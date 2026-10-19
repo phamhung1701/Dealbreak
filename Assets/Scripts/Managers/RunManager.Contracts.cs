@@ -11,6 +11,26 @@ public partial class RunManager
     int _pendingContractPrice;
     public RunContractState ActiveContract => _activeContract;
 
+    // Contract selection choices, in display order; the final choice is Cancel.
+    static readonly RunContractObjective[] ContractChoices =
+    {
+        RunContractObjective.WinTwoEncounters,
+        RunContractObjective.DefeatEliteThisMap,
+        RunContractObjective.WinCombatWithoutHpLoss
+    };
+
+    static bool IsContractCancel(int choiceIndex) => choiceIndex == ContractChoices.Length;
+
+    string GetContractChoiceUnavailableReason(int choiceIndex)
+    {
+        if (IsContractCancel(choiceIndex)) return string.Empty;
+        var cards = CardManager.Instance;
+        if (cards == null || !cards.CanAfford(_pendingContractPrice))
+            return $"Need {_pendingContractPrice}g to accept the Contract";
+        return ContractChoices[choiceIndex] == RunContractObjective.DefeatEliteThisMap && !CanReachEliteAfterActiveNode()
+            ? "No reachable Enforcer remains in this District" : string.Empty;
+    }
+
     bool ShowContractSelection(int pendingPrice)
     {
         if (_activeNode == null || _activeNode.kind != MapNodeType.Shop || _activeContract != null ||
@@ -18,6 +38,7 @@ public partial class RunManager
         var selection = ScriptableObject.CreateInstance<RunEventDefinition>();
         selection.id = $"quest-contract-select:{_activeNode.mapIndex}:{_activeNode.id}";
         selection.category = MapNodeType.Event;
+        selection.flow = RunEventFlow.ContractSelection;
         selection.title = "QUEST CONTRACT";
         selection.description = "Choose one objective. The Contract occupies no Gear slot; its 20 Credits fee is charged only when you confirm an objective. Cancel keeps your Credits.";
         selection.choices = new[]
@@ -55,9 +76,10 @@ public partial class RunManager
     bool ResolveContractSelection(int choiceIndex)
     {
         if (_pendingContractSelectionEvent == null || _activeContract != null ||
-            choiceIndex < 0 || choiceIndex > 3 || _activeNode == null || _activeNode.kind != MapNodeType.Shop)
+            choiceIndex < 0 || choiceIndex > ContractChoices.Length || _activeNode == null ||
+            _activeNode.kind != MapNodeType.Shop)
             return false;
-        if (choiceIndex == 3)
+        if (IsContractCancel(choiceIndex))
         {
             OnHideEvent?.Invoke();
             _activeEvent = null;
@@ -67,7 +89,8 @@ public partial class RunManager
             OnShowShop?.Invoke();
             return true;
         }
-        if (choiceIndex == (int)RunContractObjective.DefeatEliteThisMap && !CanReachEliteAfterActiveNode())
+        var objective = ContractChoices[choiceIndex];
+        if (objective == RunContractObjective.DefeatEliteThisMap && !CanReachEliteAfterActiveNode())
             return false;
         var cards = CardManager.Instance;
         if (cards == null || !cards.CanAfford(_pendingContractPrice) || !cards.SpendCredits(_pendingContractPrice))
@@ -75,7 +98,7 @@ public partial class RunManager
         _usedSpecialShopOffers.Add(ShopOfferKind.Contract);
         _activeContract = new RunContractState
         {
-            objective = (RunContractObjective)choiceIndex,
+            objective = objective,
             startedAtMapIndex = CurrentMapIndex,
             startedAtNodeId = _activeNode.id,
             deadlineMapExclusive = (int)Math.Min(int.MaxValue, (long)CurrentMapIndex + 12L),

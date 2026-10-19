@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Dealbreak.Runtime::RunEventDefinition
   id: evt_100
   category: 5
+  flow: 1
   title: Redline Deal
   description: A black-market broker offers an extreme upgrade with an equally extreme
     price; appears on a 1-in-20 eligible Risk roll.

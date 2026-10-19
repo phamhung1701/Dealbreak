@@ -126,6 +126,7 @@ public partial class RunManager
         _pendingBloodRitualEvent = ScriptableObject.CreateInstance<RunEventDefinition>();
         _pendingBloodRitualEvent.id = $"blood-ritual-replace:{_activeNode?.id ?? 0}";
         _pendingBloodRitualEvent.category = MapNodeType.Risk;
+        _pendingBloodRitualEvent.flow = RunEventFlow.BloodRitualReplacement;
         _pendingBloodRitualEvent.title = "REDLINE DEAL — CLAIM YOUR REWARD";
         _pendingBloodRitualEvent.description = $"Choose a Gear item to replace with {_pendingBloodRitualGear.displayName}, or cancel without paying the cost.";
         _pendingBloodRitualEvent.choices = _pendingBloodRitualReplacements
@@ -206,19 +207,14 @@ public partial class RunManager
             choiceIndex < 0 || choiceIndex >= _activeEvent.choices.Length)
             return "Choice unavailable";
 
-        if (_activeEvent.id == "evt_100")
-            return GetBloodRitualUnavailableReason(choiceIndex);
-        if (_activeEvent.id.StartsWith("blood-ritual-replace:", StringComparison.Ordinal))
-            return choiceIndex >= 0 && choiceIndex < _activeEvent.choices.Length
-                ? string.Empty : "Choice unavailable";
-        if (_activeEvent.id.StartsWith("quest-contract-select:", StringComparison.Ordinal))
+        switch (_activeEvent.flow)
         {
-            if (choiceIndex == 3) return string.Empty;
-            var cards = CardManager.Instance;
-            if (cards == null || !cards.CanAfford(_pendingContractPrice))
-                return $"Need {_pendingContractPrice}g to accept the Contract";
-            return choiceIndex == (int)RunContractObjective.DefeatEliteThisMap && !CanReachEliteAfterActiveNode()
-                ? "No reachable Enforcer remains in this District" : string.Empty;
+            case RunEventFlow.BloodRitual:
+                return GetBloodRitualUnavailableReason(choiceIndex);
+            case RunEventFlow.BloodRitualReplacement:
+                return string.Empty;
+            case RunEventFlow.ContractSelection:
+                return GetContractChoiceUnavailableReason(choiceIndex);
         }
         var choice = _activeEvent.choices[choiceIndex];
         if (choice == null) return "Choice unavailable";
@@ -453,6 +449,7 @@ public partial class RunManager
         _pendingHammerEvent.id = $"artifact-hammer:{_completedNodeCount}";
         _pendingHammerEvent.title = "HAMMER";
         _pendingHammerEvent.category = MapNodeType.Upgrade;
+        _pendingHammerEvent.flow = RunEventFlow.HammerReward;
         _pendingHammerEvent.description = hasTarget
             ? "Choose one of three cached Common Mods, then target a card in your hand."
             : "No card is in hand to target. Retry after another node, or decline this reward.";
@@ -521,12 +518,12 @@ public partial class RunManager
     {
         if (GameplayInputGate.IsBlocked || !CanChooseEventOption(choiceIndex) ||
             _activeEvent.choices[choiceIndex].interaction != RunEventChoiceInteraction.Immediate) return false;
-        if (_activeEvent.id == "evt_100")
-            return ResolveBloodRitualOption(choiceIndex);
-        if (_activeEvent.id.StartsWith("blood-ritual-replace:", StringComparison.Ordinal))
-            return ResolveBloodRitualReplacement(choiceIndex);
-        if (_activeEvent.id.StartsWith("quest-contract-select:", StringComparison.Ordinal))
-            return ResolveContractSelection(choiceIndex);
+        switch (_activeEvent.flow)
+        {
+            case RunEventFlow.BloodRitual: return ResolveBloodRitualOption(choiceIndex);
+            case RunEventFlow.BloodRitualReplacement: return ResolveBloodRitualReplacement(choiceIndex);
+            case RunEventFlow.ContractSelection: return ResolveContractSelection(choiceIndex);
+        }
         if (!RunEffectResolver.Apply(
                 _activeEvent.choices[choiceIndex], CardManager.Instance, CombatManager.Instance, this))
             return false;
