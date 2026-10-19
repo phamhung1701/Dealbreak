@@ -229,12 +229,20 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     void ApplyHp(EnemyRuntime enemy)
     {
         if (hpText) hpText.text = $"HP  {Mathf.RoundToInt(_shownHp)}/{enemy.maxHp}";
-        if (healthBar)
-        {
-            healthBar.minValue = 0;
-            healthBar.maxValue = Mathf.Max(1, enemy.maxHp);
-            healthBar.value = _shownHp;
-        }
+        ApplyHpBar(enemy.maxHp > 0 ? _shownHp / enemy.maxHp : 0f);
+    }
+
+    // The HP bar is drawn behind the HP text (see HealthBarBacking); the authored thin slider
+    // stays serialized but hidden.
+    HealthBarBacking _hpBacking;
+    void ApplyHpBar(float fraction)
+    {
+        if (healthBar && healthBar.gameObject.activeSelf) healthBar.gameObject.SetActive(false);
+        if (!hpText) return;
+        if (_hpBacking == null) _hpBacking = HealthBarBacking.Attach(hpText, true);
+        var theme = DealbreakUIStyle.Theme;
+        if (theme && hpText.color != theme.paper) hpText.color = theme.paper;
+        if (_hpBacking != null) _hpBacking.SetFraction(fraction);
     }
 
     void TickHitCue(float deltaTime)
@@ -335,22 +343,36 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (_defeatCanvasGroup != null) _defeatCanvasGroup.alpha = 1f;
     }
 
+    // The killing hit plays in full (flash, shake, HP draining to zero) before the enemy fades.
+    const float DefeatHitTime = 0.42f;
+    const float DefeatFadeTime = 0.75f;
+
     System.Collections.IEnumerator DefeatCueRoutine(float delay)
     {
         if (delay > 0f) yield return new WaitForSeconds(delay);
         var rect = (RectTransform)transform;
         Vector3 initialScale = _preDefeatScale;
+        var hitColor = new Color(1f, 0.35f, 0.2f, 1f);
+        var spentColor = new Color(0.45f, 0.42f, 0.42f, 1f);
+        _shakeTime = ShakeTime * 1.5f;
+        _shakeStrength = 14f;
+        if (portrait != null) portrait.color = hitColor;
         float elapsed = 0f;
-        // Brief warm impact flash, then a compact fade/shrink; presentation only.
-        if (portrait != null) portrait.color = new Color(1f, 0.35f, 0.2f, 1f);
-        yield return new WaitForSeconds(0.09f);
-        while (elapsed < 0.39f)
+        while (elapsed < DefeatHitTime)
+        {
+            yield return null;
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / DefeatHitTime);
+            if (portrait != null) portrait.color = Color.Lerp(hitColor, spentColor, t * t);
+        }
+        elapsed = 0f;
+        while (elapsed < DefeatFadeTime)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / 0.39f);
+            float t = Mathf.Clamp01(elapsed / DefeatFadeTime);
             float eased = t * t * (3f - 2f * t);
-            rect.localScale = Vector3.LerpUnclamped(initialScale, initialScale * 0.72f, eased);
-            if (_defeatCanvasGroup != null) _defeatCanvasGroup.alpha = 1f - t;
+            rect.localScale = Vector3.LerpUnclamped(initialScale, initialScale * 0.86f, eased);
+            if (_defeatCanvasGroup != null) _defeatCanvasGroup.alpha = 1f - eased;
             yield return null;
         }
         _defeatCue = null;
@@ -373,12 +395,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         {
             _shownHp = -1f;
             if (hpText) hpText.text = "HP  —";
-            if (healthBar)
-            {
-                healthBar.minValue = 0;
-                healthBar.maxValue = 1;
-                healthBar.value = 0;
-            }
+            ApplyHpBar(0f);
         }
 
         RefreshPortrait(enemy);
@@ -487,15 +504,12 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         rect.offsetMax = Vector2.zero;
         _perfectBlockCueText = cue.GetComponent<TMP_Text>();
         if (statusText != null) _perfectBlockCueText.font = statusText.font;
-        _perfectBlockCueText.fontSize = 25f;
+        _perfectBlockCueText.fontSize = 34f;
         _perfectBlockCueText.fontStyle = FontStyles.Bold;
         _perfectBlockCueText.alignment = TextAlignmentOptions.Center;
         _perfectBlockCueText.color = new Color(1f, 0.82f, 0.32f, 1f);
         _perfectBlockCueText.raycastTarget = false;
-        var outline = cue.GetComponent<Outline>() ?? cue.AddComponent<Outline>();
-        outline.effectColor = new Color(0.12f, 0.08f, 0.02f, 1f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
-        outline.useGraphicAlpha = false;
+        DealbreakUIStyle.Outline(_perfectBlockCueText, 0.3f);
         cue.SetActive(false);
     }
 

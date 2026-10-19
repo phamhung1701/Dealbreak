@@ -31,8 +31,7 @@ public class ActionButtonsUI : MonoBehaviour
     readonly DisplayedNumber _shownHealth = new();
     Color _healthLabelColor;
     bool _healthLabelColorCaptured;
-    RectTransform _healthBar;
-    RectTransform _healthBarFill;
+    HealthBarBacking _healthBar;
     UnityAction[] _backpackSlotListeners;
     ConsumableSlotDragUI[] _backpackSlotDragInputs;
     EnhancementTargetUI _enhancementTargetUI;
@@ -152,7 +151,6 @@ public class ActionButtonsUI : MonoBehaviour
     void LateUpdate()
     {
         if (_consumableContextPanel && _consumableContextPanel.activeSelf) PositionConsumableContext();
-        LayoutPlayerHealthBar();
     }
 
     // These labels support encounters, not the Shop/Event objects occupying the same surface.
@@ -257,7 +255,9 @@ public class ActionButtonsUI : MonoBehaviour
         if (!playerHealthLabel || combat == null) return;
         if (!_healthLabelColorCaptured)
         {
-            _healthLabelColor = playerHealthLabel.color;
+            // The label sits on the HP bar, so it reads in paper over brick and ink.
+            var theme = DealbreakUIStyle.Theme;
+            _healthLabelColor = theme ? theme.paper : Color.white;
             _healthLabelColorCaptured = true;
         }
         _shownHealth.SetTarget(combat.player.currentHealth, Application.isPlaying && isActiveAndEnabled);
@@ -267,53 +267,14 @@ public class ActionButtonsUI : MonoBehaviour
             ? $"HP  ∞{block}{shield}"
             : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}{block}{shield}";
         playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
-        EnsurePlayerHealthBar();
-        if (_healthBarFill)
-        {
-            float fraction = combat.HasInfiniteHealthForDev || combat.player.maxHealth <= 0 ? 1f
-                : Mathf.Clamp01(_shownHealth.Value / combat.player.maxHealth);
-            _healthBarFill.anchorMax = new Vector2(fraction, 1f);
-        }
+        if (_healthBar == null) _healthBar = HealthBarBacking.Attach(playerHealthLabel, true);
+        if (_healthBar != null)
+            _healthBar.SetFraction(combat.HasInfiniteHealthForDev || combat.player.maxHealth <= 0 ? 1f
+                : _shownHealth.Value / combat.player.maxHealth);
     }
 
-    // A thin bar under the HP text, matching the enemy cards' health line.
-    void EnsurePlayerHealthBar()
-    {
-        if (_healthBar != null || !playerHealthLabel) return;
-        var theme = DealbreakUIStyle.Theme;
-        var bar = new GameObject("Player Health Bar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        _healthBar = (RectTransform)bar.transform;
-        _healthBar.SetParent(playerHealthLabel.transform, false);
-        _healthBar.anchorMin = _healthBar.anchorMax = new Vector2(0.5f, 0.5f);
-        _healthBar.pivot = new Vector2(0.5f, 1f);
-        var track = bar.GetComponent<Image>();
-        track.raycastTarget = false;
-        track.color = theme ? new Color(theme.ink.r, theme.ink.g, theme.ink.b, 0.22f) : new Color(0f, 0f, 0f, 0.22f);
-        var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        _healthBarFill = (RectTransform)fill.transform;
-        _healthBarFill.SetParent(_healthBar, false);
-        _healthBarFill.anchorMin = Vector2.zero;
-        _healthBarFill.anchorMax = Vector2.one;
-        _healthBarFill.offsetMin = _healthBarFill.offsetMax = Vector2.zero;
-        var fillImage = fill.GetComponent<Image>();
-        fillImage.raycastTarget = false;
-        fillImage.color = theme ? theme.brick : new Color(0.66f, 0.27f, 0.22f, 1f);
-        LayoutPlayerHealthBar();
-    }
-
-    // The HP panel changes shape between turn and defense, so the bar follows the rendered text.
-    void LayoutPlayerHealthBar()
-    {
-        if (_healthBar == null || !playerHealthLabel) return;
-        var label = playerHealthLabel.rectTransform;
-        var bounds = playerHealthLabel.textBounds;
-        float width = label.rect.width * 0.72f;
-        Vector2 under = bounds.size.x > 0f
-            ? new Vector2(label.rect.center.x, bounds.min.y - 6f)
-            : new Vector2(label.rect.center.x, label.rect.center.y - 18f);
-        _healthBar.sizeDelta = new Vector2(width, 6f);
-        _healthBar.anchoredPosition = under - label.rect.center;
-    }
+    /// <summary>The player's HP bar, a drop target for healing Tricks.</summary>
+    public RectTransform PlayerHealthBar => _healthBar != null ? _healthBar.Bar : null;
 
     void RefreshAll()
     {

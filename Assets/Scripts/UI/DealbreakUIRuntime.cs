@@ -21,12 +21,19 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     int _lastSignature;
     int _lastShopCredits=int.MinValue;
     bool? _lastDefenseLayout;
-    Vector2 _handAnchorMin,_handAnchorMax;
+    Vector2 _handAnchorMin,_handAnchorMax,_countAnchorMin,_countAnchorMax;
+    // The compact hand fills the strip under route, Black Market and Incident panels, so its
+    // size counter moves beside it instead of under it.
+    static readonly Vector2 CompactHandMin=new(.17f,.02f),CompactHandMax=new(.83f,.46f);
+    static readonly Vector2 CompactCountMin=new(.835f,.04f),CompactCountMax=new(.91f,.14f);
     void Start()
     {
         if(!handFrame&&actions&&actions.handField)handFrame=actions.handField.transform.parent as RectTransform;
         if(handFrame){_handAnchorMin=handFrame.anchorMin;_handAnchorMax=handFrame.anchorMax;}
+        if(handCount){_countAnchorMin=handCount.rectTransform.anchorMin;_countAnchorMax=handCount.rectTransform.anchorMax;}
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
+        var canvas=actions?actions.GetComponentInParent<Canvas>():GetComponentInParent<Canvas>();
+        if(canvas)ScreenShakeUI.Install(canvas.rootCanvas);
     }
     void PositionSortControls()
     {
@@ -90,12 +97,18 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         bool overlay=map&&map.panel&&map.panel.activeInHierarchy||market&&market.panel&&market.panel.activeInHierarchy||
             incident&&incident.panel&&incident.panel.activeInHierarchy;
         bool compactHand=overlay&&!RunResultUI.IsShowingResult;
+        float ease=1f-Mathf.Exp(-Time.unscaledDeltaTime*9f);
         if(handFrame)
         {
-            Vector2 targetMin=compactHand?new Vector2(.17f,.02f):_handAnchorMin;
-            Vector2 targetMax=compactHand?new Vector2(.83f,.46f):_handAnchorMax;
-            handFrame.anchorMin=Vector2.Lerp(handFrame.anchorMin,targetMin,1f-Mathf.Exp(-Time.unscaledDeltaTime*9f));
-            handFrame.anchorMax=Vector2.Lerp(handFrame.anchorMax,targetMax,1f-Mathf.Exp(-Time.unscaledDeltaTime*9f));
+            handFrame.anchorMin=Vector2.Lerp(handFrame.anchorMin,compactHand?CompactHandMin:_handAnchorMin,ease);
+            handFrame.anchorMax=Vector2.Lerp(handFrame.anchorMax,compactHand?CompactHandMax:_handAnchorMax,ease);
+        }
+        if(handCount)
+        {
+            var count=handCount.rectTransform;
+            count.anchorMin=Vector2.Lerp(count.anchorMin,compactHand?CompactCountMin:_countAnchorMin,ease);
+            count.anchorMax=Vector2.Lerp(count.anchorMax,compactHand?CompactCountMax:_countAnchorMax,ease);
+            if(count.parent&&count.GetSiblingIndex()!=count.parent.childCount-1)count.SetAsLastSibling();
         }
         bool choosingCard=CardManager.Instance&&CardManager.Instance.IsHandEnhancementTargeting;
         if(combatGroups!=null)for(int i=0;i<combatGroups.Length;i++)

@@ -82,6 +82,25 @@ public static class DealbreakUIStyle
         if(!text)return;text.font=font;text.fontSize=size;text.fontSizeMin=size;text.fontSizeMax=size;
         text.enableAutoSizing=false;text.color=color;text.raycastTarget=text.GetComponent<ContextualInfoTrigger>()!=null||text.GetComponentInParent<PathNodeButtonUI>()!=null;
     }
+    // A black border around numbers that sit on bars or float over art. TMP keeps a per-label
+    // material instance; setting only when it differs avoids rebuilding that material each frame.
+    // The outline is centred on the glyph edge, so the face is dilated by the same amount to keep
+    // thin mono strokes from being eaten by it.
+    public static void Outline(TMP_Text text,float width=.24f)
+    {
+        if(!text)return;
+        bool changed=false;
+        if(!Mathf.Approximately(text.outlineWidth,width)){text.outlineWidth=width;changed=true;}
+        var color=text.outlineColor;if(color.r!=0||color.g!=0||color.b!=0||color.a!=255){text.outlineColor=Color.black;changed=true;}
+        var material=text.fontMaterial;
+        if(material)
+        {
+            // The mobile SDF shader draws an outline only with this keyword on.
+            if(!material.IsKeywordEnabled("OUTLINE_ON")){material.EnableKeyword("OUTLINE_ON");changed=true;}
+            if(!Mathf.Approximately(material.GetFloat(ShaderUtilities.ID_FaceDilate),width)){material.SetFloat(ShaderUtilities.ID_FaceDilate,width);changed=true;}
+        }
+        if(changed)text.UpdateMeshPadding();
+    }
     public static void ApplyHierarchy(Transform root)
     {
         if(!root||!Theme)return;
@@ -108,7 +127,7 @@ public static class DealbreakUIStyle
                 if(text==enemy.nameText){Text(text,Theme.headingFont,24,Theme.ink);text.overflowMode=TextOverflowModes.Overflow;}
                 else if(text==enemy.hpText||text==enemy.atkText)
                 {
-                    Text(text,Theme.numericFont,20,text==enemy.atkText?Theme.brick:Theme.ink);
+                    Text(text,Theme.numericFont,20,text==enemy.atkText?Theme.brick:Theme.paper);
                     text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Overflow;
                 }
                 else if(text==enemy.statusText)Text(text,Theme.bodyFont,15,Theme.ink);
