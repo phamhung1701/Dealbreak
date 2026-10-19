@@ -27,7 +27,9 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
         }
         bool open=GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
         bool paper=GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper;
-        foreach(var label in _labels)if(label)label.color=paper?theme.ink:open&&available&&(_hover||_focus||selected)?theme.ochre:!open&&available&&role==Role.Primary?theme.ink:theme.paper;
+        Color labelColor=paper?theme.ink:open&&available&&(_hover||_focus||selected)?theme.ochre:!open&&available&&role==Role.Primary?theme.ink:theme.paper;
+        if(open&&!available)labelColor=Color.Lerp(theme.paper,theme.slate,.7f);
+        foreach(var label in _labels)if(label)label.color=labelColor;
         if(button.targetGraphic)button.targetGraphic.color=Color.clear;
         Color fill=role==Role.Primary?theme.ochre:role==Role.Destructive?theme.brick:role==Role.Quiet?theme.charcoal:theme.slate;
         if(paper)fill=theme.paper;
