@@ -47,7 +47,7 @@ public sealed class PassPlayerTurnUITests
     }
 
     [Test]
-    public void PassButtonAppearsOnlyOnPlayerTurnAndCommitsOneEnemyResponse()
+    public void PassButtonCommitsEnemyResponseThenAcceptsIncomingDamage()
     {
         Assert.That(_passButton.gameObject.activeSelf, Is.False, "No Pass action is shown before the player turn.");
         var type = EnemyTypeData.Create("Pass UI Enemy", 100, 4, 0);
@@ -61,9 +61,12 @@ public sealed class PassPlayerTurnUITests
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
         Assert.That(_combat.pendingDamage, Is.EqualTo(4));
         Assert.That(_passButton.gameObject.activeSelf, Is.True);
-        Assert.That(_passButton.interactable, Is.False, "Pass remains visible but disabled during enemy retaliation.");
+        Assert.That(_passButton.interactable, Is.True, "The shared button accepts incoming damage during retaliation.");
         Assert.That(_combat.CompletedPlayerTurnCount, Is.EqualTo(1));
-        _combat.TakeRemainingDamage();
+        int hp = _combat.player.currentHealth;
+        _passButton.onClick.Invoke();
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(hp - 4));
+        Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
         Assert.That(_passButton.gameObject.activeSelf, Is.True);
         Assert.That(_passButton.interactable, Is.True);
     }

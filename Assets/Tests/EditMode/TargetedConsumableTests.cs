@@ -68,7 +68,7 @@ public sealed class TargetedConsumableTests
     [Test]
     public void SuitRune_ChangesUpToThreeDistinctHandCardsWithOneCharge()
     {
-        Assert.That(_heartRune.uses, Is.EqualTo(1));
+        Assert.That(_heartRune.uses, Is.EqualTo(3));
         Assert.That(_cards.AddConsumable(_heartRune), Is.True);
         _combat.StartEnemy(new EnemyRuntime(Enemy("Rune target encounter", 30, 0, 0)));
         _cards.DealHand();
@@ -85,7 +85,8 @@ public sealed class TargetedConsumableTests
 
         Assert.That(targets.Take(3).All(card => card.Suit == CardData.Suit.Hearts), Is.True);
         Assert.That(targets[3].Suit, Is.Not.EqualTo(CardData.Suit.Hearts));
-        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
+        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
     }
 
     [Test]

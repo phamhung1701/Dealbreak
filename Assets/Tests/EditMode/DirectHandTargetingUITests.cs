@@ -126,7 +126,8 @@ public sealed class DirectHandTargetingUITests
 
         Assert.That(targets.Take(3).All(card => card.Suit == CardData.Suit.Spades), Is.True);
         Assert.That(targets[3].Suit, Is.Not.EqualTo(CardData.Suit.Spades));
-        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
+        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
         Assert.That(_picker.panel.activeSelf, Is.False);
     }
 

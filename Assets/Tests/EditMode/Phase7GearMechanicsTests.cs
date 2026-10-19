@@ -204,6 +204,7 @@ public sealed class Phase7GearMechanicsTests
 
         var eligible = Card(CardData.Suit.Hearts, CardData.Rank.Ten, 912);
         SetOwnedCards(new[] { full, eligible });
+        CardCollectionOf(_cards).DrawToHand(1, 1);
         SetPrivate(_run, "_completedNodeCount", 4);
         Invoke(_run, "TryOpenHammerReward", null);
         Assert.That(_run.ActiveEvent.choices[0].interaction, Is.EqualTo(RunEventChoiceInteraction.ChooseEnhancementTarget));

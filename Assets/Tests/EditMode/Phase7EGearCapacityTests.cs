@@ -72,10 +72,10 @@ public sealed class Phase7EGearCapacityTests
     }
 
     [Test]
-    public void DuplicateRuleStillWinsAtCapacity_AndInvalidPriceDoesNotGrant()
+    public void DuplicateGearAtCapacity_AndInvalidPrice_DoNotGrant()
     {
         for (int i = 0; i < 5; i++) Assert.That(_cards.BuyGear(_gears[i], 0), Is.True);
-        Assert.That(_cards.GetGearAcquisitionUnavailableReason(_gears[0]), Is.EqualTo("Already owned"));
+        Assert.That(_cards.GetGearAcquisitionUnavailableReason(_gears[0]), Is.EqualTo("Gear Capacity Full"));
         Assert.That(_cards.BuyGear(_gears[0], 0), Is.False);
         Assert.That(_cards.BuyGear(_gears[5], -1), Is.False);
         Assert.That(_cards.ownedGear, Has.Count.EqualTo(5));
@@ -83,7 +83,7 @@ public sealed class Phase7EGearCapacityTests
     }
 
     [Test]
-    public void NonSlotGear_IsOwnedButDoesNotConsumeCapacity_AndDuplicateStillRejected()
+    public void NonSlotGear_DuplicateInstancesDoNotConsumeCapacity()
     {
         for (int i = 0; i < 5; i++) Assert.That(_cards.BuyGear(_gears[i], 0), Is.True);
         var contract = Gear("contract", 0);
@@ -92,7 +92,9 @@ public sealed class Phase7EGearCapacityTests
         Assert.That(_cards.BuyGear(contract, 0), Is.True);
         Assert.That(_cards.ownedGear, Has.Count.EqualTo(6));
         Assert.That(_cards.GearSlotsUsed, Is.EqualTo(5));
-        Assert.That(_cards.BuyGear(contract, 0), Is.False);
+        Assert.That(_cards.BuyGear(contract, 0), Is.True);
+        Assert.That(_cards.ownedGear.Count(item => item == contract), Is.EqualTo(2));
+        Assert.That(_cards.GearSlotsUsed, Is.EqualTo(5));
         Assert.That(_cards.BuyGear(_gears[5], 0), Is.False);
         Assert.That(_cards.ownedGear, Does.Contain(contract));
     }

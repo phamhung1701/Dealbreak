@@ -120,7 +120,9 @@ public sealed class DeckMutationTests
         var same = _cards.ownedCards.First(card => card.Suit == CardData.Suit.Spades);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { same.Id }), Is.False);
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(3));
-        var others = _cards.ownedCards.Where(card => card.Suit != CardData.Suit.Spades).Take(3).ToArray();
+        _cards.DrawToHand(8);
+        var others = _cards.hand.Where(card => card.Suit != CardData.Suit.Spades).Take(3).ToArray();
+        Assert.That(others.Length, Is.EqualTo(3));
         foreach (var card in others)
         {
             Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { card.Id }), Is.True);

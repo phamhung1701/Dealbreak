@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: d7844fbede3d4214bb4be85d66c95b00
+guid: 5af3c8b295314fa43a90d23c8102c227
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4103061592012895037
-    second: UI_DarkSlate_HUDBacking_Mask_01_0
+      213: 5601348801434266490
+    second: Background_City_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: UI_DarkSlate_HUDBacking_Mask_01_0
+      name: Background_City_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 2048
-        height: 2048
+        width: 1020
+        height: 572
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3ccc584983ffe07c0800000000000000
-      internalID: -4103061592012895037
+      spriteID: a7bac84ce0dfbbd40800000000000000
+      internalID: 5601348801434266490
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      UI_DarkSlate_HUDBacking_Mask_01_0: -4103061592012895037
+      Background_City_0: 5601348801434266490
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

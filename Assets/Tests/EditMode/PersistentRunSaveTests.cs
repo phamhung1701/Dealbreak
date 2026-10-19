@@ -8,7 +8,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using UnityEditor.SceneManagement;
 using Object = UnityEngine.Object;
 
 public sealed class PersistentRunSaveTests
@@ -320,20 +319,22 @@ public sealed class PersistentRunSaveTests
     [Test]
     public void FailedDiskCheckpoint_BlocksExitWhileUnsafeCheckpointRefusalRemainsAllowed()
     {
-        var previousScene = SceneManager.GetActiveScene();
-        var gameScene = SceneManager.GetSceneByName(GameFlowService.GameSceneName);
-        bool createdScene = !gameScene.IsValid() || !gameScene.isLoaded;
-        if (createdScene) gameScene = SceneManager.CreateScene(GameFlowService.GameSceneName);
+        var gameScene = SceneManager.GetActiveScene();
+        string previousName = gameScene.name;
         RunSaveAutosave writer = null;
         try
         {
-            Assert.That(SceneManager.SetActiveScene(gameScene), Is.True);
+            // The Test Runner owns an untitled scene; do not replace it or add a scene.
+            gameScene.name = GameFlowService.GameSceneName;
             string directoryPrimary = System.IO.Path.Combine(directory, "blocked-primary");
             Directory.CreateDirectory(directoryPrimary);
             var failingStore = new RunSaveStore(directoryPrimary);
             typeof(SaveGameService).GetField("StoreOverride", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, failingStore);
             typeof(SaveGameService).GetMethod("ClearError", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
             writer = run.gameObject.AddComponent<RunSaveAutosave>();
+            // EditMode does not invoke this MonoBehaviour's runtime OnEnable lifecycle.
+            typeof(RunSaveAutosave).GetField("_run", Private).SetValue(writer, run);
+            Assert.That(run.CanCaptureSave, Is.True);
 
             LogAssert.Expect(LogType.Warning, new Regex("Could not save run:"));
             Assert.That(writer.Checkpoint(true), Is.False);
@@ -350,8 +351,7 @@ public sealed class PersistentRunSaveTests
             if (writer != null) Object.DestroyImmediate(writer);
             typeof(SaveGameService).GetField("StoreOverride", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, null);
             typeof(SaveGameService).GetMethod("ClearError", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
-            if (previousScene.IsValid() && previousScene.isLoaded) SceneManager.SetActiveScene(previousScene);
-            if (createdScene && gameScene.IsValid() && gameScene.isLoaded) EditorSceneManager.CloseScene(gameScene, true);
+            if (gameScene.IsValid()) gameScene.name = previousName;
         }
     }
 

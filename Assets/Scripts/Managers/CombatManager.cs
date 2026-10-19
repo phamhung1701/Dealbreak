@@ -202,7 +202,8 @@ public partial class CombatManager : Singleton<CombatManager>
         player.HealingAllowed = CanPlayerHeal;
         var captain = _enemies.Find(enemy => enemy.HasCaptaincy && !enemy.IsDefeated);
         foreach (var enemy in _enemies)
-            enemy.AssignCaptain(enemy.type.enemyName == "Goblin" ? captain : null);
+            // Asset identity survives player-facing renames (Goblin is displayed as Scrapper).
+            enemy.AssignCaptain(enemy.type.name == "Goblin" || enemy.type.enemyName == "Goblin" ? captain : null);
         _earnedCreditsReward = 0;
         _processedEnemyDeaths.Clear();
         _reactions.Clear();
