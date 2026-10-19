@@ -154,33 +154,40 @@ public partial class CardManager : Singleton<CardManager>
         return count;
     }
 
-    public bool CanAddConsumable(ConsumableData consumable, int count = 1)
+    public bool CanAddConsumable(ConsumableData consumable, int count = 1) =>
+        CanAddConsumables(new[] { (consumable, count) });
+
+    // Simulates every requested addition in order, so a multi-Trick reward validates as a whole.
+    public bool CanAddConsumables(IReadOnlyList<(ConsumableData consumable, int count)> requests)
     {
-        if (consumable == null || count <= 0 || !consumableCatalog.Contains(consumable) ||
-            !IsBackpackWithinCurrentLimits()) return false;
+        if (requests == null || !IsBackpackWithinCurrentLimits()) return false;
         int capacity = BackpackCapacity;
         int maxPerSlot = ConsumablesPerSlot;
         var definitions = _backpack.Select(stack => stack.Definition).ToList();
         var stackCounts = _backpack.Select(stack => stack.Count).ToList();
-        for (int item = 0; item < count; item++)
+        foreach (var (consumable, count) in requests)
         {
-            int stackIndex = -1;
-            if (maxPerSlot > 1)
+            if (consumable == null || count <= 0 || !consumableCatalog.Contains(consumable)) return false;
+            for (int item = 0; item < count; item++)
             {
-                for (int i = 0; i < definitions.Count; i++)
-                    if (definitions[i] == consumable && stackCounts[i] < maxPerSlot)
-                    {
-                        stackIndex = i;
-                        break;
-                    }
+                int stackIndex = -1;
+                if (maxPerSlot > 1)
+                {
+                    for (int i = 0; i < definitions.Count; i++)
+                        if (definitions[i] == consumable && stackCounts[i] < maxPerSlot)
+                        {
+                            stackIndex = i;
+                            break;
+                        }
+                }
+                if (stackIndex >= 0) stackCounts[stackIndex]++;
+                else if (definitions.Count < capacity)
+                {
+                    definitions.Add(consumable);
+                    stackCounts.Add(1);
+                }
+                else return false;
             }
-            if (stackIndex >= 0) stackCounts[stackIndex]++;
-            else if (definitions.Count < capacity)
-            {
-                definitions.Add(consumable);
-                stackCounts.Add(1);
-            }
-            else return false;
         }
         return true;
     }
