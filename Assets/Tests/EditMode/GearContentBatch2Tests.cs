@@ -102,10 +102,10 @@ public sealed class GearContentBatch2Tests
     public void Lantern_RevealsExactlyOneReachableHiddenNodeWithoutChangingMapOrEliteVisibility()
     {
         var before = _run.currentPath.ToDictionary(n => n.id,
-            n => (n.revealed, n.accessible, n.completed, n.hidden, n.kind,
+            n => (n.revealed, n.scouted, n.accessible, n.completed, n.hidden, n.kind,
                 n.col, n.row, n.contentId, next: string.Join(",", n.next)));
         Assert.That(_cards.BuyGear(_lantern, 0), Is.True);
-        var extra = _run.currentPath.Where(n => !before[n.id].revealed && n.revealed).ToArray();
+        var extra = _run.currentPath.Where(n => !before[n.id].scouted && n.scouted).ToArray();
         Assert.That(extra, Has.Length.EqualTo(1));
         Assert.That(_run.IsScoutedNode(extra[0]), Is.True, "Lantern scouts one reachable unknown node of any kind.");
         Assert.That(_run.LastScoutedNode, Is.SameAs(extra[0]));
@@ -119,7 +119,7 @@ public sealed class GearContentBatch2Tests
             if (node.kind == MapNodeType.Elite) Assert.That(node.revealed, Is.True);
         }
         _run.RefreshCurrentMapEffects();
-        Assert.That(_run.currentPath.Count(n => !before[n.id].revealed && n.revealed), Is.EqualTo(1),
+        Assert.That(_run.currentPath.Count(n => !before[n.id].scouted && n.scouted), Is.EqualTo(1),
             "The Artifact reveals at most one node per map.");
     }
 
@@ -130,7 +130,7 @@ public sealed class GearContentBatch2Tests
         int first = _run.currentPath.Single(n => _run.IsScoutedNode(n)).id;
         _run.RestartRun();
         Assert.That(_cards.ownedGear, Is.Empty);
-        Assert.That(_run.currentPath.Single(n => n.id == first).revealed, Is.False);
+        Assert.That(_run.currentPath.Single(n => n.id == first).scouted, Is.False);
         _cards.BuyGear(_lantern, 0);
         Assert.That(_run.currentPath.Single(n => _run.IsScoutedNode(n)).id, Is.EqualTo(first));
         _run.StartRunWithSeed("LANTERN-DIFFERENT");

@@ -48,7 +48,7 @@ public sealed class Phase2EliteCombatTests
         var run = CreateComponent<RunManager>("Phase2 Elite RunManager");
         run.contentCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/Data/Run/PrototypeRunContent.asset");
         run.currentPath.Add(new PathNode { id = 1, kind = MapNodeType.Elite, contentId = captain.name,
-            mapIndex = mapNumber - 1, accessible = true, revealed = true });
+            mapIndex = mapNumber - 1, accessible = true, revealed = true, scouted = true });
         Assert.That(run.GetEncounterStats(run.currentPath[0]), Is.EqualTo((expectedHp, expectedAttack)));
         var previewAlly = EnemyMapScaling.Scale(3, 2, mapNumber - 1);
         Assert.That(run.GetNodeDesc(run.currentPath[0]), Does.Contain(
@@ -176,7 +176,7 @@ public sealed class Phase2EliteCombatTests
         var run = CreateComponent<RunManager>("Royal Knight Run");
         run.contentCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/Data/Run/PrototypeRunContent.asset");
         var node = new PathNode { id = 2, kind = MapNodeType.Elite, contentId = "RoyalKnight",
-            mapIndex = mapIndex, accessible = true, revealed = true };
+            mapIndex = mapIndex, accessible = true, revealed = true, scouted = true };
         run.currentPath.Add(node);
         Assert.That(run.GetEncounterStats(node), Is.EqualTo((hp, attack)));
         run.OnPathChosen(node.id);

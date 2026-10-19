@@ -4,7 +4,7 @@ using System.Linq;
 
 public static class RunSaveValidation
 {
-    public const int Version = 1;
+    public const int Version = 2;
     public const int ContentVersion = 1;
     public static bool Validate(RunSaveData s, SaveContentCatalog catalog, out string error)
     {

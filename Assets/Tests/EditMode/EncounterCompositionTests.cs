@@ -47,7 +47,7 @@ public sealed class EncounterCompositionTests
         foreach (int nodeId in new[] { 1, 2, 3, 4 })
         {
             var node = new PathNode { id = nodeId, kind = kind, contentId = enemy.name, mapIndex = mapIndex,
-                accessible = true, revealed = true };
+                accessible = true, revealed = true, scouted = true };
             _run.currentPath.Clear();
             _run.currentPath.Add(node);
             string preview = _run.GetNodeDesc(node);

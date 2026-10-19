@@ -6,7 +6,7 @@ using System.Collections.Generic;
 // Unity migration attributes do not migrate this custom persistence format. Keep these keys and enum numbers.
 [Serializable] public sealed class RunSaveData
 {
-    public int version = 1;
+    public int version = RunSaveValidation.Version;
     public int contentVersion = 1;
     public string checkpoint = "safe-node";
     public string seed;
@@ -73,7 +73,7 @@ using System.Collections.Generic;
     public int id, kind, mapIndex;
     public string type, contentId;
     public float col, row;
-    public bool completed, accessible, revealed, hidden, shopCheckpoint;
+    public bool completed, accessible, revealed, hidden, shopCheckpoint, scouted;
     public List<int> next = new();
 }
 [Serializable] public sealed class AbilitySaveData

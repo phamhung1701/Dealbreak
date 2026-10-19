@@ -456,6 +456,7 @@ public sealed class PersistentRunSaveTests
     public void Migrations_UpgradeOlderVersionsStepwise_AndRejectNewerOrUnknownVersions()
     {
         var steps = new Dictionary<int, Action<RunSaveData>> { [0] = data => data.seed = "MIGRATED" };
+        for (int version = 1; version < RunSaveValidation.Version; version++) steps[version] = _ => { };
         var older = JsonClone(run.CaptureSave()); older.version = 0;
         Assert.That(RunSaveMigrations.TryUpgrade(older, steps, out var error), Is.True, error);
         Assert.That((older.version, older.seed), Is.EqualTo((RunSaveValidation.Version, "MIGRATED")));
@@ -469,6 +470,22 @@ public sealed class PersistentRunSaveTests
         Assert.That(error, Does.Contain("newer"));
         var unknown = JsonClone(run.CaptureSave()); unknown.version = 0;
         Assert.That(RunSaveMigrations.TryUpgrade(unknown, out error), Is.False, "No silent inference without a step.");
+    }
+
+    [Test]
+    public void MigrationFromVersion1_MarksNodesRevealedAheadOfTravelAsScouted()
+    {
+        var v1 = JsonClone(run.CaptureSave()); v1.version = 1;
+        v1.nodes = new List<NodeSaveData>
+        {
+            new() { id = 1, revealed = true, accessible = true },
+            new() { id = 2, revealed = true },
+            new() { id = 3, revealed = true, accessible = true, hidden = true },
+            new() { id = 4, revealed = true, completed = true },
+            new() { id = 5 },
+        };
+        Assert.That(RunSaveMigrations.TryUpgrade(v1, out var error), Is.True, error);
+        Assert.That(v1.nodes.Select(node => node.scouted), Is.EqualTo(new[] { false, true, true, false, false }));
     }
 
     [Test]

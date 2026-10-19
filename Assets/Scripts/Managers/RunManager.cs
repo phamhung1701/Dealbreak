@@ -14,6 +14,8 @@ public class PathNode
     public float col, row;
     public List<int> next = new();
     public bool completed, accessible, revealed, hidden;
+    // Set when scouting reveals the node's contents; a fight's enemies stay unknown otherwise.
+    public bool scouted;
     public bool isShopCheckpoint;
 }
 
@@ -229,6 +231,7 @@ public partial class RunManager : Singleton<RunManager>
         var random = (_randomContext ?? new RunRandomContext(runSeed)).CreateStream("map-scout", key);
         var scouted = candidates[random.NextInt(0, candidates.Count)];
         scouted.revealed = true;
+        scouted.scouted = true;
         LastScoutedNode = scouted;
         return true;
     }
@@ -236,26 +239,29 @@ public partial class RunManager : Singleton<RunManager>
     /// <summary>The node most recently revealed by scouting on this map; runtime presentation only.</summary>
     public PathNode LastScoutedNode { get; private set; }
 
-    static bool IsScoutableKind(MapNodeType kind) =>
-        kind is MapNodeType.Combat or MapNodeType.Event or MapNodeType.Risk or MapNodeType.Upgrade;
+    static bool IsHiddenRosterKind(MapNodeType kind) => kind is MapNodeType.Combat or MapNodeType.Elite;
 
     /// <summary>
-    /// True for a node whose identity was revealed ahead of travel. Scoutable kinds are otherwise
-    /// revealed only on becoming accessible, and hidden Incidents/Risks only on being entered.
+    /// True for a node whose contents scouting revealed and the player has yet to visit. Scoutable
+    /// kinds are otherwise revealed only on becoming accessible, and hidden Incidents/Risks only on
+    /// being entered.
     /// </summary>
     public bool IsScoutedNode(PathNode node) => node != null && node != _activeNode && !node.completed &&
-        node.revealed && IsScoutableKind(node.kind) && (node.hidden || !node.accessible);
+        node.scouted && node.revealed;
 
-    /// <summary>Whether the map may show a node's contents: enemies, totals or the Incident.</summary>
+    /// <summary>
+    /// Whether the map may show a node's contents: enemies, totals or the Incident. A fight's
+    /// enemies stay unknown until it is scouted; the Headliner is always known.
+    /// </summary>
     public bool NodeDetailsVisible(PathNode node) => node != null && node.revealed &&
-        (node.accessible || node.completed || IsScoutableKind(node.kind) ||
-            node.kind is MapNodeType.Shop or MapNodeType.Headliner);
+        (!IsHiddenRosterKind(node.kind) || node.scouted || node.completed);
 
     List<PathNode> FindScoutCandidates()
     {
         var candidates = new List<PathNode>();
         foreach (var node in ReachableRouteNodes())
-            if (!node.revealed) candidates.Add(node);
+            if (node != _activeNode && !node.scouted && (!node.revealed || !NodeDetailsVisible(node)))
+                candidates.Add(node);
         candidates.Sort((a, b) => a.id.CompareTo(b.id));
         return candidates;
     }

@@ -59,8 +59,8 @@ public sealed class MapScoutingTests
             _run.TryRevealEligibleHiddenNode();
             Assert.That(_run.LastScoutedNode.id, Is.EqualTo(scouted.id), "The same state scouts the same node.");
         }
-        Assert.That(picks, Is.EquivalentTo(new[] { 2, 3, 4 }),
-            "Fights, hidden Incidents and Training are all candidates, not only the nearest node.");
+        Assert.That(picks, Is.EquivalentTo(new[] { 1, 2, 3, 4 }),
+            "Fights (even reachable ones), hidden Incidents and Training are all candidates.");
     }
 
     [Test]
@@ -68,7 +68,7 @@ public sealed class MapScoutingTests
     {
         BuildRoute(out _);
         _run._randomContext = new RunRandomContext("SCOUT-ALL");
-        for (int i = 0; i < 3; i++) Assert.That(_run.TryRevealEligibleHiddenNode(), Is.True);
+        for (int i = 0; i < 4; i++) Assert.That(_run.TryRevealEligibleHiddenNode(), Is.True);
         Assert.That(_run.CanRevealEligibleHiddenNode(), Is.False);
         Assert.That(_run.TryRevealEligibleHiddenNode(), Is.False);
     }
@@ -82,6 +82,8 @@ public sealed class MapScoutingTests
         Assert.That(_run.GetNodeDetail(fight), Does.Not.Contain("Brute"));
 
         fight.revealed = true;
+        Assert.That(_run.GetNodeDetail(fight), Does.Not.Contain("Brute"), "A known fight still hides its enemies.");
+        fight.scouted = true;
 
         string detail = _run.GetNodeDetail(fight);
         Assert.That(detail, Does.Contain("Street Fight • 3 enemies"));
@@ -97,7 +99,7 @@ public sealed class MapScoutingTests
         var incident = _run.currentPath.Single(node => node.id == 3);
         Assert.That(_run.GetNodeDetail(incident), Does.Not.Contain(_diner.title));
 
-        incident.revealed = true;
+        incident.revealed = incident.scouted = true;
 
         Assert.That(_run.IsScoutedNode(incident), Is.True);
         Assert.That(_run.GetNodeDetail(incident), Does.Contain("Incident • Late-Night Diner"));
@@ -105,7 +107,7 @@ public sealed class MapScoutingTests
     }
 
     [Test]
-    public void DistantEnforcer_KeepsItsStatsUntilReachable()
+    public void Enforcer_KeepsItsStatsUntilScouted()
     {
         var elite = new PathNode { id = 9, mapIndex = 0, kind = MapNodeType.Elite, contentId = "Brute",
             revealed = true, col = 3 };
@@ -113,6 +115,8 @@ public sealed class MapScoutingTests
         Assert.That(_run.GetNodeDetail(elite), Does.Not.Contain("HP"));
         Assert.That(_run.IsScoutedNode(elite), Is.False);
         elite.accessible = true;
+        Assert.That(_run.GetNodeDetail(elite), Does.Not.Contain("HP"), "Reaching an Enforcer does not reveal it.");
+        elite.scouted = true;
         Assert.That(_run.GetNodeDetail(elite), Does.Contain("HP"));
     }
 

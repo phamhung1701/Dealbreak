@@ -10,7 +10,19 @@ using System.Collections.Generic;
 public static class RunSaveMigrations
 {
     // [N] upgrades a version-N payload to version N + 1.
-    static readonly Dictionary<int, Action<RunSaveData>> Steps = new();
+    static readonly Dictionary<int, Action<RunSaveData>> Steps = new()
+    {
+        [1] = MarkScoutedNodes,
+    };
+
+    // v1 had no scouted flag: a node revealed ahead of travel (unvisited and not yet accessible, or
+    // a hidden Incident/Risk) was a scouted one.
+    static void MarkScoutedNodes(RunSaveData data)
+    {
+        if (data.nodes == null) return;
+        foreach (var node in data.nodes)
+            node.scouted = node.revealed && !node.completed && (node.hidden || !node.accessible);
+    }
 
     public static bool TryUpgrade(RunSaveData data, out string error) => TryUpgrade(data, Steps, out error);
 

@@ -40,7 +40,7 @@ public partial class RunManager
         data.nodes = currentPath.Select(n => new NodeSaveData { id = n.id, kind = (int)n.kind, type = n.type,
             contentId = n.contentId, mapIndex = n.mapIndex, col = n.col, row = n.row, next = n.next.ToList(),
             completed = n.completed, accessible = n.accessible, revealed = n.revealed, hidden = n.hidden,
-            shopCheckpoint = n.isShopCheckpoint }).ToList();
+            shopCheckpoint = n.isShopCheckpoint, scouted = n.scouted }).ToList();
         data.bosses = headlinerDeck.Select(b => new BossSaveData { name = b.enemyName, hp = b.maxHp, attack = b.baseAttack,
             gold = b.creditsReward, rank = (int)b.sourceCard.rank, suit = (int)b.sourceCard.suit,
             encounterCount = b.encounterCount, fleeTurns = b.fleeAfterPlayerTurns,
@@ -74,7 +74,7 @@ public partial class RunManager
         currentPath.AddRange(data.nodes.Select(n => new PathNode { id = n.id, kind = (MapNodeType)n.kind,
             type = n.type, contentId = n.contentId, mapIndex = n.mapIndex, col = n.col, row = n.row,
             next = n.next.ToList(), completed = n.completed, accessible = n.accessible,
-            revealed = n.revealed, hidden = n.hidden, isShopCheckpoint = n.shopCheckpoint }));
+            revealed = n.revealed, hidden = n.hidden, isShopCheckpoint = n.shopCheckpoint, scouted = n.scouted }));
         foreach (var saved in data.bosses)
         {
             // Stats and abilities restore exactly; player-facing text is regenerated from identity

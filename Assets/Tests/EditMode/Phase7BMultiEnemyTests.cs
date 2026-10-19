@@ -134,7 +134,7 @@ public sealed class Phase7BMultiEnemyTests
         var node = new PathNode
         {
             id = 7, kind = MapNodeType.Combat, contentId = "Knight",
-            mapIndex = mapIndex, accessible = true, revealed = true
+            mapIndex = mapIndex, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
 
@@ -158,7 +158,7 @@ public sealed class Phase7BMultiEnemyTests
         var node = new PathNode
         {
             id = 8, kind = MapNodeType.Elite, contentId = "Knight",
-            mapIndex = 11, accessible = true, revealed = true
+            mapIndex = 11, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
 
@@ -180,7 +180,7 @@ public sealed class Phase7BMultiEnemyTests
         var node = new PathNode
         {
             id = 9, kind = MapNodeType.Headliner, contentId = "boss",
-            mapIndex = 11, accessible = true, revealed = true
+            mapIndex = 11, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
 
@@ -212,7 +212,7 @@ public sealed class Phase7BMultiEnemyTests
         var node = new PathNode
         {
             id = 19, kind = MapNodeType.Combat, contentId = "Shieldbearer",
-            mapIndex = 1, accessible = true, revealed = true
+            mapIndex = 1, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
 
@@ -244,7 +244,7 @@ public sealed class Phase7BMultiEnemyTests
         var node = new PathNode
         {
             id = 20, kind = MapNodeType.Combat, contentId = "Knight",
-            mapIndex = 2, accessible = true, revealed = true
+            mapIndex = 2, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
         _combat.Reset();
