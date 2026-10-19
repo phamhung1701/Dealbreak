@@ -624,13 +624,20 @@ public partial class RunManager : Singleton<RunManager>
         UnsubscribeFromCombatResults();
         _subscribedCombatManager = combatManager;
         if (_subscribedCombatManager != null)
+        {
             _subscribedCombatManager.OnEncounterResult += HandleEncounterResult;
+            _subscribedCombatManager.DiscardChoiceRequester = RequestGearDiscardChoice;
+        }
     }
 
     void UnsubscribeFromCombatResults()
     {
         if (_subscribedCombatManager != null)
+        {
             _subscribedCombatManager.OnEncounterResult -= HandleEncounterResult;
+            if (_subscribedCombatManager.DiscardChoiceRequester == (Func<string, string, IReadOnlyList<CardInstance>, Action<int>, bool>)RequestGearDiscardChoice)
+                _subscribedCombatManager.DiscardChoiceRequester = null;
+        }
         _subscribedCombatManager = null;
     }
 

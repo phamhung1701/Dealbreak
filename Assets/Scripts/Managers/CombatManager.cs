@@ -105,6 +105,11 @@ public partial class CombatManager : Singleton<CombatManager>
     public event Action<string> OnCombatLog;
 
     public bool IsResolvingAction => _isResolvingAction;
+
+    /// <summary>Opens a player choice among cards (title, description, choices, onResolved with a
+    /// card ID or 0 to skip) and returns whether a prompt opened. The run layer supplies it, so
+    /// combat does not reach up into RunManager.</summary>
+    public Func<string, string, IReadOnlyList<CardInstance>, Action<int>, bool> DiscardChoiceRequester { get; set; }
     public CombatActionContext ActiveAction => _activeAction;
 
     bool _encounterResolved;
@@ -777,10 +782,9 @@ public partial class CombatManager : Singleton<CombatManager>
             Log("Diamond Emblem: the hand is full; the discard draw was skipped.");
             return false;
         }
-        var run = RunManager.Instance;
-        if (run == null) return false;
+        if (DiscardChoiceRequester == null) return false;
         var candidates = cards.discardPile.ToArray();
-        bool opened = run.RequestGearDiscardChoice("DIAMOND EMBLEM",
+        bool opened = DiscardChoiceRequester("DIAMOND EMBLEM",
             "Choose one physical card from the discard pile to return to your hand. Cancel skips this draw.",
             candidates, cardId =>
             {
