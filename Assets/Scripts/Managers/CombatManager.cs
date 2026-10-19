@@ -315,10 +315,8 @@ public partial class CombatManager : Singleton<CombatManager>
             ProcessReactions(CombatReactionPhase.HitResolved);
             if (_reactionFaulted) return true;
             Log($"Trick dealt {result.ActualHpLost} damage to {target.DisplayName}.");
-            if (player.IsDefeated)
-                ResolveEncounter(EncounterResult.Defeat);
-            else if (_enemies.Count == 0 && currentState == GameState.PlayerTurn)
-                ResolveEncounter(EncounterResult.Victory);
+            // A Trick may kill the last enemy while blocking; that also ends the encounter.
+            TryResolveTerminalOutcome();
             return true;
         }
         finally
@@ -785,19 +783,9 @@ public partial class CombatManager : Singleton<CombatManager>
     void FinishCommittedPlayerAction(CombatActionContext completedAction,
         CardManager cards, IReadOnlyList<CardInstance> committedCards)
     {
-        if (player.IsDefeated)
-        {
-            ResolveEncounter(EncounterResult.Defeat);
-            return;
-        }
-        if (_encounterResolved || _reactionFaulted) return;
+        if (TryResolveTerminalOutcome()) return;
         CompletePlayerTurnForEnemies();
-        if (_enemies.Count == 0)
-        {
-            _queuedPlayerTurnGrants.Clear();
-            ResolveEncounter(EncounterResult.Victory);
-            return;
-        }
+        if (TryResolveTerminalOutcome()) return;
         _completedPlayerTurnCount++;
         GameplayEffectResolver.EnqueueCompletedActionTurnGrants(
             new CompletedPlayerActionContext(completedAction, player, this, cards,
@@ -926,13 +914,7 @@ public partial class CombatManager : Singleton<CombatManager>
             bool reactionsCompleted = ProcessReactions(CombatReactionPhase.AttackBlocked);
             if (reactionsCompleted)
                 ProcessReactions(CombatReactionPhase.HitResolved);
-            if (_reactionFaulted) return true;
-            if (!_encounterResolved && _enemies.Count == 0)
-            {
-                ResolvePerfectParry();
-                ResolveEncounter(EncounterResult.Victory);
-            }
-            if (_encounterResolved) return true;
+            if (TryResolveTerminalOutcome()) return true;
 
             if (pendingDamage <= 0)
             {
@@ -985,7 +967,7 @@ public partial class CombatManager : Singleton<CombatManager>
             }
             if (!_reactionFaulted && !player.IsDefeated) ResolvePerfectParry();
             Log($"Took {lost} damage. (HP: {player.currentHealth}/{player.maxHealth})");
-            if (!_reactionFaulted && player.IsDefeated) ResolveEncounter(EncounterResult.Defeat);
+            TryResolveTerminalOutcome();
         }
         finally
         {
@@ -1025,12 +1007,7 @@ public partial class CombatManager : Singleton<CombatManager>
         {
             CardManager.Instance.ClearSelection();
             CompletePlayerTurnForEnemies();
-            if (_enemies.Count == 0)
-            {
-                _queuedPlayerTurnGrants.Clear();
-                ResolveEncounter(EncounterResult.Victory);
-                return true;
-            }
+            if (TryResolveTerminalOutcome()) return true;
 
             _completedPlayerTurnCount++;
             // Passing consumes the current action (including a bonus action) and cannot mint new action grants.
@@ -1303,10 +1280,7 @@ public partial class CombatManager : Singleton<CombatManager>
             var result = ResolveDamage(request);
             ProcessReactions(CombatReactionPhase.HitResolved);
             Log($"{logPrefix} {result.ActualHpLost} damage. (HP: {player.currentHealth}/{player.maxHealth})");
-
-            if (_reactionFaulted) return;
-            if (player.IsDefeated)
-                ResolveEncounter(EncounterResult.Defeat);
+            TryResolveTerminalOutcome();
         }
         finally
         {
@@ -1554,6 +1528,23 @@ public partial class CombatManager : Singleton<CombatManager>
 #else
         return false;
 #endif
+    }
+
+    // The single terminal check shared by every combat command tail. Defeat wins over Victory;
+    // no surviving enemy ends the encounter from any live state, discarding pending attacks.
+    bool TryResolveTerminalOutcome()
+    {
+        if (_encounterResolved || _reactionFaulted) return true;
+        if (player.IsDefeated)
+        {
+            ResolveEncounter(EncounterResult.Defeat);
+            return true;
+        }
+        if (_enemies.Count > 0) return false;
+        if (currentState == GameState.EnemyAttacking) ResolvePerfectParry();
+        _queuedPlayerTurnGrants.Clear();
+        ResolveEncounter(EncounterResult.Victory);
+        return true;
     }
 
     void ResolveEncounter(EncounterResult result)
