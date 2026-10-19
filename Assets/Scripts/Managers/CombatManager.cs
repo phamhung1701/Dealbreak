@@ -108,6 +108,25 @@ public partial class CombatManager : Singleton<CombatManager>
     public CombatActionContext ActiveAction => _activeAction;
 
     bool _encounterResolved;
+    int _commandDepth;
+    EncounterResult? _unpublishedResult;
+
+    // Encounter results publish after the outermost combat command unwinds, so run progression
+    // (rewards, the next District, checkpoints) never runs inside a half-finished action.
+    void BeginCommand() => _commandDepth++;
+
+    void EndCommand()
+    {
+        if (--_commandDepth == 0) PublishEncounterResult();
+    }
+
+    void PublishEncounterResult()
+    {
+        if (_unpublishedResult == null) return;
+        var result = _unpublishedResult.Value;
+        _unpublishedResult = null;
+        OnEncounterResult?.Invoke(result);
+    }
 
     readonly struct DefenseAssignment
     {
@@ -165,6 +184,13 @@ public partial class CombatManager : Singleton<CombatManager>
     }
 
     public bool TryStartEncounter(IReadOnlyList<EnemyRuntime> enemies, MapNodeType encounterKind = MapNodeType.Combat)
+    {
+        BeginCommand();
+        try { return TryStartEncounterCore(enemies, encounterKind); }
+        finally { EndCommand(); }
+    }
+
+    bool TryStartEncounterCore(IReadOnlyList<EnemyRuntime> enemies, MapNodeType encounterKind = MapNodeType.Combat)
     {
         if (enemies == null || enemies.Count == 0)
             throw new ArgumentException("An encounter requires at least one enemy.", nameof(enemies));
@@ -279,6 +305,13 @@ public partial class CombatManager : Singleton<CombatManager>
     public bool TryUseConsumableDamage(int amount) => TryUseConsumableDamage(amount, currentEnemy);
 
     public bool TryUseConsumableDamage(int amount, EnemyRuntime target)
+    {
+        BeginCommand();
+        try { return TryUseConsumableDamageCore(amount, target); }
+        finally { EndCommand(); }
+    }
+
+    bool TryUseConsumableDamageCore(int amount, EnemyRuntime target)
     {
         if (!CanUseConsumableDamage(amount, target)) return false;
         _isResolvingAction = true;
@@ -467,6 +500,13 @@ public partial class CombatManager : Singleton<CombatManager>
     }
 
     public bool TryPlayCards(IReadOnlyList<CardView> cards, EnemyRuntime target, int hitCount)
+    {
+        BeginCommand();
+        try { return TryPlayCardsCore(cards, target, hitCount); }
+        finally { EndCommand(); }
+    }
+
+    bool TryPlayCardsCore(IReadOnlyList<CardView> cards, EnemyRuntime target, int hitCount)
     {
         if (hitCount <= 0 || !CanPlayCards(cards, target)) return false;
         var cardInstances = new CardInstance[cards.Count];
@@ -820,6 +860,13 @@ public partial class CombatManager : Singleton<CombatManager>
 
     public bool TryDefendWithCards(IReadOnlyList<CardView> cards, EnemyRuntime target)
     {
+        BeginCommand();
+        try { return TryDefendWithCardsCore(cards, target); }
+        finally { EndCommand(); }
+    }
+
+    bool TryDefendWithCardsCore(IReadOnlyList<CardView> cards, EnemyRuntime target)
+    {
         if (!CanDefendWithCards(cards, target)) return false;
 
         var assignments = MatchDefenseAssignments(cards);
@@ -910,6 +957,13 @@ public partial class CombatManager : Singleton<CombatManager>
 
     public void TakeRemainingDamage()
     {
+        BeginCommand();
+        try { TakeRemainingDamageCore(); }
+        finally { EndCommand(); }
+    }
+
+    void TakeRemainingDamageCore()
+    {
         if (GameplayInputGate.IsBlocked || _isResolvingAction || currentState != GameState.EnemyAttacking ||
             _enemies.Count == 0 || _encounterResolved)
             return;
@@ -975,6 +1029,13 @@ public partial class CombatManager : Singleton<CombatManager>
 
     public bool PassPlayerTurn()
     {
+        BeginCommand();
+        try { return PassPlayerTurnCore(); }
+        finally { EndCommand(); }
+    }
+
+    bool PassPlayerTurnCore()
+    {
         if (!CanPassPlayerTurn) return false;
         _isResolvingAction = true;
         _reactions.Clear();
@@ -998,6 +1059,13 @@ public partial class CombatManager : Singleton<CombatManager>
     }
 
     public void Recover()
+    {
+        BeginCommand();
+        try { RecoverCore(); }
+        finally { EndCommand(); }
+    }
+
+    void RecoverCore()
     {
         if (_reactionFaulted || GameplayInputGate.IsBlocked || _isResolvingAction || currentState != GameState.PlayerTurn ||
             _enemies.Count == 0 || _encounterResolved || HandCount() != 0)
@@ -1551,7 +1619,8 @@ public partial class CombatManager : Singleton<CombatManager>
                 : "Player defeated! Game Over!");
         }
 
-        OnEncounterResult?.Invoke(result);
+        _unpublishedResult = result;
+        if (_commandDepth == 0) PublishEncounterResult();
     }
 
     public int HealPlayer(int amount)
@@ -1745,6 +1814,7 @@ public partial class CombatManager : Singleton<CombatManager>
         _isResolvingAction = false;
         _encounterResolved = false;
         _reactionFaulted = false;
+        _unpublishedResult = null;
         player.Configure(_configuredPlayerMaxHealth);
         player.Reset();
         SetPendingDamage(0, true);

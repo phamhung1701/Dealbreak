@@ -84,6 +84,26 @@ public sealed class CombatCompletionTests
         Assert.That(_results, Is.EqualTo(new[] { EncounterResult.Victory }));
     }
 
+    [Test]
+    public void EncounterResult_PublishesAfterTheActionUnwinds_SoACheckpointIsLegal()
+    {
+        var enemy = new EnemyRuntime(Enemy("Unwind Victim", 5, 3, 0));
+        _combat.StartEncounter(new[] { enemy });
+        bool? resolvingWhenPublished = null;
+        bool? checkpointLegalWhenPublished = null;
+        _combat.OnEncounterResult += _ =>
+        {
+            resolvingWhenPublished = _combat.IsResolvingAction;
+            checkpointLegalWhenPublished = _combat.CanCapturePersistentState;
+        };
+
+        Assert.That(_combat.TryUseConsumableDamage(10, enemy), Is.True);
+
+        Assert.That(_results, Is.EqualTo(new[] { EncounterResult.Victory }));
+        Assert.That(resolvingWhenPublished, Is.False, "Run progression must not run inside the action.");
+        Assert.That(checkpointLegalWhenPublished, Is.True, "The post-victory checkpoint can be written synchronously.");
+    }
+
     EnemyTypeData Enemy(string name, int hp, int attack, int credits)
     {
         var type = EnemyTypeData.Create(name, hp, attack, credits);
