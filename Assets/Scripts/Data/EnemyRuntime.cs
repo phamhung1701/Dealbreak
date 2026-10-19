@@ -77,6 +77,27 @@ public class EnemyRuntime : ICombatDamageTarget
         _duelistCallConsumed = false;
     }
 
+    /// <summary>Suit Call: each player turn announces a seeded suit whose next hit is halved.</summary>
+    public CardData.Suit AnnounceSuit(IRandomSource random)
+    {
+        var suit = (CardData.Suit)random.NextInt(0, Enum.GetValues(typeof(CardData.Suit)).Length);
+        SetAnnouncedSuit(suit);
+        return suit;
+    }
+
+    /// <summary>Master Thief: the most Credits one steal takes, from the ability's authored amount.</summary>
+    public int MasterThiefStealLimit
+    {
+        get
+        {
+            if (type.abilities != null)
+                foreach (var ability in type.abilities)
+                    if (ability != null && ability.effect == EnemyAbilityEffect.MasterThief)
+                        return Mathf.Max(0, ability.amount);
+            return 0;
+        }
+    }
+
     public bool IsSupportedBy(EnemyRuntime captain) => ReferenceEquals(_captain, captain);
 
     public void AssignCaptain(EnemyRuntime captain)

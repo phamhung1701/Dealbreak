@@ -1176,10 +1176,10 @@ public partial class CombatManager : Singleton<CombatManager>
     void ResolveMasterThiefSteal(EnemyRuntime thief)
     {
         var cards = CardManager.Instance;
-        int stolen = cards != null ? Math.Min(8, Math.Max(0, cards.credits)) : 0;
+        int stolen = cards != null ? Math.Min(thief.MasterThiefStealLimit, Math.Max(0, cards.credits)) : 0;
         if (stolen > 0) cards.SpendCredits(stolen);
         thief.SetStolenCredits(stolen);
-        Log($"{thief.DisplayName} stole {stolen} Credits and will flee after 4 player actions unless defeated!");
+        Log($"{thief.DisplayName} stole {stolen} Credits and will flee after {thief.type.fleeAfterPlayerTurns} player actions unless defeated!");
     }
 
     void CompletePlayerTurnForEnemies()
@@ -1424,9 +1424,7 @@ public partial class CombatManager : Singleton<CombatManager>
         {
             var enemy = _enemies[i];
             if (enemy == null || enemy.IsDefeated || !enemy.HasSuitCall) continue;
-            var random = _duelistSuitRandom ??= new DeterministicRandom(0x44554C49);
-            var suit = (CardData.Suit)random.NextInt(0, Enum.GetValues(typeof(CardData.Suit)).Length);
-            enemy.SetAnnouncedSuit(suit);
+            var suit = enemy.AnnounceSuit(_duelistSuitRandom ??= new DeterministicRandom(0x44554C49));
             Log($"{enemy.DisplayName} calls {suit}.");
         }
         OnEnemyHpChanged?.Invoke();
