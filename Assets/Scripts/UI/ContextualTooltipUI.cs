@@ -113,7 +113,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             var data=enemy.DisplayedEnemy;
             string traits=data.type.abilities==null?string.Empty:string.Join("\n\n",data.type.abilities.Where(a=>a).Select(a=>$"{a.displayName}\n{a.description}"));
             string reward=data.type.sourceCard?$"\n\nReward • {data.type.sourceCard.DisplayName}":string.Empty;
-            info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,$"HP {data.currentHp}/{data.maxHp} • Attack {data.EffectiveAttack}\n{enemy.DetailGuidance}\n\n{traits}{reward}");return true;
+            info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,string.Join("\n\n",new[]{$"HP {data.currentHp}/{data.maxHp} • Attack {data.EffectiveAttack}",enemy.DetailGuidance,traits,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part))));return true;
         }
         if(source.TryGetComponent<GearIconSlotUI>(out var gear)&&gear.Gear)
         {info=new("Gear",gear.Gear.displayName,gear.Gear.description);return true;}
@@ -139,7 +139,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         bool slotDetail=source.GetComponent<GearIconSlotUI>()!=null||
             source is ContextualInfoTrigger&&source.GetComponent<Button>()&&source.name.StartsWith("BackpackSlot");
         float width=slotDetail?Mathf.Min(220,parent.rect.width*.22f):Mathf.Min(390,parent.rect.width*.38f);
-        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(body.GetPreferredValues(info.Body,width-44,0).y+140,220,slotDetail?360:440));
+        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(body.GetPreferredValues(info.Body,width-44,0).y+140,150,slotDetail?360:440));
         rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);rect.sizeDelta=new(width,height);
 
         var anchor=view&&view.visualRoot?view.visualRoot:(RectTransform)source.transform;

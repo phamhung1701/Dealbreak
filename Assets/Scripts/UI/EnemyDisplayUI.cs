@@ -588,6 +588,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         // Only intents that differ from an ordinary attack; the pending total is on the HP panel.
         var parts = new System.Collections.Generic.List<string>(4);
         if (state != GameState.EnemyAttacking && enemy.NextAttackIsCharged) parts.Add("CHARGED ATTACK NEXT");
+        else if (state != GameState.EnemyAttacking && enemy.HasRoyalGuard) parts.Add("+1 SHIELD NEXT");
         if (enemy.HasDoubleStrike) parts.Add("2 HITS");
         if (enemy.ShieldCharges > 0) parts.Add($"SHIELD {enemy.ShieldCharges}");
         if (enemy.type.sourceCard) parts.Add(enemy.type.sourceCard.DisplayName);
