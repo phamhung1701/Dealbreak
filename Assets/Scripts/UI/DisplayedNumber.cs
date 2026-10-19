@@ -18,6 +18,8 @@ public sealed class DisplayedNumber
     Color _pulseColor;
 
     public int Shown => Mathf.RoundToInt(_shown);
+    /// <summary>The unrounded eased value, for bars that should glide between integers.</summary>
+    public float Value => _shown;
     public bool IsAnimating => _elapsed < Duration;
 
     /// <summary>Sets the value to show; with <paramref name="animate"/> false it is shown at once.</summary>
