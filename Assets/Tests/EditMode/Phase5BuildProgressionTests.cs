@@ -161,7 +161,6 @@ public sealed class Phase5BuildProgressionTests
         var offer = _run.GetCurrentUpgradeOffers()[0];
 
         var chosenCard = _cards.hand.First(card => card.Enhancement == null);
-        Assert.That(_run.ChooseUpgradeOffer(0), Is.False, "A target is required");
         Assert.That(_run.ChooseUpgradeOffer(0, chosenCard.Id), Is.True);
         Assert.That(_cards.FindOwnedCard(chosenCard.Id).Enhancement, Is.SameAs(offer.enhancement));
         Assert.That(upgrade.completed, Is.True);

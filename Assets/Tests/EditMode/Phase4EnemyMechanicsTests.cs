@@ -180,14 +180,14 @@ public sealed class Phase4EnemyMechanicsTests
         _runObject = new GameObject("Phase4 composition RunManager");
         _run = _runObject.AddComponent<RunManager>();
         _run.contentCatalog = catalog;
-        typeof(RunManager).GetMethod("StartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
+        typeof(RunManager).GetMethod("TryStartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
             .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "Duelist", mapIndex = 0 } });
         Assert.That(_combat.Enemies.Select(enemy => enemy.type.enemyName), Is.EqualTo(new[] { "Duelist" }));
         var duelistNode = new PathNode { kind = MapNodeType.Combat, contentId = "Duelist", mapIndex = 0, accessible = true, revealed = true };
         Assert.That(_run.GetNodeDesc(duelistNode), Does.Not.Contain("Brute"));
 
         _combat.Reset();
-        typeof(RunManager).GetMethod("StartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
+        typeof(RunManager).GetMethod("TryStartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
             .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "WarDrummer", mapIndex = 0 } });
         Assert.That(_combat.Enemies.Select(enemy => enemy.type.enemyName), Is.EqualTo(new[] { "War Drummer", "Goblin", "Goblin" }));
         Assert.That(catalog.normalEnemies.Any(enemy => enemy.enemyName is "Goblin Captain" or "Royal Knight"), Is.False,

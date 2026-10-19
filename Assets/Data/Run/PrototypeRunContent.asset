@@ -25,10 +25,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f750125b5fbe30d46830bcb2df989055, type: 2}
   - {fileID: 11400000, guid: a7b7391a4df62ac4d91b57554a41935b, type: 2}
   eliteAbility: {fileID: 11400000, guid: f84b541f748adf048a3c39827d6f1fea, type: 2}
-  clubsBossAbility: {fileID: 11400000, guid: 53482898301764e4595a1ae179aa2ab0, type: 2}
-  diamondsBossAbility: {fileID: 11400000, guid: bb29b3d4b94735745ab8194247764ed2, type: 2}
-  heartsBossAbility: {fileID: 11400000, guid: 2d9993c9ab4572349bc0cea852dff871, type: 2}
-  spadesBossAbility: {fileID: 11400000, guid: 5dc00ea543fe221459c95fcd63be92b7, type: 2}
   events:
   - {fileID: 11400000, guid: 4ed5f24787fc86045b2615d7a7537eab, type: 2}
   - {fileID: 11400000, guid: 486a63daea298c24b9ec4a409597bdb4, type: 2}

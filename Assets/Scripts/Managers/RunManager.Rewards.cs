@@ -136,9 +136,6 @@ public partial class RunManager
             ? "Card already has this Mod" : string.Empty;
     }
 
-    // No implicit target may commit an Upgrade reward.
-    public bool ChooseUpgradeOffer(int offerIndex) => false;
-
     public bool ChooseUpgradeOffer(int offerIndex, int cardId, bool replaceExisting = false)
     {
         if (GameplayInputGate.IsBlocked || _activeNode == null || _activeNode.completed ||

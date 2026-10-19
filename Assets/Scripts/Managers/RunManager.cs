@@ -353,8 +353,6 @@ public partial class RunManager : Singleton<RunManager>
         OnShowPathScreen?.Invoke();
     }
 
-    void StartEncounter(PathNode node) => TryStartEncounter(node);
-
     bool TryStartEncounter(PathNode node)
     {
         var combat = CombatManager.Instance;
