@@ -21,6 +21,7 @@ public sealed class GameplayMenuCoordinator : MonoBehaviour
 
     readonly List<Layer> _layers = new();
     float _previousTimeScale = 1f;
+    GameplayInputBlockReason _appliedReasons;
 
     public int LayerCount => _layers.Count;
     public bool HasBlockingMenu => _layers.Count > 0;
@@ -113,11 +114,17 @@ public sealed class GameplayMenuCoordinator : MonoBehaviour
         Select(null, restoreSelection);
     }
 
+    // Only release reasons this coordinator applied; gameplay-owned reasons (pending
+    // rewards, Gear choices) must survive a menu opening and closing above them.
     void ApplyGateReasons()
     {
-        GameplayInputGate.Clear();
+        var desired = GameplayInputBlockReason.None;
         foreach (var layer in _layers)
-            GameplayInputGate.Set(layer.reason, true);
+            desired |= layer.reason;
+        var released = _appliedReasons & ~desired;
+        if (released != GameplayInputBlockReason.None) GameplayInputGate.Set(released, false);
+        if (desired != GameplayInputBlockReason.None) GameplayInputGate.Set(desired, true);
+        _appliedReasons = desired;
     }
 
     void Select(Selectable preferred, GameObject fallback = null)
