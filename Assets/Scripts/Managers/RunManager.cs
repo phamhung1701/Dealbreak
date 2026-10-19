@@ -797,7 +797,7 @@ public partial class RunManager : Singleton<RunManager>
         var cards = CardManager.Instance;
         int mapIndex = CurrentMapIndex;
         if (cards == null || _randomContext == null ||
-            !cards.HasGearSpecialRule(GearSpecialRule.AlchemistsKit)) return;
+            !GearRules.OffersAlchemistRewards(cards)) return;
         if (!_alchemistChoicesByMap.TryGetValue(mapIndex, out var choices))
         {
             var candidates = cards.consumableCatalog
@@ -959,8 +959,7 @@ public partial class RunManager : Singleton<RunManager>
     bool PurchaseShopOfferCore(ShopOffer offer)
     {
         var cards = CardManager.Instance;
-        bool cashbackOwned = cards.HasGearSpecialRule(GearSpecialRule.CashbackToken);
-        bool giftOwned = cards.HasGearSpecialRule(GearSpecialRule.MerchantsGift);
+        var purchaseModifiers = GearRules.CapturePurchaseModifiers(cards);
         int creditsBefore = cards.credits;
         bool success;
         if (offer.kind == ShopOfferKind.Gear)
@@ -999,7 +998,7 @@ public partial class RunManager : Singleton<RunManager>
         if (offer.kind != ShopOfferKind.Contract && offer.price > 0)
             _madeSuccessfulPurchaseInCurrentShop = true;
         if (IsEligiblePaidItem(offer.kind))
-            CompletePaidItemPurchase(creditsBefore - cards.credits, cashbackOwned, giftOwned);
+            CompletePaidItemPurchase(creditsBefore - cards.credits, purchaseModifiers);
         RepriceActiveShopOffers();
         return true;
     }
@@ -1011,14 +1010,13 @@ public partial class RunManager : Singleton<RunManager>
         if (offer.kind != ShopOfferKind.Enhancement ||
             !string.IsNullOrEmpty(GetEnhancementAcquisitionTargetUnavailableReason(cardId, offer.enhancement))) return false;
         var cards = CardManager.Instance;
-        bool cashbackOwned = cards.HasGearSpecialRule(GearSpecialRule.CashbackToken);
-        bool giftOwned = cards.HasGearSpecialRule(GearSpecialRule.MerchantsGift);
+        var purchaseModifiers = GearRules.CapturePurchaseModifiers(cards);
         int creditsBefore = cards.credits;
         _shopTransaction = true;
         try
         {
             if (!cards.BuyEnhancement(cardId, offer.enhancement, offer.price, replaceExisting)) return false;
-            CompletePaidItemPurchase(creditsBefore - cards.credits, cashbackOwned, giftOwned);
+            CompletePaidItemPurchase(creditsBefore - cards.credits, purchaseModifiers);
             if (offer.price > 0) _madeSuccessfulPurchaseInCurrentShop = true;
             MarkShopPurchase(offer);
             return true;
@@ -1066,25 +1064,16 @@ public partial class RunManager : Singleton<RunManager>
     static bool IsEligiblePaidItem(ShopOfferKind kind) => kind is
         ShopOfferKind.Gear or ShopOfferKind.Enhancement or ShopOfferKind.Consumable;
 
-    static int RoundPercentage(int value, int percent)
-    {
-        if (value <= 0 || percent <= 0) return 0;
-        return (int)Math.Min(int.MaxValue, ((long)value * percent + 50L) / 100L);
-    }
-
     static int IncrementToMaximum(int value) => value < int.MaxValue ? value + 1 : int.MaxValue;
 
-    void CompletePaidItemPurchase(int actualCreditsSpent, bool cashbackOwned, bool giftOwned)
+    void CompletePaidItemPurchase(int actualCreditsSpent, GearRules.PurchaseModifiers modifiers)
     {
         actualCreditsSpent = Math.Max(0, actualCreditsSpent);
         if (actualCreditsSpent <= 0) return;
         var cards = CardManager.Instance;
-        if (cashbackOwned && cards != null)
-        {
-            int refund = Math.Min(actualCreditsSpent, RoundPercentage(actualCreditsSpent, 15));
-            if (refund > 0) cards.AddCredits(refund);
-        }
-        if (!giftOwned) return;
+        int refund = GearRules.CashbackRefund(modifiers, actualCreditsSpent);
+        if (refund > 0 && cards != null) cards.AddCredits(refund);
+        if (!modifiers.MerchantsGift) return;
         _paidItemPurchaseCount = IncrementToMaximum(_paidItemPurchaseCount);
         if (_paidItemPurchaseCount % 3 != 0) return;
         _merchantGiftRewardCount = IncrementToMaximum(_merchantGiftRewardCount);
@@ -1096,9 +1085,7 @@ public partial class RunManager : Singleton<RunManager>
     {
         basePrice = Math.Max(0, basePrice);
         var cards = CardManager.Instance;
-        return IsEligiblePaidItem(kind) && cards != null &&
-            cards.HasGearSpecialRule(GearSpecialRule.MerchantsBadge)
-                ? RoundPercentage(basePrice, 80) : basePrice;
+        return IsEligiblePaidItem(kind) ? GearRules.DiscountedItemPrice(cards, basePrice) : basePrice;
     }
 
     void RepriceActiveShopOffers()
@@ -1922,11 +1909,8 @@ public partial class RunManager : Singleton<RunManager>
     void TryOpenHammerReward()
     {
         var cards = CardManager.Instance;
-        int hammerIndex = cards != null ? cards.ownedGear.FindIndex(value => value != null &&
-            value.specialRule == GearSpecialRule.Hammer) : -1;
-        var hammer = hammerIndex >= 0 ? cards.ownedGear[hammerIndex] : null;
-        if (cards == null || hammer == null) return;
-        var instance = cards.GetGearInstanceAt(hammerIndex);
+        var instance = GearRules.FindHammer(cards);
+        if (cards == null || instance == null) return;
         if (!_pendingHammerReward)
         {
             int last = instance.State.GetCounter(GearCounterKeys.HammerLastRewardNode);
@@ -2091,35 +2075,8 @@ public partial class RunManager : Singleton<RunManager>
 
         bool wasElite = !wasHeadliner && _activeNode != null && _activeNode.kind == MapNodeType.Elite &&
             (CombatManager.Instance?.EliteKillCount ?? 0) > 0;
-        if (wasElite)
-        {
-            for (int gearIndex = 0; gearIndex < cards.ownedGear.Count; gearIndex++)
-            {
-                var gear = cards.ownedGear[gearIndex];
-                if (gear == null) continue;
-                var state = cards.GetGearInstanceAt(gearIndex).State;
-                if (gear.specialRule == GearSpecialRule.HuntersLedger)
-                    state.SetCounter(GearCounterKeys.HuntersLedgerEliteKills, state.GetCounter(GearCounterKeys.HuntersLedgerEliteKills) + 1);
-                if (gear.specialRule == GearSpecialRule.TrophyRack)
-                    state.SetCounter(GearCounterKeys.TrophyRackEliteKills, state.GetCounter(GearCounterKeys.TrophyRackEliteKills) + 1);
-            }
-        }
-        if (wasHeadliner)
-        {
-            for (int gearIndex = 0; gearIndex < cards.ownedGear.Count; gearIndex++)
-            {
-                var gear = cards.ownedGear[gearIndex];
-                if (gear == null || gear.specialRule != GearSpecialRule.CrownOfEndurance) continue;
-                int growth = 3 + ((CombatManager.Instance?.EncounterActualHpLost ?? 0) == 0 ? 3 : 0);
-                CombatManager.Instance?.IncreasePlayerMaxHealth(growth, healIncrease: false);
-            }
-        }
-        if (wasHeadliner && cards.HasGearSpecialRule(GearSpecialRule.GoldenVault))
-        {
-            int payout = RoundPercentage(cards.credits, 10);
-            if (payout > 0) cards.AddCredits(payout);
-        }
-        if (!cards.HasGearSpecialRule(GearSpecialRule.ScavengersSatchel)) return;
+        GearRules.OnEncounterWon(cards, CombatManager.Instance, wasElite, wasHeadliner);
+        if (!GearRules.CountsWinsForSatchelRewards(cards)) return;
         _combatWinCount = IncrementToMaximum(_combatWinCount);
         if (_combatWinCount % 3 != 0) return;
         _satchelRewardCount = IncrementToMaximum(_satchelRewardCount);
@@ -2150,7 +2107,7 @@ public partial class RunManager : Singleton<RunManager>
         return false;
     }
 
-    void ApplyPhase7MapCompletionEffects(PathNode node)
+    void ApplyNodeCompletionTracking(PathNode node)
     {
         var cards = CardManager.Instance;
         if (cards == null || node == null) return;
@@ -2160,23 +2117,7 @@ public partial class RunManager : Singleton<RunManager>
             _visitedNodeTypesMapIndex = node.mapIndex;
         }
         _visitedNodeTypesCurrentMap.Add(node.kind);
-        bool isCombatWin = node.kind is MapNodeType.Combat or MapNodeType.Elite or MapNodeType.Headliner;
-        var combat = CombatManager.Instance;
-        for (int gearIndex = 0; gearIndex < cards.ownedGear.Count; gearIndex++)
-        {
-            var gear = cards.ownedGear[gearIndex];
-            if (gear == null) continue;
-            var state = cards.GetGearInstanceAt(gearIndex).State;
-            if (gear.specialRule == GearSpecialRule.WanderersBoots &&
-                _visitedNodeTypesCurrentMap.Count >= 3 && state.GetCounter(GearCounterKeys.WanderersBootsRewardedMap) != node.mapIndex + 1)
-            {
-                state.SetCounter(GearCounterKeys.WanderersBootsRewardedMap, node.mapIndex + 1);
-                combat?.HealPlayer(3);
-                cards.AddCredits(3);
-            }
-            if (gear.specialRule == GearSpecialRule.WarpathBanner)
-                state.SetCounter(GearCounterKeys.WarpathBannerWinStreak, isCombatWin ? Math.Min(3, state.GetCounter(GearCounterKeys.WarpathBannerWinStreak) + 1) : 0);
-        }
+        GearRules.OnNodeCompleted(cards, CombatManager.Instance, node, _visitedNodeTypesCurrentMap.Count);
     }
 
     void CompleteActiveNode()
@@ -2194,7 +2135,7 @@ public partial class RunManager : Singleton<RunManager>
         // Completion hooks count visited nodes, not route depths. Checkpoints retain
         // existing Gear visit/counter behavior; their fractional column consumes no depth.
         _completedNodeCount = IncrementToMaximum(_completedNodeCount);
-        ApplyPhase7MapCompletionEffects(resolvedNode);
+        ApplyNodeCompletionTracking(resolvedNode);
         foreach (var nextId in resolvedNode.next)
         {
             var next = FindNode(nextId);

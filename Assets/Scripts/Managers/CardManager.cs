@@ -69,29 +69,13 @@ public partial class CardManager : Singleton<CardManager>
     public int GetConsumableStackCountAtSlot(int slotIndex) =>
         slotIndex >= 0 && slotIndex < _backpack.Count ? _backpack[slotIndex].Count : 0;
     public int BackpackSlotsUsed => _backpack.Count;
-    public int BackpackCapacity => HasGearSpecialRule(GearSpecialRule.TravelerPackCommon) ||
-        HasGearSpecialRule(GearSpecialRule.TravelerPackRare)
-            ? TRAVELER_BACKPACK_CAPACITY : BASE_BACKPACK_CAPACITY;
-    public int ConsumablesPerSlot => HasGearSpecialRule(GearSpecialRule.TravelerPackRare)
-        ? RARE_CONSUMABLES_PER_SLOT : 1;
+    public int BackpackCapacity => GearRules.BackpackCapacity(this);
+    public int ConsumablesPerSlot => GearRules.ConsumablesPerSlot(this);
     public int DistinctConsumableTypeCount => _backpack.Select(stack => stack.Definition).Distinct().Count();
     public bool IsBackpackFull => _backpack.Count >= BackpackCapacity;
     public int HandCount => _cards.HandCount;
     public int HandCapacity => GameplayEffectResolver.CalculateHandCapacity(HAND_SIZE, this);
-    public int OverflowCapacity
-    {
-        get
-        {
-            int capacity = 0;
-            for (int i = 0; i < ownedGear.Count; i++)
-            {
-                var rule = ownedGear[i]?.specialRule;
-                if (rule is GearSpecialRule.OverflowRare or GearSpecialRule.OverflowEpic) return 3;
-                if (rule == GearSpecialRule.OverflowCommon) capacity = 2;
-            }
-            return capacity;
-        }
-    }
+    public int OverflowCapacity => GearRules.OverflowCapacity(this);
     public bool HasInfiniteMoney
     {
         get
@@ -514,15 +498,7 @@ public partial class CardManager : Singleton<CardManager>
         }
         if (_consumableUsedThisEncounter) return;
         _consumableUsedThisEncounter = true;
-        for (int i = 0; i < ownedGear.Count; i++)
-        {
-            var gear = ownedGear[i];
-            if (gear == null) continue;
-            if (gear.specialRule == GearSpecialRule.ScavengersPouch)
-                DrawToHand(1);
-            else if (gear.specialRule == GearSpecialRule.FieldMedicsKit)
-                combat?.HealPlayer(3);
-        }
+        GearRules.OnFirstConsumableUsedInEncounter(this, combat);
     }
 
     void NormalizeBackpackStacks()
@@ -606,15 +582,12 @@ public partial class CardManager : Singleton<CardManager>
     // The one post-acquisition path for purchases, rewards and merges.
     void CompleteGearAcquisition(GearRuntimeInstance instance)
     {
-        var gear = instance.Definition;
         var run = RunManager.Instance;
         int completedNodes = run != null ? run.CompletedNodeCount : 0;
         GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance), completedNodes);
-        if (gear.specialRule == GearSpecialRule.Hammer)
-            instance.State.SetCounter(GearCounterKeys.HammerLastRewardNode, completedNodes);
-        if (gear.specialRule is GearSpecialRule.TravelerPackCommon or GearSpecialRule.TravelerPackRare)
+        if (GearRules.OnAcquired(instance, completedNodes))
         {
-            if (gear.specialRule == GearSpecialRule.TravelerPackRare) NormalizeBackpackStacks();
+            NormalizeBackpackStacks();
             OnConsumablesChanged?.Invoke();
         }
         run?.RefreshCurrentMapEffects();

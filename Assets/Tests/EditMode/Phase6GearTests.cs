@@ -252,7 +252,7 @@ public sealed class Phase6GearTests
         _run.StartRunWithSeed("PHASE6-COUNTERS");
         Assert.That(_cards.BuyGear(gift, 0), Is.True);
         typeof(RunManager).GetMethod("CompletePaidItemPurchase", BindingFlags.Instance | BindingFlags.NonPublic)
-            .Invoke(_run, new object[] { 0, true, true });
+            .Invoke(_run, new object[] { 0, new GearRules.PurchaseModifiers(true, true) });
         Assert.That(_run.PaidItemPurchaseCount, Is.Zero, "Free rewards count for neither Gift nor Cashback.");
         Assert.That(_cards.credits, Is.Zero);
         Assert.That(_cards.BuyGear(satchel, 0), Is.True);

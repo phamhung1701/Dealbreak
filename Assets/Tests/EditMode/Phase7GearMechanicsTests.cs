@@ -481,7 +481,7 @@ public sealed class Phase7GearMechanicsTests
     }
 
     void ApplyNode(MapNodeType kind, int mapIndex) => typeof(RunManager)
-        .GetMethod("ApplyPhase7MapCompletionEffects", BindingFlags.Instance | BindingFlags.NonPublic)
+        .GetMethod("ApplyNodeCompletionTracking", BindingFlags.Instance | BindingFlags.NonPublic)
         .Invoke(_run, new object[] { new PathNode { kind = kind, mapIndex = mapIndex } });
 
     RunEventDefinition Event(string id, MapNodeType kind)
