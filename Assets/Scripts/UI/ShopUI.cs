@@ -500,7 +500,7 @@ public class ShopUI : MonoBehaviour
             : System.Array.Empty<ShopOffer>();
         AddSectionHeading("GOODS", itemsContainer);
         AddGoodsRefreshButton();
-        AddSectionHeading("SERVICES — once per Shop", _servicesContainer ?? itemsContainer);
+        AddSectionHeading("SERVICES", _servicesContainer ?? itemsContainer);
         foreach (var offer in offers.Where(offer=>!offer.purchased).OrderBy(offer => offer.IsService ? 1 : 0))
         {
             string unavailableReason = RunManager.Instance != null

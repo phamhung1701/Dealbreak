@@ -88,7 +88,7 @@ public sealed class ShopOffer
         if (kind == ShopOfferKind.Guidance)
             return "Reveal 1 random hidden node on the current district.";
         if (kind == ShopOfferKind.Supply)
-            return "Draw cards from the existing Draw Pile for 3 Credits each, up to your hand limit. Once per Black Market; no recycling.";
+            return "Draw cards from the existing Draw Pile for 3 Credits each, up to your hand limit. No recycling.";
         if (kind == ShopOfferKind.Contract)
             return "Choose: win 2 encounters within 12 districts for 6 Credits; defeat a reachable Enforcer before leaving this district for an eligible Rare Gear or heal 5 HP if none is collectible; or win an encounter with zero actual HP loss for 10 Credits. Contract is run-local and uses no Gear slot. One active Contract maximum; failure settles once for up to 5 HP, never below 1.";
         return string.Empty;

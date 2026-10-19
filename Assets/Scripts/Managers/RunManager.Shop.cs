@@ -73,7 +73,8 @@ public partial class RunManager
         var cards = CardManager.Instance;
         if (offer == null || cards == null) return "Offer unavailable";
         if (offer.price < 0) return "Invalid price";
-        if (offer.purchased) return "Already purchased at this Black Market";
+        // Supply is a repeatable service: each purchase is bounded only by Credits, Draw Pile and hand space.
+        if (offer.purchased && offer.kind != ShopOfferKind.Supply) return "Already purchased at this Black Market";
 
         if (offer.kind == ShopOfferKind.Gear)
         {
@@ -105,7 +106,6 @@ public partial class RunManager
         }
         else if (offer.kind == ShopOfferKind.Supply)
         {
-            if (_usedSpecialShopOffers.Contains(offer.kind)) return "Already purchased at this Black Market";
             int maximum = GetSupplyMaximumQuantity();
             if (maximum <= 0) return "Supply needs Credits, Draw Pile cards and free Hand space";
             if (offer.supplyQuantity <= 0 || offer.supplyQuantity > maximum) return $"Choose 1–{maximum} cards";
@@ -236,7 +236,7 @@ public partial class RunManager
     {
         if (GameplayInputGate.IsBlocked || _shopTransaction || !IsActiveShopForSale()) return false;
         var offer = _activeShopOffers.FirstOrDefault(value => value.StableId == stableId);
-        if (offer == null || offer.kind != ShopOfferKind.Supply || offer.purchased ||
+        if (offer == null || offer.kind != ShopOfferKind.Supply ||
             quantity <= 0 || quantity > GetSupplyMaximumQuantity()) return false;
         offer.supplyQuantity = quantity;
         return true;
@@ -246,17 +246,19 @@ public partial class RunManager
     {
         if (GameplayInputGate.IsBlocked || _shopTransaction || !IsActiveShopForSale()) return false;
         var offer = _activeShopOffers.FirstOrDefault(value => value.StableId == stableId);
-        if (offer == null || offer.kind != ShopOfferKind.Supply || offer.purchased ||
-            _usedSpecialShopOffers.Contains(ShopOfferKind.Supply) || quantity <= 0 || quantity > GetSupplyMaximumQuantity()) return false;
+        if (offer == null || offer.kind != ShopOfferKind.Supply ||
+            quantity <= 0 || quantity > GetSupplyMaximumQuantity()) return false;
         _shopTransaction = true;
         try
         {
             // CardManager commits zones and payment before publishing either notification.
             int drawn = CardManager.Instance.PurchaseExistingDraw(quantity, 3);
             if (drawn <= 0) return false;
-            _usedSpecialShopOffers.Add(ShopOfferKind.Supply);
             _madeSuccessfulPurchaseInCurrentShop = true;
-            MarkShopPurchase(offer);
+            // The offer stays available; the next quantity defaults to what is still affordable.
+            offer.purchased = false;
+            offer.supplyQuantity = Math.Max(1, Math.Min(offer.supplyQuantity, GetSupplyMaximumQuantity()));
+            if (_activeShopState != null) _activeShopState.MadePricedPurchase = true;
             return true;
         }
         finally { _shopTransaction = false; OnShopOffersChanged?.Invoke(); SaveGameService.Checkpoint(this); }

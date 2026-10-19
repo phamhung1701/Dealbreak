@@ -359,7 +359,7 @@ public sealed class Phase7EShopSelectionTests
     {
         var labels = _ui.panel.GetComponentsInChildren<TMP_Text>(true);
         Assert.That(labels.Any(label => label.text == "GOODS"), Is.True);
-        Assert.That(labels.Any(label => label.text == "SERVICES — once per Shop"), Is.True);
+        Assert.That(labels.Any(label => label.text == "SERVICES"), Is.True);
         var services = _run.GetCurrentShopOffers().Where(offer => offer.IsService).ToArray();
         Assert.That(services.Length, Is.EqualTo(2));
         foreach (var service in services)
