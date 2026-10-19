@@ -56,7 +56,7 @@ public sealed class ConsumableRewardUI : MonoBehaviour
             _shownContext = reward.ContextId;
             _selectedChoice = reward.Choices.Count == 1 ? 0 : -1;
         }
-        if (panel) panel.SetActive(true);
+        if (panel) BoardPanelTransition.FadeIn(panel);
         if (titleLabel) titleLabel.text = reward.SourceLabel.ToUpperInvariant();
         RebuildChoices(reward);
         RebuildReplacements(reward);

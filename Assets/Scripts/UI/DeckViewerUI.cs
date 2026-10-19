@@ -88,7 +88,7 @@ public class DeckViewerUI : MonoBehaviour
             return;
         }
         _isOpen = true;
-        if (panel) panel.SetActive(true);
+        if (panel) BoardPanelTransition.FadeIn(panel);
         Refresh();
         if (panel) panel.transform.SetAsLastSibling();
     }

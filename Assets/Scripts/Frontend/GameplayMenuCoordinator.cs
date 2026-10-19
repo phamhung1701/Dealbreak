@@ -50,7 +50,7 @@ public sealed class GameplayMenuCoordinator : MonoBehaviour
             reason = reason
         };
         _layers.Add(layer);
-        panel.SetActive(true);
+        BoardPanelTransition.FadeIn(panel);
         panel.transform.SetAsLastSibling();
         ApplyGateReasons();
         Select(defaultSelection);
