@@ -71,7 +71,7 @@ public sealed class Phase7B5CombatFoundationTests
         SetPrivateField("_executingOverflowAutoPlay", true);
         SetPrivateField("_isBonusPlayerAction", true);
         var card = HighestAttackView();
-        _combat.QueueOverflowAutoPlay(card);
+        _combat.QueueOverflowAutoPlay(card.data);
         Assert.That(_combat.QueuedOverflowAutoPlayCount, Is.EqualTo(1));
 
         _combat.Reset();

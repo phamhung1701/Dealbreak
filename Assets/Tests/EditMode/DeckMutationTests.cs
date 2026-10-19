@@ -113,25 +113,25 @@ public sealed class DeckMutationTests
     }
 
     [Test]
-    public void Rune_SameSuitAndCancellationCostNothing_ThenOneChargeChangesUpToThreeHandCards()
+    public void Rune_SameSuitAndCancellationCostNothing_ThenSpendsThreeInOneSlot()
     {
-        _cards.DealHand();
         Assert.That(_cards.AddConsumable(_spade), Is.True);
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
-        var same = _cards.hand.FirstOrDefault(card => card.Suit == CardData.Suit.Spades);
-        if (same != null)
-            Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { same.Id }), Is.False);
-        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(_spade.uses));
+        var same = _cards.ownedCards.First(card => card.Suit == CardData.Suit.Spades);
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { same.Id }), Is.False);
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(3));
+        _cards.DrawToHand(8);
         var others = _cards.hand.Where(card => card.Suit != CardData.Suit.Spades).Take(3).ToArray();
-        Assert.That(others.Length, Is.GreaterThan(0));
-        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, others.Select(card => card.Id).ToArray()), Is.True);
+        Assert.That(others.Length, Is.EqualTo(3));
         foreach (var card in others)
         {
+            Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { card.Id }), Is.True);
             Assert.That(card.Suit, Is.EqualTo(CardData.Suit.Spades));
             Assert.That(card.DisplayName, Does.Contain("♠"));
             Assert.That(card.MatchesSuit(CardData.Suit.Spades), Is.True);
+            Assert.That(_cards.BackpackSlotsUsed, Is.LessThanOrEqualTo(1));
         }
-        Assert.That(_cards.BackpackSlotsUsed, Is.Zero, "Runes are single-use since the 1-charge content change.");
+        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
     }
 
     [Test]
@@ -201,6 +201,6 @@ public sealed class DeckMutationTests
             Assert.That(item.eventAvailable, Is.True);
         }
         Assert.That(items.Where(item => item.effectType == ConsumableEffectType.ChangeSuit)
-            .All(item => item.uses == 1), Is.True);
+            .All(item => item.uses == 3), Is.True);
     }
 }

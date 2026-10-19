@@ -43,8 +43,7 @@ public sealed class PathNodeButtonUI : MonoBehaviour, IPointerEnterHandler, IPoi
         {
             MapNodeType.Combat => "COMBAT",
             MapNodeType.Elite => "ENFORCER",
-            MapNodeType.Shop => "BLACK
-MARKET",
+            MapNodeType.Shop => "BLACK\nMARKET",
             MapNodeType.Event => "INCIDENT",
             MapNodeType.Upgrade => "UPGRADE",
             MapNodeType.Risk => scouted ? "RISK" : "?",
