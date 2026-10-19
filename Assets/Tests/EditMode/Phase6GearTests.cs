@@ -86,18 +86,24 @@ public sealed class Phase6GearTests
         var common = Gear("rel_120", GearSpecialRule.TravelerPackCommon, "Common", 1);
         var rare = Gear("rel_121", GearSpecialRule.TravelerPackRare, "Rare", 2, "rel_120");
         ConfigureGear(common, rare);
+        // Authored Runes are single-use; a runtime three-charge copy keeps partial-first coverage.
+        var multiCharge = UnityEngine.Object.Instantiate(_spadeRune);
+        multiCharge.uses = 3;
+        _created.Add(multiCharge);
+        _cards.consumableCatalog.Add(multiCharge);
+        _cards.DealHand();
         Assert.That(_cards.BuyGear(common, 0), Is.True);
         Assert.That(_cards.BackpackCapacity, Is.EqualTo(5));
-        Assert.That(_cards.AddConsumable(_spadeRune, 3), Is.True);
+        Assert.That(_cards.AddConsumable(multiCharge, 3), Is.True);
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(3), "Common remains non-stacking.");
 
         Assert.That(_cards.BuyGear(rare, 0), Is.True);
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
         Assert.That(_cards.GetConsumableStackCountAtSlot(0), Is.EqualTo(3));
-        var target = _cards.ownedCards.First(card => card.Suit != CardData.Suit.Spades);
+        var target = _cards.hand.First(card => card.Suit != CardData.Suit.Spades);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { target.Id }), Is.True);
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
-        target = _cards.ownedCards.First(card => card.Suit != CardData.Suit.Spades);
+        target = _cards.hand.First(card => card.Suit != CardData.Suit.Spades);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { target.Id }), Is.True);
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(1),
             "The partially used physical rune is consumed before untouched runes.");
@@ -106,9 +112,9 @@ public sealed class Phase6GearTests
 
         _cards.ownedGear.Remove(rare);
         _cards.gearIds.Remove(rare.id);
-        int before = _cards.GetConsumableCount(_spadeRune);
-        Assert.That(_cards.CanAddConsumable(_spadeRune), Is.False, "Lost stacking is withdraw-only.");
-        Assert.That(_cards.GetConsumableCount(_spadeRune), Is.EqualTo(before), "Capacity loss never deletes items.");
+        int before = _cards.GetConsumableCount(multiCharge);
+        Assert.That(_cards.CanAddConsumable(multiCharge), Is.False, "Lost stacking is withdraw-only.");
+        Assert.That(_cards.GetConsumableCount(multiCharge), Is.EqualTo(before), "Capacity loss never deletes items.");
     }
 
     [Test]

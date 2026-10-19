@@ -94,9 +94,10 @@ public sealed class LowerEffortShopTests
     [Test]
     public void Guidance_CostsFiveCreditsRevealsOneReachableHiddenEventOrRiskAndIsOneTime()
     {
-        var shop = Shop(3, 0, 2, 3);
+        // Node IDs must be unique: route lookup resolves the first node with a given ID.
+        var shop = Shop(3, 0, 2, 4);
         var farther = new PathNode { id = 2, mapIndex = 0, kind = MapNodeType.Event, hidden = true, col = 2, row = 0 };
-        var nearer = new PathNode { id = 3, mapIndex = 0, kind = MapNodeType.Risk, hidden = true, col = 1, row = 0 };
+        var nearer = new PathNode { id = 4, mapIndex = 0, kind = MapNodeType.Risk, hidden = true, col = 1, row = 0 };
         _run.currentPath.Clear();
         _run.currentPath.AddRange(new[] { shop, farther, nearer });
         _cards.AddCredits(5);

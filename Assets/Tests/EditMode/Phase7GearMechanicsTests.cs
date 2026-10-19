@@ -204,6 +204,8 @@ public sealed class Phase7GearMechanicsTests
 
         var eligible = Card(CardData.Suit.Hearts, CardData.Rank.Ten, 912);
         SetOwnedCards(new[] { full, eligible });
+        // Card-first Hammer (#38) targets a card in hand, so an eligible target must be drawn.
+        _cards.DrawToHand(2);
         SetPrivate(_run, "_completedNodeCount", 4);
         Invoke(_run, "TryOpenHammerReward", null);
         Assert.That(_run.ActiveEvent.choices[0].interaction, Is.EqualTo(RunEventChoiceInteraction.ChooseEnhancementTarget));
