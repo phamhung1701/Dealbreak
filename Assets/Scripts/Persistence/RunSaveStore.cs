@@ -47,6 +47,7 @@ public sealed class RunSaveStore
                 !string.Equals(envelope.checksum, Checksum(envelope.payload), StringComparison.Ordinal))
             { error = "Invalid save envelope/checksum."; return false; }
             var candidate = JsonUtility.FromJson<RunSaveData>(envelope.payload);
+            if (!RunSaveMigrations.TryUpgrade(candidate, out error)) return false;
             if (!RunSaveValidation.Validate(candidate, catalog, out error)) return false;
             data = candidate; return true;
         }

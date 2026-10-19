@@ -282,7 +282,7 @@ public partial class RunManager : Singleton<RunManager>
         return headliner;
     }
 
-    static string GetCanonicalHeadlinerName(CardData card)
+    internal static string GetCanonicalHeadlinerName(CardData card)
     {
         if (card == null) return "Headliner";
         return (card.rank, card.suit) switch
@@ -310,7 +310,14 @@ public partial class RunManager : Singleton<RunManager>
         var ability = ScriptableObject.CreateInstance<EnemyAbility>();
         ability.effect = effect;
         ability.id = effect.ToString();
-        ability.displayName = effect switch
+        ability.displayName = HeadlinerAbilityName(effect);
+        ability.description = HeadlinerAbilityDescription(effect);
+        _generatedEnemyAbilities.Add(ability);
+        return ability;
+    }
+
+    // Headliner identity text is derived from rank/suit/effect, so restored saves show current terminology.
+    internal static string HeadlinerAbilityName(EnemyAbilityEffect effect) => effect switch
         {
             EnemyAbilityEffect.HeavySwing => "Heavy Swing",
             EnemyAbilityEffect.Desperation => "Desperation",
@@ -323,7 +330,8 @@ public partial class RunManager : Singleton<RunManager>
             EnemyAbilityEffect.FullCoverageBlock => "Unyielding Defense",
             _ => effect.ToString()
         };
-        ability.description = effect switch
+
+    internal static string HeadlinerAbilityDescription(EnemyAbilityEffect effect) => effect switch
         {
             EnemyAbilityEffect.HeavySwing => "Alternates normal attacks with a 150% ATK response.",
             EnemyAbilityEffect.Desperation => "Gains 25% ATK while below 50% maximum HP.",
@@ -336,9 +344,6 @@ public partial class RunManager : Singleton<RunManager>
             EnemyAbilityEffect.FullCoverageBlock => "Each attack must be fully covered by one Block card; partial or combined blocks are rejected.",
             _ => effect.ToString()
         };
-        _generatedEnemyAbilities.Add(ability);
-        return ability;
-    }
 
     public string CurrentHeadlinerDescription
     {

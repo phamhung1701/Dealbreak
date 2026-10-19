@@ -349,7 +349,7 @@ public sealed class PersistentRunSaveTests
         Directory.CreateDirectory(directory);
         File.WriteAllText(store.Path, JsonUtility.ToJson(new RunSaveEnvelope { checksum = checksum, payload = payload }));
         Assert.That(store.TryRead(catalog, out _, out var error), Is.False);
-        Assert.That(error, Does.Contain("Unsupported save/content version"));
+        Assert.That(error, Does.Contain("newer than this build supports"));
     }
 
     [Test]
@@ -391,6 +391,42 @@ public sealed class PersistentRunSaveTests
         }
         Assert.That(store.TryRead(catalog, out _, out _), Is.False);
         Assert.That(writer.Checkpoint(true), Is.False);
+    }
+
+    [Test]
+    public void Migrations_UpgradeOlderVersionsStepwise_AndRejectNewerOrUnknownVersions()
+    {
+        var steps = new Dictionary<int, Action<RunSaveData>> { [0] = data => data.seed = "MIGRATED" };
+        var older = JsonClone(run.CaptureSave()); older.version = 0;
+        Assert.That(RunSaveMigrations.TryUpgrade(older, steps, out var error), Is.True, error);
+        Assert.That((older.version, older.seed), Is.EqualTo((RunSaveValidation.Version, "MIGRATED")));
+
+        var current = JsonClone(run.CaptureSave());
+        Assert.That(RunSaveMigrations.TryUpgrade(current, out error), Is.True, error);
+        Assert.That(current.version, Is.EqualTo(RunSaveValidation.Version));
+
+        var newer = JsonClone(run.CaptureSave()); newer.version = RunSaveValidation.Version + 1;
+        Assert.That(RunSaveMigrations.TryUpgrade(newer, out error), Is.False);
+        Assert.That(error, Does.Contain("newer"));
+        var unknown = JsonClone(run.CaptureSave()); unknown.version = 0;
+        Assert.That(RunSaveMigrations.TryUpgrade(unknown, out error), Is.False, "No silent inference without a step.");
+    }
+
+    [Test]
+    public void Restore_RegeneratesHeadlinerTextFromIdentity_AndKeepsStatsAndAbilities()
+    {
+        var saved = JsonClone(run.CaptureSave());
+        saved.bosses[0].name = "Stale Legacy Name";
+        foreach (var ability in saved.bosses[0].abilities) ability.displayName = "Stale Ability";
+        run.RestoreSave(saved, catalog);
+        var headliner = run.headlinerDeck[0];
+        Assert.That(headliner.enemyName, Is.Not.EqualTo("Stale Legacy Name"));
+        Assert.That(headliner.enemyName, Does.Contain("—"), "Canonical names come from the face-card identity.");
+        Assert.That((headliner.maxHp, headliner.baseAttack, headliner.creditsReward),
+            Is.EqualTo((saved.bosses[0].hp, saved.bosses[0].attack, saved.bosses[0].gold)));
+        Assert.That(headliner.abilities.Select(ability => (int)ability.effect),
+            Is.EqualTo(saved.bosses[0].abilities.Select(ability => ability.effect)));
+        Assert.That(headliner.abilities.Any(ability => ability.displayName == "Stale Ability"), Is.False);
     }
 
     [Test]

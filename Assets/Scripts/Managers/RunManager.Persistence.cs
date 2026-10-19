@@ -76,14 +76,18 @@ public partial class RunManager
             revealed = n.revealed, hidden = n.hidden, isShopCheckpoint = n.shopCheckpoint }));
         foreach (var saved in data.bosses)
         {
-            var headliner = EnemyTypeData.Create(saved.name, saved.hp, saved.attack, saved.gold);
-            headliner.sourceCard = CardData.Create((CardData.Suit)saved.suit, (CardData.Rank)saved.rank);
+            // Stats and abilities restore exactly; player-facing text is regenerated from identity
+            // so terminology updates also reach existing saves.
+            var sourceCard = CardData.Create((CardData.Suit)saved.suit, (CardData.Rank)saved.rank);
+            var headliner = EnemyTypeData.Create(GetCanonicalHeadlinerName(sourceCard), saved.hp, saved.attack, saved.gold);
+            headliner.sourceCard = sourceCard;
             headliner.encounterCount = saved.encounterCount; headliner.fleeAfterPlayerTurns = saved.fleeTurns;
             headliner.abilities = saved.abilities.Select(a =>
             {
                 var ability = ScriptableObject.CreateInstance<EnemyAbility>();
-                ability.id = a.id; ability.displayName = a.displayName; ability.description = a.description;
-                ability.effect = (EnemyAbilityEffect)a.effect; ability.amount = a.amount;
+                ability.id = a.id; ability.effect = (EnemyAbilityEffect)a.effect; ability.amount = a.amount;
+                ability.displayName = HeadlinerAbilityName(ability.effect);
+                ability.description = HeadlinerAbilityDescription(ability.effect);
                 _generatedEnemyAbilities.Add(ability); return ability;
             }).ToArray();
             _generatedEnemyTypes.Add(headliner); headlinerDeck.Add(headliner);
