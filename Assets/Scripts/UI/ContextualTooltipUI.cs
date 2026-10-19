@@ -105,7 +105,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         if(source.TryGetComponent<GearIconSlotUI>(out var gear)&&gear.Gear)
         {info=new("Gear",gear.Gear.displayName,gear.Gear.description);return true;}
         if(source.TryGetComponent<DrawDeckStackUI>(out _)&&CardManager.Instance!=null)
-        {var c=CardManager.Instance;info=new("Deck","Draw Pile",$"Draw {c.deck.Count}\nDiscard {c.discardPile.Count}\nHand {c.HandCount}/{c.HandCapacity}\n\nSelect to inspect the deck.");return true;}
+        {var c=CardManager.Instance;info=new("Deck","Draw Pile",$"Draw {c.deck.Count}\nDiscard {c.discardPile.Count}\nHand {c.HandCount}/{c.HandCapacity}");return true;}
         return false;
     }
     bool GetHandBounds(RectTransform parent,out float left,out float right,out float bottom,out float top)

@@ -358,7 +358,7 @@ public class PathScreenUI : MonoBehaviour
         else if (scouted != null)
             _nodeDetailLabel.text = "<color=#F2C35E><b>SCOUTED</b></color>  " + BoldFirstLine(run.GetNodeDetail(scouted));
         else
-            _nodeDetailLabel.text = "<alpha=#99>Hover a node to see what is known about it.";
+            _nodeDetailLabel.text = string.Empty;
     }
 
     static string BoldFirstLine(string text)

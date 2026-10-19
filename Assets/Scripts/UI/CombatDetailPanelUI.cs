@@ -34,7 +34,6 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         if (runStatus == null) return;
         if (runStatus.timingLabel) runStatus.timingLabel.gameObject.SetActive(false);
         if (runStatus.pileSummaryLabel) runStatus.pileSummaryLabel.enabled = visible;
-        if (actions && actions.combatLogLabel) actions.combatLogLabel.gameObject.SetActive(visible);
         if (visible && actions)
         {
             if (actions.recoverButton) actions.recoverButton.gameObject.SetActive(true);
@@ -100,10 +99,10 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         if (cards == null || combat == null || cards.SelectedCards.Count == 0) return string.Empty;
         var instances = new CardInstance[cards.SelectedCards.Count];
         for (int i = 0; i < instances.Length; i++) instances[i] = cards.SelectedCards[i].data;
-        if (GameplayEffectResolver.IsRoyalFamilySelection(instances, cards)) return "ROYAL FAMILY • Instant defeat • Choose a target";
+        if (GameplayEffectResolver.IsRoyalFamilySelection(instances, cards)) return "ROYAL FAMILY • Instant defeat";
         long power = 0;
         for (int i = 0; i < instances.Length; i++) power += combat.CalculateCardAttackDamage(instances[i], instances, i == 0);
-        return $"{instances.Length} selected • Attack power {Math.Min(int.MaxValue, power)} • Choose a target";
+        return $"{instances.Length} selected • Attack power {Math.Min(int.MaxValue, power)}";
     }
 
     bool RenderSource(GameObject source)
@@ -116,10 +115,9 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
             var data = card.data;
             _text.Append($"ATTACK POWER  {combat.CalculateCardAttackDamage(data)}\nBLOCK VALUE  {combat.CalculateCardDefense(data)}\n\n");
             if (data.Enhancement) _text.Append("MOD • ").Append(data.Enhancement.displayName).Append('\n').Append(data.Enhancement.description).Append("\n\n");
-            else _text.Append("No Mod attached.\n\n");
             if (CardManager.Instance?.SelectedCards.Count > 0)
                 _text.Append(actions && actions.selectionLabel ? actions.selectionLabel.text : SelectionSummary(CardManager.Instance)).Append("\n\n");
-            _text.Append("Attack power is before action bonuses, target reactions and chance effects. Block preview uses the pending attacks.\n\nSelect to pin • Drag to a target or use the action bar.");
+            while (_text.Length > 0 && _text[_text.Length - 1] == '\n') _text.Length--;
             Show(data.DisplayName, _text.ToString());
         }
         else if (source.TryGetComponent<EnemyDisplayUI>(out var enemy))
@@ -132,7 +130,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
                     if (ability) _text.Append("\n\n").Append(ability.displayName).Append('\n').Append(ability.description);
             if (data.type.sourceCard) _text.Append("\n\nHeadliner reward • ").Append(data.type.sourceCard.DisplayName);
             if (data.type.fleeAfterPlayerTurns > 0) _text.Append("\n\nFlees after ").Append(data.type.fleeAfterPlayerTurns).Append(" completed card actions. Completed: ").Append(data.PlayerTurnsCompleted);
-            Show(data.DisplayName, _text.ToString());
+            Show(data.DisplayName, _text.ToString().TrimStart('\n'));
         }
         else if (source.TryGetComponent<GearIconSlotUI>(out var slot))
         {
@@ -143,7 +141,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         {
             var cards = CardManager.Instance;
             if (cards == null) return false;
-            Show("DRAW PILE", $"Draw {cards.deck.Count}\nDiscard {cards.discardPile.Count}\nHand {cards.HandCount}/{cards.HandCapacity}\n\nSelect the pile to inspect its cards.\n\n{runStatus?.pileSummaryLabel?.text}\n{runStatus?.timingLabel?.text}");
+            Show("DRAW PILE", $"Draw {cards.deck.Count}\nDiscard {cards.discardPile.Count}\nHand {cards.HandCount}/{cards.HandCapacity}\n\n{runStatus?.pileSummaryLabel?.text}\n{runStatus?.timingLabel?.text}");
         }
         else return false;
         return true;

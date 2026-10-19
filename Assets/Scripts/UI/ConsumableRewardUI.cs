@@ -117,7 +117,7 @@ public sealed class ConsumableRewardUI : MonoBehaviour
         if (detailsLabel)
         {
             if (!selected)
-                detailsLabel.text = "Inspect the choices, then select one to claim or replace a Trick slot. Decline grants nothing.";
+                detailsLabel.text = string.Empty;
             else if (cards != null && cards.CanAddConsumable(item))
                 detailsLabel.text = $"{item.displayName}\n"+(ContextualTooltipUI.Instance?string.Empty:$"{item.description}\n")+"A compatible Trick slot is available.";
             else

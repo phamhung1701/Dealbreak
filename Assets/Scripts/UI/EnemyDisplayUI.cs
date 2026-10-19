@@ -526,21 +526,9 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         if (statusText)
         {
-            string guidance = state switch
-            {
-                GameState.PlayerTurn => "Choose a card to attack",
-                GameState.EnemyAttacking => "Enemy attack incoming",
-                GameState.GameWon => "Encounter cleared",
-                GameState.GameOver => "Player defeated",
-                _ => "Choose your next encounter"
-            };
+            // Enemy facts only: phase hints and the pending total live on the player side.
+            string guidance = string.Empty;
             var enemy = DisplayedEnemy;
-            if (enemy != null && state == GameState.EnemyAttacking)
-            {
-                int incoming = CombatManager.Instance != null
-                    ? CombatManager.Instance.GetPendingAttackDamage(enemy) : 0;
-                guidance += incoming > 0 ? $"\nINCOMING: {incoming} DAMAGE" : "\nBLOCKED";
-            }
             if (enemy != null && state == GameState.PlayerTurn && enemy.HasDoubleStrike)
             {
                 int budget = enemy.ResponseAttack + (enemy.HasOppression
@@ -571,6 +559,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
                 guidance += $"\nShield: {enemy.ShieldCharges}";
             if (enemy != null && enemy.CaptainAttackBonus > 0)
                 guidance += "\nCaptain alive: +1 ATK";
+            guidance = guidance.TrimStart('\n');
             DetailGuidance = guidance;
             string abilities = enemy?.AbilitySummary;
             statusText.text = CombatDetailPanelUI.IsCombatActive ? CompactIntent(enemy, state) : string.IsNullOrEmpty(abilities)
@@ -596,12 +585,12 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     static string CompactIntent(EnemyRuntime enemy, GameState state)
     {
         if (enemy == null) return string.Empty;
-        string intent = state == GameState.EnemyAttacking
-            ? $"INCOMING {CombatManager.Instance.GetPendingAttackDamage(enemy)}"
-            : enemy.NextAttackIsCharged ? "CHARGED ATTACK NEXT" : "ATTACK NEXT";
-        if (enemy.HasDoubleStrike) intent += " • 2 HITS";
-        if (enemy.ShieldCharges > 0) intent += $" • SHIELD {enemy.ShieldCharges}";
-        if (enemy.type.sourceCard) intent += $" • {enemy.type.sourceCard.DisplayName}";
-        return intent;
+        // Only intents that differ from an ordinary attack; the pending total is on the HP panel.
+        var parts = new System.Collections.Generic.List<string>(4);
+        if (state != GameState.EnemyAttacking && enemy.NextAttackIsCharged) parts.Add("CHARGED ATTACK NEXT");
+        if (enemy.HasDoubleStrike) parts.Add("2 HITS");
+        if (enemy.ShieldCharges > 0) parts.Add($"SHIELD {enemy.ShieldCharges}");
+        if (enemy.type.sourceCard) parts.Add(enemy.type.sourceCard.DisplayName);
+        return string.Join(" • ", parts);
     }
 }

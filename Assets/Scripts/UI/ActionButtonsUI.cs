@@ -159,7 +159,7 @@ public class ActionButtonsUI : MonoBehaviour
         bool encounter = node != null && (node.kind == MapNodeType.Combat ||
             node.kind == MapNodeType.Elite || node.kind == MapNodeType.Headliner);
         if (turnStateLabel && turnStateLabel.enabled != encounter) turnStateLabel.enabled = encounter;
-        if (combatLogLabel && combatLogLabel.enabled != encounter) combatLogLabel.enabled = encounter;
+        if (combatLogLabel && combatLogLabel.gameObject.activeSelf) combatLogLabel.gameObject.SetActive(false);
         bool showSelection = node == null || encounter;
         if (selectionLabel && selectionLabel.enabled != showSelection) selectionLabel.enabled = showSelection;
     }
@@ -240,9 +240,10 @@ public class ActionButtonsUI : MonoBehaviour
     }
     void HandlePlayerHealthChanged(int _, int __) => RefreshAll();
 
+    // The combat log is kept for the Console and telemetry; the board shows state, not narration.
     void HandleCombatLog(string message)
     {
-        if (combatLogLabel) combatLogLabel.text = message;
+        if (combatLogLabel && combatLogLabel.gameObject.activeSelf) combatLogLabel.gameObject.SetActive(false);
         RefreshAll();
     }
 
@@ -322,7 +323,7 @@ public class ActionButtonsUI : MonoBehaviour
             turnStateLabel.text = combat.currentState switch
             {
                 GameState.PlayerTurn => combat.IsBonusPlayerAction ? "PLAYER TURN  •  BONUS ACTION" : "PLAYER TURN",
-                GameState.EnemyAttacking => $"DEFENSE  ·  INCOMING {combat.pendingDamage}",
+                GameState.EnemyAttacking => "DEFENSE",
                 GameState.GameWon => "ENCOUNTER WON",
                 GameState.GameOver => "RUN DEFEAT",
                 _ => "CHOOSE A ROUTE"
@@ -335,38 +336,32 @@ public class ActionButtonsUI : MonoBehaviour
             pendingDamageLabel.gameObject.SetActive(showDamage);
             pendingDamageLabel.text = showDamage
                 ? combat.pendingDamage > 0
-                    ? $"INCOMING {combat.pendingDamage} · {combat.PendingAttackCount} ATTACKS"
-                    : "ALL ATTACKS BLOCKED"
+                    ? $"INCOMING {combat.pendingDamage}"
+                    : "ALL BLOCKED"
                 : string.Empty;
         }
 
         if (selectionLabel)
         {
-        if (cards.IsEnemyTargeting) selectionLabel.text = "Click a highlighted enemy to target it · Back or Esc cancels";
-        else if (cards.IsHandEnhancementTargeting) selectionLabel.text = "Select highlighted cards · Confirm to apply, Back to cancel";
+        // Only what the current selection will do; how to play is left to the tutorial.
+        if (cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting) selectionLabel.text = string.Empty;
         else selectionLabel.text = combat.currentState switch
             {
                 GameState.PlayerTurn when cards.HandCount == 0 =>
-                    $"Hand empty: Recover takes {combat.TotalEnemyAttack} damage, then draws 1 card",
+                    $"Recover: take {combat.TotalEnemyAttack}, draw 1",
                 GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilySelection(cards.SelectedCards.Select(view => view.data).ToArray(), cards) =>
-                    "Royal Family: exact 10/J/Q/K/A in one effective suit — instant defeat. Press Attack or drag to target",
+                    "Royal Family • instant defeat",
                 GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilyPartialSelection(cards.SelectedCards, cards) =>
-                    $"Royal Family selection ({selectedCount}/5)  •  exact 10/J/Q/K/A, one effective suit; target will be instantly defeated when complete",
+                    $"Royal Family {selectedCount}/5",
                 GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) =>
-                    $"Ace pair: {cards.SelectedCards[0].data.DisplayName} + {cards.SelectedCards[1].data.DisplayName}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
+                    $"Ace pair • {DamagePreview(cards, combat)}",
                 GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) =>
-                    $"Same-rank set ({selectedCount} cards): {cards.SelectedCards[0].data.Rank}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
-                GameState.PlayerTurn when hasSelected =>
-                    $"Selected: {cards.selectedCard.data.DisplayName}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
-                GameState.PlayerTurn => "Select a card to attack, or drag it to an enemy",
+                    $"Same rank ×{selectedCount} • {DamagePreview(cards, combat)}",
+                GameState.PlayerTurn when hasSelected => DamagePreview(cards, combat),
                 GameState.EnemyAttacking when hasSelected && combat.TryPreviewDefense(cards.SelectedCards, out int blocked, out int remaining) =>
-                    $"{selectedCount} selected  •  Blocks {blocked} of {combat.PendingAttackCount} pending attacks  •  Remaining damage {remaining}",
-                GameState.EnemyAttacking when hasSelected =>
-                    "Selected cards cannot each block a distinct pending attack",
-                GameState.EnemyAttacking => "Block attacks with cards, or take the remaining damage",
-                GameState.GameWon => "Encounter cleared — choose the next route",
-                GameState.GameOver => "The run has ended",
-                _ => "Choose an available route on the map"
+                    $"Blocks {blocked} of {combat.PendingAttackCount} • {remaining} damage left",
+                GameState.EnemyAttacking when hasSelected => "Can't block with this selection",
+                _ => string.Empty
             };
         }
     }
@@ -764,7 +759,7 @@ public class ActionButtonsUI : MonoBehaviour
                     ? validEnhancementTarget
                         ? $"\n<size=90%><color=#E8C66D>Selected target: {selectedEnhancementTarget.DisplayName}</color></size>"
                         : $"\n<size=85%><color=#DFA0A0>Selected card is unavailable (enhanced or outside the allowed zone).</color></size>"
-                    : "\n<size=85%><color=#C7D0DB>Select one card first; Use applies this effect to that card.</color></size>";
+                    : string.Empty;
             if (_discardConfirmationArmed)
                 _consumableContextText.text = $"Discard 1 of {stackCount} copies of {definition.displayName}? This removes this copy and all {_selectedConsumable.RemainingCharges} remaining charge(s). No reward.";
             else
