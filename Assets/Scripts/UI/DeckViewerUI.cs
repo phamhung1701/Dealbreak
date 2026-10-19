@@ -81,13 +81,16 @@ public class DeckViewerUI : MonoBehaviour
 
     void Toggle()
     {
-        _isOpen = !_isOpen;
-        if (panel) panel.SetActive(_isOpen);
         if (_isOpen)
         {
-            Refresh();
-            if (panel) panel.transform.SetAsLastSibling();
+            // Closing through the toggle must release snapshots exactly like Close().
+            Close();
+            return;
         }
+        _isOpen = true;
+        if (panel) panel.SetActive(true);
+        Refresh();
+        if (panel) panel.transform.SetAsLastSibling();
     }
 
     void Close()
