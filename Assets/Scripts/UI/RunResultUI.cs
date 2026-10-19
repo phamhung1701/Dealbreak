@@ -26,6 +26,9 @@ public class RunResultUI : MonoBehaviour
     bool _pendingResultVictory;
     bool _aborted;
     ScrollRect _summaryScroll;
+    Button _copySeedButton;
+    TMP_Text _copySeedLabel;
+    float _copiedUntil;
 
     public static bool IsShowingResult { get; private set; }
 
@@ -46,7 +49,58 @@ public class RunResultUI : MonoBehaviour
         if (retrySameSeedButton) { retrySameSeedButton.onClick.AddListener(RetrySameSeed); KeyButtonBorderStyle.Apply(retrySameSeedButton); }
         if (newRunButton) { newRunButton.onClick.AddListener(NewRun); KeyButtonBorderStyle.Apply(newRunButton); }
         if (mainMenuButton) mainMenuButton.onClick.AddListener(MainMenu);
+        EnsureCopySeedButton();
         HideAll();
+    }
+
+    // Copies the run seed so it can be shared or replayed; sits beside the seed in the summary.
+    void EnsureCopySeedButton()
+    {
+        if (_copySeedButton || !mainMenuButton || !resultPanel) return;
+        _copySeedButton = Instantiate(mainMenuButton, resultPanel.transform);
+        _copySeedButton.name = "CopySeedButton";
+        _copySeedButton.onClick = new Button.ButtonClickedEvent();
+        _copySeedButton.onClick.AddListener(CopySeed);
+        _copySeedLabel = _copySeedButton.GetComponentInChildren<TMP_Text>();
+        if (_copySeedLabel) _copySeedLabel.text = "COPY SEED";
+        var rect = (RectTransform)_copySeedButton.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.sizeDelta = new Vector2(170f, 44f);
+    }
+
+    // Beside the SEED heading and value, which open the summary text.
+    void PlaceCopySeedButton(string seed)
+    {
+        if (!_copySeedButton || !resultBodyLabel) return;
+        var rect = (RectTransform)_copySeedButton.transform;
+        var parent = (RectTransform)rect.parent;
+        resultBodyLabel.ForceMeshUpdate();
+        int heading = resultBodyLabel.GetParsedText().IndexOf("SEED", System.StringComparison.Ordinal);
+        if (heading < 0 || heading >= resultBodyLabel.textInfo.characterCount) return;
+        var label = resultBodyLabel.rectTransform;
+        Vector3 top = label.TransformPoint(resultBodyLabel.textInfo.characterInfo[heading].topLeft);
+        Vector3 left = label.TransformPoint(new Vector3(label.rect.xMin, 0f, 0f));
+        Vector2 anchor = (Vector2)parent.InverseTransformPoint(new Vector3(left.x, top.y, top.z)) - parent.rect.center;
+        float seedWidth = Mathf.Max(resultBodyLabel.GetPreferredValues(seed).x,
+            resultBodyLabel.GetPreferredValues("SEED").x);
+        rect.anchoredPosition = anchor + new Vector2(seedWidth + 28f, 0f);
+    }
+
+    void CopySeed()
+    {
+        var run = RunManager.Instance;
+        if (run == null || string.IsNullOrEmpty(run.RunSeed)) return;
+        GUIUtility.systemCopyBuffer = run.RunSeed;
+        _copiedUntil = Time.unscaledTime + 1.5f;
+        if (_copySeedLabel) _copySeedLabel.text = "COPIED";
+    }
+
+    void Update()
+    {
+        if (_copiedUntil <= 0f || Time.unscaledTime < _copiedUntil) return;
+        _copiedUntil = 0f;
+        if (_copySeedLabel) _copySeedLabel.text = "COPY SEED";
     }
 
     void OnDisable()
@@ -228,6 +282,11 @@ public class RunResultUI : MonoBehaviour
         else if (resultPanel)
             resultPanel.SetActive(true);
         RefreshSummaryScroll();
+        if (_copySeedButton)
+        {
+            _copySeedButton.gameObject.SetActive(!string.IsNullOrEmpty(seed));
+            PlaceCopySeedButton(seed);
+        }
     }
 
     static string EscapeRichText(string value) => string.IsNullOrEmpty(value)
