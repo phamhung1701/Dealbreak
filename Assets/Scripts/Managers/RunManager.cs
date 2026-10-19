@@ -20,7 +20,6 @@ public class PathNode
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunManager")]
 public partial class RunManager : Singleton<RunManager>
 {
-    public const int FirstMapHeadlinerHp = 20;
     [Header("Enemy Type Assets")]
     public EnemyTypeData thiefType;
     public EnemyTypeData goblinType;
@@ -61,7 +60,7 @@ public partial class RunManager : Singleton<RunManager>
     PathNode _activeNode;
     RunEventDefinition _activeEvent;
     CombatManager _subscribedCombatManager;
-    RunRandomContext _randomContext;
+    internal RunRandomContext _randomContext;
     int _completedNodeCount;
 
     public RunTimingStatistics Timing { get; } = new();

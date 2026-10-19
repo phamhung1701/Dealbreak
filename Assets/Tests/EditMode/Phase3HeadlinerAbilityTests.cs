@@ -123,8 +123,8 @@ public sealed class Phase3HeadlinerAbilityTests
         var firstHeadliner = run.CurrentHeadliner;
         var firstNode = new PathNode { kind = MapNodeType.Headliner, mapIndex = 0 };
         Assert.That(firstHeadliner.maxHp, Is.EqualTo(30), "The generated definition remains reusable for later scaling.");
-        Assert.That(run.GetEncounterStats(firstNode).hp, Is.EqualTo(RunManager.FirstMapHeadlinerHp));
-        Assert.That(run.CurrentHeadlinerDescription, Does.Contain($"{RunManager.FirstMapHeadlinerHp} HP"));
+        Assert.That(run.GetEncounterStats(firstNode).hp, Is.EqualTo(run.FirstMapHeadlinerHp));
+        Assert.That(run.CurrentHeadlinerDescription, Does.Contain($"{run.FirstMapHeadlinerHp} HP"));
 
         run.headlinerIndex = 1;
         var secondHeadliner = run.CurrentHeadliner;

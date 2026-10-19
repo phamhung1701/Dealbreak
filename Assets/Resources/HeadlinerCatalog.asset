@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27ecc623d2e8ad24cb332c8d764401b7, type: 3}
+  m_Name: HeadlinerCatalog
+  m_EditorClassIdentifier: Dealbreak.Runtime::HeadlinerCatalog
+  maxHp: 30
+  baseAttack: 6
+  firstDistrictMaxHp: 20
+  jackCredits: 10
+  queenCredits: 15
+  kingCredits: 20
+  names:
+  - rank: 10
+    suit: 0
+    displayName: "J\u2665 \u2014 The Charmer"
+  - rank: 10
+    suit: 1
+    displayName: "J\u2666 \u2014 The Courier"
+  - rank: 10
+    suit: 2
+    displayName: "J\u2663 \u2014 The Hitter"
+  - rank: 10
+    suit: 3
+    displayName: "J\u2660 \u2014 The Fixer"
+  - rank: 11
+    suit: 0
+    displayName: "Q\u2665 \u2014 The Influencer"
+  - rank: 11
+    suit: 1
+    displayName: "Q\u2666 \u2014 The Broker"
+  - rank: 11
+    suit: 2
+    displayName: "Q\u2663 \u2014 The Foreman"
+  - rank: 11
+    suit: 3
+    displayName: "Q\u2660 \u2014 The Handler"
+  - rank: 12
+    suit: 0
+    displayName: "K\u2665 \u2014 The Icon"
+  - rank: 12
+    suit: 1
+    displayName: "K\u2666 \u2014 The Mogul"
+  - rank: 12
+    suit: 2
+    displayName: "K\u2663 \u2014 The Chairman"
+  - rank: 12
+    suit: 3
+    displayName: "K\u2660 \u2014 The Director"
+  abilityText:
+  - effect: 8
+    displayName: Heavy Swing
+    description: Alternates normal attacks with a 150% ATK response.
+  - effect: 9
+    displayName: Desperation
+    description: Gains 25% ATK while below 50% maximum HP.
+  - effect: 10
+    displayName: Regeneration
+    description: Heals 5% maximum HP after an enemy response, up to 3 times.
+  - effect: 11
+    displayName: Guarded
+    description: The first non-immune hit is reduced by 50%; resets after each enemy
+      response.
+  - effect: 15
+    displayName: Double Strike
+    description: Attacks twice per response; each hit deals 60% of the response budget.
+  - effect: 12
+    displayName: Silence
+    description: While above 50% HP, disables held-card effects.
+  - effect: 13
+    displayName: Withering
+    description: While above 50% HP, prevents player healing.
+  - effect: 14
+    displayName: Oppression
+    description: +2 response damage per held card beyond 3.
+  - effect: 19
+    displayName: Unyielding Defense
+    description: Each attack must be fully covered by one Block card; partial or
+      combined blocks are rejected.
+  jackAndQueenAbilities: 0f00000008000000090000000a0000000b0000000c0000000d0000000e00000013000000
+  kingHardCounters: 0c0000000d0000000e000000
+  kingHardCounterPartners: 0f00000008000000090000000a0000000b00000013000000
+  kingDefensiveAbilities: 0a0000000b00000013000000
+  kingOffensiveAbilities: 0f0000000800000009000000

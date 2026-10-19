@@ -3,10 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-// RunManager: Headliner sequence, generated abilities and canonical names.
+// RunManager: Headliner sequence and generated abilities. Names, text, balance and ability pools
+// are authored in Resources/HeadlinerCatalog; pool order is part of seeded generation.
 public partial class RunManager
 {
-    void BuildHeadlinerDeck()
+    HeadlinerCatalog _headliners;
+
+    internal HeadlinerCatalog Headliners
+    {
+        get
+        {
+            if (_headliners == null) _headliners = HeadlinerCatalog.Load();
+            if (_headliners == null)
+                throw new InvalidOperationException("Resources/HeadlinerCatalog is missing.");
+            return _headliners;
+        }
+    }
+
+    /// <summary>Maximum HP of the District 1 Headliner, before District scaling.</summary>
+    public int FirstMapHeadlinerHp => Headliners.firstDistrictMaxHp;
+
+    internal void BuildHeadlinerDeck()
     {
         headlinerDeck.Clear();
         headlinerIndex = 0;
@@ -25,71 +42,35 @@ public partial class RunManager
 
     EnemyTypeData CreateHeadlinerType(CardData card)
     {
-        int credits = card.rank switch
-        {
-            CardData.Rank.Jack => 10,
-            CardData.Rank.Queen => 15,
-            _ => 20,
-        };
-        var headliner = EnemyTypeData.Create(GetCanonicalHeadlinerName(card), 30, 6, credits);
+        var catalog = Headliners;
+        var headliner = EnemyTypeData.Create(catalog.NameFor(card), catalog.maxHp, catalog.baseAttack,
+            catalog.CreditsFor(card.rank));
         headliner.sourceCard = card;
         var random = _randomContext.CreateStream("boss-ability", (int)card.rank * 10 + (int)card.suit);
         EnemyAbility[] abilities;
         if (card.rank != CardData.Rank.King)
         {
-            abilities = new[] { CreateAbility(Choose(random,
-                EnemyAbilityEffect.DoubleStrike, EnemyAbilityEffect.HeavySwing,
-                EnemyAbilityEffect.Desperation, EnemyAbilityEffect.Regeneration,
-                EnemyAbilityEffect.Guarded, EnemyAbilityEffect.Silence,
-                EnemyAbilityEffect.Withering, EnemyAbilityEffect.Oppression,
-                EnemyAbilityEffect.FullCoverageBlock)) };
+            abilities = new[] { CreateAbility(Choose(random, catalog.jackAndQueenAbilities)) };
         }
         else
         {
-            var hardCounters = new[] { EnemyAbilityEffect.Silence, EnemyAbilityEffect.Withering, EnemyAbilityEffect.Oppression };
             bool hasHardCounter = random.NextInt(0, 2) == 0;
             if (hasHardCounter)
             {
-                var chosenHardCounter = Choose(random, hardCounters);
-                var secondary = Choose(random, new[] { EnemyAbilityEffect.DoubleStrike,
-                    EnemyAbilityEffect.HeavySwing, EnemyAbilityEffect.Desperation,
-                    EnemyAbilityEffect.Regeneration, EnemyAbilityEffect.Guarded,
-                    EnemyAbilityEffect.FullCoverageBlock });
+                var chosenHardCounter = Choose(random, catalog.kingHardCounters);
+                var secondary = Choose(random, catalog.kingHardCounterPartners);
                 abilities = new[] { CreateAbility(chosenHardCounter), CreateAbility(secondary) };
             }
             else
             {
                 abilities = new[] {
-                    CreateAbility(Choose(random, EnemyAbilityEffect.Regeneration, EnemyAbilityEffect.Guarded,
-                        EnemyAbilityEffect.FullCoverageBlock)),
-                    CreateAbility(Choose(random, EnemyAbilityEffect.DoubleStrike,
-                        EnemyAbilityEffect.HeavySwing, EnemyAbilityEffect.Desperation)) };
+                    CreateAbility(Choose(random, catalog.kingDefensiveAbilities)),
+                    CreateAbility(Choose(random, catalog.kingOffensiveAbilities)) };
             }
         }
         headliner.abilities = abilities;
         _generatedEnemyTypes.Add(headliner);
         return headliner;
-    }
-
-    internal static string GetCanonicalHeadlinerName(CardData card)
-    {
-        if (card == null) return "Headliner";
-        return (card.rank, card.suit) switch
-        {
-            (CardData.Rank.Jack, CardData.Suit.Hearts) => "J♥ — The Charmer",
-            (CardData.Rank.Jack, CardData.Suit.Diamonds) => "J♦ — The Courier",
-            (CardData.Rank.Jack, CardData.Suit.Clubs) => "J♣ — The Hitter",
-            (CardData.Rank.Jack, CardData.Suit.Spades) => "J♠ — The Fixer",
-            (CardData.Rank.Queen, CardData.Suit.Hearts) => "Q♥ — The Influencer",
-            (CardData.Rank.Queen, CardData.Suit.Diamonds) => "Q♦ — The Broker",
-            (CardData.Rank.Queen, CardData.Suit.Clubs) => "Q♣ — The Foreman",
-            (CardData.Rank.Queen, CardData.Suit.Spades) => "Q♠ — The Handler",
-            (CardData.Rank.King, CardData.Suit.Hearts) => "K♥ — The Icon",
-            (CardData.Rank.King, CardData.Suit.Diamonds) => "K♦ — The Mogul",
-            (CardData.Rank.King, CardData.Suit.Clubs) => "K♣ — The Chairman",
-            (CardData.Rank.King, CardData.Suit.Spades) => "K♠ — The Director",
-            _ => "Headliner"
-        };
     }
 
     static T Choose<T>(IRandomSource random, params T[] options) => options[random.NextInt(0, options.Length)];
@@ -99,40 +80,11 @@ public partial class RunManager
         var ability = ScriptableObject.CreateInstance<EnemyAbility>();
         ability.effect = effect;
         ability.id = effect.ToString();
-        ability.displayName = HeadlinerAbilityName(effect);
-        ability.description = HeadlinerAbilityDescription(effect);
+        ability.displayName = Headliners.AbilityName(effect);
+        ability.description = Headliners.AbilityDescription(effect);
         _generatedEnemyAbilities.Add(ability);
         return ability;
     }
-
-    // Headliner identity text is derived from rank/suit/effect, so restored saves show current terminology.
-    internal static string HeadlinerAbilityName(EnemyAbilityEffect effect) => effect switch
-        {
-            EnemyAbilityEffect.HeavySwing => "Heavy Swing",
-            EnemyAbilityEffect.Desperation => "Desperation",
-            EnemyAbilityEffect.Regeneration => "Regeneration",
-            EnemyAbilityEffect.Guarded => "Guarded",
-            EnemyAbilityEffect.DoubleStrike => "Double Strike",
-            EnemyAbilityEffect.Silence => "Silence",
-            EnemyAbilityEffect.Withering => "Withering",
-            EnemyAbilityEffect.Oppression => "Oppression",
-            EnemyAbilityEffect.FullCoverageBlock => "Unyielding Defense",
-            _ => effect.ToString()
-        };
-
-    internal static string HeadlinerAbilityDescription(EnemyAbilityEffect effect) => effect switch
-        {
-            EnemyAbilityEffect.HeavySwing => "Alternates normal attacks with a 150% ATK response.",
-            EnemyAbilityEffect.Desperation => "Gains 25% ATK while below 50% maximum HP.",
-            EnemyAbilityEffect.Regeneration => "Heals 5% maximum HP after an enemy response, up to 3 times.",
-            EnemyAbilityEffect.Guarded => "The first non-immune hit is reduced by 50%; resets after each enemy response.",
-            EnemyAbilityEffect.DoubleStrike => "Attacks twice per response; each hit deals 60% of the response budget.",
-            EnemyAbilityEffect.Silence => "While above 50% HP, disables held-card effects.",
-            EnemyAbilityEffect.Withering => "While above 50% HP, prevents player healing.",
-            EnemyAbilityEffect.Oppression => "+2 response damage per held card beyond 3.",
-            EnemyAbilityEffect.FullCoverageBlock => "Each attack must be fully covered by one Block card; partial or combined blocks are rejected.",
-            _ => effect.ToString()
-        };
 
     public string CurrentHeadlinerDescription
     {
