@@ -444,7 +444,7 @@ Working gameplay foundations should be preserved, but the following systems are 
 
 - The gameplay UI was rebuilt in Phase 3.5; its layout and visuals remain temporary rather than final art.
 - The Phase 4 map uses a fixed five-column/three-row prototype template; richer generation rules and additional topology variety remain future content work.
-- Normal enemies remain the original three definitions; elites use scaled normal-enemy stats plus one authored trait.
+- Seven normal enemies and three authored Enforcers are registered in `PrototypeRunContent`; generic Enforcers use scaled normal-enemy stats plus one authored trait. Allies, map gating and Enforcer eligibility are authored on `EnemyTypeData`.
 - Shops now have 22 authored Artifact definitions: 18 canonical IDs (`rel_001`–`rel_014`, `rel_016`, `rel_019`, `rel_023`, and `rel_028`) plus four retained non-workbook prototype Artifacts. Six canonical Tier I Enhancements (`enh_001`–`enh_004`, `enh_007`, `enh_008`) are authored. Recently added canonical batch prices are temporary; Tier upgrades/replacement and rarity-weighted distribution are not implemented.
 - One Enhancement per card remains the prototype rule. Replacement, removal, stacking and card-target reroll remain deferred; Shops and Upgrade rewards now let the player explicitly choose a valid owned card at confirmation.
 - Upgrade nodes offer deterministic free Enhancement choices; player-selected owned-card targeting replaces the old preselected-card behavior. Older authored health-focused Upgrade event assets remain unused prototype content.
@@ -658,6 +658,15 @@ Shop completion now marks the checkpoint cache complete on every completion path
 ### Phase 8B extension boundary
 
 Retain this storage envelope, content-ID registry and owner contracts. Add a new versioned combat checkpoint DTO/discriminator containing exact enemy runtimes/identities, pending hit/source assignments, Shield/Block, turn/action counters, death/reward guards and ordered resumable reaction/extra-turn/overflow state. Establish explicit between-action capture points first. Do not serialize callbacks or replay encounter-start effects to rebuild combat. Add deliberate migration/compatibility policy and mid-combat determinism tests before enabling that checkpoint kind; version 1 accepts only `safe-node`.
+
+## Architecture Audit Remediation — October 19, 2026
+
+`DEALBREAK_ARCHITECTURE_AUDIT.md` (branch `architecture-audit-fixes`, one commit per finding). Verified: EditMode 651/651, PlayMode 7/7.
+
+- Correctness: lethal Tricks while blocking no longer softlock (single terminal check); the menu coordinator no longer clears gameplay input-gate reasons; enemy rules no longer compare `enemyName` (the rebrand had disabled the Captain aura and broken Captain/War Drummer previews); copies of owned Gear stay tracked after an upgrade; previews share the execution damage calculation; Incident Trick rewards validate atomically; reaction faults abort the encounter and keep the save; encounter results publish after the combat action unwinds.
+- Structure: all Gear special rules in `GearRules*.cs` with named `GearCounterKeys`; `EncounterComposer` for spawns and previews; typed `RunEventFlow`; `RunManager` and `CardManager` split into partial files; combat commands on `CardInstance`; `CombatCommands` UI routing; Headliner content in `Resources/HeadlinerCatalog`; one content registry (`RunSaveContent`) for play and saves, which also made the Double Strike Patch obtainable; `RunSaveMigrations` chain; event-driven autosave; read-only manager state with internal test seams.
+- Removed: legacy enemy damage paths, unused per-suit Headliner abilities and their assets, unused stubs, `Bootstrap.unity`, `SampleScene` and `_Recovery` scenes.
+- Deliberately not changed: per-card runtime `CardData` instances (no defect; large blast radius); `CardManager` lookups into `RunManager` (edit-mode tests rely on them without `RunManager.Awake`).
 
 ## 10. Instructions for Future Locus Sessions
 

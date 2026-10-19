@@ -17,6 +17,40 @@ Findings are labelled **Confirmed (simulation)**, **Confirmed (test)**, **Confir
 
 ---
 
+## Resolution Status (2026-10-19)
+
+All findings below were addressed on branch `architecture-audit-fixes`, one commit per problem. Verified after the final commit: **EditMode 651/651, PlayMode 7/7.** The body of this report is kept as written at audit time.
+
+| ID | Resolution | Commit(s) |
+|---|---|---|
+| TD-01 | One terminal check (`TryResolveTerminalOutcome`) for every combat command | `76e3fc0` |
+| TD-02 | Menu coordinator releases only the input-gate reasons it owns | `6b98d3b` |
+| TD-03, TD-09 | Enemy composition authored on `EnemyTypeData`; `EncounterComposer` builds spawns and previews | `b3dcf08` |
+| TD-04, TD-22 | 18 failures triaged: stale tests realigned, three UI bugs fixed; `AGENTS.md` and the dev log updated | `b4fdd22`, `9e4c163`, `76fca65`, docs commit |
+| TD-05 | All Gear special rules in `GearRules*.cs`; named `GearCounterKeys` | `96a7dd8`, `46e060b`, `9386626`, `c23fd81` |
+| TD-06 | `RunManager` split into subsystem partial files | `a1e1d38` |
+| TD-07 | One Gear acquisition path; `gearIds` rebuilt so owned copies stay tracked | `0af6305` |
+| TD-08 | Typed `RunEventFlow` dispatch; explicit Contract choice table | `13913b1` |
+| TD-10 | `PreviewActionDamage` shares the execution calculation | `c18b35a` |
+| TD-11, TD-18 | Combat on `CardInstance`; injected discard-choice requester; dev check moved out of combat; `CombatCommands`; `CardManager.Hand` partial | `4ffdcce`, `cd27f67`, `e1ffcd8`, `0757847`, `7e68e07` |
+| TD-12 | Encounter results publish after the outermost command unwinds | `d710638` |
+| TD-13 | `GameController` plays from `RunSaveContent`; registry consistency tests; Double Strike Patch registered | `d44a442` |
+| TD-14 | `RunSaveMigrations` chain; Headliner text regenerated on load | `5392578` |
+| TD-15 | Reaction fault resolves as `EncounterResult.Aborted` and keeps the save | `0d429ac` |
+| TD-16 | Suit Call and Master Thief moved onto `EnemyRuntime`; steal limit from the authored ability | `2c175fa` |
+| TD-17 | Incident Trick rewards validated together | `9071c4e` |
+| TD-19 | Manager state read-only outside its owner; internal test seams | `dc311c3`, `196cbd9` |
+| TD-20 | Event-driven autosave with a 5 s fallback poll | `284d1d2` |
+| TD-21 | Legacy enemy damage paths, unused catalog fields/assets, stubs and scenes removed | `df6100f`, `1de3f24`, `8963c0d` |
+| TD-23 | Headliner content in `Resources/HeadlinerCatalog`, pinned by golden seed tests | `97ef7ff` |
+| TD-24 | Not changed by decision: per-card runtime `CardData` causes no defect and has a large blast radius | — |
+| Other | Combat log console echo limited to development builds; Supply respects the infinite-Credits dev rule | `ab4fb2a`, `2728bff` |
+
+**Corrections to this audit:**
+- **CX-05 / TD-07:** owning copies of the same Gear is intended. Commit `57afa28` removed the CardManager "Already owned" rule when Gear merging was added, and only the Black Market refuses owned Gear. The Swamp reward granting a copy is therefore not a bug. The real defect was `gearIds` losing a still-owned copy on upgrade, which is fixed.
+- **TD-16:** the `EnemyAbility` virtual hooks are not unused. Tests subclass them to inject queue-integrated behavior, so they were kept as the extension point.
+- `CardManager` still reads `RunManager.Instance` (node count, map-effect refresh, Hammer routing). Routing these through subscriptions would change edit-mode behavior, where `RunManager.Awake` does not run, so they were left as they are.
+
 ## 1. Executive Summary
 
 Dealbreak's architecture is **sound at its core and strained at its edges**.
