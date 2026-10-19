@@ -70,6 +70,7 @@ public partial class RunManager
         CardManager.Instance.RestoreSave(data.cards, catalog);
         headlinerIndex = data.bossIndex; IsInfiniteMode = data.infiniteMode;
         _completedNodeCount = data.completedNodeCount;
+        LastScoutedNode = null;
         currentPath.AddRange(data.nodes.Select(n => new PathNode { id = n.id, kind = (MapNodeType)n.kind,
             type = n.type, contentId = n.contentId, mapIndex = n.mapIndex, col = n.col, row = n.row,
             next = n.next.ToList(), completed = n.completed, accessible = n.accessible,

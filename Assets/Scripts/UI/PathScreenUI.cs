@@ -19,6 +19,10 @@ public class PathScreenUI : MonoBehaviour
     bool _mapToggleEnabled;
     Button _mapVisibilityButton;
     TMP_Text _mapVisibilityLabel;
+    TMP_Text _nodeDetailLabel;
+    PathNode _hoveredNode;
+
+    static readonly Color ScoutedOutlineColor = new(1f, 0.8f, 0.32f, 1f);
 
     [Header("Map Settings")]
     [Min(0f)] public float horizontalInset = 20f;
@@ -215,6 +219,7 @@ public class PathScreenUI : MonoBehaviour
     void ShowImmediately()
     {
         _pendingMapShow = false;
+        _hoveredNode = null;
         BuildMap();
         BoardPanelTransition.Show(panel);
         var run = RunManager.Instance;
@@ -242,7 +247,11 @@ public class PathScreenUI : MonoBehaviour
         _nodePositions.Clear();
 
         var run = RunManager.Instance;
-        if (run == null || run.currentPath == null || run.currentPath.Count == 0) return;
+        if (run == null || run.currentPath == null || run.currentPath.Count == 0)
+        {
+            RefreshNodeDetail();
+            return;
+        }
 
         Vector2 nodeSize = new Vector2(Mathf.Clamp(bounds.rect.width / 12f, 62f, 88f), 62f);
         float halfH = nodeSize.y * 0.5f;
@@ -302,7 +311,9 @@ public class PathScreenUI : MonoBehaviour
             var nodeButtonUI = buttonObject.GetComponent<PathNodeButtonUI>();
             if (nodeButtonUI == null) nodeButtonUI = buttonObject.AddComponent<PathNodeButtonUI>();
             nodeButtonUI.SetNode(node, run);
+            nodeButtonUI.HoverChanged = HandleNodeHover;
             PlaceNode(buttonObject.GetComponent<RectTransform>(), _nodePositions[node.id], nodeSize);
+            MarkScouted(buttonObject, run.IsScoutedNode(node));
 
             var button = buttonObject.GetComponent<Button>();
             if (button)
@@ -318,6 +329,70 @@ public class PathScreenUI : MonoBehaviour
                 button.onClick.AddListener(() => run.OnPathChosen(id));
             }
         }
+        // Rebuilt buttons never receive the old pointer-exit, so drop a stale hover.
+        if (_hoveredNode != null && !run.currentPath.Contains(_hoveredNode)) _hoveredNode = null;
+        RefreshNodeDetail();
+    }
+
+    // A scouted node keeps its "?"-free label and gains a gold ring so it stands out off-route.
+    static void MarkScouted(GameObject buttonObject, bool scouted)
+    {
+        if (!scouted) return;
+        var image = buttonObject.GetComponent<Image>();
+        if (image == null) return;
+        var outline = image.GetComponent<Outline>();
+        if (outline == null) outline = image.gameObject.AddComponent<Outline>();
+        outline.effectColor = ScoutedOutlineColor;
+        outline.effectDistance = new Vector2(3f, -3f);
+        outline.enabled = true;
+    }
+
+    void HandleNodeHover(PathNode node)
+    {
+        _hoveredNode = node;
+        RefreshNodeDetail();
+    }
+
+    // Shows what is known about the hovered node; otherwise the node most recently scouted.
+    void RefreshNodeDetail()
+    {
+        EnsureNodeDetailLabel();
+        if (_nodeDetailLabel == null) return;
+        var run = RunManager.Instance;
+        var scouted = run != null && run.LastScoutedNode != null && run.IsScoutedNode(run.LastScoutedNode)
+            ? run.LastScoutedNode : null;
+        if (run != null && _hoveredNode != null)
+            _nodeDetailLabel.text = BoldFirstLine(run.GetNodeDetail(_hoveredNode));
+        else if (scouted != null)
+            _nodeDetailLabel.text = "<color=#F2C35E><b>SCOUTED</b></color>  " + BoldFirstLine(run.GetNodeDetail(scouted));
+        else
+            _nodeDetailLabel.text = "<alpha=#99>Hover a node to see what is known about it.";
+    }
+
+    static string BoldFirstLine(string text)
+    {
+        int newline = text.IndexOf('\n');
+        return newline < 0 ? $"<b>{text}</b>" : $"<b>{text.Substring(0, newline)}</b>{text.Substring(newline)}";
+    }
+
+    void EnsureNodeDetailLabel()
+    {
+        if (_nodeDetailLabel != null || mapContainer == null || mapContainer.parent == null) return;
+        var detail = new GameObject("Node Detail Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        detail.transform.SetParent(mapContainer.parent, false);
+        var rect = (RectTransform)detail.transform;
+        rect.anchorMin = new Vector2(0.03f, 0.005f);
+        rect.anchorMax = new Vector2(0.78f, 0.15f);
+        rect.offsetMin = rect.offsetMax = Vector2.zero;
+        _nodeDetailLabel = detail.GetComponent<TextMeshProUGUI>();
+        if (headerText != null) _nodeDetailLabel.font = headerText.font;
+        _nodeDetailLabel.fontSize = 16f;
+        _nodeDetailLabel.enableAutoSizing = true;
+        _nodeDetailLabel.fontSizeMin = 11f;
+        _nodeDetailLabel.fontSizeMax = 16f;
+        _nodeDetailLabel.alignment = TextAlignmentOptions.BottomLeft;
+        _nodeDetailLabel.color = new Color(0.87f, 0.89f, 0.81f, 1f);
+        _nodeDetailLabel.raycastTarget = false;
     }
 
     void CreateStartEndpoint(Vector2 position, Vector2 nodeSize)

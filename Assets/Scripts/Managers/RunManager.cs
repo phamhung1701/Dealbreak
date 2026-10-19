@@ -178,6 +178,7 @@ public partial class RunManager : Singleton<RunManager>
     void GeneratePath(int mapIndex)
     {
         currentPath.Clear();
+        LastScoutedNode = null;
         _visitedNodeTypesCurrentMap.Clear();
         _visitedNodeTypesMapIndex = mapIndex;
         currentPath.AddRange(GenerateMapForIndex(mapIndex));
@@ -194,7 +195,7 @@ public partial class RunManager : Singleton<RunManager>
 
     internal bool TryRerollEligibleHiddenNode()
     {
-        var candidate = FindEligibleHiddenNodeToReveal();
+        var candidate = FindHiddenTrailCandidate();
         if (candidate == null || _randomContext == null) return false;
         MapNodeType replacement = candidate.kind == MapNodeType.Risk ? MapNodeType.Event : MapNodeType.Risk;
         var definitions = contentCatalog != null ? contentCatalog.GetEvents(replacement) : null;
@@ -211,15 +212,67 @@ public partial class RunManager : Singleton<RunManager>
         return true;
     }
 
-    // Shares Lantern's policy: reachable hidden Event/Risk only, ordered by route depth, row, then stable node ID.
-    internal bool CanRevealEligibleHiddenNode() => FindEligibleHiddenNodeToReveal() != null;
+    // Scouting (Black Market Intel, the Late-Night Diner tip, Lantern) reveals one random reachable
+    // node that still shows "?", of any kind, together with its details. The pick is seeded by the
+    // current candidate set on its own stream, so it consumes no shared randomness and the same
+    // state always scouts the same node.
+    internal bool CanRevealEligibleHiddenNode() => FindScoutCandidates().Count > 0;
 
     internal bool TryRevealEligibleHiddenNode()
     {
-        var candidate = FindEligibleHiddenNodeToReveal();
-        if (candidate == null) return false;
-        candidate.revealed = true;
+        var candidates = FindScoutCandidates();
+        if (candidates.Count == 0) return false;
+        int key = CurrentMapIndex;
+        foreach (var node in candidates) key = unchecked(key * 31 + node.id);
+        var random = (_randomContext ?? new RunRandomContext(runSeed)).CreateStream("map-scout", key);
+        var scouted = candidates[random.NextInt(0, candidates.Count)];
+        scouted.revealed = true;
+        LastScoutedNode = scouted;
         return true;
+    }
+
+    /// <summary>The node most recently revealed by scouting on this map; runtime presentation only.</summary>
+    public PathNode LastScoutedNode { get; private set; }
+
+    static bool IsScoutableKind(MapNodeType kind) =>
+        kind is MapNodeType.Combat or MapNodeType.Event or MapNodeType.Risk or MapNodeType.Upgrade;
+
+    /// <summary>
+    /// True for a node whose identity was revealed ahead of travel. Scoutable kinds are otherwise
+    /// revealed only on becoming accessible, and hidden Incidents/Risks only on being entered.
+    /// </summary>
+    public bool IsScoutedNode(PathNode node) => node != null && node != _activeNode && !node.completed &&
+        node.revealed && IsScoutableKind(node.kind) && (node.hidden || !node.accessible);
+
+    /// <summary>Whether the map may show a node's contents: enemies, totals or the Incident.</summary>
+    public bool NodeDetailsVisible(PathNode node) => node != null && node.revealed &&
+        (node.accessible || node.completed || IsScoutableKind(node.kind) ||
+            node.kind is MapNodeType.Shop or MapNodeType.Headliner);
+
+    List<PathNode> FindScoutCandidates()
+    {
+        var candidates = new List<PathNode>();
+        foreach (var node in ReachableRouteNodes())
+            if (!node.revealed) candidates.Add(node);
+        candidates.Sort((a, b) => a.id.CompareTo(b.id));
+        return candidates;
+    }
+
+    // Hidden Trail rerolls the nearest hidden Incident/Risk: route depth, row, then stable node ID.
+    PathNode FindHiddenTrailCandidate()
+    {
+        PathNode candidate = null;
+        foreach (var node in ReachableRouteNodes())
+        {
+            if (node.hidden && !node.revealed &&
+                (node.kind == MapNodeType.Event || node.kind == MapNodeType.Risk) &&
+                (candidate == null || node.col < candidate.col ||
+                    (Mathf.Approximately(node.col, candidate.col) &&
+                        (node.row < candidate.row ||
+                            (Mathf.Approximately(node.row, candidate.row) && node.id < candidate.id)))))
+                candidate = node;
+        }
+        return candidate;
     }
 
     internal bool TryRevealHiddenNodeFromEvent()
@@ -229,35 +282,28 @@ public partial class RunManager : Singleton<RunManager>
         return true;
     }
 
-    PathNode FindEligibleHiddenNodeToReveal()
+    // Uncompleted current-map nodes the player can still reach from where they stand.
+    IEnumerable<PathNode> ReachableRouteNodes()
     {
-        if (currentPath.Count == 0) return null;
+        if (currentPath.Count == 0) yield break;
         var frontier = _activeNode != null && !_activeNode.completed
             ? new[] { _activeNode }
             : currentPath.Where(node => node.accessible && !node.completed)
                 .OrderBy(node => node.id).ToArray();
         var pending = new Queue<PathNode>(frontier);
         var visited = new HashSet<int>();
-        PathNode candidate = null;
         while (pending.Count > 0)
         {
             var node = pending.Dequeue();
             if (node == null || node.mapIndex != CurrentMapIndex || node.completed ||
                 !visited.Add(node.id)) continue;
-            if (node.hidden && !node.revealed &&
-                (node.kind == MapNodeType.Event || node.kind == MapNodeType.Risk) &&
-                (candidate == null || node.col < candidate.col ||
-                    (Mathf.Approximately(node.col, candidate.col) &&
-                        (node.row < candidate.row ||
-                            (Mathf.Approximately(node.row, candidate.row) && node.id < candidate.id)))))
-                candidate = node;
+            yield return node;
             foreach (int nextId in node.next)
             {
                 var next = FindNode(nextId);
                 if (next != null && !next.completed) pending.Enqueue(next);
             }
         }
-        return candidate;
     }
 
     public void OnPathChosen(int id)
@@ -460,7 +506,7 @@ public partial class RunManager : Singleton<RunManager>
     public string GetNodeDesc(PathNode node)
     {
         if (node == null) return string.Empty;
-        bool showStats = node.accessible && node.revealed &&
+        bool showStats = NodeDetailsVisible(node) &&
             (node.kind == MapNodeType.Combat || node.kind == MapNodeType.Elite || node.kind == MapNodeType.Headliner);
         var stats = showStats ? GetEncounterStats(node) : (hp: 0, attack: 0);
         showStats &= stats.hp > 0;
@@ -481,6 +527,71 @@ public partial class RunManager : Singleton<RunManager>
                 : "Major Headliner fight",
             _ => string.Empty
         };
+    }
+
+    /// <summary>
+    /// Everything the player may know about a node, for the route map: the enemy roster and
+    /// totals of a fight, or the specific Incident. Unknown nodes stay unknown.
+    /// </summary>
+    public string GetNodeDetail(PathNode node)
+    {
+        if (node == null) return string.Empty;
+        if (!node.revealed) return "Unknown node • scout it or travel closer to learn more";
+        string label = GetNodeLabel(node);
+        if (!NodeDetailsVisible(node)) return $"{label} • {GetNodeDesc(node)}";
+        switch (node.kind)
+        {
+            case MapNodeType.Combat:
+            {
+                var enemy = FindEnemy(node.contentId);
+                if (enemy == null) return label;
+                var members = ComposeEncounter(node, enemy, false);
+                return DescribeRoster(DescribeEncounter(label, members), members);
+            }
+            case MapNodeType.Elite:
+            {
+                var authored = FindAuthoredElite(node.contentId);
+                if (authored != null)
+                {
+                    var members = ComposeEncounter(node, authored, true);
+                    return DescribeRoster(DescribeEncounter(label, members), members);
+                }
+                var source = FindEnemy(node.contentId);
+                var stats = GetEncounterStats(node);
+                var trait = contentCatalog != null ? contentCatalog.eliteAbility : null;
+                return source == null ? label
+                    : $"{label} • {stats.hp} HP / {stats.attack} ATK\nEnforcer {source.enemyName}" +
+                      (trait != null && !string.IsNullOrEmpty(trait.displayName) ? $" • Traits: {trait.displayName}" : string.Empty);
+            }
+            case MapNodeType.Event:
+            case MapNodeType.Risk:
+            case MapNodeType.Upgrade:
+            {
+                var definition = FindEvent(node.kind, node.contentId);
+                return definition == null || string.IsNullOrEmpty(definition.title)
+                    ? $"{label} • {GetNodeDesc(node)}"
+                    : $"{label} • {definition.title}\n" +
+                      (string.IsNullOrEmpty(definition.description) ? GetNodeDesc(node) : definition.description);
+            }
+            case MapNodeType.Headliner:
+                return CurrentHeadlinerDescription;
+            default:
+                return $"{label} • {GetNodeDesc(node)}";
+        }
+    }
+
+    // Lists who is in a fight, in spawn order, with duplicates counted, then their traits.
+    static string DescribeRoster(string summary, IReadOnlyList<EncounterMember> members)
+    {
+        var names = members.Where(member => member.Type != null)
+            .GroupBy(member => member.Type.enemyName)
+            .Select(group => group.Count() > 1 ? $"{group.Key} ×{group.Count()}" : group.Key);
+        var traits = members.Where(member => member.Type != null && member.Type.abilities != null)
+            .SelectMany(member => member.Type.abilities)
+            .Where(ability => ability != null && !string.IsNullOrEmpty(ability.displayName))
+            .Select(ability => ability.displayName).Distinct().ToArray();
+        return $"{summary}\n{string.Join(", ", names)}" +
+            (traits.Length > 0 ? $" • Traits: {string.Join(", ", traits)}" : string.Empty);
     }
 
     string GetElitePreviewDescription(PathNode node, (int hp, int attack) stats)
