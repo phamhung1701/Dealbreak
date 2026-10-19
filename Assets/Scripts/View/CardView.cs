@@ -34,9 +34,9 @@ public class CardView : MonoBehaviour,
     [Min(0f)] public float hoverRaise = 10f;
     [Min(0f)] public float selectedRaise = 18f;
     [Min(0f)] public float dragRaise = 6f;
-    [Min(0.001f)] public float positionSmoothTime = 0.055f;
-    [Min(0.001f)] public float layoutSmoothTime = 0.075f;
-    [Min(0.001f)] public float scaleSmoothTime = 0.055f;
+    [Min(0.001f)] public float positionSmoothTime = 0.085f;
+    [Min(0.001f)] public float layoutSmoothTime = 0.11f;
+    [Min(0.001f)] public float scaleSmoothTime = 0.08f;
 
     [Header("State")]
     [NonSerialized] public CardInstance data;
@@ -74,6 +74,7 @@ public class CardView : MonoBehaviour,
     float _layoutTargetScale = 1f;
     float _rootScaleVelocity;
     bool _hasLayoutTarget;
+    float _entryDelay;
     bool _hasGrabPoint;
     bool _suppressClick;
     Vector2 _grabLocalPoint;
@@ -269,7 +270,10 @@ public class CardView : MonoBehaviour,
     public void TickPresentation(float deltaTime)
     {
         if (deltaTime <= 0f) return;
-        if (_hasLayoutTarget && !_isDragging && homeField != null && transform.parent == homeField.cardsHolder)
+        // A dealt card waits at the draw-pile side for its turn in the deal.
+        if (_entryDelay > 0f) _entryDelay = Mathf.Max(0f, _entryDelay - deltaTime);
+        if (_hasLayoutTarget && _entryDelay <= 0f && !_isDragging && homeField != null &&
+            transform.parent == homeField.cardsHolder)
         {
             transform.localPosition = Vector3.SmoothDamp(transform.localPosition,
                 _layoutTargetPosition, ref _rootVelocity, layoutSmoothTime, Mathf.Infinity, deltaTime);
@@ -312,8 +316,9 @@ public class CardView : MonoBehaviour,
         SetFanPose(fanOffset, rotation);
     }
 
-    public void BeginHandEntry(Vector3 localPosition)
+    public void BeginHandEntry(Vector3 localPosition, float delay = 0f)
     {
+        _entryDelay = Mathf.Max(0f, delay);
         transform.localPosition = localPosition;
         transform.localScale = Vector3.one * _layoutTargetScale * 0.94f;
         _rootVelocity = Vector3.zero;
@@ -386,6 +391,7 @@ public class CardView : MonoBehaviour,
         _dragHomeField = homeField;
         _dragHomeField.BeginVisualDrag(this);
         _isDragging = true;
+        _entryDelay = 0f;
         manager.BeginCardDrag(this);
 
         transform.SetParent(manager.dragCanvas.transform, true);

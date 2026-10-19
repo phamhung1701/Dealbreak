@@ -11,6 +11,8 @@ public class Field : MonoBehaviour
 
     [Header("Hand Motion")]
     [Min(0f)] public float reorderThreshold = 18f;
+    [Tooltip("Seconds between cards dealt in the same frame.")]
+    [Min(0f)] public float dealStagger = 0.06f;
 
     [Header("Fan Layout")]
     public float maximumSpacing = -18f;
@@ -27,6 +29,8 @@ public class Field : MonoBehaviour
     bool _dragInsideHand;
     Vector2 _lastHolderSize;
     int _lastChildCount = -1;
+    int _dealFrame = -1;
+    int _dealCount;
 
     public int CardCount
     {
@@ -140,9 +144,16 @@ public class Field : MonoBehaviour
         if (!_orderedCards.Contains(card)) _orderedCards.Add(card);
         card.Setup(data);
         Reflow();
-        // Short, local entry from the draw-pile side; no dependency on gameplay timing.
+        // Short, local entry from the draw-pile side; no dependency on gameplay timing. Cards drawn
+        // together are dealt one after another (presentation only, capped so big draws stay quick).
+        float delay = 0f;
+        if (Application.isPlaying)
+        {
+            if (_dealFrame != Time.frameCount) { _dealFrame = Time.frameCount; _dealCount = 0; }
+            delay = Mathf.Min(_dealCount++, 7) * dealStagger;
+        }
         card.BeginHandEntry(new Vector3(cardsHolder.rect.xMax + 35f,
-            cardsHolder.rect.center.y - cardsHolder.rect.height * 0.12f, 0f));
+            cardsHolder.rect.center.y - cardsHolder.rect.height * 0.12f, 0f), delay);
     }
 
     public void ClearCards()

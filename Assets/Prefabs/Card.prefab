@@ -326,9 +326,9 @@ MonoBehaviour:
   hoverRaise: 10
   selectedRaise: 18
   dragRaise: 6
-  positionSmoothTime: 0.055
-  layoutSmoothTime: 0.075
-  scaleSmoothTime: 0.055
+  positionSmoothTime: 0.085
+  layoutSmoothTime: 0.11
+  scaleSmoothTime: 0.08
   homeField: {fileID: 0}
   index: 0
 --- !u!1 &5567256571824613244
