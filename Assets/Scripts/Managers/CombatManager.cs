@@ -222,7 +222,7 @@ public partial class CombatManager : Singleton<CombatManager>
                 var gear = cards.ownedGear[gearIndex];
                 if (gear != null && gear.specialRule == GearSpecialRule.WarpathBanner)
                     player.GainEncounterBlock(Math.Min(6,
-                        cards.GetGearInstanceAt(gearIndex).State.GetCounter(-1340) * 2));
+                        cards.GetGearInstanceAt(gearIndex).State.GetCounter(GearCounterKeys.WarpathBannerWinStreak) * 2));
             }
         if (_isEliteOrHeadlinerEncounter && cards?.ownedGear.Any(a => a != null &&
             a.specialRule == GearSpecialRule.ChallengerCrest) == true)
@@ -1656,10 +1656,10 @@ public partial class CombatManager : Singleton<CombatManager>
             if (gear == null || gear.specialRule is not (GearSpecialRule.AceRare or GearSpecialRule.AceEpic))
                 continue;
             var state = cards.GetGearInstanceAt(gearIndex).State;
-            if (state.GetEncounterCounter(-114) != 0) continue;
+            if (state.GetEncounterCounter(GearCounterKeys.AceReturnUsed) != 0) continue;
             var ace = committedCards.FirstOrDefault(card => card != null && card.Rank == CardData.Rank.Ace);
             if (ace == null || !cards.TryReturnDiscardCardToHand(ace)) continue;
-            state.SetEncounterCounter(-114, 1);
+            state.SetEncounterCounter(GearCounterKeys.AceReturnUsed, 1);
             Log($"{gear.displayName}: returned the physical Ace to hand.");
             return;
         }
@@ -1677,7 +1677,7 @@ public partial class CombatManager : Singleton<CombatManager>
             if (instance == null) continue;
             var state = instance.State;
             if (_isHeadlinerEncounter && gear.specialRule == GearSpecialRule.KingslayersMark &&
-                state.GetEncounterCounter(-1382) > 0)
+                state.GetEncounterCounter(GearCounterKeys.KingslayerCharges) > 0)
                 _activeKingslayerBonus = 1;
             if (gear.specialRule is GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic)
             {
@@ -1692,20 +1692,20 @@ public partial class CombatManager : Singleton<CombatManager>
             }
             if (gear.specialRule == GearSpecialRule.BalancersScale)
             {
-                int previousGroup = state.GetCounter(-1181);
+                int previousGroup = state.GetCounter(GearCounterKeys.BalancersScalePreviousGroup);
                 int playedGroup = playedCards.Count > 0 ? GetBalancerGroup(playedCards[0]) : 0;
                 if (playedGroup != 0 && playedGroup == previousGroup)
                 {
-                    state.SetCounter(-1182, 0);
+                    state.SetCounter(GearCounterKeys.BalancersScaleBonus, 0);
                     _activeBalancerBonus = 0;
                 }
-                else _activeBalancerBonus = Math.Max(0, state.GetCounter(-1182));
+                else _activeBalancerBonus = Math.Max(0, state.GetCounter(GearCounterKeys.BalancersScaleBonus));
             }
             if (gear.specialRule == GearSpecialRule.SpadeEpic)
-                _activeSpadeBonus = Math.Max(0, state.GetEncounterCounter(-1071));
+                _activeSpadeBonus = Math.Max(0, state.GetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks));
             if (gear.specialRule == GearSpecialRule.HeartEpic &&
                 playedCards.Any(card => card != null && card.MatchesSuit(CardData.Suit.Hearts)))
-                _activeHeartBonus = Math.Max(0, state.GetCounter(-1050));
+                _activeHeartBonus = Math.Max(0, state.GetCounter(GearCounterKeys.HeartEpicStoredOverheal));
         }
     }
 
@@ -1725,13 +1725,13 @@ public partial class CombatManager : Singleton<CombatManager>
                 instance.PreparedDwarfSourceCard = null;
             }
             if (_activeKingslayerBonus > 0 && gear.specialRule == GearSpecialRule.KingslayersMark)
-                state.SetEncounterCounter(-1382, Math.Max(0, state.GetEncounterCounter(-1382) - 1));
+                state.SetEncounterCounter(GearCounterKeys.KingslayerCharges, Math.Max(0, state.GetEncounterCounter(GearCounterKeys.KingslayerCharges) - 1));
             if (_activeBalancerBonus > 0 && gear.specialRule == GearSpecialRule.BalancersScale)
-                state.SetCounter(-1182, 0);
+                state.SetCounter(GearCounterKeys.BalancersScaleBonus, 0);
             if (_activeSpadeBonus > 0 && gear.specialRule == GearSpecialRule.SpadeEpic)
-                state.SetEncounterCounter(-1071, 0);
+                state.SetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks, 0);
             if (_activeHeartBonus > 0 && gear.specialRule == GearSpecialRule.HeartEpic)
-                state.SetCounter(-1050, 0);
+                state.SetCounter(GearCounterKeys.HeartEpicStoredOverheal, 0);
         }
         if (autoPlay) return;
 
@@ -1749,37 +1749,37 @@ public partial class CombatManager : Singleton<CombatManager>
                     instance.PreparedDwarfSourceCard = card;
                 if (_isHeadlinerEncounter && gear.specialRule == GearSpecialRule.KingslayersMark)
                 {
-                    int mask = state.GetEncounterCounter(-1381) | (1 << (int)card.Rank);
+                    int mask = state.GetEncounterCounter(GearCounterKeys.KingslayerRankMask) | (1 << (int)card.Rank);
                     int uniqueRanks = 0;
                     for (int bits = mask; bits != 0; bits >>= 1) uniqueRanks += bits & 1;
                     if (uniqueRanks >= 3)
                     {
-                        state.SetEncounterCounter(-1381, 0);
-                        state.SetEncounterCounter(-1382, state.GetEncounterCounter(-1382) + 1);
+                        state.SetEncounterCounter(GearCounterKeys.KingslayerRankMask, 0);
+                        state.SetEncounterCounter(GearCounterKeys.KingslayerCharges, state.GetEncounterCounter(GearCounterKeys.KingslayerCharges) + 1);
                     }
-                    else state.SetEncounterCounter(-1381, mask);
+                    else state.SetEncounterCounter(GearCounterKeys.KingslayerRankMask, mask);
                 }
                 if (gear.specialRule == GearSpecialRule.DiamondEpic &&
                     card.MatchesSuit(CardData.Suit.Diamonds))
                 {
-                    int count = state.GetCounter(-108) + 1;
+                    int count = state.GetCounter(GearCounterKeys.DiamondEpicSuitCount) + 1;
                     if (count >= 3)
                     {
                         _pendingDiamondDrawChoices++;
                         count -= 3;
                     }
-                    state.SetCounter(-108, count);
+                    state.SetCounter(GearCounterKeys.DiamondEpicSuitCount, count);
                 }
                 if (gear.specialRule == GearSpecialRule.BalancersScale)
                 {
                     int group = GetBalancerGroup(card);
                     if (group == 0) continue;
-                    int previous = state.GetCounter(-1181);
-                    int bonus = state.GetCounter(-1182);
+                    int previous = state.GetCounter(GearCounterKeys.BalancersScalePreviousGroup);
+                    int bonus = state.GetCounter(GearCounterKeys.BalancersScaleBonus);
                     if (group == previous) bonus = 0;
                     else if (previous != 0) bonus++;
-                    state.SetCounter(-1181, group);
-                    state.SetCounter(-1182, bonus);
+                    state.SetCounter(GearCounterKeys.BalancersScalePreviousGroup, group);
+                    state.SetCounter(GearCounterKeys.BalancersScaleBonus, bonus);
                 }
             }
         }
@@ -1818,9 +1818,9 @@ public partial class CombatManager : Singleton<CombatManager>
                 if (gear == null) continue;
                 var state = cards.GetGearInstanceAt(gearIndex).State;
                 if (gear.specialRule == GearSpecialRule.HuntersLedger)
-                    gilded += state.GetCounter(-119);
+                    gilded += state.GetCounter(GearCounterKeys.HuntersLedgerEliteKills);
                 else if (gear.specialRule == GearSpecialRule.TrophyRack && _isHeadlinerEncounter)
-                    gilded += state.GetCounter(-137);
+                    gilded += state.GetCounter(GearCounterKeys.TrophyRackEliteKills);
             }
         }
         return GameplayEffectResolver.CalculateAttack(card, cards, playedCards, overflowHeld, gilded);

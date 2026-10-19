@@ -1929,7 +1929,7 @@ public partial class RunManager : Singleton<RunManager>
         var instance = cards.GetGearInstanceAt(hammerIndex);
         if (!_pendingHammerReward)
         {
-            int last = instance.State.GetCounter(-140);
+            int last = instance.State.GetCounter(GearCounterKeys.HammerLastRewardNode);
             if (_completedNodeCount - last < 3) return;
             var common = cards.enhancementCatalog
                 .Where(value => value != null && string.Equals(value.rarity, "Common", StringComparison.Ordinal))
@@ -1945,7 +1945,7 @@ public partial class RunManager : Singleton<RunManager>
                 _pendingHammerEnhancements.Add(common[selected]);
                 common.RemoveAt(selected);
             }
-            instance.State.SetCounter(-140, _completedNodeCount);
+            instance.State.SetCounter(GearCounterKeys.HammerLastRewardNode, _completedNodeCount);
             _pendingHammerReward = true;
         }
         else if (!_hammerRetryPending) return;
@@ -2099,9 +2099,9 @@ public partial class RunManager : Singleton<RunManager>
                 if (gear == null) continue;
                 var state = cards.GetGearInstanceAt(gearIndex).State;
                 if (gear.specialRule == GearSpecialRule.HuntersLedger)
-                    state.SetCounter(-119, state.GetCounter(-119) + 1);
+                    state.SetCounter(GearCounterKeys.HuntersLedgerEliteKills, state.GetCounter(GearCounterKeys.HuntersLedgerEliteKills) + 1);
                 if (gear.specialRule == GearSpecialRule.TrophyRack)
-                    state.SetCounter(-137, state.GetCounter(-137) + 1);
+                    state.SetCounter(GearCounterKeys.TrophyRackEliteKills, state.GetCounter(GearCounterKeys.TrophyRackEliteKills) + 1);
             }
         }
         if (wasHeadliner)
@@ -2168,14 +2168,14 @@ public partial class RunManager : Singleton<RunManager>
             if (gear == null) continue;
             var state = cards.GetGearInstanceAt(gearIndex).State;
             if (gear.specialRule == GearSpecialRule.WanderersBoots &&
-                _visitedNodeTypesCurrentMap.Count >= 3 && state.GetCounter(-133) != node.mapIndex + 1)
+                _visitedNodeTypesCurrentMap.Count >= 3 && state.GetCounter(GearCounterKeys.WanderersBootsRewardedMap) != node.mapIndex + 1)
             {
-                state.SetCounter(-133, node.mapIndex + 1);
+                state.SetCounter(GearCounterKeys.WanderersBootsRewardedMap, node.mapIndex + 1);
                 combat?.HealPlayer(3);
                 cards.AddCredits(3);
             }
             if (gear.specialRule == GearSpecialRule.WarpathBanner)
-                state.SetCounter(-1340, isCombatWin ? Math.Min(3, state.GetCounter(-1340) + 1) : 0);
+                state.SetCounter(GearCounterKeys.WarpathBannerWinStreak, isCombatWin ? Math.Min(3, state.GetCounter(GearCounterKeys.WarpathBannerWinStreak) + 1) : 0);
         }
     }
 

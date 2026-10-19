@@ -611,7 +611,7 @@ public partial class CardManager : Singleton<CardManager>
         int completedNodes = run != null ? run.CompletedNodeCount : 0;
         GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance), completedNodes);
         if (gear.specialRule == GearSpecialRule.Hammer)
-            instance.State.SetCounter(-140, completedNodes);
+            instance.State.SetCounter(GearCounterKeys.HammerLastRewardNode, completedNodes);
         if (gear.specialRule is GearSpecialRule.TravelerPackCommon or GearSpecialRule.TravelerPackRare)
         {
             if (gear.specialRule == GearSpecialRule.TravelerPackRare) NormalizeBackpackStacks();

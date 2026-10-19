@@ -1060,10 +1060,10 @@ public static class GameplayEffectResolver
                 changed = true;
             }
             if (gear.specialRule == GearSpecialRule.HiddenTrail &&
-                source.State.GetCounter(-135) != context.MapIndex + 1 &&
+                source.State.GetCounter(GearCounterKeys.HiddenTrailRerolledMap) != context.MapIndex + 1 &&
                 context.Run.TryRerollEligibleHiddenNode())
             {
-                source.State.SetCounter(-135, context.MapIndex + 1);
+                source.State.SetCounter(GearCounterKeys.HiddenTrailRerolledMap, context.MapIndex + 1);
                 changed = true;
             }
         }
@@ -1319,7 +1319,7 @@ public static class GameplayEffectResolver
                             {
                                 var state = gearInstance.State;
                                 int overheal = Math.Max(0, 3 - healed);
-                                state.SetCounter(-1050, Math.Min(10, state.GetCounter(-1050) + overheal));
+                                state.SetCounter(GearCounterKeys.HeartEpicStoredOverheal, Math.Min(10, state.GetCounter(GearCounterKeys.HeartEpicStoredOverheal) + overheal));
                             }
                         });
                 if (gear.specialRule is GearSpecialRule.RareDiamond or GearSpecialRule.DiamondEpic &&
@@ -1446,7 +1446,7 @@ public static class GameplayEffectResolver
                     CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue - 1,
                     () => context.Cards.DrawToHand(1));
             if (spadeRule == GearSpecialRule.SpadeEpic && block > attack)
-                source.State.SetEncounterCounter(-1071, source.State.GetEncounterCounter(-1071) + 1);
+                source.State.SetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks, source.State.GetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks) + 1);
         }
         var retaliationRule = source.Gear?.Definition.specialRule;
         if (retaliationRule is GearSpecialRule.RareRetaliation or GearSpecialRule.RetaliationEpic)
@@ -1454,7 +1454,7 @@ public static class GameplayEffectResolver
             int block = context.Combat.CalculateCardDefense(context.BlockingCard);
             int attack = context.BlockedAttackDamage;
             int growth = retaliationRule == GearSpecialRule.RetaliationEpic
-                ? source.State.GetCounter(-111) : 0;
+                ? source.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) : 0;
             int retaliation = CalculateRetaliationDamage(block, attack) + growth;
             if (retaliation > 0)
                 queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
@@ -1465,7 +1465,7 @@ public static class GameplayEffectResolver
                             ? result =>
                             {
                                 if (!result.WasLethal) return;
-                                source.State.SetCounter(-111, growth + 1);
+                                source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, growth + 1);
                                 context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +1 counter damage.");
                             }
                             : null));
