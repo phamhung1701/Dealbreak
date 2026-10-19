@@ -141,7 +141,11 @@ public class EnemyGroupUI : MonoBehaviour
             view.transform.SetSiblingIndex(i);
         }
         for (int i = 0; i < _activeViews.Count; i++)
-            if (!used.Contains(_activeViews[i]) && _activeViews[i] != null) Destroy(_activeViews[i].gameObject);
+        {
+            if (used.Contains(_activeViews[i]) || _activeViews[i] == null) continue;
+            if (Application.isPlaying) Destroy(_activeViews[i].gameObject);
+            else DestroyImmediate(_activeViews[i].gameObject);
+        }
         _activeViews.Clear();
         _activeViews.AddRange(orderedViews);
         FitViewsToContainer();
