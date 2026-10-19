@@ -15,11 +15,7 @@ public sealed class GearUpgradeIntegrationTests
     [SetUp]
     public void SetUp()
     {
-        var controller = Object.FindFirstObjectByType<GameController>();
-        _catalog = controller != null && controller.gearCatalog != null
-            ? controller.gearCatalog
-            : AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Relics" })
-                .Select(guid => AssetDatabase.LoadAssetAtPath<GearData>(AssetDatabase.GUIDToAssetPath(guid))).ToArray();
+        _catalog = SaveContentCatalog.Load().gearItems;
         _cards = Make<CardManager>("Artifact Upgrade Cards");
         _cards.Configure(null, null, null, _catalog);
         _cards.BuildDeck();

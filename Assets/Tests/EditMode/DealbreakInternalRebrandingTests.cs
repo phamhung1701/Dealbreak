@@ -93,8 +93,8 @@ public sealed class DealbreakInternalRebrandingTests
                     Assert.That(GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(transform.gameObject), Is.Zero, entry.path + "/" + transform.name);
                 var controller = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<GameController>(true)).FirstOrDefault();
                 if (controller == null) continue;
-                Assert.That(controller.gearCatalog, Is.Not.Empty);
-                Assert.That(controller.gearCatalog.All(x => x != null), Is.True);
+                Assert.That(controller.contentRegistry, Is.SameAs(SaveContentCatalog.Load()),
+                    "The Game scene plays from the same registry that saves resolve against.");
                 var status = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<RunStatusUI>(true)).First();
                 Assert.That(status.creditsLabel, Is.Not.Null);
                 Assert.That(status.headlinerProgressLabel, Is.Not.Null);
