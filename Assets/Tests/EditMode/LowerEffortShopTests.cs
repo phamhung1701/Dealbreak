@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -92,11 +93,12 @@ public sealed class LowerEffortShopTests
     }
 
     [Test]
-    public void Guidance_CostsFiveCreditsRevealsOneReachableHiddenEventOrRiskAndIsOneTime()
+    public void Guidance_CostsFiveCreditsRevealsOneReachableUnknownNodeAndIsOneTime()
     {
-        var shop = Shop(1, 0, 2, 3);
+        // Node IDs must be unique: route lookup resolves the first node with a given ID.
+        var shop = Shop(3, 0, 2, 4);
         var farther = new PathNode { id = 2, mapIndex = 0, kind = MapNodeType.Event, hidden = true, col = 2, row = 0 };
-        var nearer = new PathNode { id = 3, mapIndex = 0, kind = MapNodeType.Risk, hidden = true, col = 1, row = 0 };
+        var nearer = new PathNode { id = 4, mapIndex = 0, kind = MapNodeType.Risk, hidden = true, col = 1, row = 0 };
         _run.currentPath.Clear();
         _run.currentPath.AddRange(new[] { shop, farther, nearer });
         _cards.AddCredits(5);
@@ -108,8 +110,9 @@ public sealed class LowerEffortShopTests
         Assert.That(_run.PurchaseShopOffer(guidance.StableId), Is.True);
 
         Assert.That(_cards.credits, Is.Zero);
-        Assert.That(nearer.revealed, Is.True);
-        Assert.That(farther.revealed, Is.False);
+        Assert.That(new[] { nearer, farther }.Count(node => node.revealed), Is.EqualTo(1),
+            "Intel scouts exactly one of the reachable unknown nodes.");
+        Assert.That(_run.LastScoutedNode, Is.SameAs(nearer.revealed ? nearer : farther));
         Assert.That(notifications, Is.EqualTo(1));
         Assert.That(_run.CanPurchaseShopOffer(guidance.StableId), Is.False);
     }

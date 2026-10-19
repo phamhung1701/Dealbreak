@@ -65,16 +65,21 @@ public class EnemyGroupUI : MonoBehaviour
         if (wasBusy) OnDefeatPresentationCompleted?.Invoke();
     }
 
+    // Hit and defeat reactions wait until the attack card visibly lands on the enemy.
     void HandleDamageResolved(DamageResult result)
     {
-        if (!result.WasLethal || result.TargetAlreadyDefeated || !(result.Request.Target is EnemyRuntime enemy) ||
+        if (result.TargetAlreadyDefeated || !(result.Request.Target is EnemyRuntime enemy) ||
             _defeating.Contains(enemy)) return;
         for (int i = 0; i < _activeViews.Count; i++)
         {
             var view = _activeViews[i];
             if (view == null || !ReferenceEquals(view.DisplayedEnemy, enemy)) continue;
+            var presentation = AttackCardPresentationUI.Instance;
+            float delay = presentation != null ? presentation.ImpactDelay(result.Request.HitIndex) : 0f;
+            view.PlayHitCue(result.ShieldConsumed || result.ActualHpLost <= 0, delay);
+            if (!result.WasLethal) return;
             _defeating.Add(enemy);
-            view.PlayDefeatCue();
+            view.PlayDefeatCue(delay);
             StartCoroutine(RemoveDefeatedView(enemy, view));
             return;
         }
@@ -124,6 +129,7 @@ public class EnemyGroupUI : MonoBehaviour
         // Reconcile by runtime identity so simultaneous kills never animate the wrong recycled panel.
         var orderedViews = new List<EnemyDisplayUI>(desired.Count);
         var used = new HashSet<EnemyDisplayUI>();
+        int entering = 0;
         for (int i = 0; i < desired.Count; i++)
         {
             EnemyDisplayUI view = null;
@@ -137,15 +143,21 @@ public class EnemyGroupUI : MonoBehaviour
             used.Add(view);
             orderedViews.Add(view);
             view.gameObject.SetActive(true);
-            if (!_defeating.Contains(desired[i])) view.Bind(desired[i]);
+            if (!_defeating.Contains(desired[i]))
+            {
+                // Newly arriving enemies fade in left to right.
+                bool arriving = !view.IsBoundTo(desired[i]);
+                view.Bind(desired[i]);
+                if (arriving) view.PlayEntrance(entering++ * 0.08f);
+            }
             view.transform.SetSiblingIndex(i);
         }
         for (int i = 0; i < _activeViews.Count; i++)
-            if (!used.Contains(_activeViews[i]) && _activeViews[i] != null)
-            {
-                if(Application.isPlaying)Destroy(_activeViews[i].gameObject);
-                else DestroyImmediate(_activeViews[i].gameObject);
-            }
+        {
+            if (used.Contains(_activeViews[i]) || _activeViews[i] == null) continue;
+            if (Application.isPlaying) Destroy(_activeViews[i].gameObject);
+            else DestroyImmediate(_activeViews[i].gameObject);
+        }
         _activeViews.Clear();
         _activeViews.AddRange(orderedViews);
         FitViewsToContainer();

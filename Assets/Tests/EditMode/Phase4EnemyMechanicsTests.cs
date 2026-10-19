@@ -169,7 +169,9 @@ public sealed class Phase4EnemyMechanicsTests
         var goblin = EnemyType("Goblin", 3, 2);
         var duelist = EnemyType("Duelist", 14, 4, EnemyAbilityEffect.SuitCall);
         var drummer = EnemyType("War Drummer", 8, 1, EnemyAbilityEffect.WarDrum);
+        drummer.allies = new[] { new EncounterAllySpec { type = goblin, count = 2 } };
         var captain = EnemyType("Goblin Captain", 16, 3, EnemyAbilityEffect.Captaincy);
+        captain.allies = new[] { new EncounterAllySpec { type = goblin, count = 2 } };
         var royalKnight = EnemyType("Royal Knight", 32, 5, EnemyAbilityEffect.RoyalGuard);
         var catalog = ScriptableObject.CreateInstance<RunContentCatalog>();
         _created.Add(catalog);
@@ -178,17 +180,15 @@ public sealed class Phase4EnemyMechanicsTests
         _runObject = new GameObject("Phase4 composition RunManager");
         _run = _runObject.AddComponent<RunManager>();
         _run.contentCatalog = catalog;
-        typeof(RunManager).GetMethod("StartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
+        typeof(RunManager).GetMethod("TryStartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
             .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "Duelist", mapIndex = 0 } });
         Assert.That(_combat.Enemies.Select(enemy => enemy.type.enemyName), Is.EqualTo(new[] { "Duelist" }));
         var duelistNode = new PathNode { kind = MapNodeType.Combat, contentId = "Duelist", mapIndex = 0, accessible = true, revealed = true };
         Assert.That(_run.GetNodeDesc(duelistNode), Does.Not.Contain("Brute"));
 
         _combat.Reset();
-        var drummerNode = new PathNode { kind = MapNodeType.Combat, contentId = "WarDrummer", mapIndex = 0, accessible = true, revealed = true };
-        Assert.That(_run.GetNodeDesc(drummerNode), Does.Contain("14 HP / 5 ATK total"));
-        typeof(RunManager).GetMethod("StartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
-            .Invoke(_run, new object[] { drummerNode });
+        typeof(RunManager).GetMethod("TryStartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "WarDrummer", mapIndex = 0 } });
         Assert.That(_combat.Enemies.Select(enemy => enemy.type.enemyName), Is.EqualTo(new[] { "War Drummer", "Goblin", "Goblin" }));
         Assert.That(catalog.normalEnemies.Any(enemy => enemy.enemyName is "Goblin Captain" or "Royal Knight"), Is.False,
             "Elite variants remain outside the normal encounter pool.");

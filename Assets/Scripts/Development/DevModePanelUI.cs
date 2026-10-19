@@ -107,7 +107,7 @@ public sealed class DevModePanelUI : MonoBehaviour
     void ConfirmLose()
     {
         if (_confirmation == null || CombatManager.Instance == null || CombatManager.Instance.currentState is GameState.GameOver or GameState.GameWon) return;
-        _confirmation.Open(_coordinator, "LOSE RUN NOW?", "Immediately end this run and show the normal defeat result?", "LOSE RUN", () => CombatManager.Instance?.ForceDefeatForDevelopment());
+        _confirmation.Open(_coordinator, "LOSE RUN NOW?", "Immediately end this run and show the normal defeat result?", "LOSE RUN", () => DevModeRuntime.TryForceDefeat());
     }
 
     static GameObject MakePanel(string name, Transform parent, Vector2 size)

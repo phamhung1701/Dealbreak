@@ -42,12 +42,25 @@ public class RunEventChoice
     [Min(0)] public int requiredDiscardValue;
 }
 
+// How an event's choices resolve. Authored choices apply their RunEffects; the other flows are
+// RunManager-owned sequences with their own state. Dispatch on this, never on an event's id.
+public enum RunEventFlow
+{
+    Authored = 0,
+    BloodRitual = 1,
+    BloodRitualReplacement = 2,
+    ContractSelection = 3,
+    HammerReward = 4
+}
+
 [CreateAssetMenu(fileName = "RunEvent", menuName = "Game/Incident")]
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunEventDefinition")]
 public class RunEventDefinition : ScriptableObject
 {
     public string id;
     public MapNodeType category = MapNodeType.Event;
+    [Tooltip("Authored for ordinary Incidents. Blood Ritual marks the rare Risk with its own reward flow.")]
+    public RunEventFlow flow = RunEventFlow.Authored;
     public string title;
     [TextArea] public string description;
     public RunEventChoice[] choices;

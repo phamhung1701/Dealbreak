@@ -57,6 +57,14 @@ public static class DevModeRuntime
         PlayerPrefs.Save();
 #endif
     }
+    /// <summary>Dev "lose now": waits for attack presentation, then asks combat to resolve a defeat.</summary>
+    public static bool TryForceDefeat()
+    {
+        var presentation = AttackCardPresentationUI.Instance;
+        if (presentation != null && presentation.IsBusy) return false;
+        return CombatManager.Instance != null && CombatManager.Instance.ForceDefeatForDevelopment();
+    }
+
     public static void ResetSession()
     {
         _enabled = false;

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c17ba9ae54e9a741aba64de33a26aef, type: 3}
   m_Name: RunSaveContent
   m_EditorClassIdentifier: Dealbreak.Runtime::SaveContentCatalog
-  artifacts:
+  gearItems:
   - {fileID: 11400000, guid: 70efe9d722824464ead2685f20a9aaca, type: 2}
   - {fileID: 11400000, guid: f3fed06e48b10dc48b94d009058740ae, type: 2}
   - {fileID: 11400000, guid: 3a17f2c563b91da4683ae2fad5e4ddfd, type: 2}
@@ -120,6 +120,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5d0e590f47422604bba271e80186b540, type: 2}
   - {fileID: 11400000, guid: beac260573c7c184295aef2b157df775, type: 2}
   - {fileID: 11400000, guid: a7c2ed4b086e9984bab2e92a371a8ed6, type: 2}
+  - {fileID: 11400000, guid: 09c7c7cfadbcc144488ef4a915ad21af, type: 2}
   runContent: {fileID: 11400000, guid: f208b378a791811468b53e10fc68185c, type: 2}
   fallbackEnemies:
   - {fileID: 11400000, guid: 4cf02a4bcf7b3ac4aa246a0da053d4eb, type: 2}

@@ -24,6 +24,7 @@ public class RunResultUI : MonoBehaviour
     AttackCardPresentationUI _presentation;
     bool _pendingResult;
     bool _pendingResultVictory;
+    bool _aborted;
     ScrollRect _summaryScroll;
 
     public static bool IsShowingResult { get; private set; }
@@ -92,6 +93,11 @@ public class RunResultUI : MonoBehaviour
     void HandleEncounterResult(EncounterResult result)
     {
         if (result == EncounterResult.Defeat) ShowWhenPresentationIdle(false);
+        else if (result == EncounterResult.Aborted)
+        {
+            _aborted = true;
+            ShowWhenPresentationIdle(false);
+        }
     }
 
     void HandleHeadlinerRewardGranted(CardInstance reward)
@@ -164,8 +170,10 @@ public class RunResultUI : MonoBehaviour
 
     public void MainMenu()
     {
+        // An aborted encounter keeps the saved run so Continue resumes from the last checkpoint.
+        bool keepSavedRun = _aborted;
         HideAll();
-        RunManager.Instance?.AbandonRun();
+        if (!keepSavedRun) RunManager.Instance?.AbandonRun();
         GameFlowService.Instance?.ShowMainMenu(MainMenuDestination.Home);
     }
 
@@ -186,9 +194,10 @@ public class RunResultUI : MonoBehaviour
 
         if (resultTitleLabel)
         {
-            resultTitleLabel.text = victory ? "RUN VICTORY" : "RUN DEFEAT";
+            resultTitleLabel.text = _aborted ? "ENCOUNTER HALTED" : victory ? "RUN VICTORY" : "RUN DEFEAT";
             resultTitleLabel.color = DealbreakUIStyle.Theme
-                ? victory ? DealbreakUIStyle.Theme.ochre : DealbreakUIStyle.Theme.paper
+                ? _aborted || victory ? DealbreakUIStyle.Theme.ochre : DealbreakUIStyle.Theme.paper
+                : _aborted ? new Color(0.95f, 0.73f, 0.37f, 1f)
                 : victory ? new Color(0.46f, 0.88f, 0.63f, 1f) : new Color(1f, 0.50f, 0.43f, 1f);
         }
         if (retrySameSeedButton)
@@ -203,6 +212,7 @@ public class RunResultUI : MonoBehaviour
             resultBodyLabel.alignment = TextAlignmentOptions.TopLeft;
             resultBodyLabel.overflowMode = TextOverflowModes.Overflow;
             resultBodyLabel.text =
+                (_aborted ? "A combat rule error stopped this fight. Main Menu keeps your run: Continue resumes from before the encounter.\n\n" : string.Empty) +
                 $"<size=85%><b><color=#F2B95E>SEED</color></b></size>\n{EscapeRichText(seed)}\n\n" +
                 $"<size=85%><b><color=#F2B95E>PROGRESS</color></b></size>\nDistrict {mapReached}/{totalHeadliners}  ·  Headliners defeated {headlinersDefeated}/{totalHeadliners}\n\n" +
                 $"<size=85%><b><color=#F2B95E>RUN TOTALS</color></b></size>\nCredits  {creditsDisplay}\nGear  {EscapeRichText(gearItems)}\nMods applied  {enhanced}" +
@@ -265,6 +275,7 @@ public class RunResultUI : MonoBehaviour
 
     void HideAll()
     {
+        _aborted = false;
         _pendingResult = false;
         _pendingResultVictory = false;
         _lastHeadlinerRewardName = null;

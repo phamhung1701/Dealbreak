@@ -60,7 +60,7 @@ public sealed class Phase2EliteCombatTests
         var allyStats = EnemyMapScaling.Scale(3, 2, mapNumber - 1);
         foreach (var goblin in _combat.Enemies.Skip(1))
         {
-            Assert.That(goblin.type, Is.SameAs(LoadEnemy("Goblin")));
+            Assert.That(goblin.type, Is.SameAs(LoadEnemy("Goblin")), "Allies are the authored Scrapper asset.");
             Assert.That((goblin.maxHp, goblin.currentAttack, goblin.EffectiveAttack),
                 Is.EqualTo((allyStats.hp, allyStats.attack, allyStats.attack + 1)));
         }
@@ -73,6 +73,7 @@ public sealed class Phase2EliteCombatTests
     {
         var captain = CreateEnemy("Captain", 16, 3, EnemyAbilityEffect.Captaincy);
         var goblinType = CreateEnemyType("Goblin", 3, 2);
+        captain.allies = new[] { new EncounterAllySpec { type = goblinType, count = 2 } };
         var captainRuntime = new EnemyRuntime(captain);
         var goblin = new EnemyRuntime(goblinType);
         _combat.StartEncounter(new[] { captainRuntime, goblin });
@@ -86,7 +87,7 @@ public sealed class Phase2EliteCombatTests
         Assert.That((goblin.currentAttack, goblin.EffectiveAttack), Is.EqualTo((1, 2)),
             "The captain aura remains a fixed +1 after base attack changes.");
 
-        captainRuntime.TakeDamage(16);
+        captainRuntime.ApplyResolvedCombatDamage(16);
         Assert.That(captainRuntime.IsDefeated, Is.True);
         Assert.That(goblin.CaptainAttackBonus, Is.Zero);
         Assert.That(goblin.EffectiveAttack, Is.EqualTo(1));
@@ -133,7 +134,7 @@ public sealed class Phase2EliteCombatTests
 
         var first = new EnemyRuntime(captain);
         var second = new EnemyRuntime(captain);
-        first.TakeDamage(4);
+        first.ApplyResolvedCombatDamage(4);
         first.IncreaseAttack(2);
         Assert.That((first.currentHp, first.currentAttack), Is.EqualTo((12, 5)));
         Assert.That((second.currentHp, second.currentAttack), Is.EqualTo((16, 3)));
@@ -146,6 +147,7 @@ public sealed class Phase2EliteCombatTests
     {
         var captainType = CreateEnemy("Captain", 100, 3, EnemyAbilityEffect.Captaincy);
         var goblinType = CreateEnemyType("Goblin", 100, 2);
+        captainType.allies = new[] { new EncounterAllySpec { type = goblinType, count = 2 } };
         var captain = new EnemyRuntime(captainType);
         var goblins = new[] { new EnemyRuntime(goblinType), new EnemyRuntime(goblinType) };
         var retaliation = UnityEditor.AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/RetaliationEmblem.asset");

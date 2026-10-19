@@ -72,11 +72,15 @@ public sealed class Phase7DMapVisibilityTests
                 ui.SetNode(new PathNode { kind = MapNodeType.Elite, revealed = true }, run);
                 Assert.That(label.text, Is.EqualTo("ENFORCER"));
                 ui.SetNode(new PathNode { kind = MapNodeType.Shop, revealed = true }, run);
-                Assert.That(label.text, Is.EqualTo("BLACK\nMARKET"));
+                Assert.That(label.text, Is.EqualTo("BLACK
+MARKET"));
                 ui.SetNode(new PathNode { kind = MapNodeType.Event, revealed = true }, run);
                 Assert.That(label.text, Is.EqualTo("INCIDENT"));
-                ui.SetNode(new PathNode { kind = MapNodeType.Risk, revealed = true }, run);
+                ui.SetNode(new PathNode { kind = MapNodeType.Risk, revealed = true, accessible = true }, run);
                 Assert.That(label.text, Is.EqualTo("?"));
+                // A Risk revealed ahead of travel has been scouted: it names what it is.
+                ui.SetNode(new PathNode { kind = MapNodeType.Risk, revealed = true, hidden = true, accessible = true }, run);
+                Assert.That(label.text, Is.EqualTo("RISK"));
                 ui.SetNode(new PathNode { kind = MapNodeType.Combat, revealed = false }, run);
                 Assert.That(label.text, Is.EqualTo("?"));
             }

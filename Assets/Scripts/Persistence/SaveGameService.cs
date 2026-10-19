@@ -66,28 +66,76 @@ public static class SaveGameService
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunSaveAutosave")]
 public sealed class RunSaveAutosave : MonoBehaviour
 {
+    // A snapshot is captured only after gameplay reports a change, plus a slow fallback poll,
+    // instead of serializing the whole run four times per second.
+    const float PollInterval = 0.25f;
+    const float FallbackInterval = 5f;
     RunManager _run;
     CombatManager _combat;
+    CardManager _cards;
     string _lastContent;
     float _nextPoll;
+    float _nextFallbackPoll;
+    bool _dirty = true;
     bool _terminal;
     void OnEnable()
     {
-        _run = GetComponent<RunManager>(); _combat = CombatManager.Instance;
+        _run = GetComponent<RunManager>(); _combat = CombatManager.Instance; _cards = CardManager.Instance;
         _run.OnRunCompleted += Terminal;
         _run.OnRunStarted += Started;
-        if (_combat != null) _combat.OnEncounterResult += EncounterEnded;
+        _run.OnShowPathScreen += MarkDirty; _run.OnShowShop += MarkDirty; _run.OnHideShop += MarkDirty;
+        _run.OnShowEvent += MarkDirty; _run.OnHideEvent += MarkDirty; _run.OnShowUpgrade += MarkDirty;
+        _run.OnShopOffersChanged += MarkDirty; _run.OnMapRevealChanged += MarkDirty;
+        _run.OnConsumableRewardChanged += MarkDirty; _run.OnCycleStarted += MarkDirty;
+        if (_combat != null)
+        {
+            _combat.OnEncounterResult += EncounterEnded;
+            _combat.OnStateChanged += MarkDirty; _combat.OnPlayerHealthChanged += MarkDirty;
+        }
+        if (_cards != null)
+        {
+            _cards.OnCreditsChanged += MarkDirty; _cards.OnDeckChanged += MarkDirty;
+            _cards.OnBuildChanged += MarkDirty; _cards.OnConsumablesChanged += MarkDirty;
+        }
     }
     void OnDisable()
     {
-        if (_run != null) { _run.OnRunCompleted -= Terminal; _run.OnRunStarted -= Started; }
-        if (_combat != null) _combat.OnEncounterResult -= EncounterEnded;
+        if (_run != null)
+        {
+            _run.OnRunCompleted -= Terminal; _run.OnRunStarted -= Started;
+            _run.OnShowPathScreen -= MarkDirty; _run.OnShowShop -= MarkDirty; _run.OnHideShop -= MarkDirty;
+            _run.OnShowEvent -= MarkDirty; _run.OnHideEvent -= MarkDirty; _run.OnShowUpgrade -= MarkDirty;
+            _run.OnShopOffersChanged -= MarkDirty; _run.OnMapRevealChanged -= MarkDirty;
+            _run.OnConsumableRewardChanged -= MarkDirty; _run.OnCycleStarted -= MarkDirty;
+        }
+        if (_combat != null)
+        {
+            _combat.OnEncounterResult -= EncounterEnded;
+            _combat.OnStateChanged -= MarkDirty; _combat.OnPlayerHealthChanged -= MarkDirty;
+        }
+        if (_cards != null)
+        {
+            _cards.OnCreditsChanged -= MarkDirty; _cards.OnDeckChanged -= MarkDirty;
+            _cards.OnBuildChanged -= MarkDirty; _cards.OnConsumablesChanged -= MarkDirty;
+        }
     }
+    internal bool IsDirty { get => _dirty; set => _dirty = value; }
+    void MarkDirty() => _dirty = true;
+    void MarkDirty(int _) => _dirty = true;
+    void MarkDirty(int _, int __) => _dirty = true;
+    void MarkDirty(string _) => _dirty = true;
+    void MarkDirty(GameState _) => _dirty = true;
+    void MarkDirty(RunEventDefinition _) => _dirty = true;
     void Started(string _) => StartSession();
-    public void StartSession() { _terminal = false; _lastContent = null; }
+    public void StartSession() { _terminal = false; _lastContent = null; _dirty = true; }
     public void Suspend() => _terminal = true;
     public void EndRun() => Terminal();
-    void EncounterEnded(EncounterResult result) { if (result == EncounterResult.Defeat) Terminal(); }
+    // Defeat ends the run; an aborted encounter keeps the last checkpoint and stops writing.
+    void EncounterEnded(EncounterResult result)
+    {
+        if (result == EncounterResult.Defeat) Terminal();
+        else if (result == EncounterResult.Aborted) Suspend();
+    }
     void Terminal()
     {
         _terminal = true;
@@ -95,9 +143,14 @@ public sealed class RunSaveAutosave : MonoBehaviour
     }
     void LateUpdate()
     {
-        if (Time.unscaledTime < _nextPoll) return;
-        _nextPoll = Time.unscaledTime + 0.25f;
-        Checkpoint(false);
+        float now = Time.unscaledTime;
+        if (now < _nextPoll) return;
+        bool fallbackDue = now >= _nextFallbackPoll;
+        if (!_dirty && !fallbackDue) return;
+        _nextPoll = now + PollInterval;
+        if (fallbackDue) _nextFallbackPoll = now + FallbackInterval;
+        // Stay dirty while the run is not at a safe checkpoint (for example mid-combat), and retry.
+        if (Checkpoint(false)) _dirty = false;
     }
     void OnApplicationPause(bool paused) { if (paused) Checkpoint(true); }
     void OnApplicationQuit() => Checkpoint(true);

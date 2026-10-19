@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -62,7 +63,7 @@ public sealed class TavernEventTests
     }
 
     [Test]
-    public void Guidance_RevealsExactlyOneNearestReachableHiddenEventOrRisk_AndNotifiesMap()
+    public void Guidance_RevealsExactlyOneReachableUnknownNode_AndNotifiesMap()
     {
         var entry = new PathNode
         {
@@ -88,8 +89,8 @@ public sealed class TavernEventTests
         Assert.That(_run.GetEventOptionUnavailableReason(0), Is.Empty);
         Assert.That(_run.ChooseEventOption(0), Is.True);
 
-        Assert.That(nearer.revealed, Is.True);
-        Assert.That(farther.revealed, Is.False);
+        Assert.That(new[] { nearer, farther }.Count(node => node.revealed), Is.EqualTo(1));
+        Assert.That(_run.LastScoutedNode, Is.SameAs(nearer.revealed ? nearer : farther));
         Assert.That(mapNotifications, Is.EqualTo(1));
         Assert.That(string.Join(",", entry.next), Is.EqualTo(originalConnections));
         Assert.That(_run.currentPath, Has.Count.EqualTo(3));

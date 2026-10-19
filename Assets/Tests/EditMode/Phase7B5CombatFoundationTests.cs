@@ -114,7 +114,7 @@ public sealed class Phase7B5CombatFoundationTests
     public void DamageResult_AlreadyDefeatedTargetIsNotReportedAsModifierPrevention()
     {
         var enemy = new EnemyRuntime(CreateEnemyType("Already Defeated", 5, 0, 0));
-        enemy.TakeDamage(5);
+        enemy.ApplyResolvedCombatDamage(5);
         var action = new CombatActionContext(6, CombatActionOrigin.PlayerCard, _combat.player, targetEnemy: enemy);
         var request = new DamageRequest(action, 0, CombatDamageOrigin.Card, _combat.player, enemy, 9);
 
@@ -686,7 +686,8 @@ public sealed class Phase7B5CombatFoundationTests
         var enemy = new EnemyRuntime(CreateEnemyType("Runaway Player Action", 1000, 0, 75, runaway));
         _combat.StartEnemy(enemy);
         int results = 0;
-        _combat.OnEncounterResult += _ => results++;
+        EncounterResult? lastResult = null;
+        _combat.OnEncounterResult += value => { results++; lastResult = value; };
 
         LogAssert.Expect(LogType.Error,
             $"Combat reaction limit ({CombatReactionQueue.DefaultOperationLimit}) exceeded. Remaining reactions were discarded.");
@@ -695,6 +696,7 @@ public sealed class Phase7B5CombatFoundationTests
         Assert.That(enemy.IsDefeated, Is.True);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.GameOver));
         Assert.That(results, Is.EqualTo(1));
+        Assert.That(lastResult, Is.EqualTo(EncounterResult.Aborted), "A rule fault aborts; it is not a player defeat.");
         Assert.That(_cards.credits, Is.Zero);
         Assert.That(_combat.TryPlayCards(new[] { LowestAttackView() }, enemy), Is.False);
         Assert.That(results, Is.EqualTo(1), "A terminal reaction fault must not publish a second result.");
@@ -728,7 +730,8 @@ public sealed class Phase7B5CombatFoundationTests
         _created.Add(runaway);
         enemy.type.abilities = new[] { runaway };
         int results = 0;
-        _combat.OnEncounterResult += _ => results++;
+        EncounterResult? lastResult = null;
+        _combat.OnEncounterResult += value => { results++; lastResult = value; };
 
         LogAssert.Expect(LogType.Error,
             $"Combat reaction limit ({CombatReactionQueue.DefaultOperationLimit}) exceeded. Remaining reactions were discarded.");
@@ -737,6 +740,7 @@ public sealed class Phase7B5CombatFoundationTests
         Assert.That(enemy.IsDefeated, Is.True);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.GameOver));
         Assert.That(results, Is.EqualTo(1));
+        Assert.That(lastResult, Is.EqualTo(EncounterResult.Aborted), "A rule fault aborts; it is not a player defeat.");
         Assert.That(_cards.credits, Is.Zero);
         Assert.That(_combat.TryDefendWithCards(new[] { LowestAttackView() }, enemy), Is.False);
         Assert.That(results, Is.EqualTo(1), "A terminal reaction fault must not publish a second result.");
@@ -752,7 +756,8 @@ public sealed class Phase7B5CombatFoundationTests
         var enemy = new EnemyRuntime(type);
         int handBefore = _cards.HandCount;
         int results = 0;
-        _combat.OnEncounterResult += _ => results++;
+        EncounterResult? lastResult = null;
+        _combat.OnEncounterResult += value => { results++; lastResult = value; };
 
         LogAssert.Expect(LogType.Error,
             $"Combat reaction limit ({CombatReactionQueue.DefaultOperationLimit}) exceeded. Remaining reactions were discarded.");
@@ -761,6 +766,7 @@ public sealed class Phase7B5CombatFoundationTests
         Assert.That(_combat.currentState, Is.EqualTo(GameState.GameOver));
         Assert.That(_cards.HandCount, Is.EqualTo(handBefore));
         Assert.That(results, Is.EqualTo(1));
+        Assert.That(lastResult, Is.EqualTo(EncounterResult.Aborted), "A rule fault aborts; it is not a player defeat.");
         Assert.That(_combat.TryPlayCards(new[] { LowestAttackView() }, enemy), Is.False);
         Assert.That(results, Is.EqualTo(1), "A startup reaction fault must publish exactly one result.");
     }

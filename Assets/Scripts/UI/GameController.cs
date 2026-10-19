@@ -9,16 +9,13 @@ public class GameController : MonoBehaviour
     public Field handField;
     public Canvas dragCanvas;
     public CardView cardPrefab;
-    [UnityEngine.Serialization.FormerlySerializedAs("relicCatalog")]
-    public GearData[] gearCatalog;
-    public CardEnhancementData[] enhancementCatalog;
-    public ConsumableData[] consumableCatalog;
+
+    [Header("Content")]
+    [Tooltip("The single content registry for play and saves. Defaults to Resources/RunSaveContent.")]
+    public SaveContentCatalog contentRegistry;
 
     [Header("Player Prototype Balance")]
     [Min(1)] public int playerMaxHealth = 30;
-
-    [Header("Run Content")]
-    public RunContentCatalog runContentCatalog;
 
     [Header("Enemy Definitions")]
     public EnemyTypeData thiefType;
@@ -37,15 +34,23 @@ public class GameController : MonoBehaviour
             return;
         }
 
+        // Play and saves read one registry, so content cannot be playable but unloadable.
+        var registry = contentRegistry != null ? contentRegistry : SaveContentCatalog.Load();
+        if (registry == null)
+        {
+            Debug.LogError("GameController: the Resources/RunSaveContent content registry is missing.", this);
+            return;
+        }
+
         var cards = GetOrCreate<CardManager>();
         var combat = GetOrCreate<CombatManager>();
         var run = GetOrCreate<RunManager>();
-        cards.Configure(handField, dragCanvas, cardPrefab, gearCatalog, enhancementCatalog, consumableCatalog);
+        cards.Configure(handField, dragCanvas, cardPrefab, registry.gearItems, registry.enhancements, registry.consumables);
         combat.ConfigurePlayer(playerMaxHealth);
         run.thiefType = thiefType;
         run.goblinType = goblinType;
         run.knightType = knightType;
-        run.contentCatalog = runContentCatalog;
+        run.contentCatalog = registry.runContent;
         SaveGameService.Attach(run);
         _configured = true;
     }

@@ -29,6 +29,9 @@ public class ActionButtonsUI : MonoBehaviour
     public TMP_Text combatLogLabel;
 
     TMP_Text _primaryActionLabel;
+    readonly DisplayedNumber _shownHealth = new();
+    Color _healthLabelColor;
+    bool _healthLabelColorCaptured;
     UnityAction[] _backpackSlotListeners;
     ConsumableSlotDragUI[] _backpackSlotDragInputs;
     EnhancementTargetUI _enhancementTargetUI;
@@ -144,6 +147,7 @@ public class ActionButtonsUI : MonoBehaviour
             RefreshEnemyTargetPresentation();
         }
         RefreshBoardGuidance();
+        if (_shownHealth.Tick(Time.unscaledDeltaTime)) RefreshPlayerHealthLabel(CombatManager.Instance);
     }
 
     void LateUpdate()
@@ -245,6 +249,25 @@ public class ActionButtonsUI : MonoBehaviour
         RefreshAll();
     }
 
+    // HP changes count over a few frames with a loss/gain tint in play mode; the value itself is
+    // always read from the player.
+    void RefreshPlayerHealthLabel(CombatManager combat)
+    {
+        if (!playerHealthLabel || combat == null) return;
+        if (!_healthLabelColorCaptured)
+        {
+            _healthLabelColor = playerHealthLabel.color;
+            _healthLabelColorCaptured = true;
+        }
+        _shownHealth.SetTarget(combat.player.currentHealth, Application.isPlaying && isActiveAndEnabled);
+        string block = combat.player.EncounterBlock > 0 ? $"  •  BLOCK {combat.player.EncounterBlock}" : string.Empty;
+        string shield = combat.player.ShieldCharges > 0 ? $"  •  SHIELD {combat.player.ShieldCharges}" : string.Empty;
+        playerHealthLabel.text = combat.HasInfiniteHealthForDev
+            ? $"HP  ∞{block}{shield}"
+            : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}{block}{shield}";
+        playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
+    }
+
     void RefreshAll()
     {
         var combat = CombatManager.Instance;
@@ -300,14 +323,7 @@ public class ActionButtonsUI : MonoBehaviour
 
         RefreshBackpackSlots(cards, combat);
 
-        if (playerHealthLabel)
-        {
-            string block = combat.player.EncounterBlock > 0 ? $"  •  BLOCK {combat.player.EncounterBlock}" : string.Empty;
-            string shield = combat.player.ShieldCharges > 0 ? $"  •  SHIELD {combat.player.ShieldCharges}" : string.Empty;
-            playerHealthLabel.text = combat.HasInfiniteHealthForDev
-                ? $"HP  ∞{block}{shield}"
-                : $"HP  {combat.player.currentHealth}/{combat.player.maxHealth}{block}{shield}";
-        }
+        RefreshPlayerHealthLabel(combat);
 
         if (turnStateLabel)
         {
@@ -345,11 +361,11 @@ public class ActionButtonsUI : MonoBehaviour
                 GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilyPartialSelection(cards.SelectedCards, cards) =>
                     $"Royal Family selection ({selectedCount}/5)  •  exact 10/J/Q/K/A, one effective suit; target will be instantly defeated when complete",
                 GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) =>
-                    $"Ace pair: {cards.SelectedCards[0].data.DisplayName} + {cards.SelectedCards[1].data.DisplayName}  •  Drag to an enemy to attack",
+                    $"Ace pair: {cards.SelectedCards[0].data.DisplayName} + {cards.SelectedCards[1].data.DisplayName}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
                 GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) =>
-                    $"Same-rank set ({selectedCount} cards): {cards.SelectedCards[0].data.Rank}  •  Drag to an enemy to attack",
+                    $"Same-rank set ({selectedCount} cards): {cards.SelectedCards[0].data.Rank}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
                 GameState.PlayerTurn when hasSelected =>
-                    $"Selected: {cards.selectedCard.data.DisplayName}  •  Drag to an enemy to attack",
+                    $"Selected: {cards.selectedCard.data.DisplayName}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
                 GameState.PlayerTurn => "Select a card to attack, or drag it to an enemy",
                 GameState.EnemyAttacking when hasSelected && combat.TryPreviewDefense(cards.SelectedCards, out int blocked, out int remaining) =>
                     $"{selectedCount} selected  •  Blocks {blocked} of {combat.PendingAttackCount} pending attacks  •  Remaining damage {remaining}",
@@ -363,6 +379,15 @@ public class ActionButtonsUI : MonoBehaviour
         }
     }
 
+    // Shares the execution calculation; the critical roll and enemy defenses are not included.
+    static string DamagePreview(CardManager cards, CombatManager combat)
+    {
+        var selected = cards.SelectedCards.Select(view => view.data).ToArray();
+        int damage = combat.PreviewActionDamage(selected, combat.currentEnemy);
+        return GameplayEffectResolver.HasDoubleStrikeEffect(selected)
+            ? $"{damage} damage ×2 hits" : $"{damage} damage";
+    }
+
     void OnPrimaryActionClicked()
     {
         var cards = CardManager.Instance;
@@ -373,13 +398,7 @@ public class ActionButtonsUI : MonoBehaviour
         if (combat.currentState == GameState.PlayerTurn)
             StartSelectedAttack(cards, combat);
         else if (combat.currentState == GameState.EnemyAttacking)
-        {
-            var presentation = AttackCardPresentationUI.Instance;
-            if (presentation != null)
-                presentation.TryDefendCards(selection, combat.currentEnemy);
-            else
-                combat.TryDefendWithCards(selection);
-        }
+            CombatCommands.Block(selection, combat.currentEnemy);
     }
 
     void OnPlayClicked()
@@ -471,13 +490,8 @@ public class ActionButtonsUI : MonoBehaviour
         if (!resolved) RefreshAll();
     }
 
-    bool ExecuteAttack(IReadOnlyList<CardView> selection, EnemyRuntime target, CombatManager combat)
-    {
-        var presentation = AttackCardPresentationUI.Instance;
-        return presentation != null
-            ? presentation.TryPlayCards(selection, target)
-            : combat.TryPlayCards(selection, target);
-    }
+    bool ExecuteAttack(IReadOnlyList<CardView> selection, EnemyRuntime target, CombatManager combat) =>
+        CombatCommands.Attack(selection, target);
 
     void CancelEnemyTargeting()
     {
@@ -512,12 +526,7 @@ public class ActionButtonsUI : MonoBehaviour
         var combat = CombatManager.Instance;
         if (cards != null && combat != null && combat.currentState == GameState.EnemyAttacking)
         {
-            var selected = cards.GetSelectedCardsSnapshot();
-            var presentation = AttackCardPresentationUI.Instance;
-            if (presentation != null)
-                presentation.TryDefendCards(selected, combat.currentEnemy);
-            else
-                combat.TryDefendWithCards(selected);
+            CombatCommands.Block(cards.GetSelectedCardsSnapshot(), combat.currentEnemy);
         }
     }
 

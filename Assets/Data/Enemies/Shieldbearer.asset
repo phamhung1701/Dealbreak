@@ -15,9 +15,18 @@ MonoBehaviour:
   enemyName: Shieldbearer
   maxHp: 10
   baseAttack: 3
-  goldReward: 0
+  creditsReward: 0
   encounterCount: 1
   fleeAfterPlayerTurns: 0
   sourceCard: {fileID: 0}
+  portraitSprite: {fileID: 0}
   abilities:
   - {fileID: 11400000, guid: 3ee25dd5f8a9aab4ea8529f33be13305, type: 2}
+  minMapIndex: 0
+  eligibleAsEliteBase: 0
+  allies:
+  - type: {fileID: 11400000, guid: d1bd1b5f338bb314187873c9dc5563c8, type: 2}
+    count: 1
+    minMapIndex: 0
+    oneInChance: 0
+    chanceStream: 

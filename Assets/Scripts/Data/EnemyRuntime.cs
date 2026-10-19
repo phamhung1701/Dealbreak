@@ -77,6 +77,27 @@ public class EnemyRuntime : ICombatDamageTarget
         _duelistCallConsumed = false;
     }
 
+    /// <summary>Suit Call: each player turn announces a seeded suit whose next hit is halved.</summary>
+    public CardData.Suit AnnounceSuit(IRandomSource random)
+    {
+        var suit = (CardData.Suit)random.NextInt(0, Enum.GetValues(typeof(CardData.Suit)).Length);
+        SetAnnouncedSuit(suit);
+        return suit;
+    }
+
+    /// <summary>Master Thief: the most Credits one steal takes, from the ability's authored amount.</summary>
+    public int MasterThiefStealLimit
+    {
+        get
+        {
+            if (type.abilities != null)
+                foreach (var ability in type.abilities)
+                    if (ability != null && ability.effect == EnemyAbilityEffect.MasterThief)
+                        return Mathf.Max(0, ability.amount);
+            return 0;
+        }
+    }
+
     public bool IsSupportedBy(EnemyRuntime captain) => ReferenceEquals(_captain, captain);
 
     public void AssignCaptain(EnemyRuntime captain)
@@ -196,23 +217,6 @@ public class EnemyRuntime : ICombatDamageTarget
         ? string.Empty
         : string.Join("  •  ", type.abilities.Where(ability => ability != null).Select(ability => ability.displayName));
 
-    public int TakeCardDamage(int amount, CombatManager context)
-    {
-        var action = new CombatActionContext(
-            0,
-            CombatActionOrigin.Legacy,
-            sourcePlayer: context?.player,
-            targetEnemy: this);
-        var request = new DamageRequest(
-            action,
-            0,
-            CombatDamageOrigin.Card,
-            context?.player,
-            this,
-            amount);
-        return new CombatResolver().Resolve(request, context).ActualHpLost;
-    }
-
     public int ModifyIncomingCombatDamage(DamageRequest request, CombatManager context, int damage)
     {
         int resolvedDamage = Mathf.Max(0, damage);
@@ -287,13 +291,6 @@ public class EnemyRuntime : ICombatDamageTarget
         ShieldCharges = 0;
     }
 
-    public void TakeDamage(int amount)
-    {
-        var action = new CombatActionContext(0, CombatActionOrigin.Legacy, targetEnemy: this);
-        var request = new DamageRequest(action, 0, CombatDamageOrigin.Legacy, null, this, amount);
-        new CombatResolver().Resolve(request, null);
-    }
-
     public void Heal(int amount)
     {
         if (amount <= 0 || IsDefeated) return;
@@ -314,23 +311,10 @@ public class EnemyRuntime : ICombatDamageTarget
         OnAttackChanged?.Invoke();
     }
 
-    public void NotifyEncounterStarted(CombatManager context)
-    {
-        if (type.abilities == null) return;
-        foreach (var ability in type.abilities)
-            ability?.OnEncounterStarted(this, context);
-    }
-
     public void NotifyPlayerTurnCompleted()
     {
         if (!IsDefeated && PlayerTurnsCompleted < int.MaxValue)
             PlayerTurnsCompleted++;
     }
 
-    public void NotifyPlayerCardResolved(CombatManager context)
-    {
-        if (type.abilities == null) return;
-        foreach (var ability in type.abilities)
-            ability?.OnPlayerCardResolved(this, context);
-    }
 }
