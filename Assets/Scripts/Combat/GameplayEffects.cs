@@ -1133,11 +1133,23 @@ public static class GameplayEffectResolver
         return false;
     }
 
-    public static bool IsSameRankMultiCardAction(IReadOnlyList<CardView> cards, CardManager manager)
+    // Selection rules operate on committed card data; CardView overloads only adapt UI selections.
+    static CardInstance[] Instances(IReadOnlyList<CardView> views)
     {
-        if (cards == null || cards.Count < 2 || manager == null || cards[0]?.data == null) return false;
+        if (views == null) return null;
+        var instances = new CardInstance[views.Count];
+        for (int i = 0; i < views.Count; i++) instances[i] = views[i]?.data;
+        return instances;
+    }
+
+    public static bool IsSameRankMultiCardAction(IReadOnlyList<CardView> cards, CardManager manager) =>
+        IsSameRankMultiCardAction(Instances(cards), manager);
+
+    public static bool IsSameRankMultiCardAction(IReadOnlyList<CardInstance> cards, CardManager manager)
+    {
+        if (cards == null || cards.Count < 2 || manager == null || cards[0] == null) return false;
         for (int i = 1; i < cards.Count; i++)
-            if (cards[i]?.data == null || cards[i].data.Rank != cards[0].data.Rank) return false;
+            if (cards[i] == null || cards[i].Rank != cards[0].Rank) return false;
         for (int i = 0; i < manager.ownedGear.Count; i++)
         {
             var rules = manager.ownedGear[i]?.ruleModifiers;
@@ -1150,7 +1162,7 @@ public static class GameplayEffectResolver
                 if (!rule.sameRankMultiCard.requireMatchingRank) return true;
                 bool allMatch = true;
                 for (int cardIndex = 1; cardIndex < cards.Count; cardIndex++)
-                    if (cards[cardIndex]?.data == null || cards[cardIndex].data.Rank != cards[0].data.Rank)
+                    if (cards[cardIndex] == null || cards[cardIndex].Rank != cards[0].Rank)
                     { allMatch = false; break; }
                 if (allMatch) return true;
             }
@@ -1211,20 +1223,25 @@ public static class GameplayEffectResolver
         }
     }
 
-    public static bool CanPlayAsAcePair(IReadOnlyList<CardView> cards)
+    public static bool CanPlayAsAcePair(IReadOnlyList<CardView> cards) => CanPlayAsAcePair(Instances(cards));
+
+    public static bool CanPlayAsAcePair(IReadOnlyList<CardInstance> cards)
     {
-        return cards != null && cards.Count == 2 && cards[0]?.data != null && cards[1]?.data != null &&
-            (cards[0].data.Rank == CardData.Rank.Ace || cards[1].data.Rank == CardData.Rank.Ace);
+        return cards != null && cards.Count == 2 && cards[0] != null && cards[1] != null &&
+            (cards[0].Rank == CardData.Rank.Ace || cards[1].Rank == CardData.Rank.Ace);
     }
 
     public static bool CanPlaySelection(IReadOnlyList<CardView> cards, EnemyRuntime target,
+        CardManager manager) => CanPlaySelection(Instances(cards), target, manager);
+
+    public static bool CanPlaySelection(IReadOnlyList<CardInstance> cards, EnemyRuntime target,
         CardManager manager)
     {
         if (target == null || target.IsDefeated || cards == null || cards.Count == 0 || cards.Count > 5) return false;
-        if (!cards.All(card => card != null && card.data != null)) return false;
+        if (!cards.All(card => card != null)) return false;
         if (cards.Count <= 4 && (cards.Count == 1 || CanPlayAsAcePair(cards) || IsSameRankMultiCardAction(cards, manager))) return true;
         if (cards.Count == 5)
-            return IsRoyalFamilySelection(cards.Select(card => card.data).ToArray(), manager);
+            return IsRoyalFamilySelection(cards, manager);
         return false;
     }
 

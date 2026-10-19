@@ -848,13 +848,13 @@ public partial class CardManager : Singleton<CardManager>
         int drawn = _cards.DrawToHand(count, drawCapacity);
         if (drawn <= 0) return 0;
 
-        if (CanCreateViews())
+        bool createViews = CanCreateViews();
+        for (int i = previousHandCount; i < _cards.HandCount; i++)
         {
-            for (int i = previousHandCount; i < _cards.HandCount; i++)
-            {
-                var view = CreateView(_cards.Hand[i]);
-                if (i >= normalCapacity && combat != null) combat.QueueOverflowAutoPlay(view);
-            }
+            var card = _cards.Hand[i];
+            if (createViews) CreateView(card);
+            // Overflow is a gameplay rule, so it must not depend on whether hand views exist.
+            if (i >= normalCapacity && combat != null) combat.QueueOverflowAutoPlay(card);
         }
 
         OnDeckChanged?.Invoke();
@@ -915,46 +915,60 @@ public partial class CardManager : Singleton<CardManager>
     public bool TryDiscardCardsByIds(IReadOnlyList<int> cardIds)
     {
         if (cardIds == null || cardIds.Count == 0) return false;
-        var views = new List<CardView>(cardIds.Count);
+        var cards = new List<CardInstance>(cardIds.Count);
         var uniqueIds = new HashSet<int>();
         for (int i = 0; i < cardIds.Count; i++)
         {
             int id = cardIds[i];
-            if (id <= 0 || !uniqueIds.Add(id)) return false;
-            CardView found = null;
-            foreach (var view in _trackedViews)
-                if (view != null && view.data != null && view.data.Id == id && _cards.ContainsInHand(view.data))
-                { found = view; break; }
-            if (found == null) return false;
-            views.Add(found);
+            var card = FindOwnedCard(id);
+            if (id <= 0 || !uniqueIds.Add(id) || card == null || !_cards.ContainsInHand(card)) return false;
+            cards.Add(card);
         }
-        return TryDiscardCards(views);
+        return TryDiscardCards(cards);
     }
 
-    public bool TryDiscardCards(IReadOnlyList<CardView> cards) => TryCommitHandCards(cards, false);
+    public bool TryDiscardCards(IReadOnlyList<CardView> cards) => TryCommitHandViews(cards, false);
 
-    public bool TryRecycleDefenseCards(IReadOnlyList<CardView> cards) => TryCommitHandCards(cards, true);
+    public bool TryRecycleDefenseCards(IReadOnlyList<CardView> cards) => TryCommitHandViews(cards, true);
 
-    bool TryCommitHandCards(IReadOnlyList<CardView> cards, bool recycleToDeck)
+    public bool TryDiscardCards(IReadOnlyList<CardInstance> cards) => TryCommitHandCards(cards, false);
+
+    public bool TryRecycleDefenseCards(IReadOnlyList<CardInstance> cards) => TryCommitHandCards(cards, true);
+
+    // A UI selection must be tracked views of hand cards; the commit itself works on card data.
+    bool TryCommitHandViews(IReadOnlyList<CardView> cards, bool recycleToDeck)
     {
         if (cards == null || cards.Count == 0) return false;
-
-        var committedViews = new List<CardView>(cards.Count);
         var uniqueViews = new HashSet<CardView>();
         var instances = new List<CardInstance>(cards.Count);
         for (int i = 0; i < cards.Count; i++)
         {
             var view = cards[i];
-            if (view == null || view.data == null || !_trackedViews.Contains(view) ||
-                !uniqueViews.Add(view) || !_cards.ContainsInHand(view.data))
+            if (view == null || view.data == null || !_trackedViews.Contains(view) || !uniqueViews.Add(view))
                 return false;
             instances.Add(view.data);
-            committedViews.Add(view);
+        }
+        return TryCommitHandCards(instances, recycleToDeck);
+    }
+
+    bool TryCommitHandCards(IReadOnlyList<CardInstance> cards, bool recycleToDeck)
+    {
+        if (cards == null || cards.Count == 0) return false;
+        var instances = new List<CardInstance>(cards.Count);
+        var unique = new HashSet<CardInstance>();
+        for (int i = 0; i < cards.Count; i++)
+        {
+            var card = cards[i];
+            if (card == null || !unique.Add(card) || !_cards.ContainsInHand(card)) return false;
+            instances.Add(card);
         }
 
         if (!(recycleToDeck ? _cards.TryRecycleHandToDeck(instances) : _cards.TryDiscard(instances))) return false;
 
-        // Selection may be the input list; removing selected views must not shorten our iteration.
+        // Collect first: the selection may be the caller's input list.
+        var committedViews = new List<CardView>();
+        foreach (var view in _trackedViews)
+            if (view != null && view.data != null && unique.Contains(view.data)) committedViews.Add(view);
         for (int i = 0; i < committedViews.Count; i++)
         {
             var view = committedViews[i];

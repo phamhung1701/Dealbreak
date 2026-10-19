@@ -28,7 +28,7 @@ public partial class CombatManager : Singleton<CombatManager>
     bool _parryResolved;
     bool _parryDamageLeaked;
     readonly HashSet<int> _parryDrawCandidates = new();
-    readonly Queue<CardView> _overflowAutoPlays = new();
+    readonly Queue<CardInstance> _overflowAutoPlays = new();
     int _overflowBudgetRemaining;
     long _overflowRootActionId;
     bool _overflowRootActive;
@@ -282,7 +282,7 @@ public partial class CombatManager : Singleton<CombatManager>
     public int OverflowDrawAllowance => _overflowRootActive && currentState == GameState.PlayerTurn
         ? _overflowBudgetRemaining : 0;
 
-    public void QueueOverflowAutoPlay(CardView card)
+    public void QueueOverflowAutoPlay(CardInstance card)
     {
         if (card == null || !_overflowRootActive || _overflowBudgetRemaining <= 0 ||
             currentState != GameState.PlayerTurn || _encounterResolved) return;
@@ -349,7 +349,7 @@ public partial class CombatManager : Singleton<CombatManager>
     public bool CanAddCardToSelection(IReadOnlyList<CardView> selectedCards, CardView candidate)
     {
         if (GameplayInputGate.IsBlocked || candidate?.data == null ||
-            !AreValidHandViews(new[] { candidate }))
+            !AreValidHandCards(new[] { candidate.data }))
             return false;
 
         return currentState switch
@@ -384,22 +384,13 @@ public partial class CombatManager : Singleton<CombatManager>
             (selectedCards[0].data.Rank == CardData.Rank.Ace || candidate.data.Rank == CardData.Rank.Ace);
     }
 
-    public int CalculateSelectedDefense(IReadOnlyList<CardView> cards)
-    {
-        if (cards == null) return 0;
-        int total = 0;
-        for (int i = 0; i < cards.Count; i++)
-            if (cards[i]?.data != null)
-                total += CalculateCardDefense(cards[i].data);
-        return total;
-    }
-
     public bool TryPreviewDefense(IReadOnlyList<CardView> cards, out int blockedCount, out int remainingDamage)
     {
         blockedCount = 0;
         remainingDamage = pendingDamage;
-        if (cards == null || cards.Count == 0 || !AreValidHandViews(cards)) return false;
-        var matched = MatchDefenseAssignments(cards);
+        var instances = Instances(cards);
+        if (instances == null || instances.Length == 0 || !AreValidHandCards(instances)) return false;
+        var matched = MatchDefenseAssignments(instances);
         if (matched == null) return false;
         var reductions = new int[_pendingAttacks.Count];
         for (int i = 0; i < matched.Count; i++)
@@ -415,28 +406,28 @@ public partial class CombatManager : Singleton<CombatManager>
     bool CanAddDefenseCard(IReadOnlyList<CardView> selectedCards, CardView candidate)
     {
         if (pendingDamage <= 0 || currentState != GameState.EnemyAttacking) return false;
-        var proposed = new List<CardView>((selectedCards?.Count ?? 0) + 1);
-        if (selectedCards != null) proposed.AddRange(selectedCards);
-        proposed.Add(candidate);
-        return AreValidHandViews(proposed) && MatchDefenseAssignments(proposed) != null;
+        var proposed = new List<CardInstance>((selectedCards?.Count ?? 0) + 1);
+        if (selectedCards != null) foreach (var view in selectedCards) proposed.Add(view?.data);
+        proposed.Add(candidate?.data);
+        return AreValidHandCards(proposed) && MatchDefenseAssignments(proposed) != null;
     }
 
     // Full-coverage attacks require one sufficient card. Ordinary attacks accept partial
     // Block and can receive multiple cards. Stronger cards/attacks win deterministic ties.
-    List<DefenseAssignment> MatchDefenseAssignments(IReadOnlyList<CardView> cards)
+    List<DefenseAssignment> MatchDefenseAssignments(IReadOnlyList<CardInstance> cards)
     {
         var cardOrder = new List<int>(cards.Count);
         for (int i = 0; i < cards.Count; i++) cardOrder.Add(i);
         cardOrder.Sort((a, b) =>
         {
-            int comparison = CalculateCardDefense(cards[b].data).CompareTo(CalculateCardDefense(cards[a].data));
+            int comparison = CalculateCardDefense(cards[b]).CompareTo(CalculateCardDefense(cards[a]));
             return comparison != 0 ? comparison : a.CompareTo(b);
         });
         var remaining = _pendingAttacks.ToArray();
         var matched = new List<DefenseAssignment>(cards.Count);
         foreach (int cardIndex in cardOrder)
         {
-            int defense = CalculateCardDefense(cards[cardIndex].data);
+            int defense = CalculateCardDefense(cards[cardIndex]);
             if (defense <= 0) return null;
             int attackIndex = FindDefenseTarget(remaining, defense, true, true);
             if (attackIndex < 0) attackIndex = FindDefenseTarget(remaining, defense, false, true);
@@ -445,7 +436,7 @@ public partial class CombatManager : Singleton<CombatManager>
             int before = remaining[attackIndex];
             int blocked = Mathf.Min(defense, before);
             remaining[attackIndex] -= blocked;
-            matched.Add(new DefenseAssignment(cards[cardIndex].data, cardIndex, attackIndex, before, blocked));
+            matched.Add(new DefenseAssignment(cards[cardIndex], cardIndex, attackIndex, before, blocked));
         }
         return matched;
     }
@@ -482,15 +473,25 @@ public partial class CombatManager : Singleton<CombatManager>
 
     public void ConfigureDuelistSuitRandom(IRandomSource random) => _duelistSuitRandom = random;
 
-    public bool CanPlayCards(IReadOnlyList<CardView> cards, EnemyRuntime target)
+    // Combat resolves committed card data. CardView overloads only adapt UI selections.
+    static CardInstance[] Instances(IReadOnlyList<CardView> views)
+    {
+        if (views == null) return null;
+        var instances = new CardInstance[views.Count];
+        for (int i = 0; i < views.Count; i++) instances[i] = views[i]?.data;
+        return instances;
+    }
+
+    public bool CanPlayCards(IReadOnlyList<CardView> cards, EnemyRuntime target) =>
+        CanPlayCards(Instances(cards), target);
+
+    public bool CanPlayCards(IReadOnlyList<CardInstance> cards, EnemyRuntime target)
     {
         if (GameplayInputGate.IsBlocked || _reactionFaulted || _isResolvingAction || currentState != GameState.PlayerTurn ||
             target == null || target.IsDefeated || !_enemies.Contains(target) || _encounterResolved ||
-            !AreValidHandViews(cards) || !GameplayEffectResolver.CanPlaySelection(cards, target, CardManager.Instance))
+            !AreValidHandCards(cards) || !GameplayEffectResolver.CanPlaySelection(cards, target, CardManager.Instance))
             return false;
-        var instances = new CardInstance[cards.Count];
-        for (int i = 0; i < cards.Count; i++) instances[i] = cards[i].data;
-        int cost = GameplayEffectResolver.GetVampiricHealthCost(instances);
+        int cost = GameplayEffectResolver.GetVampiricHealthCost(cards);
         return cost == 0 || CanTakeRunDamage(cost);
     }
 
@@ -499,18 +500,22 @@ public partial class CombatManager : Singleton<CombatManager>
         return TryPlayCards(cards, target, 1);
     }
 
-    public bool TryPlayCards(IReadOnlyList<CardView> cards, EnemyRuntime target, int hitCount)
+    public bool TryPlayCards(IReadOnlyList<CardView> cards, EnemyRuntime target, int hitCount) =>
+        TryPlayCards(Instances(cards), target, hitCount);
+
+    public bool TryPlayCards(IReadOnlyList<CardInstance> cards, EnemyRuntime target, int hitCount = 1)
     {
         BeginCommand();
         try { return TryPlayCardsCore(cards, target, hitCount); }
         finally { EndCommand(); }
     }
 
-    bool TryPlayCardsCore(IReadOnlyList<CardView> cards, EnemyRuntime target, int hitCount)
+    bool TryPlayCardsCore(IReadOnlyList<CardInstance> cards, EnemyRuntime target, int hitCount)
     {
         if (hitCount <= 0 || !CanPlayCards(cards, target)) return false;
+        // Copy: the caller may pass a live selection, which the discard below clears.
         var cardInstances = new CardInstance[cards.Count];
-        for (int i = 0; i < cards.Count; i++) cardInstances[i] = cards[i].data;
+        for (int i = 0; i < cards.Count; i++) cardInstances[i] = cards[i];
         // Derive the enhancement's extra hit from the committed gameplay data, not from UI input.
         if (GameplayEffectResolver.HasDoubleStrikeEffect(cardInstances)) hitCount = 2;
         _openingPlayerAttackInProgress = _playerAttackActionCount == 0;
@@ -540,7 +545,7 @@ public partial class CombatManager : Singleton<CombatManager>
         bool handsGroup = GameplayEffectResolver.IsHandsMultiCardAction(cardInstances, cm);
         _handsEpicAction = handsGroup && GearRules.HandsActionRepeatsCardEffects(cm);
         bool critical = false;
-        bool isAcePair = cards.Count == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards);
+        bool isAcePair = cards.Count == 2 && GameplayEffectResolver.CanPlayAsAcePair(cardInstances);
         bool hasCriticalChanceOverride = GameplayEffectResolver.TryGetCriticalChanceOverride(
             cardInstances, cm, out float criticalChanceOverride);
         float actionCriticalChance = hasCriticalChanceOverride
@@ -570,7 +575,7 @@ public partial class CombatManager : Singleton<CombatManager>
 
         try
         {
-            if (!cm.TryDiscardCards(cards)) return false;
+            if (!cm.TryDiscardCards(cardInstances)) return false;
             _playerAttackActionCount++;
             _pendingDiamondDrawChoices += GearRules.AdvanceActionState(cm, cardInstances, _activeGearBonuses,
                 isOverflowAutoPlay, _isHeadlinerEncounter);
@@ -818,7 +823,7 @@ public partial class CombatManager : Singleton<CombatManager>
         while (_overflowAutoPlays.Count > 0 && CanAutoPlayOverflow)
         {
             var card = _overflowAutoPlays.Dequeue();
-            if (card == null || card.data == null || !CardManager.Instance.hand.Any(instance => ReferenceEquals(instance, card.data)))
+            if (card == null || !CardManager.Instance.hand.Any(instance => ReferenceEquals(instance, card)))
                 continue;
             var target = currentEnemy != null && !currentEnemy.IsDefeated && _enemies.Contains(currentEnemy)
                 ? currentEnemy : _enemies.FirstOrDefault(enemy => enemy != null && !enemy.IsDefeated);
@@ -827,7 +832,7 @@ public partial class CombatManager : Singleton<CombatManager>
             _executingOverflowAutoPlay = true;
             try
             {
-                Log($"Overflow auto-plays {card.data.DisplayName} on {target.DisplayName}.");
+                Log($"Overflow auto-plays {card.DisplayName} on {target.DisplayName}.");
                 TryPlayCards(new[] { card }, target, 1);
             }
             finally { _executingOverflowAutoPlay = previous; }
@@ -846,11 +851,14 @@ public partial class CombatManager : Singleton<CombatManager>
         return CanDefendWithCards(cards, currentEnemy);
     }
 
-    public bool CanDefendWithCards(IReadOnlyList<CardView> cards, EnemyRuntime target)
+    public bool CanDefendWithCards(IReadOnlyList<CardView> cards, EnemyRuntime target) =>
+        CanDefendWithCards(Instances(cards), target);
+
+    public bool CanDefendWithCards(IReadOnlyList<CardInstance> cards, EnemyRuntime target)
     {
         return !GameplayInputGate.IsBlocked && !_reactionFaulted && !_isResolvingAction && currentState == GameState.EnemyAttacking &&
             target != null && !target.IsDefeated && _enemies.Contains(target) && !_encounterResolved &&
-            cards != null && cards.Count > 0 && AreValidHandViews(cards) && MatchDefenseAssignments(cards) != null;
+            cards != null && cards.Count > 0 && AreValidHandCards(cards) && MatchDefenseAssignments(cards) != null;
     }
 
     public bool TryDefendWithCards(IReadOnlyList<CardView> cards)
@@ -858,14 +866,17 @@ public partial class CombatManager : Singleton<CombatManager>
         return TryDefendWithCards(cards, currentEnemy);
     }
 
-    public bool TryDefendWithCards(IReadOnlyList<CardView> cards, EnemyRuntime target)
+    public bool TryDefendWithCards(IReadOnlyList<CardView> cards, EnemyRuntime target) =>
+        TryDefendWithCards(Instances(cards), target);
+
+    public bool TryDefendWithCards(IReadOnlyList<CardInstance> cards, EnemyRuntime target)
     {
         BeginCommand();
         try { return TryDefendWithCardsCore(cards, target); }
         finally { EndCommand(); }
     }
 
-    bool TryDefendWithCardsCore(IReadOnlyList<CardView> cards, EnemyRuntime target)
+    bool TryDefendWithCardsCore(IReadOnlyList<CardInstance> cards, EnemyRuntime target)
     {
         if (!CanDefendWithCards(cards, target)) return false;
 
@@ -873,7 +884,7 @@ public partial class CombatManager : Singleton<CombatManager>
         if (assignments == null) return false;
         var names = new List<string>(cards.Count);
         for (int i = 0; i < cards.Count; i++)
-            names.Add(cards[i].data.DisplayName);
+            names.Add(cards[i].DisplayName);
 
         _isResolvingAction = true;
         _reactions.Clear();
@@ -883,7 +894,7 @@ public partial class CombatManager : Singleton<CombatManager>
         {
             var cardManager = CardManager.Instance;
             long effectiveBlock = 0;
-            foreach (var view in cards) effectiveBlock += CalculateCardDefense(view.data);
+            foreach (var card in cards) effectiveBlock += CalculateCardDefense(card);
             if (cardManager == null || !cardManager.TryRecycleDefenseCards(cards)) return false;
             _parryEffectiveBlock += effectiveBlock;
 
@@ -1712,22 +1723,19 @@ public partial class CombatManager : Singleton<CombatManager>
     public int CalculateCardDefense(CardInstance card) =>
         GameplayEffectResolver.CalculateBlock(card, CardManager.Instance);
 
-    bool AreValidHandViews(IReadOnlyList<CardView> cards)
+    bool AreValidHandCards(IReadOnlyList<CardInstance> cards)
     {
         var manager = CardManager.Instance;
-        if (manager == null) return false;
-
+        if (manager == null || cards == null) return false;
         var uniqueCards = new HashSet<CardInstance>();
         for (int i = 0; i < cards.Count; i++)
         {
-            var view = cards[i];
-            if (view == null || view.data == null || !uniqueCards.Add(view.data))
-                return false;
-
+            var card = cards[i];
+            if (card == null || !uniqueCards.Add(card)) return false;
             bool found = false;
             for (int handIndex = 0; handIndex < manager.hand.Count; handIndex++)
             {
-                if (!ReferenceEquals(manager.hand[handIndex], view.data)) continue;
+                if (!ReferenceEquals(manager.hand[handIndex], card)) continue;
                 found = true;
                 break;
             }
