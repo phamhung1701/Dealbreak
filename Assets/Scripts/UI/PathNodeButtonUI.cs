@@ -1,25 +1,14 @@
-using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
-/// <summary>Applies the compact, non-spoiling label used by route-map nodes and reports hover.</summary>
+/// <summary>Applies the compact, non-spoiling label used by route-map nodes.</summary>
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "PathNodeButtonUI")]
-public sealed class PathNodeButtonUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public sealed class PathNodeButtonUI : MonoBehaviour
 {
     [SerializeField] TMP_Text label;
 
-    PathNode _node;
-
-    /// <summary>Raised with this node while the pointer is over it, and with null when it leaves.</summary>
-    public Action<PathNode> HoverChanged;
-
-    public void OnPointerEnter(PointerEventData eventData) => HoverChanged?.Invoke(_node);
-    public void OnPointerExit(PointerEventData eventData) => HoverChanged?.Invoke(null);
-
     public void SetNode(PathNode node, RunManager run)
     {
-        _node = node;
         if (label == null) label = GetComponentInChildren<TMP_Text>();
         if (label == null) return;
 

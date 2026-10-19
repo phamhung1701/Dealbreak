@@ -705,6 +705,7 @@ public class ActionButtonsUI : MonoBehaviour
         _consumableContextRect.anchorMin = _consumableContextRect.anchorMax = new Vector2(0.5f, 0.5f);
         _consumableContextRect.pivot = new Vector2(0.5f, 0.5f);
         _consumableContextRect.sizeDelta = new Vector2(270f, 150f);
+        ContextualTooltipUI.RegisterObstacle(_consumableContextRect);
         var background = _consumableContextPanel.GetComponent<Image>();
         background.color = new Color(0.08f, 0.12f, 0.16f, 0.96f);
         background.raycastTarget = true;

@@ -19,8 +19,6 @@ public class PathScreenUI : MonoBehaviour
     bool _mapToggleEnabled;
     Button _mapVisibilityButton;
     TMP_Text _mapVisibilityLabel;
-    TMP_Text _nodeDetailLabel;
-    PathNode _hoveredNode;
 
     [Header("Map Settings")]
     [Min(0f)] public float horizontalInset = 20f;
@@ -222,7 +220,6 @@ public class PathScreenUI : MonoBehaviour
     void ShowImmediately()
     {
         _pendingMapShow = false;
-        _hoveredNode = null;
         BuildMap();
         BoardPanelTransition.Show(panel);
         var run = RunManager.Instance;
@@ -250,11 +247,7 @@ public class PathScreenUI : MonoBehaviour
         _nodePositions.Clear();
 
         var run = RunManager.Instance;
-        if (run == null || run.currentPath == null || run.currentPath.Count == 0)
-        {
-            RefreshNodeDetail();
-            return;
-        }
+        if (run == null || run.currentPath == null || run.currentPath.Count == 0) return;
 
         Vector2 nodeSize = new Vector2(Mathf.Clamp(bounds.rect.width / 12f, 62f, DealbreakUIStyle.Theme?72f:88f), 62f);
         float halfH = nodeSize.y * 0.5f;
@@ -314,7 +307,7 @@ public class PathScreenUI : MonoBehaviour
             var nodeButtonUI = buttonObject.GetComponent<PathNodeButtonUI>();
             if (nodeButtonUI == null) nodeButtonUI = buttonObject.AddComponent<PathNodeButtonUI>();
             nodeButtonUI.SetNode(node, run);
-            nodeButtonUI.HoverChanged = HandleNodeHover;
+            AttachNodeDetail(buttonObject, node, run);
             MapNodePresentation.Apply(buttonObject, node, run.IsScoutedNode(node));
             DealbreakUIStyle.ApplyHierarchy(buttonObject.transform);
             PlaceNode(buttonObject.GetComponent<RectTransform>(), _nodePositions[node.id], nodeSize);
@@ -334,57 +327,24 @@ public class PathScreenUI : MonoBehaviour
             }
             MapNodePresentation.Apply(buttonObject, node, run.IsScoutedNode(node));
         }
-        // Rebuilt buttons never receive the old pointer-exit, so drop a stale hover.
-        if (_hoveredNode != null && !run.currentPath.Contains(_hoveredNode)) _hoveredNode = null;
-        RefreshNodeDetail();
     }
 
-    void HandleNodeHover(PathNode node)
+    // Hovering a node opens the shared detail beside it: the enemies and totals of a fight, or the
+    // Incident, once the node is revealed. Unknown nodes say only that.
+    static void AttachNodeDetail(GameObject buttonObject, PathNode node, RunManager run)
     {
-        _hoveredNode = node;
-        RefreshNodeDetail();
-    }
-
-    // Shows what is known about the hovered node; otherwise the node most recently scouted.
-    void RefreshNodeDetail()
-    {
-        EnsureNodeDetailLabel();
-        if (_nodeDetailLabel == null) return;
-        var run = RunManager.Instance;
-        var scouted = run != null && run.LastScoutedNode != null && run.IsScoutedNode(run.LastScoutedNode)
-            ? run.LastScoutedNode : null;
-        if (run != null && _hoveredNode != null)
-            _nodeDetailLabel.text = BoldFirstLine(run.GetNodeDetail(_hoveredNode));
-        else if (scouted != null)
-            _nodeDetailLabel.text = "<color=#F2C35E><b>SCOUTED</b></color>  " + BoldFirstLine(run.GetNodeDetail(scouted));
-        else
-            _nodeDetailLabel.text = string.Empty;
-    }
-
-    static string BoldFirstLine(string text)
-    {
-        int newline = text.IndexOf('\n');
-        return newline < 0 ? $"<b>{text}</b>" : $"<b>{text.Substring(0, newline)}</b>{text.Substring(newline)}";
-    }
-
-    void EnsureNodeDetailLabel()
-    {
-        if (_nodeDetailLabel != null || mapContainer == null || mapContainer.parent == null) return;
-        var detail = new GameObject("Node Detail Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-        detail.transform.SetParent(mapContainer.parent, false);
-        var rect = (RectTransform)detail.transform;
-        rect.anchorMin = new Vector2(0.03f, 0.005f);
-        rect.anchorMax = new Vector2(0.78f, 0.15f);
-        rect.offsetMin = rect.offsetMax = Vector2.zero;
-        _nodeDetailLabel = detail.GetComponent<TextMeshProUGUI>();
-        if (headerText != null) _nodeDetailLabel.font = headerText.font;
-        _nodeDetailLabel.fontSize = 16f;
-        _nodeDetailLabel.enableAutoSizing = true;
-        _nodeDetailLabel.fontSizeMin = 11f;
-        _nodeDetailLabel.fontSizeMax = 16f;
-        _nodeDetailLabel.alignment = TextAlignmentOptions.BottomLeft;
-        _nodeDetailLabel.color = new Color(0.87f, 0.89f, 0.81f, 1f);
-        _nodeDetailLabel.raycastTarget = false;
+        if (!buttonObject.TryGetComponent<ContextualInfoTrigger>(out var detail))
+            detail = buttonObject.AddComponent<ContextualInfoTrigger>();
+        detail.describe = () =>
+        {
+            if (run == null || node == null) return null;
+            if (!node.revealed && !node.completed) return new ContextualInfo("Route", "Unknown", "Not yet scouted.");
+            string label = run.GetNodeLabel(node);
+            string body = run.GetNodeDetail(node);
+            if (body.StartsWith(label + " • ")) body = body.Substring(label.Length + 3);
+            else if (body == label) body = string.Empty;
+            return new ContextualInfo(run.IsScoutedNode(node) ? "Scouted" : "Route", label, body);
+        };
     }
 
     void CreateStartEndpoint(Vector2 position, Vector2 nodeSize)

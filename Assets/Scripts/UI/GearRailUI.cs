@@ -236,6 +236,7 @@ public sealed class GearRailUI : MonoBehaviour
         canvas.sortingOrder = 65;
         _sellPanel.anchorMin = _sellPanel.anchorMax = _sellPanel.pivot = new Vector2(0.5f, 0.5f);
         _sellPanel.sizeDelta = new Vector2(250f, 118f);
+        ContextualTooltipUI.RegisterObstacle(_sellPanel);
         panel.GetComponent<Image>().color = new Color(0.08f, 0.12f, 0.16f, 0.96f);
 
         var textObject = new GameObject("Gear Sale Details", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
