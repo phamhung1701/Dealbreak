@@ -377,13 +377,7 @@ public class ActionButtonsUI : MonoBehaviour
         if (combat.currentState == GameState.PlayerTurn)
             StartSelectedAttack(cards, combat);
         else if (combat.currentState == GameState.EnemyAttacking)
-        {
-            var presentation = AttackCardPresentationUI.Instance;
-            if (presentation != null)
-                presentation.TryDefendCards(selection, combat.currentEnemy);
-            else
-                combat.TryDefendWithCards(selection);
-        }
+            CombatCommands.Block(selection, combat.currentEnemy);
     }
 
     void OnPlayClicked()
@@ -475,13 +469,8 @@ public class ActionButtonsUI : MonoBehaviour
         if (!resolved) RefreshAll();
     }
 
-    bool ExecuteAttack(IReadOnlyList<CardView> selection, EnemyRuntime target, CombatManager combat)
-    {
-        var presentation = AttackCardPresentationUI.Instance;
-        return presentation != null
-            ? presentation.TryPlayCards(selection, target)
-            : combat.TryPlayCards(selection, target);
-    }
+    bool ExecuteAttack(IReadOnlyList<CardView> selection, EnemyRuntime target, CombatManager combat) =>
+        CombatCommands.Attack(selection, target);
 
     void CancelEnemyTargeting()
     {
@@ -516,12 +505,7 @@ public class ActionButtonsUI : MonoBehaviour
         var combat = CombatManager.Instance;
         if (cards != null && combat != null && combat.currentState == GameState.EnemyAttacking)
         {
-            var selected = cards.GetSelectedCardsSnapshot();
-            var presentation = AttackCardPresentationUI.Instance;
-            if (presentation != null)
-                presentation.TryDefendCards(selected, combat.currentEnemy);
-            else
-                combat.TryDefendWithCards(selected);
+            CombatCommands.Block(cards.GetSelectedCardsSnapshot(), combat.currentEnemy);
         }
     }
 
