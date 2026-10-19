@@ -84,15 +84,15 @@ public sealed class Phase7GearMechanicsTests
         var collection = CardCollectionOf(_cards);
         collection.DrawToHand(2, 2);
         Assert.That(collection.TryDiscard(ace), Is.True);
-        Invoke(_combat, "TryReturnCriticalAce", new object[] { new[] { ace, face }, _cards });
+        GearRules.TryReturnCriticalAce(_cards, new[] { ace, face }, null);
         Assert.That(_cards.GetGearInstance(gear).State.GetEncounterCounter(-114), Is.EqualTo(1));
         Assert.That(_cards.hand.Count(card => ReferenceEquals(card, ace)), Is.EqualTo(1));
         Assert.That(collection.OwnedCards.Count, Is.EqualTo(2));
         Assert.That(collection.TryDiscard(ace), Is.True);
-        Invoke(_combat, "TryReturnCriticalAce", new object[] { new[] { ace, face }, _cards });
+        GearRules.TryReturnCriticalAce(_cards, new[] { ace, face }, null);
         Assert.That(collection.DiscardPile.Count(card => ReferenceEquals(card, ace)), Is.EqualTo(1));
         _cards.ResetGearEncounterEffectState();
-        Invoke(_combat, "TryReturnCriticalAce", new object[] { new[] { ace, face }, _cards });
+        GearRules.TryReturnCriticalAce(_cards, new[] { ace, face }, null);
         Assert.That(_cards.hand.Count(card => ReferenceEquals(card, ace)), Is.EqualTo(1));
     }
 
@@ -291,9 +291,10 @@ public sealed class Phase7GearMechanicsTests
         var state = _cards.GetGearInstance(heart).State;
         Assert.That(state.GetCounter(-1050), Is.EqualTo(10));
         SetPrivate(_combat, "_openingPlayerAttackInProgress", true);
-        Invoke(_combat, "PreparePhase7ActionBonuses", new object[] { new[] { card } });
+        var bonuses = GearRules.PrepareActionBonuses(_cards, new[] { card }, false);
+        SetPrivate(_combat, "_activeGearBonuses", bonuses);
         Assert.That(_combat.CalculateCardAttackDamage(card), Is.EqualTo(card.BaseAttackValue + 10));
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { card }, false });
+        GearRules.AdvanceActionState(_cards, new[] { card }, bonuses, false, false);
         Assert.That(state.GetCounter(-1050), Is.Zero);
 
         var withering = Enemy(EnemyAbilityEffect.Withering, "Withering", 30);
@@ -310,11 +311,11 @@ public sealed class Phase7GearMechanicsTests
         var source = Card(CardData.Suit.Clubs, CardData.Rank.Two, 401);
         var higher = Card(CardData.Suit.Hearts, CardData.Rank.King, 402);
         SetOwnedCards(new[] { source, higher });
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { source }, false });
-        Invoke(_combat, "PreparePhase7ActionBonuses", new object[] { new[] { higher } });
-        Assert.That(GetPrivate<int>(_combat, "_activeDwarfBonus"), Is.EqualTo(1));
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { higher }, false });
-        Invoke(_combat, "AwardDevouringKillBonus", new object[] { new[] { higher } });
+        GearRules.AdvanceActionState(_cards, new[] { source }, default, false, false);
+        var bonuses = GearRules.PrepareActionBonuses(_cards, new[] { higher }, false);
+        Assert.That(bonuses.Dwarf, Is.EqualTo(1));
+        GearRules.AdvanceActionState(_cards, new[] { higher }, bonuses, false, false);
+        GearRules.OnKill(_cards, new[] { higher }, null);
         Assert.That(source.PermanentAttackBonus, Is.EqualTo(1));
         Assert.That(_cards.FindOwnedCard(source.Id), Is.SameAs(source));
     }
@@ -323,21 +324,20 @@ public sealed class Phase7GearMechanicsTests
     public void Kingslayer_RequiresThreeDistinctManualRanksAndConsumesOneChargeOnAttack()
     {
         Gear("rel_138", GearSpecialRule.KingslayersMark);
-        SetPrivate(_combat, "_isHeadlinerEncounter", true);
         var ace = Card(CardData.Suit.Clubs, CardData.Rank.Ace, 501);
         var king = Card(CardData.Suit.Hearts, CardData.Rank.King, 502);
         var queen = Card(CardData.Suit.Spades, CardData.Rank.Queen, 503);
         var state = _cards.GetGearInstance(_cards.ownedGear[0]).State;
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { ace }, false });
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { ace }, false });
+        GearRules.AdvanceActionState(_cards, new[] { ace }, default, false, true);
+        GearRules.AdvanceActionState(_cards, new[] { ace }, default, false, true);
         Assert.That(state.GetEncounterCounter(-1382), Is.Zero, "Repeating a rank does not qualify.");
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { king }, false });
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { queen }, false });
+        GearRules.AdvanceActionState(_cards, new[] { king }, default, false, true);
+        GearRules.AdvanceActionState(_cards, new[] { queen }, default, false, true);
         Assert.That(state.GetEncounterCounter(-1382), Is.EqualTo(1));
         var attack = Card(CardData.Suit.Diamonds, CardData.Rank.Ten, 504);
-        Invoke(_combat, "PreparePhase7ActionBonuses", new object[] { new[] { attack } });
-        Assert.That(GetPrivate<int>(_combat, "_activeKingslayerBonus"), Is.EqualTo(1));
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { attack }, false });
+        var bonuses = GearRules.PrepareActionBonuses(_cards, new[] { attack }, true);
+        Assert.That(bonuses.Kingslayer, Is.EqualTo(1));
+        GearRules.AdvanceActionState(_cards, new[] { attack }, bonuses, false, true);
         Assert.That(state.GetEncounterCounter(-1382), Is.Zero);
         _cards.ResetGearEncounterEffectState();
         Assert.That(state.GetEncounterCounter(-1381), Is.Zero);
@@ -350,11 +350,10 @@ public sealed class Phase7GearMechanicsTests
         var low = Card(CardData.Suit.Clubs, CardData.Rank.Four, 601);
         var face = Card(CardData.Suit.Hearts, CardData.Rank.Jack, 602);
         var state = _cards.GetGearInstance(_cards.ownedGear[0]).State;
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { low }, false });
-        Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { face }, false });
+        GearRules.AdvanceActionState(_cards, new[] { low }, default, false, false);
+        GearRules.AdvanceActionState(_cards, new[] { face }, default, false, false);
         Assert.That(state.GetCounter(-1182), Is.EqualTo(1));
-        Invoke(_combat, "PreparePhase7ActionBonuses", new object[] { new[] { face } });
-        Assert.That(GetPrivate<int>(_combat, "_activeBalancerBonus"), Is.Zero);
+        Assert.That(GearRules.PrepareActionBonuses(_cards, new[] { face }, false).Balancer, Is.Zero);
         Assert.That(state.GetCounter(-1182), Is.Zero);
     }
 
@@ -364,9 +363,10 @@ public sealed class Phase7GearMechanicsTests
         Gear("rel_108", GearSpecialRule.DiamondEpic);
         var diamonds = Enumerable.Range(0, 3).Select(i => Card(CardData.Suit.Diamonds,
             (CardData.Rank)((int)CardData.Rank.Two + i), 701 + i)).ToArray();
+        int choices = 0;
         foreach (var diamond in diamonds)
-            Invoke(_combat, "ConsumeAndAdvancePhase7ActionState", new object[] { new[] { diamond }, false });
-        Assert.That(GetPrivate<int>(_combat, "_pendingDiamondDrawChoices"), Is.EqualTo(1));
+            choices += GearRules.AdvanceActionState(_cards, new[] { diamond }, default, false, false);
+        Assert.That(choices, Is.EqualTo(1));
 
         var chosen = Card(CardData.Suit.Hearts, CardData.Rank.King, 710);
         SetOwnedCards(diamonds.Concat(new[] { chosen }).ToArray());
@@ -411,8 +411,7 @@ public sealed class Phase7GearMechanicsTests
         Assert.That(_cards.hand.Count, Is.EqualTo(2), "Rare draw behavior is retained on Epic.");
         Assert.That(_cards.GetGearInstance(spade).State.GetEncounterCounter(-1071), Is.EqualTo(1));
         var attack = Card(CardData.Suit.Clubs, CardData.Rank.Five, 803);
-        Invoke(_combat, "PreparePhase7ActionBonuses", new object[] { new[] { attack } });
-        Assert.That(GetPrivate<int>(_combat, "_activeSpadeBonus"), Is.EqualTo(1));
+        Assert.That(GearRules.PrepareActionBonuses(_cards, new[] { attack }, false).Spade, Is.EqualTo(1));
     }
 
     [Test]
