@@ -1783,7 +1783,10 @@ public partial class CombatManager : Singleton<CombatManager>
     void Log(string msg)
     {
         OnCombatLog?.Invoke(msg);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // The combat log UI is the player-facing record; console echo is a development aid only.
         Debug.Log($"[Combat] {msg}");
+#endif
     }
 
     void SetState(GameState state)
