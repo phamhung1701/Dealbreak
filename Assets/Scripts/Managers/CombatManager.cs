@@ -14,9 +14,10 @@ public partial class CombatManager : Singleton<CombatManager>
     IRandomSource _duelistSuitRandom;
 
     [Header("Runtime State")]
-    public GameState currentState = GameState.Idle;
-    public EnemyRuntime currentEnemy;
-    public int pendingDamage;
+    // Read-only outside combat; tests may set state through the internal setters.
+    public GameState currentState { get; internal set; } = GameState.Idle;
+    public EnemyRuntime currentEnemy { get; private set; }
+    public int pendingDamage { get; internal set; }
 
     readonly List<EnemyRuntime> _enemies = new();
     readonly List<int> _pendingAttacks = new();

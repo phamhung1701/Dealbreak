@@ -31,11 +31,10 @@ public partial class RunManager : Singleton<RunManager>
 
     [Header("Runtime State")]
     [SerializeField] string runSeed;
-    [UnityEngine.Serialization.FormerlySerializedAs("bossDeck")]
-    public List<EnemyTypeData> headlinerDeck = new();
-    [UnityEngine.Serialization.FormerlySerializedAs("bossIndex")]
-    public int headlinerIndex;
-    public List<PathNode> currentPath = new();
+    // RunManager is created at runtime, so these are not serialized; tests may set the index internally.
+    public List<EnemyTypeData> headlinerDeck { get; } = new();
+    public int headlinerIndex { get; internal set; }
+    public List<PathNode> currentPath { get; } = new();
 
     public event Action OnShowPathScreen;
     public event Action OnHidePathScreen;

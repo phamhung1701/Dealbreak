@@ -28,12 +28,11 @@ public partial class CardManager : Singleton<CardManager>
     public List<ConsumableData> consumableCatalog = new();
 
     [Header("Runtime State")]
-    [UnityEngine.Serialization.FormerlySerializedAs("gold")]
-    public int credits;
-    public HashSet<string> gearIds = new();
-    [UnityEngine.Serialization.FormerlySerializedAs("ownedArtifacts")]
-    public List<GearData> ownedGear = new();
-    public CardView selectedCard;
+    // Credits change only through AddCredits/SpendCredits; tests may seed them internally.
+    public int credits { get; internal set; }
+    public HashSet<string> gearIds { get; } = new();
+    public List<GearData> ownedGear { get; } = new();
+    public CardView selectedCard { get; private set; }
 
     readonly CardCollection _cards = new();
     readonly HashSet<CardView> _trackedViews = new();
