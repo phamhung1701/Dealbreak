@@ -56,6 +56,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     void BindTricks()
     {
         if(!actions)return;
+        ContextualTooltipUI.RegisterSlotGroup(System.Array.ConvertAll(actions.backpackSlotButtons,b=>b?(RectTransform)b.transform:null));
         for(int i=0;i<actions.backpackSlotButtons.Length;i++)
         {
             var button=actions.backpackSlotButtons[i];if(!button)continue;

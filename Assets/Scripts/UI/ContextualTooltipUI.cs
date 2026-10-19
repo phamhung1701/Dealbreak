@@ -33,6 +33,16 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     /// open beside their slots. Inactive or destroyed panels are ignored.
     /// </summary>
     public static void RegisterObstacle(RectTransform obstacle){if(obstacle&&!Obstacles.Contains(obstacle))Obstacles.Add(obstacle);}
+    static readonly List<RectTransform[]> SlotGroups=new();
+    /// <summary>
+    /// Registers a row of slots (the Trick slots) whose details open beside the whole row, so a
+    /// detail never covers the neighbouring slots. Gear slots use their shared container.
+    /// </summary>
+    public static void RegisterSlotGroup(RectTransform[] slots)
+    {
+        SlotGroups.RemoveAll(group=>group.All(member=>!member));
+        if(slots!=null&&slots.Length>0)SlotGroups.Add(slots);
+    }
     void OnEnable(){Instance=this;Hide();}
     void OnDisable(){if(Instance==this)Instance=null;Hide();}
     public void Inspect(MonoBehaviour source){if(!source)return;_source=source;_dismissed=null;_leaveUntil=float.PositiveInfinity;}
@@ -138,12 +148,12 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         bool handCard=view&&view.homeField!=null;
         bool slotDetail=source.GetComponent<GearIconSlotUI>()!=null||
             source is ContextualInfoTrigger&&source.GetComponent<Button>()&&source.name.StartsWith("BackpackSlot");
-        float width=slotDetail?Mathf.Min(220,parent.rect.width*.22f):Mathf.Min(390,parent.rect.width*.38f);
-        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(body.GetPreferredValues(info.Body,width-44,0).y+140,150,slotDetail?360:440));
+        float width=slotDetail?Mathf.Min(340,parent.rect.width*.26f):Mathf.Min(390,parent.rect.width*.38f);
+        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(body.GetPreferredValues(info.Body,width-44,0).y+140,150,460));
         rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);rect.sizeDelta=new(width,height);
 
         var anchor=view&&view.visualRoot?view.visualRoot:(RectTransform)source.transform;
-        var target=BoundsIn(parent,anchor);
+        var target=slotDetail?SlotGroupBounds(parent,anchor,source.GetComponent<GearIconSlotUI>()!=null):BoundsIn(parent,anchor);
         var size=new Vector2(width,height);
         var order=handCard?HandOrder:BesideOrder;
         Vector2 chosen=Avoid(parent,Beside(order[0],target,size),size,rect,handCard);
@@ -156,6 +166,33 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         chosen.x=Mathf.Clamp(chosen.x,parent.rect.xMin+halfWidth+Gap,parent.rect.xMax-halfWidth-Gap);
         chosen.y=Mathf.Clamp(chosen.y,parent.rect.yMin+halfHeight+Gap,parent.rect.yMax-halfHeight-Gap);
         rect.anchoredPosition=chosen-parent.rect.center;
+    }
+
+    // The row's horizontal extent with the hovered slot's height: the detail clears the
+    // neighbouring slots but stays level with the one it describes.
+    Rect SlotGroupBounds(RectTransform parent,RectTransform slot,bool gear)
+    {
+        var own=BoundsIn(parent,slot);
+        var row=GroupBounds(parent,slot,gear);
+        return Rect.MinMaxRect(row.xMin,own.yMin,row.xMax,own.yMax);
+    }
+
+    Rect GroupBounds(RectTransform parent,RectTransform slot,bool gear)
+    {
+        if(gear&&slot.parent is RectTransform container)return BoundsIn(parent,container);
+        var bounds=BoundsIn(parent,slot);
+        foreach(var group in SlotGroups)
+        {
+            if(System.Array.IndexOf(group,slot)<0)continue;
+            foreach(var member in group)
+            {
+                if(!member||!member.gameObject.activeInHierarchy)continue;
+                var other=BoundsIn(parent,member);
+                bounds=Rect.MinMaxRect(Mathf.Min(bounds.xMin,other.xMin),Mathf.Min(bounds.yMin,other.yMin),
+                    Mathf.Max(bounds.xMax,other.xMax),Mathf.Max(bounds.yMax,other.yMax));
+            }
+        }
+        return bounds;
     }
 
     Rect BoundsIn(RectTransform parent,RectTransform child)
