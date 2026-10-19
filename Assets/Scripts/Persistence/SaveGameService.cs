@@ -87,7 +87,12 @@ public sealed class RunSaveAutosave : MonoBehaviour
     public void StartSession() { _terminal = false; _lastContent = null; }
     public void Suspend() => _terminal = true;
     public void EndRun() => Terminal();
-    void EncounterEnded(EncounterResult result) { if (result == EncounterResult.Defeat) Terminal(); }
+    // Defeat ends the run; an aborted encounter keeps the last checkpoint and stops writing.
+    void EncounterEnded(EncounterResult result)
+    {
+        if (result == EncounterResult.Defeat) Terminal();
+        else if (result == EncounterResult.Aborted) Suspend();
+    }
     void Terminal()
     {
         _terminal = true;

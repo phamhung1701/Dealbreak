@@ -2046,7 +2046,7 @@ public partial class RunManager : Singleton<RunManager>
 
     void HandleEncounterResult(EncounterResult result)
     {
-        if (result == EncounterResult.Defeat)
+        if (result is EncounterResult.Defeat or EncounterResult.Aborted)
             Timing.StopRun();
         if (_activeNode == null) return;
 

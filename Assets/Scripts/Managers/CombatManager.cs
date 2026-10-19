@@ -1457,7 +1457,7 @@ public partial class CombatManager : Singleton<CombatManager>
         _reactionFaulted = true;
         _queuedPlayerTurnGrants.Clear();
         Log($"Encounter halted after reaction processing failed during {phase}. No victory or rewards will be granted.");
-        ResolveEncounter(EncounterResult.Defeat);
+        ResolveEncounter(EncounterResult.Aborted);
     }
 
     CombatActionContext CreateAction(
@@ -1511,7 +1511,7 @@ public partial class CombatManager : Singleton<CombatManager>
 
     void ResolveEncounter(EncounterResult result)
     {
-        if (_encounterResolved || _reactionFaulted && result != EncounterResult.Defeat) return;
+        if (_encounterResolved || _reactionFaulted && result != EncounterResult.Aborted) return;
 
         _encounterResolved = true;
         _pendingDiamondDrawChoices = 0;
@@ -1546,7 +1546,9 @@ public partial class CombatManager : Singleton<CombatManager>
         else
         {
             SetState(GameState.GameOver);
-            Log("Player defeated! Game Over!");
+            Log(result == EncounterResult.Aborted
+                ? "Encounter aborted. The run returns to its last safe checkpoint."
+                : "Player defeated! Game Over!");
         }
 
         OnEncounterResult?.Invoke(result);

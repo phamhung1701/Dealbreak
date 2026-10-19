@@ -394,6 +394,20 @@ public sealed class PersistentRunSaveTests
     }
 
     [Test]
+    public void AbortedEncounter_KeepsSaveAndStopsAutosave()
+    {
+        typeof(SaveGameService).GetField("StoreOverride", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, store);
+        Write(run.CaptureSave());
+        var writer = run.gameObject.AddComponent<RunSaveAutosave>();
+        if (typeof(RunSaveAutosave).GetField("_run", Private).GetValue(writer) == null)
+            typeof(RunSaveAutosave).GetMethod("OnEnable", Private).Invoke(writer, null);
+        var callback = (Action<EncounterResult>)typeof(CombatManager).GetField("OnEncounterResult", Private).GetValue(combat);
+        callback.Invoke(EncounterResult.Aborted);
+        Assert.That(store.TryRead(catalog, out _, out _), Is.True, "A rule fault must not delete the player's run.");
+        Assert.That(writer.Checkpoint(true), Is.False, "No state is written after an aborted encounter.");
+    }
+
+    [Test]
     public void ContinueLaunchPayload_IsOneShotAndMutuallyExclusiveWithNewRun()
     {
         var saved = run.CaptureSave(); FrontendLaunchContext.RequestContinue(saved);
