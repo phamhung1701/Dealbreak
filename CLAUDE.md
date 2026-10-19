@@ -8,10 +8,11 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Combat: persistent player HP, blocking by discarding cards, empty-hand Recover, multiple enemies with exact targeting, kill draws, secured rewards, Thief fleeing. Runs use seeded random streams.
 - `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` is authoritative for player-facing names and terms. Use Credits, Gear, Mod, Trick, Black Market, Incident, District, Enforcer, Headliner and Perfect Block. Keep legacy class, field, serialized-ID, asset-path and save identifiers. A workbook Draft status is not approval to implement.
 
-## Branches — check first
+## Branches
 
-- Work on `ui-new-look`: the new Dealbreak look with the audit fixes, polish and later UI work. It is pushed to `origin`, which is `phamhung1701/Dealbreak` (the old `Cardpg` URL redirects).
-- `main` has the **old look**; never start UI work there. Old-look signs: flat blue panels, a TAKE DAMAGE button, ELITE/SHOP node labels.
+- Solo project: work directly on `main`, which has the new Dealbreak look and all later work. Origin is `phamhung1701/Dealbreak` (the old `Cardpg` URL redirects).
+- Older branches (`ui-new-look`, `ui-polish`, `architecture-audit-fixes`, `codex/combat-ui-vertical-slice`) are merged into `main`; don't build on them.
+- If a screen shows the old look (flat blue panels, a TAKE DAMAGE button, ELITE/SHOP node labels), you're on a stale commit.
 
 ## Working rules
 
