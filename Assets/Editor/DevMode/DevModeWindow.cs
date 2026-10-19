@@ -73,7 +73,7 @@ public sealed class DevModeWindow : EditorWindow
                    CombatManager.Instance.currentState is GameState.GameOver or GameState.GameWon))
         {
             if (GUILayout.Button("LOSE RUN NOW", GUILayout.Height(32)))
-                CombatManager.Instance?.ForceDefeatForDevelopment();
+                DevModeRuntime.TryForceDefeat();
         }
 
         if (GUILayout.Button("Stop Play Mode"))

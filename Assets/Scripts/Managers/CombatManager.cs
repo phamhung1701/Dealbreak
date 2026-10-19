@@ -1565,7 +1565,7 @@ public partial class CombatManager : Singleton<CombatManager>
     public bool ForceDefeatForDevelopment()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (_encounterResolved || _reactionFaulted || _isResolvingAction || AttackCardPresentationUI.Instance != null && AttackCardPresentationUI.Instance.IsBusy) return false;
+        if (_encounterResolved || _reactionFaulted || _isResolvingAction) return false;
         ResolveEncounter(EncounterResult.Defeat);
         return true;
 #else
