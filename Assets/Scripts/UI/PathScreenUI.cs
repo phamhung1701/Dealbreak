@@ -129,9 +129,25 @@ public class PathScreenUI : MonoBehaviour
         }
         else if (_pendingMapShow)
         {
-            _pendingMapShow = false;
-            ShowImmediately();
+            // Let the cleared board breathe before the route slides in. Hide, a new run or a
+            // cancelled presentation clear the pending flag and so cancel the beat.
+            if (Application.isPlaying && isActiveAndEnabled) StartCoroutine(ShowAfterClearedBeat());
+            else
+            {
+                _pendingMapShow = false;
+                ShowImmediately();
+            }
         }
+    }
+
+    const float ClearedBeatSeconds = 0.35f;
+
+    System.Collections.IEnumerator ShowAfterClearedBeat()
+    {
+        yield return new WaitForSecondsRealtime(ClearedBeatSeconds);
+        if (!_pendingMapShow) yield break;
+        _pendingMapShow = false;
+        ShowImmediately();
     }
 
     void HandlePresentationCancelled()

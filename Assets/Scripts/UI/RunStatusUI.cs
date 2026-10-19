@@ -17,6 +17,10 @@ public class RunStatusUI : MonoBehaviour
     public TMP_Text ownedGearLabel;
     public TMP_Text[] backpackSlotLabels = new TMP_Text[CardManager.BACKPACK_CAPACITY];
 
+    readonly DisplayedNumber _shownCredits = new();
+    Color _creditsLabelColor;
+    bool _creditsLabelColorCaptured;
+
     void OnEnable()
     {
         if (CardManager.Instance != null)
@@ -70,6 +74,7 @@ public class RunStatusUI : MonoBehaviour
     void Update()
     {
         RefreshTiming();
+        if (_shownCredits.Tick(Time.unscaledDeltaTime)) RefreshCredits(CardManager.Instance);
     }
 
     void Refresh()
@@ -77,8 +82,7 @@ public class RunStatusUI : MonoBehaviour
         var cards = CardManager.Instance;
         var run = RunManager.Instance;
 
-        if (creditsLabel)
-            creditsLabel.text = cards == null ? "CREDITS —" : cards.HasInfiniteMoney ? "CREDITS ∞" : $"CREDITS {cards.credits}";
+        RefreshCredits(cards);
 
         RefreshGear(cards);
         RefreshBackpack(cards);
@@ -197,6 +201,26 @@ public class RunStatusUI : MonoBehaviour
             }
         }
         ownedGearLabel.text = text.ToString();
+    }
+
+    // Credits count toward their new total with a spend/earn tint in play mode.
+    void RefreshCredits(CardManager cards)
+    {
+        if (!creditsLabel) return;
+        if (!_creditsLabelColorCaptured)
+        {
+            _creditsLabelColor = creditsLabel.color;
+            _creditsLabelColorCaptured = true;
+        }
+        if (cards == null || cards.HasInfiniteMoney)
+        {
+            creditsLabel.text = cards == null ? "CREDITS —" : "CREDITS ∞";
+            creditsLabel.color = _creditsLabelColor;
+            return;
+        }
+        _shownCredits.SetTarget(cards.credits, Application.isPlaying && isActiveAndEnabled);
+        creditsLabel.text = $"CREDITS {_shownCredits.Shown}";
+        creditsLabel.color = _shownCredits.Tint(_creditsLabelColor);
     }
 
     void RefreshTiming()

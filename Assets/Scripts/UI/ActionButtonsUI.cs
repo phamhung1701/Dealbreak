@@ -29,6 +29,9 @@ public class ActionButtonsUI : MonoBehaviour
     public TMP_Text combatLogLabel;
 
     TMP_Text _primaryActionLabel;
+    readonly DisplayedNumber _shownHealth = new();
+    Color _healthLabelColor;
+    bool _healthLabelColorCaptured;
     UnityAction[] _backpackSlotListeners;
     ConsumableSlotDragUI[] _backpackSlotDragInputs;
     EnhancementTargetUI _enhancementTargetUI;
@@ -144,6 +147,7 @@ public class ActionButtonsUI : MonoBehaviour
             RefreshEnemyTargetPresentation();
         }
         RefreshBoardGuidance();
+        if (_shownHealth.Tick(Time.unscaledDeltaTime)) RefreshPlayerHealthLabel(CombatManager.Instance);
     }
 
     void LateUpdate()
@@ -245,6 +249,25 @@ public class ActionButtonsUI : MonoBehaviour
         RefreshAll();
     }
 
+    // HP changes count over a few frames with a loss/gain tint in play mode; the value itself is
+    // always read from the player.
+    void RefreshPlayerHealthLabel(CombatManager combat)
+    {
+        if (!playerHealthLabel || combat == null) return;
+        if (!_healthLabelColorCaptured)
+        {
+            _healthLabelColor = playerHealthLabel.color;
+            _healthLabelColorCaptured = true;
+        }
+        _shownHealth.SetTarget(combat.player.currentHealth, Application.isPlaying && isActiveAndEnabled);
+        string block = combat.player.EncounterBlock > 0 ? $"  •  BLOCK {combat.player.EncounterBlock}" : string.Empty;
+        string shield = combat.player.ShieldCharges > 0 ? $"  •  SHIELD {combat.player.ShieldCharges}" : string.Empty;
+        playerHealthLabel.text = combat.HasInfiniteHealthForDev
+            ? $"HP  ∞{block}{shield}"
+            : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}{block}{shield}";
+        playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
+    }
+
     void RefreshAll()
     {
         var combat = CombatManager.Instance;
@@ -295,14 +318,7 @@ public class ActionButtonsUI : MonoBehaviour
 
         RefreshBackpackSlots(cards, combat);
 
-        if (playerHealthLabel)
-        {
-            string block = combat.player.EncounterBlock > 0 ? $"  •  BLOCK {combat.player.EncounterBlock}" : string.Empty;
-            string shield = combat.player.ShieldCharges > 0 ? $"  •  SHIELD {combat.player.ShieldCharges}" : string.Empty;
-            playerHealthLabel.text = combat.HasInfiniteHealthForDev
-                ? $"HP  ∞{block}{shield}"
-                : $"HP  {combat.player.currentHealth}/{combat.player.maxHealth}{block}{shield}";
-        }
+        RefreshPlayerHealthLabel(combat);
 
         if (turnStateLabel)
         {
