@@ -39,13 +39,16 @@ public sealed class DeckMutationTests
     [Test]
     public void Mirror_ClonesPermanentStateWithoutTransientState_AndGivesNewIdentity()
     {
-        var source = _cards.ownedCards[0];
+        Assert.That(_cards.AddConsumable(_mirror), Is.True);
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { _cards.deck[0].Id }), Is.False,
+            "Card Tricks are dropped on hand cards, so a Draw Pile card is never a target.");
+        _cards.DrawToHand(1);
+        var source = _cards.hand[0];
         var enhancement = ScriptableObject.CreateInstance<CardEnhancementData>(); _created.Add(enhancement);
         Assert.That(_cards.ApplyEnhancement(source.Id, enhancement), Is.True);
         source.GainPermanentAttackBonus(4);
         source.TryChangeSuit(CardData.Suit.Spades);
         source.EffectState.ClearEncounter();
-        Assert.That(_cards.AddConsumable(_mirror), Is.True);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { source.Id }), Is.True);
         var copy = _cards.ownedCards.Last();
         Assert.That(copy.Id, Is.Not.EqualTo(source.Id));
@@ -98,13 +101,17 @@ public sealed class DeckMutationTests
     }
 
     [Test]
-    public void Torch_RejectsDuplicateIds_AndPreservesLastCard()
+    public void Torch_TakesOneHandCardPerUse_AndPreservesLastCard()
     {
         Assert.That(_cards.AddConsumable(_torch), Is.True);
-        int first = _cards.ownedCards[0].Id;
+        _cards.DrawToHand(2);
+        int first = _cards.hand[0].Id, second = _cards.hand[1].Id;
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { first, first }), Is.False);
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
-        var ids = _cards.ownedCards.Select(card => card.Id).Skip(1).ToArray();
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { first, second }), Is.False,
+            "Each drop destroys one card.");
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { second }), Is.True);
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(1));
+        var ids = _cards.ownedCards.Select(card => card.Id).Where(id => id != first).ToArray();
         foreach (int id in ids)
             Assert.That(_cards.DestroyOwnedCard(_cards.FindOwnedCard(id)), Is.True);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { first }), Is.False);

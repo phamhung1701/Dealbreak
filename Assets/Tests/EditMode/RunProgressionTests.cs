@@ -276,8 +276,9 @@ public sealed class RunProgressionTests
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
         typeof(EnhancementTargetUI).GetMethod("OnEnable", flags).Invoke(ui, null);
         ui.OpenConsumableTarget(0);
+        _cardManager.DrawToHand(1);
         typeof(EnhancementTargetUI).GetMethod("SelectCard", flags)
-            .Invoke(ui, new object[] { _cardManager.ownedCards[0].Id });
+            .Invoke(ui, new object[] { _cardManager.hand[0].Id });
         var targetIds = (List<int>)typeof(EnhancementTargetUI).GetField("_mutationCardIds", flags).GetValue(ui);
         Assert.That(ui.IsTargeting, Is.True);
         Assert.That(targetIds.Count, Is.EqualTo(1));

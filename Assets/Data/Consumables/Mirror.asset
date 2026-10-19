@@ -20,10 +20,9 @@ MonoBehaviour:
 
     Timing: Anytime
 
-    Effect: Copy one card''s effective
-    suit, rank, mod and permanent attack bonus into a new card ID. Combat: select
-    a hand card; copy enters discard. Outside combat: select any owned card; copy
-    enters the next encounter deck.
+    Effect: Copy one hand card''s
+    effective suit, rank, Mod and permanent attack bonus into a new card. In combat
+    the copy joins your hand; outside combat it enters your deck.
 
     Uses: 1'
   price: 5

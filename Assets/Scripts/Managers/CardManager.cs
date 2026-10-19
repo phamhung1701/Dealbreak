@@ -279,10 +279,10 @@ public partial class CardManager : Singleton<CardManager>
             combat.IsResolvingAction) return false;
         bool inCombat = combat.currentState == GameState.PlayerTurn || combat.currentState == GameState.EnemyAttacking;
         bool canEdit = inCombat || combat.currentState == GameState.Idle || combat.currentState == GameState.GameWon;
-        bool hasTarget = _cards.OwnedCards.Any(card => DeckMutationService.CanTarget(_cards, card, inCombat));
+        // Card-targeting Tricks are dropped on a hand card, so only cards in hand are targets.
+        bool hasTarget = _cards.Hand.Any(card => DeckMutationService.CanTarget(_cards, card, true));
         bool hasRuneTarget = _cards.Hand.Any(card => card != null && card.Suit != consumable.targetSuit);
-        bool hasEnhancementTarget = _cards.OwnedCards.Any(card => card != null && card.Enhancement == null &&
-            (!inCombat || _cards.ContainsInHand(card)));
+        bool hasEnhancementTarget = _cards.Hand.Any(card => card != null && card.Enhancement == null);
         return consumable.effectType switch
         {
             ConsumableEffectType.Heal => consumable.healAmount > 0 &&
@@ -373,13 +373,13 @@ public partial class CardManager : Singleton<CardManager>
         if (definition.effectType is not (ConsumableEffectType.DuplicateCard or
             ConsumableEffectType.DestroyCards or ConsumableEffectType.ChangeSuit)) return false;
         bool inCombat = combat.currentState == GameState.PlayerTurn || combat.currentState == GameState.EnemyAttacking;
-        bool requiresHandTarget = inCombat || definition.effectType == ConsumableEffectType.ChangeSuit;
+        // One hand card per use: each drop spends one charge.
+        if (cardIds.Count != 1) return false;
         var selected = new List<CardInstance>(cardIds.Count);
-        var unique = new HashSet<int>();
         foreach (int id in cardIds)
         {
             var card = FindOwnedCard(id);
-            if (!unique.Add(id) || !DeckMutationService.CanTarget(_cards, card, requiresHandTarget)) return false;
+            if (!DeckMutationService.CanTarget(_cards, card, true)) return false;
             selected.Add(card);
         }
         bool success;
@@ -431,12 +431,10 @@ public partial class CardManager : Singleton<CardManager>
         var item = GetConsumableAtSlot(slotIndex);
         var card = FindOwnedCard(cardId);
         if (item == null || card == null) return false;
-        bool inCombat = combat != null && combat.currentState is GameState.PlayerTurn or GameState.EnemyAttacking;
         switch (item.effectType)
         {
             case ConsumableEffectType.ApplyEnhancement:
-                return item.enhancementToApply != null && card.Enhancement == null &&
-                    (!inCombat || _cards.ContainsInHand(card));
+                return item.enhancementToApply != null && card.Enhancement == null && _cards.ContainsInHand(card);
             case ConsumableEffectType.DuplicateCard:
             case ConsumableEffectType.DestroyCards:
             case ConsumableEffectType.ChangeSuit:
@@ -461,10 +459,8 @@ public partial class CardManager : Singleton<CardManager>
         var combat = CombatManager.Instance;
         if (!CanUseConsumableAtSlot(slotIndex, combat)) return false;
         var definition = GetConsumableAtSlot(slotIndex);
-        bool inCombat = combat.currentState == GameState.PlayerTurn || combat.currentState == GameState.EnemyAttacking;
-        bool requiresHandTarget = inCombat || definition.effectType == ConsumableEffectType.ChangeSuit;
         var card = FindOwnedCard(cardId);
-        return DeckMutationService.CanTarget(_cards, card, requiresHandTarget) &&
+        return DeckMutationService.CanTarget(_cards, card, true) &&
             (definition.effectType != ConsumableEffectType.ChangeSuit || card.Suit != definition.targetSuit);
     }
 
@@ -1000,21 +996,13 @@ public partial class CardManager : Singleton<CardManager>
         if (item == null) return 0;
         return item.effectType switch
         {
-            ConsumableEffectType.DestroyCards => 2,
-            ConsumableEffectType.ChangeSuit => 3,
-            ConsumableEffectType.DuplicateCard or ConsumableEffectType.ApplyEnhancement => 1,
+            ConsumableEffectType.DestroyCards or ConsumableEffectType.ChangeSuit or
+                ConsumableEffectType.DuplicateCard or ConsumableEffectType.ApplyEnhancement => 1,
             _ => 0
         };
     }
 
-    public bool ConsumableRequiresHandTarget(int slotIndex)
-    {
-        var item = GetConsumableAtSlot(slotIndex);
-        var combat = CombatManager.Instance;
-        if (item == null || combat == null) return false;
-        return item.effectType == ConsumableEffectType.ChangeSuit ||
-            combat.currentState is GameState.PlayerTurn or GameState.EnemyAttacking;
-    }
+    public bool ConsumableRequiresHandTarget(int slotIndex) => GetConsumableAtSlot(slotIndex) != null;
 
     public bool CanConfirmConsumableTargets(int slotIndex, IReadOnlyList<int> cardIds) =>
         CanConfirmConsumableTargetsAtSlot(slotIndex, cardIds);

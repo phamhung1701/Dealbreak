@@ -21,13 +21,11 @@ MonoBehaviour:
     Timing: Anytime
 
     Effect: Permanently destroy
-    one or two distinct cards; at least one deck card must survive. Combat targets
-    must be in hand; outside combat targets may be any owned cards. Cancel without
-    consuming.
+    one card in your hand; at least one deck card must survive.
 
-    Uses: 1'
+    Uses: 2'
   price: 5
-  uses: 1
+  uses: 2
   effectType: 4
   healAmount: 0
   damageAmount: 0

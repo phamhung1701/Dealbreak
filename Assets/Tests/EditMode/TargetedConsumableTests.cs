@@ -66,7 +66,7 @@ public sealed class TargetedConsumableTests
     }
 
     [Test]
-    public void SuitRune_ChangesUpToThreeDistinctHandCardsWithOneCharge()
+    public void SuitRune_ChangesOneHandCardPerChargeForThreeCharges()
     {
         Assert.That(_heartRune.uses, Is.EqualTo(3));
         Assert.That(_cards.AddConsumable(_heartRune), Is.True);
@@ -77,16 +77,21 @@ public sealed class TargetedConsumableTests
         var targets = _cards.hand.Take(4).ToArray();
         Assert.That(targets, Has.Length.EqualTo(4));
         var fourIds = targets.Select(card => card.Id).ToArray();
-        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, fourIds), Is.False);
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, fourIds.Take(2).ToArray()), Is.False,
+            "Each drop changes one card.");
         Assert.That(targets.All(card => card.Suit != CardData.Suit.Hearts), Is.True);
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
 
-        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, fourIds.Take(3).ToArray()), Is.True);
+        for (int i = 0; i < 2; i++)
+        {
+            Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { fourIds[i] }), Is.True);
+            Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2 - i));
+        }
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { fourIds[2] }), Is.True);
 
         Assert.That(targets.Take(3).All(card => card.Suit == CardData.Suit.Hearts), Is.True);
         Assert.That(targets[3].Suit, Is.Not.EqualTo(CardData.Suit.Hearts));
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
-        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
+        Assert.That(_cards.BackpackSlotsUsed, Is.Zero, "The third charge empties the slot.");
     }
 
     [Test]
@@ -203,7 +208,9 @@ public sealed class TargetedConsumableTests
     public void Whetstone_AppliesSharpenedToChosenUnenhancedCardAndConsumesThatSlot()
     {
         Assert.That(_cards.AddConsumable(_whetstone), Is.True);
-        var card = _cards.ownedCards.First(value => value.Enhancement == null);
+        Assert.That(_cards.CanUseConsumableAtSlot(0, _combat), Is.False, "With an empty hand there is no target.");
+        _cards.DrawToHand(1);
+        var card = _cards.hand.First(value => value.Enhancement == null);
         int baseDamage = _combat.CalculateCardAttackDamage(card);
         Assert.That(_cards.CanUseConsumableAtSlot(0, _combat), Is.True);
 

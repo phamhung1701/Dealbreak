@@ -20,10 +20,8 @@ MonoBehaviour:
 
     Timing: Anytime
 
-    Effect: Change one card''s
-    effective suit to Heart per charge; same-suit target spends no charge. Three
-    charges remain in one backpack slot until exhausted. Combat: hand target; outside
-    combat: any owned card.
+    Effect: Change one hand card''s
+    effective suit to Heart.
 
     Uses: 3'
   price: 5

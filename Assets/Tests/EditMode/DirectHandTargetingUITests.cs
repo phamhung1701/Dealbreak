@@ -103,7 +103,7 @@ public sealed class DirectHandTargetingUITests
     }
 
     [Test]
-    public void SuitRunePicker_EnablesAtMinimumCapsAtThreeAndCommitsSelectedHandCards()
+    public void SuitRunePicker_CapsAtOneHandCardAndSpendsOneCharge()
     {
         Assert.That(_cards.AddConsumable(_spade), Is.True);
         StartCombat();
@@ -115,17 +115,15 @@ public sealed class DirectHandTargetingUITests
         _picker.OpenConsumableTarget(0);
         Assert.That(_picker.confirmButton.interactable, Is.False);
 
-        foreach (var card in targets.Take(3))
-            HandView(card).OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(_picker.feedbackLabel.text, Does.Contain("3/3"));
+        HandView(targets[0]).OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
+        Assert.That(_picker.feedbackLabel.text, Does.Contain("1/1"));
         Assert.That(_picker.confirmButton.interactable, Is.True);
-        HandView(targets[3]).OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(_picker.feedbackLabel.text, Does.Contain("3/3"), "Selection cannot exceed the rune maximum.");
+        HandView(targets[1]).OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
+        Assert.That(_picker.feedbackLabel.text, Does.Contain("1/1"), "Each use changes one card.");
 
         _picker.confirmButton.onClick.Invoke();
 
-        Assert.That(targets.Take(3).All(card => card.Suit == CardData.Suit.Spades), Is.True);
-        Assert.That(targets[3].Suit, Is.Not.EqualTo(CardData.Suit.Spades));
+        Assert.That(targets.Count(card => card.Suit == CardData.Suit.Spades), Is.EqualTo(1));
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
         Assert.That(_picker.panel.activeSelf, Is.False);
@@ -211,33 +209,33 @@ public sealed class DirectHandTargetingUITests
     }
 
     [Test]
-    public void MultiTargetConsumables_ExposeAuthoritativeMinimumMaximumAndRejectInvalidSets()
+    public void CardConsumables_TargetExactlyOneHandCardPerUse()
     {
         Assert.That(_cards.AddConsumable(_torch), Is.True);
-        Assert.That(_cards.GetConsumableTargetMinimum(0), Is.EqualTo(1));
-        Assert.That(_cards.GetConsumableTargetMaximum(0), Is.EqualTo(2));
-        var torchTargets = _cards.ownedCards.Take(2).Select(card => card.Id).ToArray();
-        Assert.That(_cards.CanConfirmConsumableTargets(0, torchTargets), Is.True);
-        Assert.That(_cards.CanConfirmConsumableTargets(0, new[] { torchTargets[0], torchTargets[0] }), Is.False);
-        Assert.That(_cards.CanConfirmConsumableTargets(0, _cards.ownedCards.Take(3).Select(card => card.Id).ToArray()), Is.False);
-
         Assert.That(_cards.AddConsumable(_spade), Is.True);
+        Assert.That(_cards.CanConfirmConsumableTargets(0, new[] { _cards.deck[0].Id }), Is.False,
+            "Draw Pile cards are never targets.");
         _cards.DealHand();
-        Assert.That(_cards.GetConsumableTargetMinimum(1), Is.EqualTo(1));
-        Assert.That(_cards.GetConsumableTargetMaximum(1), Is.EqualTo(3));
-        var runeTargets = _cards.hand.Where(card => card.Suit != CardData.Suit.Spades)
-            .Take(3).Select(card => card.Id).ToArray();
-        Assert.That(runeTargets, Has.Length.EqualTo(3));
-        Assert.That(_cards.CanConfirmConsumableTargets(1, runeTargets.Take(2).ToArray()), Is.True);
-        Assert.That(_cards.CanConfirmConsumableTargets(1, runeTargets), Is.True);
-        Assert.That(_cards.CanConfirmConsumableTargets(1, runeTargets.Concat(new[] { runeTargets[0] }).ToArray()), Is.False);
+        for (int slot = 0; slot < 2; slot++)
+        {
+            Assert.That(_cards.GetConsumableTargetMinimum(slot), Is.EqualTo(1));
+            Assert.That(_cards.GetConsumableTargetMaximum(slot), Is.EqualTo(1));
+        }
+        var targets = _cards.hand.Where(card => card.Suit != CardData.Suit.Spades)
+            .Take(2).Select(card => card.Id).ToArray();
+        Assert.That(targets, Has.Length.EqualTo(2));
+        Assert.That(_cards.CanConfirmConsumableTargets(0, new[] { targets[0] }), Is.True);
+        Assert.That(_cards.CanConfirmConsumableTargets(0, targets), Is.False);
+        Assert.That(_cards.CanConfirmConsumableTargets(1, new[] { targets[0] }), Is.True);
+        Assert.That(_cards.CanConfirmConsumableTargets(1, targets), Is.False);
     }
 
     [Test]
     public void TargetEligibility_RejectsRemovedTargetAndRemovedConsumableSource()
     {
         Assert.That(_cards.AddConsumable(_torch), Is.True);
-        int targetId = _cards.ownedCards[0].Id;
+        _cards.DrawToHand(1);
+        int targetId = _cards.hand[0].Id;
         Assert.That(_cards.CanTargetConsumableAtSlot(0, targetId), Is.True);
         Assert.That(_cards.DestroyOwnedCard(_cards.FindOwnedCard(targetId)), Is.True);
         Assert.That(_cards.CanTargetConsumableAtSlot(0, targetId), Is.False);
