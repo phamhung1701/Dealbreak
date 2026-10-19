@@ -623,48 +623,8 @@ public static class GameplayEffectResolver
                     includeThresholdEffects: true, attackValue: qualifyingValue);
             }
         int resolved = ClampToInt((long)qualifyingValue * conditionalMultiplier + conditionalFlat);
-        if (cards != null)
-            for (int i = 0; i < cards.ownedGear.Count; i++)
-            {
-                var gear = cards.ownedGear[i];
-                if (gear == null) continue;
-                switch (gear.specialRule)
-                {
-                    case GearSpecialRule.ClubEpic when card.MatchesSuit(CardData.Suit.Clubs):
-                    {
-                        long numerator = 1, denominator = 1;
-                        for (int clubIndex = 0; clubIndex < unplayedClubCount; clubIndex++)
-                        {
-                            numerator *= 5;
-                            denominator *= 4;
-                        }
-                        resolved = ClampToInt((long)resolved * numerator / denominator);
-                        break;
-                    }
-                    case GearSpecialRule.OverflowEpic when CombatManager.Instance?.IsResolvingOverflowAttack == true:
-                        resolved = ClampToInt((long)resolved + Math.Max(0, overflowHandCount));
-                        break;
-                    case GearSpecialRule.GildedBlade:
-                        break;
-                    case GearSpecialRule.RareClub when card.MatchesSuit(CardData.Suit.Clubs):
-                        resolved = ClampToInt((long)resolved * 2);
-                        break;
-                    case GearSpecialRule.GlassCommon:
-                        resolved = ClampToInt((long)resolved + 5);
-                        break;
-                    case GearSpecialRule.GlassRare:
-                        resolved = ClampToInt((long)resolved * 2);
-                        break;
-                    case GearSpecialRule.GlassEpic when CombatManager.Instance?.player?.currentHealth == 1:
-                        resolved = ClampToInt((long)resolved * 3);
-                        break;
-                }
-            }
-        if (openingAttackBonus > 0 && cards?.ownedGear.Any(gear => gear != null &&
-            gear.specialRule is GearSpecialRule.GildedBlade or GearSpecialRule.HuntersLedger or
-                GearSpecialRule.TrophyRack or GearSpecialRule.KingslayersMark or
-                GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic or
-                GearSpecialRule.BalancersScale or GearSpecialRule.SpadeEpic or GearSpecialRule.HeartEpic) == true)
+        resolved = GearRules.ApplyFinalAttackRules(cards, card, resolved, unplayedClubCount, overflowHandCount);
+        if (openingAttackBonus > 0 && GearRules.GrantsOpeningAttackBonus(cards))
             resolved = ClampToInt((long)resolved + openingAttackBonus);
         return resolved;
     }
@@ -685,7 +645,7 @@ public static class GameplayEffectResolver
                 if (effect.kind != GameplayEffectKind.MimicInHandEffects ||
                     effect.trigger != GameplayEffectTrigger.CardCommitted || !effect.Matches(target)) continue;
                 repetitions += Mathf.Max(1, effect.amount);
-                if (gear.specialRule == GearSpecialRule.MimicEpic)
+                if (GearRules.IsMimicEpic(gear))
                     epicExtraRepetitions += Mathf.Max(1, effect.amount);
             }
         }
@@ -809,9 +769,7 @@ public static class GameplayEffectResolver
                 ApplyCriticalChanceOverrides(new GameplayEffectSource(card), committedCards,
                     ref chancePercent, ref found);
         }
-        if (manager != null && manager.HasGearSpecialRule(GearSpecialRule.AceEpic) &&
-            committedCards.Any(card => card?.Rank == CardData.Rank.Ace) &&
-            committedCards.Any(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King))
+        if (GearRules.GuaranteesCritical(manager, committedCards))
         {
             chancePercent = 100f;
             return true;
@@ -977,14 +935,7 @@ public static class GameplayEffectResolver
             if (gear == null) continue;
             capacity += SumSourceEffects(new GameplayEffectSource(cards.GetGearInstanceAt(i)),
                 GameplayEffectTrigger.HandCapacityCalculated, GameplayEffectKind.HandSizeBonus, null);
-            if (gear.specialRule == GearSpecialRule.RareArsenal) capacity += 3;
-            else if (gear.specialRule == GearSpecialRule.ArsenalEpic)
-            {
-                int faces = cards.hand.Count(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King);
-                double harmonic = 0d;
-                for (int faceIndex = 1; faceIndex <= faces; faceIndex++) harmonic += 1d / faceIndex;
-                capacity += (int)Math.Floor(harmonic);
-            }
+            capacity += GearRules.HandCapacityBonus(cards, gear);
         }
         for (int i = 0; i < cards.hand.Count; i++)
         {
@@ -1002,9 +953,6 @@ public static class GameplayEffectResolver
         var cards = context.Cards;
         if (cards == null) return damage;
         long reductions = 0;
-        bool arsenal = false;
-        bool glassCommon = false;
-        bool glassRare = false;
         for (int gearIndex = 0; gearIndex < cards.ownedGear.Count; gearIndex++)
         {
             var gear = cards.ownedGear[gearIndex];
@@ -1017,18 +965,10 @@ public static class GameplayEffectResolver
                     Applies(source, effect, GameplayEffectTrigger.IncomingDamageCalculated, null))
                     reductions += Math.Max(0, effect.amount);
             }
-            if (context.Request.Origin != CombatDamageOrigin.EnemyAggregate) continue;
-            arsenal |= gear.specialRule == GearSpecialRule.RareArsenal;
-            glassCommon |= gear.specialRule == GearSpecialRule.GlassCommon;
-            glassRare |= gear.specialRule == GearSpecialRule.GlassRare;
         }
         damage = ClampToInt(Math.Max(0L, damage - reductions));
         if (context.Request.Origin == CombatDamageOrigin.EnemyAggregate)
-        {
-            if (glassCommon) damage = ClampToInt((long)damage + 5);
-            else if (glassRare) damage = ClampToInt((long)damage * 2);
-            if (arsenal) damage = ClampToInt(((long)damage * 3 + 1) / 2);
-        }
+            damage = GearRules.ApplyAggregateIncomingRules(cards, damage);
         return damage;
     }
 
@@ -1059,13 +999,7 @@ public static class GameplayEffectResolver
                 source.State.SetCounter(effectIndex, context.MapIndex + 1);
                 changed = true;
             }
-            if (gear.specialRule == GearSpecialRule.HiddenTrail &&
-                source.State.GetCounter(GearCounterKeys.HiddenTrailRerolledMap) != context.MapIndex + 1 &&
-                context.Run.TryRerollEligibleHiddenNode())
-            {
-                source.State.SetCounter(GearCounterKeys.HiddenTrailRerolledMap, context.MapIndex + 1);
-                changed = true;
-            }
+            changed |= GearRules.ApplyMapReadyRules(gear, source.State, context);
         }
         return changed;
     }
@@ -1163,9 +1097,7 @@ public static class GameplayEffectResolver
         return AttackSelectionRules.IsRoyalFamilyPartial(proposed);
     }
 
-    public static bool HasRoyalFamilyHeirloom(CardManager manager) => manager != null &&
-        manager.ownedGear.Any(gear => gear != null &&
-            gear.specialRule == GearSpecialRule.RoyalFamilyHeirloom);
+    public static bool HasRoyalFamilyHeirloom(CardManager manager) => GearRules.EnablesRoyalFamily(manager);
 
     public static bool IsRoyalFamilyPartialSelection(IReadOnlyList<CardView> cards, CardManager manager)
     {
@@ -1306,27 +1238,7 @@ public static class GameplayEffectResolver
             {
                 EnqueueCommittedSource(new GameplayEffectSource(gearInstance),
                     context, queue, i);
-                if (gear.specialRule is GearSpecialRule.RareHeart or GearSpecialRule.HeartEpic &&
-                    context.Card.MatchesSuit(CardData.Suit.Hearts))
-                    queue.Enqueue(context.Action.ActionId, context.HitIndex, CombatReactionPhase.CardCommitted,
-                        CombatReactionSourceCategory.Gear, i, int.MaxValue - 1,
-                        () =>
-                        {
-                            int before = context.Combat.player.currentHealth;
-                            int healed = context.Combat.HealPlayer(3);
-                            if (before * 2 < context.Combat.player.maxHealth) context.Cards.AddCredits(3);
-                            if (gear.specialRule == GearSpecialRule.HeartEpic && context.Combat.CanPlayerHeal())
-                            {
-                                var state = gearInstance.State;
-                                int overheal = Math.Max(0, 3 - healed);
-                                state.SetCounter(GearCounterKeys.HeartEpicStoredOverheal, Math.Min(10, state.GetCounter(GearCounterKeys.HeartEpicStoredOverheal) + overheal));
-                            }
-                        });
-                if (gear.specialRule is GearSpecialRule.RareDiamond or GearSpecialRule.DiamondEpic &&
-                    context.Card.MatchesSuit(CardData.Suit.Diamonds))
-                    queue.Enqueue(context.Action.ActionId, context.HitIndex, CombatReactionPhase.CardCommitted,
-                        CombatReactionSourceCategory.Gear, i, int.MaxValue,
-                        () => context.Cards.DrawToHand(2));
+                GearRules.EnqueueCardCommittedRules(gear, gearInstance, i, context, queue);
             }
         }
         if (context.Card.Enhancement != null && !HeldCardEffectsSuppressed(context.Combat))
@@ -1372,9 +1284,8 @@ public static class GameplayEffectResolver
             {
                 var effect = EffectAt(source, effectIndex);
                 if (!IsMimicRetriggerableHandEffect(effect) || !effect.Matches(card)) continue;
-                bool epicExtra = cards.ownedGear.Any(gear => gear != null &&
-                    gear.specialRule == GearSpecialRule.MimicEpic && context.Card != null &&
-                    card.Rank == context.Card.Rank);
+                bool epicExtra = context.Card != null && card.Rank == context.Card.Rank &&
+                    GearRules.OwnsMimicEpic(cards);
                 int repeats = epicExtra ? 2 : 1;
                 int capturedIndex = effectIndex;
                 int sourceOrder = cards.ownedGear.Count + handIndex + mimicSourceOrder;
@@ -1435,41 +1346,7 @@ public static class GameplayEffectResolver
                 () => ApplyReactive(source, effect, context.Combat, context.Cards,
                     context.BlockingCard, context.AttackedEnemy, sourceOrder, capturedIndex));
         }
-        var spadeRule = source.Gear?.Definition.specialRule;
-        if (spadeRule is GearSpecialRule.SpadeRare or GearSpecialRule.SpadeEpic &&
-            context.BlockingCard.MatchesSuit(CardData.Suit.Spades))
-        {
-            int block = context.Combat.CalculateCardDefense(context.BlockingCard);
-            int attack = Math.Max(0, context.BlockedAttackDamage);
-            if (block >= attack && attack > 0)
-                queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
-                    CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue - 1,
-                    () => context.Cards.DrawToHand(1));
-            if (spadeRule == GearSpecialRule.SpadeEpic && block > attack)
-                source.State.SetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks, source.State.GetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks) + 1);
-        }
-        var retaliationRule = source.Gear?.Definition.specialRule;
-        if (retaliationRule is GearSpecialRule.RareRetaliation or GearSpecialRule.RetaliationEpic)
-        {
-            int block = context.Combat.CalculateCardDefense(context.BlockingCard);
-            int attack = context.BlockedAttackDamage;
-            int growth = retaliationRule == GearSpecialRule.RetaliationEpic
-                ? source.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) : 0;
-            int retaliation = CalculateRetaliationDamage(block, attack) + growth;
-            if (retaliation > 0)
-                queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
-                    CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue,
-                    () => context.Combat.QueueReactiveDamage(context.Combat.player, context.AttackedEnemy,
-                        retaliation, sourceOrder, int.MaxValue, sourceCategory: source.Category,
-                        onResolved: retaliationRule == GearSpecialRule.RetaliationEpic
-                            ? result =>
-                            {
-                                if (!result.WasLethal) return;
-                                source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, growth + 1);
-                                context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +1 counter damage.");
-                            }
-                            : null));
-        }
+        GearRules.EnqueueAttackBlockedRules(source, context, queue, sourceOrder);
     }
 
     public static int CalculateRetaliationDamage(int committedBlock, int incomingAttack)
