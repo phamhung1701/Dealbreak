@@ -198,7 +198,8 @@ public partial class CombatManager : Singleton<CombatManager>
         player.HealingAllowed = CanPlayerHeal;
         var captain = _enemies.Find(enemy => enemy.HasCaptaincy && !enemy.IsDefeated);
         foreach (var enemy in _enemies)
-            enemy.AssignCaptain(enemy.type.enemyName == "Goblin" ? captain : null);
+            enemy.AssignCaptain(captain != null && EncounterComposer.IsCaptainSupported(captain.type, enemy.type)
+                ? captain : null);
         _earnedCreditsReward = 0;
         _processedEnemyDeaths.Clear();
         _reactions.Clear();

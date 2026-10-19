@@ -583,59 +583,29 @@ public partial class RunManager : Singleton<RunManager>
         var combat = CombatManager.Instance;
         if (node == null || combat == null || !combat.CanStartEncounter) return false;
 
+        var authoredElite = node.kind == MapNodeType.Elite ? FindAuthoredElite(node.contentId) : null;
         var enemyType = node.kind switch
         {
             MapNodeType.Headliner => CurrentHeadliner,
-            MapNodeType.Elite => FindAuthoredElite(node.contentId) ?? CreateEliteType(FindEnemy(node.contentId)),
+            MapNodeType.Elite => authoredElite ?? CreateEliteType(FindEnemy(node.contentId)),
             _ => FindEnemy(node.contentId)
         };
         if (enemyType == null) return false;
 
-        var stats = GetEncounterStats(node);
-        int encounterCount = node.kind == MapNodeType.Combat
-            ? Mathf.Max(1, enemyType.encounterCount)
-            : 1;
-        var enemies = new List<EnemyRuntime>(encounterCount + 1);
-        for (int i = 0; i < encounterCount; i++)
-            enemies.Add(new EnemyRuntime(enemyType, i + 1, encounterCount, stats.hp, stats.attack));
-
-        bool isCaptain = node.kind == MapNodeType.Elite && IsCaptainType(enemyType);
-        var allies = new List<EnemyTypeData>();
-        if (node.kind == MapNodeType.Combat && enemyType.enemyName == "War Drummer")
-        {
-            var goblin = FindNormalEnemyExact("Goblin");
-            if (goblin != null) { allies.Add(goblin); allies.Add(goblin); }
-        }
-        else if (isCaptain || node.kind == MapNodeType.Combat && ShouldAddGoblinAlly(node, enemyType))
-        {
-            var goblin = FindNormalEnemyExact("Goblin");
-            int allyCount = isCaptain ? 2 : 1;
-            for (int i = 0; i < allyCount && goblin != null; i++) allies.Add(goblin);
-        }
-        foreach (var allyType in allies)
-        {
-            var allyStats = ScaleEncounterStats(allyType.maxHp, allyType.baseAttack, node.mapIndex);
-            int sameTypeCount = allies.Count(value => ReferenceEquals(value, allyType));
-            int instance = enemies.Count(value => ReferenceEquals(value.type, allyType)) + 1;
-            enemies.Add(new EnemyRuntime(allyType, instance, sameTypeCount, allyStats.hp, allyStats.attack));
-        }
-
+        var members = ComposeEncounter(node, enemyType, authoredElite != null);
+        var enemies = new List<EnemyRuntime>(members.Count);
+        foreach (var member in members)
+            enemies.Add(new EnemyRuntime(member.Type, member.Instance, member.GroupSize, member.Hp, member.Attack));
         return combat.TryStartEncounter(enemies, node.kind);
     }
 
-    bool ShouldAddGoblinAlly(PathNode node, EnemyTypeData enemyType)
-    {
-        if (enemyType.enemyName == "Shieldbearer") return true;
-        if (enemyType.enemyName != "Knight" || node.mapIndex < 3) return false;
-        var random = (_randomContext ?? new RunRandomContext(runSeed)).CreateStream(
-            "knight-weak-ally", unchecked(node.mapIndex * 7919 ^ node.id));
-        return random.NextInt(0, 2) == 0;
-    }
+    // Spawn and preview share this composition; previews pass the source type of a generic Enforcer.
+    List<EncounterMember> ComposeEncounter(PathNode node, EnemyTypeData primary, bool authoredElite) =>
+        EncounterComposer.Compose(primary, GetEncounterStats(node), node.kind, authoredElite,
+            node.mapIndex, node.id, _randomContext ?? new RunRandomContext(runSeed));
 
     static (int hp, int attack) ScaleEncounterStats(int hp, int attack, int mapIndex) =>
-        mapIndex >= InfiniteRunScaling.FirstInfiniteMapIndex
-            ? InfiniteRunScaling.Scale(hp, attack, mapIndex)
-            : EnemyMapScaling.Scale(hp, attack, mapIndex);
+        EncounterComposer.ScaleStats(hp, attack, mapIndex);
 
     /// <summary>Preview and spawn use the same scaled base stats; elite bonuses are applied afterwards.</summary>
     public (int hp, int attack) GetEncounterStats(PathNode node)
@@ -666,15 +636,8 @@ public partial class RunManager : Singleton<RunManager>
         return elite;
     }
 
-    static bool IsCaptainType(EnemyTypeData enemy) => enemy != null && enemy.abilities != null &&
-        enemy.abilities.Any(ability => ability != null && ability.effect == EnemyAbilityEffect.Captaincy);
-
     EnemyTypeData FindAuthoredElite(string contentId) => contentCatalog?.eliteEnemies?.FirstOrDefault(
         enemy => enemy != null && (enemy.name == contentId || enemy.enemyName == contentId));
-
-    EnemyTypeData FindNormalEnemyExact(string enemyName) => GetNormalEnemies().FirstOrDefault(enemy =>
-        enemy != null && (string.Equals(enemy.enemyName, enemyName, StringComparison.Ordinal) ||
-            string.Equals(enemy.name, enemyName, StringComparison.Ordinal)));
 
     EnemyTypeData FindEnemy(string contentId)
     {
@@ -731,7 +694,7 @@ public partial class RunManager : Singleton<RunManager>
         return node.kind switch
         {
             MapNodeType.Combat => showStats
-                ? GetNormalEncounterPreview(node, stats)
+                ? DescribeEncounter("Street Fight", ComposeEncounter(node, FindEnemy(node.contentId), false))
                 : "Street Fight",
             MapNodeType.Elite => showStats
                 ? GetElitePreviewDescription(node, stats)
@@ -747,40 +710,23 @@ public partial class RunManager : Singleton<RunManager>
         };
     }
 
-    string GetNormalEncounterPreview(PathNode node, (int hp, int attack) stats)
-    {
-        var enemy = FindEnemy(node.contentId);
-        if (enemy == null) return $"Street Fight • {stats.hp} HP / {stats.attack} ATK";
-        string allyName = enemy.enemyName == "War Drummer" ? "2 Goblins" : null;
-        if (allyName == null) return $"Street Fight • primary enemy {stats.hp} HP / {stats.attack} ATK";
-        var ally = FindNormalEnemyExact(allyName);
-        if (ally == null) return $"Street Fight • {enemy.enemyName} • {stats.hp} HP / {stats.attack} ATK";
-        int count = enemy.enemyName == "War Drummer" ? 2 : 1;
-            var allyStats = ScaleEncounterStats(ally.maxHp, ally.baseAttack, node.mapIndex);
-        return $"Street Fight • {enemy.enemyName} + {allyName} • {AddCappedStats(stats.hp, allyStats.hp, count)} HP / {AddCappedStats(stats.attack, allyStats.attack, count)} ATK total";
-    }
-
     string GetElitePreviewDescription(PathNode node, (int hp, int attack) stats)
     {
         var authored = FindAuthoredElite(node.contentId);
-        if (IsCaptainType(authored))
-        {
-            var goblin = GetNormalEnemies().FirstOrDefault(enemy => enemy != null && enemy.enemyName == "Goblin");
-            if (goblin != null)
-            {
-                var ally = ScaleEncounterStats(goblin.maxHp, goblin.baseAttack, node.mapIndex);
-                return $"Enforcer • 3 enemies • {AddCappedStats(stats.hp, ally.hp, 2)} HP / {AddCappedStats(stats.attack, AddCappedStats(ally.attack, 1, 1), 2)} ATK total";
-            }
-        }
-        return authored != null
+        if (authored == null) return $"Hard fight • better Credits • {stats.hp} HP / {stats.attack} ATK";
+        var members = ComposeEncounter(node, authored, true);
+        return members.Count == 1
             ? $"Enforcer • 1 enemy • {stats.hp} HP / {stats.attack} ATK"
-            : $"Hard fight • better Credits • {stats.hp} HP / {stats.attack} ATK";
+            : DescribeEncounter("Enforcer", members);
     }
 
-    static int AddCappedStats(int primary, int secondary, int secondaryCount)
+    // Totals include allies and the Captain aura, so the preview matches the spawned encounter.
+    static string DescribeEncounter(string label, IReadOnlyList<EncounterMember> members)
     {
-        long total = (long)Math.Max(0, primary) + (long)Math.Max(0, secondary) * Math.Max(0, secondaryCount);
-        return (int)Math.Min(int.MaxValue, total);
+        var totals = EncounterComposer.Totals(members);
+        return members.Count <= 1
+            ? $"{label} • {totals.hp} HP / {totals.attack} ATK"
+            : $"{label} • {members.Count} enemies • {totals.hp} HP / {totals.attack} ATK total";
     }
 
     public IReadOnlyList<ShopOffer> GetCurrentShopOffers() => _activeShopOffers;

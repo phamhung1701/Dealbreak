@@ -169,7 +169,9 @@ public sealed class Phase4EnemyMechanicsTests
         var goblin = EnemyType("Goblin", 3, 2);
         var duelist = EnemyType("Duelist", 14, 4, EnemyAbilityEffect.SuitCall);
         var drummer = EnemyType("War Drummer", 8, 1, EnemyAbilityEffect.WarDrum);
+        drummer.allies = new[] { new EncounterAllySpec { type = goblin, count = 2 } };
         var captain = EnemyType("Goblin Captain", 16, 3, EnemyAbilityEffect.Captaincy);
+        captain.allies = new[] { new EncounterAllySpec { type = goblin, count = 2 } };
         var royalKnight = EnemyType("Royal Knight", 32, 5, EnemyAbilityEffect.RoyalGuard);
         var catalog = ScriptableObject.CreateInstance<RunContentCatalog>();
         _created.Add(catalog);

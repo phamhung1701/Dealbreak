@@ -203,6 +203,7 @@ public sealed class Phase7BMultiEnemyTests
         shieldAbility.amount = 1;
         shield.abilities = new[] { shieldAbility };
         var goblin = CreateEnemyType("Goblin", 3, 2, 3, encounterCount: 3);
+        shield.allies = new[] { new EncounterAllySpec { type = goblin, count = 1 } };
         var catalog = ScriptableObject.CreateInstance<RunContentCatalog>();
         _created.Add(catalog);
         catalog.normalEnemies = new[] { shield, goblin };

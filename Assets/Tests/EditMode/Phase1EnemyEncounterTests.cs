@@ -65,6 +65,9 @@ public sealed class Phase1EnemyEncounterTests
         var knight = CreateEnemy("Knight", 16, 4, 10);
         var shieldbearer = CreateEnemy("Shieldbearer", 10, 3, 0);
         var brute = CreateEnemy("Brute", 18, 3, 0);
+        knight.minMapIndex = 2;
+        shieldbearer.eligibleAsEliteBase = false;
+        brute.eligibleAsEliteBase = false;
         var enemies = new[] { goblin, knight, shieldbearer, brute };
 
         for (int mapIndex = 0; mapIndex < 2; mapIndex++)
@@ -89,6 +92,30 @@ public sealed class Phase1EnemyEncounterTests
             Assert.That(nodes.Where(n => n.kind == MapNodeType.Elite).Any(n => n.contentId == shieldbearer.name || n.contentId == brute.name), Is.False,
                 "Shieldbearer and Brute are normal-only and must not be selected for Elite encounters.");
         }
+    }
+
+    [Test]
+    public void AuthoredEnemyAssets_CarryCompositionRulesAsData()
+    {
+        EnemyTypeData Load(string name) => UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>($"Assets/Data/Enemies/{name}.asset");
+        var goblin = Load("Goblin");
+        var knight = Load("Knight");
+        var shieldbearer = Load("Shieldbearer");
+        var brute = Load("Brute");
+        var drummer = Load("WarDrummer");
+        var captain = Load("GoblinCaptain");
+
+        Assert.That(knight.minMapIndex, Is.EqualTo(2));
+        Assert.That((shieldbearer.eligibleAsEliteBase, brute.eligibleAsEliteBase), Is.EqualTo((false, false)));
+        // Unity serializes an unset string as "", so compare normalized fields.
+        static (EnemyTypeData, int, int, int, string) Spec(EncounterAllySpec spec) =>
+            (spec.type, spec.count, spec.minMapIndex, spec.oneInChance, spec.chanceStream ?? string.Empty);
+        Assert.That(Spec(drummer.allies.Single()), Is.EqualTo((goblin, 2, 0, 0, string.Empty)));
+        Assert.That(Spec(shieldbearer.allies.Single()), Is.EqualTo((goblin, 1, 0, 0, string.Empty)));
+        Assert.That(Spec(captain.allies.Single()), Is.EqualTo((goblin, 2, 0, 0, string.Empty)));
+        Assert.That(Spec(knight.allies.Single()), Is.EqualTo((goblin, 1, 3, 2, "knight-weak-ally")));
+        Assert.That(EncounterComposer.IsCaptainSupported(captain, goblin), Is.True,
+            "Captain support follows asset identity, so renaming the Scrapper cannot disable the aura.");
     }
 
     [Test]

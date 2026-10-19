@@ -60,7 +60,7 @@ public sealed class Phase2EliteCombatTests
         var allyStats = EnemyMapScaling.Scale(3, 2, mapNumber - 1);
         foreach (var goblin in _combat.Enemies.Skip(1))
         {
-            Assert.That(goblin.type.enemyName, Is.EqualTo("Goblin"));
+            Assert.That(goblin.type, Is.SameAs(LoadEnemy("Goblin")), "Allies are the authored Scrapper asset.");
             Assert.That((goblin.maxHp, goblin.currentAttack, goblin.EffectiveAttack),
                 Is.EqualTo((allyStats.hp, allyStats.attack, allyStats.attack + 1)));
         }
@@ -73,6 +73,7 @@ public sealed class Phase2EliteCombatTests
     {
         var captain = CreateEnemy("Captain", 16, 3, EnemyAbilityEffect.Captaincy);
         var goblinType = CreateEnemyType("Goblin", 3, 2);
+        captain.allies = new[] { new EncounterAllySpec { type = goblinType, count = 2 } };
         var captainRuntime = new EnemyRuntime(captain);
         var goblin = new EnemyRuntime(goblinType);
         _combat.StartEncounter(new[] { captainRuntime, goblin });
@@ -146,6 +147,7 @@ public sealed class Phase2EliteCombatTests
     {
         var captainType = CreateEnemy("Captain", 100, 3, EnemyAbilityEffect.Captaincy);
         var goblinType = CreateEnemyType("Goblin", 100, 2);
+        captainType.allies = new[] { new EncounterAllySpec { type = goblinType, count = 2 } };
         var captain = new EnemyRuntime(captainType);
         var goblins = new[] { new EnemyRuntime(goblinType), new EnemyRuntime(goblinType) };
         var retaliation = UnityEditor.AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/RetaliationEmblem.asset");
