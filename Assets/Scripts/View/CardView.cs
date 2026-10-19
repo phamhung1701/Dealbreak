@@ -126,6 +126,7 @@ public class CardView : MonoBehaviour,
     public void Setup(CardInstance cardData)
     {
         data = cardData;
+        if (Application.isPlaying) CardGlitchUI.Attach(this);
         RefreshContent();
         RefreshState();
     }

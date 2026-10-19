@@ -150,6 +150,9 @@ public class ActionButtonsUI : MonoBehaviour
 
     void LateUpdate()
     {
+        // Style passes repaint labels; the HP label must stay readable on its bar.
+        if (_healthLabelColorCaptured && playerHealthLabel)
+            playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
         if (_consumableContextPanel && _consumableContextPanel.activeSelf) PositionConsumableContext();
     }
 

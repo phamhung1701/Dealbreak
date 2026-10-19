@@ -54,10 +54,13 @@ public class EnemyAbility : ScriptableObject
 
     public virtual void OnEncounterStarted(EnemyRuntime enemy, CombatManager context)
     {
-        if (effect == EnemyAbilityEffect.IncreaseAttackOnEncounterStart)
+        if (effect == EnemyAbilityEffect.IncreaseAttackOnEncounterStart && amount > 0)
+        {
             enemy.IncreaseAttack(amount);
-        else if (effect == EnemyAbilityEffect.StartWithShield)
-            enemy.GainShield(amount);
+            enemy.NotifyAbilityTriggered(this);
+        }
+        else if (effect == EnemyAbilityEffect.StartWithShield && enemy.GainShield(amount) > 0)
+            enemy.NotifyAbilityTriggered(this);
     }
 
     public virtual void OnIncomingHitResolved(
@@ -71,9 +74,15 @@ public class EnemyAbility : ScriptableObject
     {
         if (enemy == null || enemy.IsDefeated) return;
 
-        if (effect == EnemyAbilityEffect.IncreaseAttackAfterPlayerCard)
+        if (effect == EnemyAbilityEffect.IncreaseAttackAfterPlayerCard && amount > 0)
+        {
             enemy.IncreaseAttack(amount);
-        else if (effect == EnemyAbilityEffect.HealAfterPlayerCard)
+            enemy.NotifyAbilityTriggered(this);
+        }
+        else if (effect == EnemyAbilityEffect.HealAfterPlayerCard && amount > 0 && enemy.currentHp < enemy.maxHp)
+        {
             enemy.Heal(amount);
+            enemy.NotifyAbilityTriggered(this);
+        }
     }
 }

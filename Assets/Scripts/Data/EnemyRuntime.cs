@@ -49,6 +49,11 @@ public class EnemyRuntime : ICombatDamageTarget
 
     public event Action OnHpChanged;
     public event Action OnAttackChanged;
+    /// <summary>
+    /// Raised when one of this enemy's abilities takes effect on the real resolution path (never
+    /// from a preview). Presentation only: listeners must not change combat state.
+    /// </summary>
+    public event Action<EnemyAbility> OnAbilityTriggered;
 
     public EnemyRuntime(EnemyTypeData enemyType, int instanceNumber = 1, int encounterSize = 1,
         int? startingHp = null, int? startingAttack = null)
@@ -71,6 +76,30 @@ public class EnemyRuntime : ICombatDamageTarget
     bool HasAbility(EnemyAbilityEffect effect) => type.abilities != null &&
         type.abilities.Any(ability => ability != null && ability.effect == effect);
 
+    internal void NotifyAbilityTriggered(EnemyAbility ability)
+    {
+        if (ability != null) OnAbilityTriggered?.Invoke(ability);
+    }
+
+    void NotifyAbilityTriggered(EnemyAbilityEffect effect)
+    {
+        if (type.abilities == null) return;
+        foreach (var ability in type.abilities)
+            if (ability != null && ability.effect == effect)
+            {
+                OnAbilityTriggered?.Invoke(ability);
+                return;
+            }
+    }
+
+    /// <summary>
+    /// Whether a card of this suit is weakened against this enemy right now: a Headliner's own
+    /// suit deals no damage, and a Suit Call halves the next hit of the called suit.
+    /// </summary>
+    public bool ResistsSuit(CardData.Suit suit) => !IsDefeated &&
+        (type.sourceCard != null && type.sourceCard.suit == suit ||
+            HasSuitCall && !_duelistCallConsumed && _announcedSuit == suit);
+
     public void SetAnnouncedSuit(CardData.Suit suit)
     {
         _announcedSuit = suit;
@@ -82,6 +111,7 @@ public class EnemyRuntime : ICombatDamageTarget
     {
         var suit = (CardData.Suit)random.NextInt(0, Enum.GetValues(typeof(CardData.Suit)).Length);
         SetAnnouncedSuit(suit);
+        NotifyAbilityTriggered(EnemyAbilityEffect.SuitCall);
         return suit;
     }
 
@@ -132,14 +162,20 @@ public class EnemyRuntime : ICombatDamageTarget
     {
         _currentResponseIsCharged = NextAttackIsCharged;
         PreparedCaptainAttackBonus = CaptainAttackBonus;
-        if (HasRoyalGuard && !_currentResponseIsCharged)
-            GainShield(1);
+        if (HasRoyalGuard && !_currentResponseIsCharged && GainShield(1) > 0)
+            NotifyAbilityTriggered(EnemyAbilityEffect.RoyalGuard);
         _responsesPrepared++;
+        if (_currentResponseIsCharged)
+            NotifyAbilityTriggered(HasAbility(EnemyAbilityEffect.HeavySwing) ? EnemyAbilityEffect.HeavySwing
+                : HasRoyalGuard ? EnemyAbilityEffect.RoyalGuard : EnemyAbilityEffect.AlternateChargedAttack);
+        if (HasAbility(EnemyAbilityEffect.Desperation) && (long)currentHp * 2L < maxHp)
+            NotifyAbilityTriggered(EnemyAbilityEffect.Desperation);
         int budget = ResponseAttack;
         if (HasOppression)
         {
             long oppressed = (long)budget + (long)Mathf.Max(0, heldCardCount - 3) * 2L;
             budget = (int)Math.Min(int.MaxValue, oppressed);
+            if (heldCardCount > 3) NotifyAbilityTriggered(EnemyAbilityEffect.Oppression);
         }
         PreparedResponseBudget = budget;
         return budget;
@@ -149,6 +185,7 @@ public class EnemyRuntime : ICombatDamageTarget
     {
         int budget = PrepareResponseAttack(heldCardCount);
         if (!HasDoubleStrike) return new[] { budget };
+        NotifyAbilityTriggered(EnemyAbilityEffect.DoubleStrike);
         int hitDamage = RoundHalfUp(budget * 0.6f);
         return new[] { hitDamage, hitDamage };
     }
@@ -157,6 +194,7 @@ public class EnemyRuntime : ICombatDamageTarget
     {
         if (!HasMasterThief || _masterThiefHasStolen || IsDefeated) return false;
         _masterThiefHasStolen = true;
+        NotifyAbilityTriggered(EnemyAbilityEffect.MasterThief);
         return true;
     }
 
@@ -176,6 +214,7 @@ public class EnemyRuntime : ICombatDamageTarget
         _guardedHitConsumed = false;
         if (HasWarDrum && enemies != null)
         {
+            bool drummed = false;
             for (int i = 0; i < enemies.Count; i++)
             {
                 var ally = enemies[i];
@@ -184,13 +223,16 @@ public class EnemyRuntime : ICombatDamageTarget
                 if (currentBonus >= 3) continue;
                 ally.IncreaseAttack(1);
                 _warDrumBonuses[ally] = currentBonus + 1;
+                drummed = true;
             }
+            if (drummed) NotifyAbilityTriggered(EnemyAbilityEffect.WarDrum);
         }
         if (!HasAbility(EnemyAbilityEffect.Regeneration) || _regenerationActivations >= 3) return;
         int heal = RoundHalfUp(maxHp * 0.05f);
         if (heal <= 0 || currentHp >= maxHp) return;
         Heal(heal);
         _regenerationActivations++;
+        NotifyAbilityTriggered(EnemyAbilityEffect.Regeneration);
     }
 
     public void ResetResponseIntent()
@@ -225,8 +267,10 @@ public class EnemyRuntime : ICombatDamageTarget
             for (int i = 0; i < type.abilities.Length; i++)
             {
                 var ability = type.abilities[i];
-                if (ability != null)
-                    resolvedDamage = ability.ModifyIncomingDamage(this, context, request, resolvedDamage);
+                if (ability == null) continue;
+                int before = resolvedDamage;
+                resolvedDamage = ability.ModifyIncomingDamage(this, context, request, resolvedDamage);
+                if (resolvedDamage < before) NotifyAbilityTriggered(ability);
             }
         }
         // Headliner immunity is based on the Headliner's source-card suit and the action's existing
@@ -243,6 +287,7 @@ public class EnemyRuntime : ICombatDamageTarget
         {
             resolvedDamage = RoundHalfUp(resolvedDamage * 0.5f);
             _duelistCallConsumed = true;
+            NotifyAbilityTriggered(EnemyAbilityEffect.SuitCall);
         }
 
         if (_guardedReady && !_guardedHitConsumed && resolvedDamage > 0)
@@ -250,6 +295,7 @@ public class EnemyRuntime : ICombatDamageTarget
             resolvedDamage = RoundHalfUp(resolvedDamage * 0.5f);
             _guardedHitConsumed = true;
             _guardedReady = false;
+            NotifyAbilityTriggered(EnemyAbilityEffect.Guarded);
         }
         return Mathf.Max(0, resolvedDamage);
     }

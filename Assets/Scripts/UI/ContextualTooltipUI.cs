@@ -121,7 +121,9 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         if(source.TryGetComponent<EnemyDisplayUI>(out var enemy)&&enemy.DisplayedEnemy!=null&&!enemy.DisplayedEnemy.IsDefeated)
         {
             var data=enemy.DisplayedEnemy;
-            string traits=data.type.abilities==null?string.Empty:string.Join("\n\n",data.type.abilities.Where(a=>a).Select(a=>$"{a.displayName}\n{a.description}"));
+            // Ability names stand out from their rules text.
+            string accent=DealbreakUIStyle.Theme?ColorUtility.ToHtmlStringRGB(DealbreakUIStyle.Theme.brick):"A8453A";
+            string traits=data.type.abilities==null?string.Empty:string.Join("\n\n",data.type.abilities.Where(a=>a).Select(a=>$"<b><color=#{accent}>{a.displayName.ToUpperInvariant()}</color></b>\n{a.description}"));
             string reward=data.type.sourceCard?$"\n\nReward • {data.type.sourceCard.DisplayName}":string.Empty;
             info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,string.Join("\n\n",new[]{$"HP {data.currentHp}/{data.maxHp} • Attack {data.EffectiveAttack}",enemy.DetailGuidance,traits,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part))));return true;
         }

@@ -72,6 +72,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 
     void Awake()
     {
+        EnemyAbilityCalloutUI.Attach(this);
         _baseTargetScale = transform.localScale;
         if (!portrait) return;
 
