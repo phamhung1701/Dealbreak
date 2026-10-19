@@ -77,12 +77,13 @@ public class ShopUI : MonoBehaviour
     }
     void RefreshInlinePrices()
     {
-        if(!storeComposition||!panel)return;
+        var run=RunManager.Instance;
+        if(!storeComposition||!panel||run==null)return;
         foreach(var view in panel.GetComponentsInChildren<ShopOfferUI>())
         {
-            var offer=view.Offer;if(offer==null)continue;
+            var offer=view.Offer;if(offer==null||!view.statusLabel)continue;
             int cost=offer.kind==ShopOfferKind.Investment?offer.investmentStake:offer.kind==ShopOfferKind.Supply?offer.supplyQuantity*3:offer.price;
-            string reason=RunManager.Instance.GetShopOfferUnavailableReason(offer.StableId);
+            string reason=run.GetShopOfferUnavailableReason(offer.StableId);
             view.statusLabel.text=reason.Replace("Backpack Full","Trick slots full");view.RefreshPurchase(reason,cost);
             if(_investmentStakeInput&&_investmentStakeInput.textComponent)
             {var text=_investmentStakeInput.textComponent;text.alignment=TextAlignmentOptions.Midline;text.font=DealbreakUIStyle.Theme.numericFont;text.fontSize=22;}
