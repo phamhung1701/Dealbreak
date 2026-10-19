@@ -430,6 +430,22 @@ public sealed class PersistentRunSaveTests
     }
 
     [Test]
+    public void Autosave_IsMarkedDirtyByGameplayChanges()
+    {
+        var writer = run.gameObject.AddComponent<RunSaveAutosave>();
+        if (typeof(RunSaveAutosave).GetField("_run", Private).GetValue(writer) == null)
+            typeof(RunSaveAutosave).GetMethod("OnEnable", Private).Invoke(writer, null);
+        writer.IsDirty = false;
+        cards.AddCredits(3);
+        Assert.That(writer.IsDirty, Is.True, "A Credits change must schedule a snapshot.");
+        writer.IsDirty = false;
+        combat.HealPlayer(1);
+        run.RefreshCurrentMapEffects();
+        cards.ShuffleDeck();
+        Assert.That(writer.IsDirty, Is.True, "A deck change must schedule a snapshot.");
+    }
+
+    [Test]
     public void AbortedEncounter_KeepsSaveAndStopsAutosave()
     {
         typeof(SaveGameService).GetField("StoreOverride", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, store);
