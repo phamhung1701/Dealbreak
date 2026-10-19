@@ -68,7 +68,7 @@ public sealed class Phase7B5CombatFoundationTests
     public void DamageResult_AlreadyDefeatedTargetIsNotReportedAsModifierPrevention()
     {
         var enemy = new EnemyRuntime(CreateEnemyType("Already Defeated", 5, 0, 0));
-        enemy.TakeDamage(5);
+        enemy.ApplyResolvedCombatDamage(5);
         var action = new CombatActionContext(6, CombatActionOrigin.PlayerCard, _combat.player, targetEnemy: enemy);
         var request = new DamageRequest(action, 0, CombatDamageOrigin.Card, _combat.player, enemy, 9);
 

@@ -73,8 +73,10 @@ public sealed class Phase4DeterminismTests
         type.abilities = new[] { guard, fury };
         var enemy = new EnemyRuntime(type);
 
-        int dealt = enemy.TakeCardDamage(7, null);
-        enemy.NotifyPlayerCardResolved(null);
+        var action = new CombatActionContext(1, CombatActionOrigin.PlayerCard, targetEnemy: enemy);
+        int dealt = new CombatResolver().Resolve(
+            new DamageRequest(action, 0, CombatDamageOrigin.Card, null, enemy, 7), null).ActualHpLost;
+        foreach (var ability in type.abilities) ability.OnPlayerCardResolved(enemy, null);
 
         Assert.That(dealt, Is.EqualTo(5));
         Assert.That(enemy.currentHp, Is.EqualTo(15));

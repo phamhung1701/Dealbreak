@@ -87,7 +87,7 @@ public sealed class Phase2EliteCombatTests
         Assert.That((goblin.currentAttack, goblin.EffectiveAttack), Is.EqualTo((1, 2)),
             "The captain aura remains a fixed +1 after base attack changes.");
 
-        captainRuntime.TakeDamage(16);
+        captainRuntime.ApplyResolvedCombatDamage(16);
         Assert.That(captainRuntime.IsDefeated, Is.True);
         Assert.That(goblin.CaptainAttackBonus, Is.Zero);
         Assert.That(goblin.EffectiveAttack, Is.EqualTo(1));
@@ -134,7 +134,7 @@ public sealed class Phase2EliteCombatTests
 
         var first = new EnemyRuntime(captain);
         var second = new EnemyRuntime(captain);
-        first.TakeDamage(4);
+        first.ApplyResolvedCombatDamage(4);
         first.IncreaseAttack(2);
         Assert.That((first.currentHp, first.currentAttack), Is.EqualTo((12, 5)));
         Assert.That((second.currentHp, second.currentAttack), Is.EqualTo((16, 3)));

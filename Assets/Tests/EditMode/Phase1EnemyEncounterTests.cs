@@ -40,7 +40,7 @@ public sealed class Phase1EnemyEncounterTests
 
         var shield = new EnemyRuntime(shieldType);
         var brute = new EnemyRuntime(bruteType);
-        shield.NotifyEncounterStarted(null);
+        foreach (var ability in shield.type.abilities) ability.OnEncounterStarted(shield, null);
 
         Assert.That(shield.ShieldCharges, Is.EqualTo(1));
         Assert.That(brute.NextAttackIsCharged, Is.False);

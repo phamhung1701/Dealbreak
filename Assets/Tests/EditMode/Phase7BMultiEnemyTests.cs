@@ -224,7 +224,9 @@ public sealed class Phase7BMultiEnemyTests
         Assert.That((_combat.Enemies[1].maxHp, _combat.Enemies[1].currentAttack), Is.EqualTo((4, 2)));
         var shieldRuntime = _combat.Enemies[0];
         Assert.That(shieldRuntime.ShieldCharges, Is.EqualTo(1));
-        Assert.That(shieldRuntime.TakeCardDamage(2, _combat), Is.Zero);
+        var action = new CombatActionContext(1, CombatActionOrigin.PlayerCard, _combat.player, targetEnemy: shieldRuntime);
+        Assert.That(new CombatResolver().Resolve(new DamageRequest(action, 0, CombatDamageOrigin.Card,
+            _combat.player, shieldRuntime, 2), _combat).ActualHpLost, Is.Zero);
         Assert.That((shieldRuntime.currentHp, shieldRuntime.ShieldCharges), Is.EqualTo((12, 0)));
         _combat.Reset();
         _combat.StartEncounter(new[] { shieldRuntime, new EnemyRuntime(goblin, startingHp: 4, startingAttack: 2) });
