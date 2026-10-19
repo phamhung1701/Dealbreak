@@ -149,7 +149,8 @@ public class CardView : MonoBehaviour,
             else
             {
                 var combat = CombatManager.Instance;
-                int attack = combat != null ? combat.CalculateCardAttackDamage(data) : data.AttackValue;
+                // A card's face shows what playing it alone would request, including primed Gear.
+                int attack = combat != null ? combat.PreviewActionDamage(new[] { data }) : data.AttackValue;
                 int defense = combat != null ? combat.CalculateCardDefense(data) : data.DefenseValue;
                 string identityFallback = sprite == null
                     ? $"{data.Definition.RankLabel}{data.SuitSymbol}  "

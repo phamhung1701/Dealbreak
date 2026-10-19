@@ -1600,7 +1600,33 @@ public partial class CombatManager : Singleton<CombatManager>
     }
 
     public int CalculateCardAttackDamage(CardInstance card, IReadOnlyList<CardInstance> playedCards = null,
-        bool includeOpeningAttackBonus = true)
+        bool includeOpeningAttackBonus = true) =>
+        CalculateCardAttackDamage(card, playedCards, includeOpeningAttackBonus, _activeGearBonuses);
+
+    /// <summary>
+    /// The damage one hit of this action would request before enemy modifiers, Shield and the
+    /// critical roll. It runs the same calculation as TryPlayCards (card values, primed Gear
+    /// bonuses, action flat damage and cap) without committing state or consuming RNG.
+    /// </summary>
+    public int PreviewActionDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target = null)
+    {
+        var cm = CardManager.Instance;
+        if (cards == null || cards.Count == 0) return 0;
+        for (int i = 0; i < cards.Count; i++) if (cards[i] == null) return 0;
+        var bonuses = GearRules.PrepareActionBonuses(cm, cards, _isHeadlinerEncounter, commit: false);
+        long raw = 0;
+        for (int i = 0; i < cards.Count; i++)
+            raw += CalculateCardAttackDamage(cards[i], cards, i == 0, bonuses);
+        var action = new CombatActionContext(0, CombatActionOrigin.PlayerCard, player, card: cards[0],
+            targetEnemy: target);
+        int perHit = GameplayEffectResolver.CalculateActionDamage(new ActionDamageEffectContext(action, cards,
+            target, cm, (int)Math.Min(raw, int.MaxValue), GameplayEffectResolver.IsHandsMultiCardAction(cards, cm)),
+            out int cap);
+        return cap < 0 ? perHit : Math.Min(perHit, cap);
+    }
+
+    int CalculateCardAttackDamage(CardInstance card, IReadOnlyList<CardInstance> playedCards,
+        bool includeOpeningAttackBonus, GearRules.ActionBonuses actionBonuses)
     {
         var cards = CardManager.Instance;
         int overflowHeld = _executingOverflowAutoPlay && cards != null
@@ -1608,7 +1634,7 @@ public partial class CombatManager : Singleton<CombatManager>
         int gilded = includeOpeningAttackBonus && IsOpeningPlayerAttack && _playerTurnNumber == 1 &&
             !_executingOverflowAutoPlay && cards != null ? Math.Max(0, cards.credits / 10) : 0;
         if (includeOpeningAttackBonus)
-            gilded += _activeGearBonuses.Total;
+            gilded += actionBonuses.Total;
         if (includeOpeningAttackBonus && IsOpeningPlayerAttack && cards != null)
             gilded += GearRules.OpeningAttackBonus(cards, _isHeadlinerEncounter);
         return GameplayEffectResolver.CalculateAttack(card, cards, playedCards, overflowHeld, gilded);

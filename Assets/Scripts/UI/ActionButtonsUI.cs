@@ -340,11 +340,11 @@ public class ActionButtonsUI : MonoBehaviour
                 GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilyPartialSelection(cards.SelectedCards, cards) =>
                     $"Royal Family selection ({selectedCount}/5)  •  exact 10/J/Q/K/A, one effective suit; target will be instantly defeated when complete",
                 GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) =>
-                    $"Ace pair: {cards.SelectedCards[0].data.DisplayName} + {cards.SelectedCards[1].data.DisplayName}  •  Drag to an enemy to attack",
+                    $"Ace pair: {cards.SelectedCards[0].data.DisplayName} + {cards.SelectedCards[1].data.DisplayName}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
                 GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) =>
-                    $"Same-rank set ({selectedCount} cards): {cards.SelectedCards[0].data.Rank}  •  Drag to an enemy to attack",
+                    $"Same-rank set ({selectedCount} cards): {cards.SelectedCards[0].data.Rank}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
                 GameState.PlayerTurn when hasSelected =>
-                    $"Selected: {cards.selectedCard.data.DisplayName}  •  Drag to an enemy to attack",
+                    $"Selected: {cards.selectedCard.data.DisplayName}  •  {DamagePreview(cards, combat)}  •  Drag to an enemy to attack",
                 GameState.PlayerTurn => "Select a card to attack, or drag it to an enemy",
                 GameState.EnemyAttacking when hasSelected && combat.TryPreviewDefense(cards.SelectedCards, out int blocked, out int remaining) =>
                     $"{selectedCount} selected  •  Blocks {blocked} of {combat.PendingAttackCount} pending attacks  •  Remaining damage {remaining}",
@@ -356,6 +356,15 @@ public class ActionButtonsUI : MonoBehaviour
                 _ => "Choose an available route on the map"
             };
         }
+    }
+
+    // Shares the execution calculation; the critical roll and enemy defenses are not included.
+    static string DamagePreview(CardManager cards, CombatManager combat)
+    {
+        var selected = cards.SelectedCards.Select(view => view.data).ToArray();
+        int damage = combat.PreviewActionDamage(selected, combat.currentEnemy);
+        return GameplayEffectResolver.HasDoubleStrikeEffect(selected)
+            ? $"{damage} damage ×2 hits" : $"{damage} damage";
     }
 
     void OnPrimaryActionClicked()

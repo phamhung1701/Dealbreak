@@ -45,8 +45,9 @@ public static partial class GearRules
 
     // ---- Player attack actions ------------------------------------------------------------
 
+    /// <param name="commit">False for previews: computes the same bonuses without resetting state.</param>
     public static ActionBonuses PrepareActionBonuses(CardManager cards, IReadOnlyList<CardInstance> playedCards,
-        bool headlinerEncounter)
+        bool headlinerEncounter, bool commit = true)
     {
         var bonuses = new ActionBonuses();
         if (cards == null || playedCards == null) return bonuses;
@@ -74,7 +75,7 @@ public static partial class GearRules
                 int playedGroup = playedCards.Count > 0 ? GetBalancerGroup(playedCards[0]) : 0;
                 if (playedGroup != 0 && playedGroup == previousGroup)
                 {
-                    state.SetCounter(GearCounterKeys.BalancersScaleBonus, 0);
+                    if (commit) state.SetCounter(GearCounterKeys.BalancersScaleBonus, 0);
                     bonuses.Balancer = 0;
                 }
                 else bonuses.Balancer = Math.Max(0, state.GetCounter(GearCounterKeys.BalancersScaleBonus));
