@@ -22,24 +22,18 @@ public class ShopUI : MonoBehaviour
     TMP_Text _investmentResultText;
     Button _quantityDecreaseButton;
     Button _quantityIncreaseButton;
-    Button _sellModeButton;
-    TMP_Text _sellModeLabel;
     ScrollRect _offersScroll;
     Transform _servicesContainer;
     RectTransform _selectedOfferRect;
     Vector2 _selectedOfferAnchorMax;
 
     string _selectedOfferId;
-    bool _sellingMode;
-    long _selectedGearInstanceId;
-    int _selectedSaleAuthoredPrice = -1;
     public string SelectedOfferId => _selectedOfferId;
-    public bool SellingMode => _sellingMode;
     public void RefreshPresentation() => RefreshItems();
 
     public void PurchaseInline(string stableId)
     {
-        if (_selectedOfferId != stableId || _sellingMode || GameplayInputGate.IsBlocked) return;
+        if (_selectedOfferId != stableId || GameplayInputGate.IsBlocked) return;
         OnBuy(); // Existing RunManager transaction guards, identity checks and payment authority.
     }
     void ReturnQuantityControls()
@@ -104,7 +98,7 @@ public class ShopUI : MonoBehaviour
     }
     void Update()
     {
-        if(!storeComposition||!panel||!panel.activeInHierarchy||GameplayInputGate.IsBlocked||_sellingMode)return;
+        if(!storeComposition||!panel||!panel.activeInHierarchy||GameplayInputGate.IsBlocked)return;
         if(UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame==true)
         {if(!Object.FindFirstObjectByType<PauseMenuUI>())ClearOfferSelection();return;}
         var mouse=UnityEngine.InputSystem.Mouse.current;
@@ -133,7 +127,6 @@ public class ShopUI : MonoBehaviour
         if (buyButton) { buyButton.onClick.AddListener(OnBuy); KeyButtonBorderStyle.Apply(buyButton); }
         EnsureInvestmentControls();
         EnsureOfferScrolling();
-        EnsureSellingControls();
         if (RunManager.Instance != null) RunManager.Instance.OnInvestmentResult += ShowInvestmentResult;
         Close();
     }
@@ -154,8 +147,7 @@ public class ShopUI : MonoBehaviour
             CardManager.Instance.OnDeckChanged -= RefreshQuantityLimitDetails;
         }
         if (continueButton) continueButton.onClick.RemoveListener(OnContinue);
-        if (buyButton) buyButton.onClick.RemoveListener(OnBuyOrConfirmSale);
-        if (_sellModeButton) _sellModeButton.onClick.RemoveListener(ToggleSellingMode);
+        if (buyButton) buyButton.onClick.RemoveListener(OnBuy);
         Close();
     }
 
@@ -216,103 +208,6 @@ public class ShopUI : MonoBehaviour
         text.fontSize = 22f;
         text.raycastTarget = false;
         return button;
-    }
-
-    void EnsureSellingControls()
-    {
-        if (panel == null) return;
-        if (_sellModeButton == null)
-        {
-            var card = _offersScroll != null ? _offersScroll.transform.parent :
-                itemsContainer != null ? itemsContainer.parent : panel.transform;
-            var go = new GameObject("ShopSellMode", typeof(RectTransform), typeof(Image), typeof(Button));
-            go.transform.SetParent(card, false);
-            var rect = (RectTransform)go.transform;
-            rect.anchorMin = rect.anchorMax = new Vector2(0.87f, 0.9f);
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(130f, 32f);
-            go.GetComponent<Image>().color = new Color(0.18f, 0.24f, 0.32f, 1f);
-            _sellModeButton = go.GetComponent<Button>();
-            _sellModeLabel = CreateInputLabel(go.transform, "Sell Items", false);
-            _sellModeLabel.alignment = TextAlignmentOptions.Center;
-            _sellModeLabel.raycastTarget = false;
-        }
-        _sellModeButton.onClick.RemoveListener(ToggleSellingMode);
-        if(storeComposition)DealbreakUIStyle.Place(_sellModeButton.transform,.055f,.04f,.20f,.10f);
-        _sellModeButton.onClick.AddListener(ToggleSellingMode);
-        if (buyButton)
-        {
-            buyButton.onClick.RemoveListener(OnBuy);
-            buyButton.onClick.RemoveListener(OnBuyOrConfirmSale);
-            buyButton.onClick.AddListener(OnBuyOrConfirmSale);
-        }
-    }
-
-    void OnBuyOrConfirmSale()
-    {
-        if (_sellingMode) OnConfirmSale(); else OnBuy();
-    }
-
-    void ToggleSellingMode()
-    {
-        if (GameplayInputGate.IsBlocked || panel == null || !panel.activeSelf) return;
-        _sellingMode = !_sellingMode;
-        ClearSaleSelection();
-        if (_sellModeLabel) _sellModeLabel.text = _sellingMode ? "Return to Buying" : "Sell Items";
-        RefreshItems();
-    }
-
-    void ClearSaleSelection()
-    {
-        _selectedGearInstanceId = 0;
-        _selectedSaleAuthoredPrice = -1;
-        if (buyButton) SetButtonLabel(buyButton, _sellingMode ? "Confirm Sale" : "Buy");
-        if (buyButton) buyButton.interactable = false;
-    }
-
-    static void SetButtonLabel(Button button, string label)
-    {
-        if (button && button.GetComponentInChildren<TMP_Text>())
-            button.GetComponentInChildren<TMP_Text>().text = label;
-    }
-
-    void SelectGearForSale(long instanceId)
-    {
-        if (GameplayInputGate.IsBlocked || !IsShopOpen()) return;
-        var item = CardManager.Instance != null ? CardManager.Instance.GetGearInstanceById(instanceId) : null;
-        if (item == null || item.Definition == null || item.Definition.price < 0) return;
-        _selectedGearInstanceId = instanceId;
-        _selectedSaleAuthoredPrice = item.Definition.price;
-        UpdateSaleDetails(item.Definition.displayName, item.Definition.price / 2);
-    }
-
-    bool IsShopOpen() => panel != null && panel.activeSelf && RunManager.Instance != null &&
-        RunManager.Instance.CanSellItems;
-
-    void UpdateSaleDetails(string itemName, int payout)
-    {
-        if (buyButton)
-        {
-            SetButtonLabel(buyButton, "Confirm Sale");
-            buyButton.interactable = true;
-        }
-        if (selectedOfferText) selectedOfferText.text = $"Sell {itemName} for {payout} Credits? Confirm to complete sale.";
-    }
-
-    void OnConfirmSale()
-    {
-        if (GameplayInputGate.IsBlocked || !IsShopOpen() || !_sellingMode) return;
-        var run = RunManager.Instance;
-        bool sold = _selectedGearInstanceId != 0 &&
-            run.SellGear(_selectedGearInstanceId, _selectedSaleAuthoredPrice);
-        if (!sold)
-        {
-            ClearSaleSelection();
-            UpdateSelectionDetails("Sale unavailable; item may have changed.");
-            return;
-        }
-        ClearSaleSelection();
-        RefreshItems();
     }
 
     void EnsureOfferScrolling()
@@ -451,9 +346,6 @@ public class ShopUI : MonoBehaviour
     void Close()
     {
         _selectedOfferId = null;
-        _sellingMode = false;
-        ClearSaleSelection();
-        if (_sellModeLabel) _sellModeLabel.text = "Sell Items";
         BoardPanelTransition.Hide(panel);
         UpdateSelectionDetails();
     }
@@ -472,7 +364,6 @@ public class ShopUI : MonoBehaviour
         if (_investmentStakeInput) _investmentStakeInput.gameObject.SetActive(false);
         if (_quantityDecreaseButton) _quantityDecreaseButton.gameObject.SetActive(false);
         if (_quantityIncreaseButton) _quantityIncreaseButton.gameObject.SetActive(false);
-        ClearSaleSelection();
         UpdateSelectionDetails();
         if (itemsContainer == null || itemButtonPrefab == null) return;
 
@@ -483,18 +374,6 @@ public class ShopUI : MonoBehaviour
             else DestroyImmediate(child.gameObject);
         }
 
-        var cm = CardManager.Instance;
-        if (_sellingMode)
-        {
-            RefreshSellItems(cm);
-            Canvas.ForceUpdateCanvases();
-            if (_offersScroll != null)
-            {
-                _offersScroll.velocity = Vector2.zero;
-                _offersScroll.verticalNormalizedPosition = 1f;
-            }
-            return;
-        }
         var offers = RunManager.Instance != null
             ? RunManager.Instance.GetCurrentShopOffers()
             : System.Array.Empty<ShopOffer>();
@@ -590,38 +469,6 @@ public class ShopUI : MonoBehaviour
             button.interactable = run.CanRefreshGoods;
             button.onClick.AddListener(() => { run.RefreshGoods(expected); });
         }
-    }
-
-    void RefreshSellItems(CardManager cards)
-    {
-        if (cards == null) return;
-        for (int i = 0; i < cards.OwnedGearInstances.Count; i++)
-        {
-            var gear = cards.OwnedGearInstances[i];
-            if (gear == null || gear.Definition == null || gear.Definition.price < 0) continue;
-            AddSellRow($"artifact:{gear.Id}", gear.Definition.icon, gear.Definition.displayName,
-                gear.Definition.price / 2, () => SelectGearForSale(gear.Id));
-        }
-        if (itemsContainer.childCount == 0 && selectedOfferText)
-            selectedOfferText.text = cards.BackpackSlotsUsed > 0
-                ? "No Gear to sell. Select a Trick in your backpack to use or sell it here."
-                : "No owned Gear or Tricks to sell.";
-    }
-
-    void AddSellRow(string rowName, string icon, string itemName, int payout, UnityEngine.Events.UnityAction onClick)
-    {
-        var row = Instantiate(itemButtonPrefab, itemsContainer);
-        row.name = $"Sell_{rowName.Replace(':', '_')}";
-        var label = row.GetComponentInChildren<TMP_Text>();
-        if (label)
-        {
-            label.text = $"{icon} {itemName} — Sell for {payout} Credits";
-            var layout = row.GetComponent<LayoutElement>() ?? row.AddComponent<LayoutElement>();
-            layout.minHeight = 58f;
-            layout.preferredHeight = 58f;
-        }
-        var button = row.GetComponent<Button>();
-        if (button) button.onClick.AddListener(onClick);
     }
 
     void SelectOffer(string stableId)
@@ -742,14 +589,14 @@ public class ShopUI : MonoBehaviour
                 if (offer.StableId == _selectedOfferId) { selected = offer; break; }
         RefreshQuantityControls();
         RefreshInlinePrices();
-        if(buyButton&&storeComposition)buyButton.gameObject.SetActive(_sellingMode);
+        if(buyButton&&storeComposition)buyButton.gameObject.SetActive(false);
 
         if (buyButton) buyButton.interactable = selected != null &&
             (selected.kind is ShopOfferKind.Supply or ShopOfferKind.Investment
                 ? RunManager.Instance.CanPurchaseShopOffer(selected.StableId)
                 : selected.kind != ShopOfferKind.Supply);
         if (!selectedOfferText) return;
-        if(storeComposition)selectedOfferText.gameObject.SetActive(_sellingMode||!string.IsNullOrEmpty(failure));
+        if(storeComposition)selectedOfferText.gameObject.SetActive(!string.IsNullOrEmpty(failure));
         if (!string.IsNullOrEmpty(failure))
         {
             selectedOfferText.text = failure;

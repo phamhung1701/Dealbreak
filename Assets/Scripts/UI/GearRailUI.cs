@@ -47,6 +47,13 @@ public sealed class GearRailUI : MonoBehaviour
     Vector2 _lastDetailParentSize;
     RectTransform _generatedControlsViewport;
     bool _hasLastDetailParentSize;
+    RectTransform _sellPanel;
+    TMP_Text _sellText;
+    Button _sellButton;
+    readonly Vector3[] _sellSlotCorners = new Vector3[4];
+
+    /// <summary>The Sell button shown beside the selected Gear while a Black Market is open.</summary>
+    public Button SellButton => _sellButton;
 
     void OnEnable()
     {
@@ -110,6 +117,8 @@ public sealed class GearRailUI : MonoBehaviour
             detailPanel.transform.parent is RectTransform detailParent &&
             (!_hasLastDetailParentSize || (detailParent.rect.size - _lastDetailParentSize).sqrMagnitude > 0.25f))
             PositionDetailBesideSlot(_selectedInstanceId);
+        // Leaving the Black Market or losing the Gear closes the sale panel without a rail refresh.
+        if (_sellPanel && _sellPanel.gameObject.activeSelf) RefreshSellContext();
     }
 
     public void Refresh()
@@ -187,6 +196,132 @@ public sealed class GearRailUI : MonoBehaviour
         if (_hovered && (!cards || !cards.ownedGear.Contains(_hovered))) HideTooltip();
         if (_selectedInstanceId != 0 && (!cards || cards.GetGearInstanceById(_selectedInstanceId) == null)) CloseDetail();
         UpdateMergeControls();
+        RefreshSellContext();
+    }
+
+    // Gear sells like a Trick: select it in a Black Market, then Sell and confirm.
+    void RefreshSellContext()
+    {
+        var run = RunManager.Instance;
+        var cards = CardManager.Instance;
+        var gear = _selectedInstanceId != 0 && cards ? cards.GetGearInstanceById(_selectedInstanceId) : null;
+        bool show = gear != null && gear.Definition != null && run != null && run.CanSellItems && !_mergeSelecting;
+        if (!show)
+        {
+            if (_sellPanel) _sellPanel.gameObject.SetActive(false);
+            return;
+        }
+        EnsureSellPanel();
+        if (!_sellPanel) return;
+        bool sellable = gear.Definition.price >= 0;
+        _sellText.text = sellable
+            ? $"<b>{gear.Definition.displayName}</b>\nSells for {gear.Definition.price / 2} Credits"
+            : $"<b>{gear.Definition.displayName}</b>\nCannot be sold";
+        _sellButton.interactable = sellable && !GameplayInputGate.IsBlocked;
+        _sellPanel.gameObject.SetActive(true);
+        PositionSellPanel();
+    }
+
+    void EnsureSellPanel()
+    {
+        if (_sellPanel || !slotsRoot) return;
+        var parent = slotsRoot.GetComponentInParent<Canvas>()?.transform as RectTransform;
+        if (!parent) return;
+        var panel = new GameObject("Selected Gear Sale", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image),
+            typeof(Canvas), typeof(GraphicRaycaster));
+        _sellPanel = (RectTransform)panel.transform;
+        _sellPanel.SetParent(parent, false);
+        var canvas = panel.GetComponent<Canvas>();
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 65;
+        _sellPanel.anchorMin = _sellPanel.anchorMax = _sellPanel.pivot = new Vector2(0.5f, 0.5f);
+        _sellPanel.sizeDelta = new Vector2(250f, 118f);
+        panel.GetComponent<Image>().color = new Color(0.08f, 0.12f, 0.16f, 0.96f);
+
+        var textObject = new GameObject("Gear Sale Details", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        var textRect = (RectTransform)textObject.transform;
+        textRect.SetParent(_sellPanel, false);
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = new Vector2(12f, 58f);
+        textRect.offsetMax = new Vector2(-12f, -10f);
+        _sellText = textObject.GetComponent<TMP_Text>();
+        CopyTextStyle(_sellText);
+        _sellText.fontSize = 18f;
+        _sellText.alignment = TextAlignmentOptions.TopLeft;
+        _sellText.raycastTarget = false;
+
+        var buttonObject = new GameObject("Sell Gear", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        var buttonRect = (RectTransform)buttonObject.transform;
+        buttonRect.SetParent(_sellPanel, false);
+        buttonRect.anchorMin = buttonRect.anchorMax = buttonRect.pivot = new Vector2(0.5f, 0f);
+        buttonRect.anchoredPosition = new Vector2(0f, 10f);
+        buttonRect.sizeDelta = new Vector2(110f, 44f);
+        var buttonImage = buttonObject.GetComponent<Image>();
+        buttonImage.color = new Color(0.22f, 0.43f, 0.34f, 1f);
+        _sellButton = buttonObject.GetComponent<Button>();
+        _sellButton.targetGraphic = buttonImage;
+        var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        var labelRect = (RectTransform)labelObject.transform;
+        labelRect.SetParent(buttonRect, false);
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
+        var label = labelObject.GetComponent<TMP_Text>();
+        CopyTextStyle(label);
+        label.text = "SELL";
+        label.fontSize = 16f;
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
+        _sellButton.onClick.AddListener(SellSelectedGear);
+        DealbreakUIStyle.Frame(_sellPanel);
+        DealbreakUIStyle.Button(_sellButton);
+        panel.SetActive(false);
+    }
+
+    void PositionSellPanel()
+    {
+        var parent = _sellPanel ? _sellPanel.parent as RectTransform : null;
+        GearIconSlotUI selected = null;
+        foreach (var slot in _slots)
+            if (slot && slot.InstanceId == _selectedInstanceId) { selected = slot; break; }
+        if (!parent || !selected) return;
+        var slotRect = (RectTransform)selected.transform;
+        var canvas = parent.GetComponentInParent<Canvas>();
+        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        slotRect.GetWorldCorners(_sellSlotCorners);
+        Vector2 screen = RectTransformUtility.WorldToScreenPoint(camera, _sellSlotCorners[3]);
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screen, camera, out var local)) return;
+        float halfWidth = _sellPanel.rect.width * 0.5f;
+        float halfHeight = _sellPanel.rect.height * 0.5f;
+        local.x = Mathf.Clamp(local.x + halfWidth + 12f, parent.rect.xMin + halfWidth, parent.rect.xMax - halfWidth);
+        local.y = Mathf.Clamp(local.y + slotRect.rect.height * 0.5f, parent.rect.yMin + halfHeight, parent.rect.yMax - halfHeight);
+        _sellPanel.anchoredPosition = local;
+    }
+
+    void SellSelectedGear()
+    {
+        var run = RunManager.Instance;
+        var gear = CardManager.Instance ? CardManager.Instance.GetGearInstanceById(_selectedInstanceId) : null;
+        if (run == null || gear?.Definition == null || !run.CanSellItems || gear.Definition.price < 0 ||
+            GameplayInputGate.IsBlocked) return;
+        long instanceId = gear.Id;
+        int authoredPrice = gear.Definition.price;
+        void Sell()
+        {
+            // The sale revalidates identity and price in RunManager, as Trick sales do.
+            if (RunManager.Instance != null && RunManager.Instance.SellGear(instanceId, authoredPrice))
+            {
+                CloseDetail();
+                Refresh();
+            }
+        }
+        var dialog = FindFirstObjectByType<ConfirmationDialogUI>();
+        var coordinator = FindFirstObjectByType<GameplayMenuCoordinator>();
+        if (dialog && coordinator)
+            dialog.Open(coordinator, "Sell Gear?", $"Sell {gear.Definition.displayName} for {authoredPrice / 2} Credits?",
+                "SELL", Sell);
+        else Sell();
     }
 
     void EnsureMergeControls()
@@ -577,6 +712,7 @@ public sealed class GearRailUI : MonoBehaviour
         foreach (var slot in _slots)
             if (slot) slot.SetDetailSelected(false);
         if (detailPanel) detailPanel.SetActive(false);
+        if (_sellPanel) _sellPanel.gameObject.SetActive(false);
     }
 
     static string Describe(GearData gear) => gear
