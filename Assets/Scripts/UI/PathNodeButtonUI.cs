@@ -34,7 +34,6 @@ public sealed class PathNodeButtonUI : MonoBehaviour
             MapNodeType.Elite => "ENFORCER",
             MapNodeType.Shop => "BLACK\nMARKET",
             MapNodeType.Event => "INCIDENT",
-            MapNodeType.Upgrade => "UPGRADE",
             MapNodeType.Risk => scouted ? "RISK" : "?",
             MapNodeType.Headliner => "HEADLINER",
             _ => "?"

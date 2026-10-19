@@ -60,7 +60,7 @@ public sealed class Phase4DeterminismTests
         Assert.That(first.Count(node => node.kind == MapNodeType.Elite), Is.InRange(0, 2));
         Assert.That(first.Select(node => node.kind), Does.Contain(MapNodeType.Shop));
         Assert.That(first.Select(node => node.kind), Does.Contain(MapNodeType.Event));
-        Assert.That(first.Select(node => node.kind), Does.Contain(MapNodeType.Upgrade));
+        Assert.That(first.Select(node => node.kind), Has.No.Member(MapNodeType.Upgrade), "Training nodes are retired.");
         Assert.That(first.Select(node => node.kind), Does.Contain(MapNodeType.Risk));
     }
 

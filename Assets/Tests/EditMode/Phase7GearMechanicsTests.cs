@@ -149,7 +149,7 @@ public sealed class Phase7GearMechanicsTests
     }
 
     [Test]
-    public void HammerRare_CachesThreeCommonChoicesAndAppliesOneChosenTarget()
+    public void HammerRare_CachesThreeCommonChoicesAndGrantsTheChosenModAsATrick()
     {
         var common = Asset("Hammer");
         var rare = Asset("HammerRare");
@@ -159,6 +159,9 @@ public sealed class Phase7GearMechanicsTests
         foreach (var name in new[] { "Sharpened", "Reinforced", "Mending", "Quickdraw" })
             _cards.enhancementCatalog.Add(AssetDatabase.LoadAssetAtPath<CardEnhancementData>(
                 $"Assets/Data/Enhancements/{name}.asset"));
+        _cards.consumableCatalog.AddRange(AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+            .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
+            .Where(asset => asset != null).ToArray());
         var card = Card(CardData.Suit.Clubs, CardData.Rank.Seven, 910);
         SetOwnedCards(new[] { card });
         CardCollectionOf(_cards).DrawToHand(1, 1);
@@ -172,14 +175,15 @@ public sealed class Phase7GearMechanicsTests
         Assert.That(choices.Length, Is.EqualTo(3));
         Assert.That(choices.Select(value => value.canonicalId).Distinct().Count(), Is.EqualTo(3));
         Assert.That(choices.All(value => value.rarity == "Common"), Is.True);
-        Assert.That(_run.ChooseEventEnhancementTarget(0, card.Id, choices[0]), Is.True);
-        Assert.That(card.Enhancement, Is.SameAs(choices[0]));
+        Assert.That(_run.ChooseEventMod(0, choices[0]), Is.True);
+        Assert.That(_cards.GetConsumableAtSlot(0), Is.SameAs(_cards.FindModTrick(choices[0])));
+        Assert.That(card.Enhancement, Is.Null);
         Assert.That(_run.IsPendingHammerReward, Is.False);
         Assert.That(GameplayInputGate.IsBlocked, Is.False);
     }
 
     [Test]
-    public void HammerRare_NoEligibleTargetOffersRetryOrDeclineWithoutSilentLoss()
+    public void HammerRare_FullTrickSlotsOfferRetryOrDeclineWithoutSilentLoss()
     {
         var common = Asset("Hammer");
         var rare = Asset("HammerRare");
@@ -189,9 +193,11 @@ public sealed class Phase7GearMechanicsTests
         foreach (var name in new[] { "Sharpened", "Reinforced", "Mending", "Quickdraw" })
             _cards.enhancementCatalog.Add(AssetDatabase.LoadAssetAtPath<CardEnhancementData>(
                 $"Assets/Data/Enhancements/{name}.asset"));
-        var full = Card(CardData.Suit.Clubs, CardData.Rank.Seven, 911);
-        SetOwnedCards(new[] { full });
-        Assert.That(_cards.ApplyEnhancement(full.Id, _cards.enhancementCatalog[0]), Is.True);
+        _cards.consumableCatalog.AddRange(AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+            .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
+            .Where(asset => asset != null).ToArray());
+        var filler = _cards.consumableCatalog.First(value => value.effectType == ConsumableEffectType.Heal);
+        while (_cards.CanAddConsumable(filler)) Assert.That(_cards.AddConsumable(filler), Is.True);
         SetPrivate(_run, "_completedNodeCount", 3);
         RunEventDefinition shown = null;
         _run.OnShowEvent += definition => shown = definition;
@@ -202,10 +208,8 @@ public sealed class Phase7GearMechanicsTests
         Assert.That(_run.IsPendingHammerReward, Is.True);
         Assert.That(GameplayInputGate.IsBlocked, Is.False);
 
-        var eligible = Card(CardData.Suit.Hearts, CardData.Rank.Ten, 912);
-        SetOwnedCards(new[] { full, eligible });
-        // Card-first Hammer (#38) targets a card in hand, so an eligible target must be drawn.
-        _cards.DrawToHand(2);
+        // Freeing a Trick slot makes the cached Mods takeable on the retry.
+        Assert.That(_cards.RemoveConsumableInstanceAtSlot(0, _cards.GetConsumableInstanceAtSlot(0)), Is.True);
         SetPrivate(_run, "_completedNodeCount", 4);
         Invoke(_run, "TryOpenHammerReward", null);
         Assert.That(_run.ActiveEvent.choices[0].interaction, Is.EqualTo(RunEventChoiceInteraction.ChooseEnhancementTarget));

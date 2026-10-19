@@ -37,8 +37,6 @@ public class RunEventUI : MonoBehaviour
             RunManager.Instance.OnShowEvent += Show;
             RunManager.Instance.OnHideEvent += Hide;
             RunManager.Instance.OnShowGearDiscardChoice += ShowGearDiscardChoice;
-            RunManager.Instance.OnShowUpgrade += ShowUpgrade;
-            RunManager.Instance.OnHideUpgrade += Hide;
         }
         Hide();
         Canvas.willRenderCanvases += HandleCanvasWillRender;
@@ -52,8 +50,6 @@ public class RunEventUI : MonoBehaviour
             RunManager.Instance.OnShowEvent -= Show;
             RunManager.Instance.OnHideEvent -= Hide;
             RunManager.Instance.OnShowGearDiscardChoice -= ShowGearDiscardChoice;
-            RunManager.Instance.OnShowUpgrade -= ShowUpgrade;
-            RunManager.Instance.OnHideUpgrade -= Hide;
         }
     }
 
@@ -78,19 +74,13 @@ public class RunEventUI : MonoBehaviour
             buttonObject.name = $"EventChoice_{choiceIndex + 1}";
             string unavailableReason = RunManager.Instance.GetEventOptionUnavailableReason(choiceIndex);
             if (string.IsNullOrEmpty(unavailableReason) && !HasRequiredInteractionUI(choice.interaction))
-                unavailableReason = choice.interaction == RunEventChoiceInteraction.ChooseEnhancementTarget
-                    ? "Mod selection UI unavailable"
-                    : "Card selection UI unavailable";
+                unavailableReason = "Card selection UI unavailable";
             bool available = string.IsNullOrEmpty(unavailableReason);
             var label = buttonObject.GetComponentInChildren<TMP_Text>();
             if (label)
             {
                 string status = available ? string.Empty : $"\n<color=#DFA0A0>{unavailableReason}</color>";
                 string description = choice.description ?? string.Empty;
-                if (choice.interaction == RunEventChoiceInteraction.ChooseEnhancementTarget)
-                    description = description.Replace("owned cards", "cards in your hand")
-                        .Replace("owned card", "card in your hand")
-                        .Replace("then a card.", "then click a card in your hand.");
                 label.text = $"<size=125%><b>{choice.label}</b></size>\n{description}{status}";
                 var detail=buttonObject.GetComponent<ContextualInfoTrigger>()??buttonObject.AddComponent<ContextualInfoTrigger>();
                 detail.category="Incident choice";detail.title=choice.label;detail.description=description+"\n"+unavailableReason;detail.enabled=false;
@@ -112,8 +102,6 @@ public class RunEventUI : MonoBehaviour
 
     bool HasRequiredInteractionUI(RunEventChoiceInteraction interaction)
     {
-        if (interaction == RunEventChoiceInteraction.ChooseEnhancementTarget)
-            return enhancementTargetUI != null && enhancementTargetUI.CanOpenEventEnhancementPicker;
         if (interaction == RunEventChoiceInteraction.DiscardTwoForRandomEnhancement ||
             interaction == RunEventChoiceInteraction.DiscardCardsForTotalValue)
         {
@@ -330,7 +318,7 @@ public class RunEventUI : MonoBehaviour
                 RunManager.Instance.DeclineHammerReward();
                 break;
             case RunEventChoiceInteraction.ChooseEnhancementTarget:
-                enhancementTargetUI?.OpenEventEnhancement(choiceIndex);
+                ShowModChoices(choiceIndex);
                 break;
             case RunEventChoiceInteraction.DiscardTwoForRandomEnhancement:
             case RunEventChoiceInteraction.DiscardCardsForTotalValue:
@@ -340,6 +328,50 @@ public class RunEventUI : MonoBehaviour
                 RunManager.Instance.ChooseEventOption(choiceIndex);
                 break;
         }
+    }
+
+    // A Mod choice lists its Mods; the one taken goes to the Trick slots as its Mod Trick.
+    void ShowModChoices(int choiceIndex)
+    {
+        var run = RunManager.Instance;
+        if (run == null || run.ActiveEvent == null) return;
+        var definition = run.ActiveEvent;
+        PrepareChoicesLayout();
+        PrepareDescriptionLayout();
+        ClearChoices();
+        SetDescription(definition.choices[choiceIndex].description);
+        foreach (var mod in run.GetEventEnhancementsForChoice(choiceIndex))
+        {
+            if (mod == null) continue;
+            var chosen = mod;
+            string reason = run.GetEventModUnavailableReason(choiceIndex, chosen);
+            var buttonObject = Instantiate(choiceButtonPrefab, choicesContainer);
+            buttonObject.name = $"ModChoice_{chosen.id}";
+            if (editorialLayout)
+            {
+                var surface = buttonObject.GetComponent<EditorialSurface>();
+                if (!surface) surface = buttonObject.AddComponent<EditorialSurface>();
+                surface.treatment = EditorialSurface.Treatment.Paper;
+            }
+            var label = buttonObject.GetComponentInChildren<TMP_Text>();
+            if (label)
+                label.text = $"<size=125%><b>{chosen.displayName}</b></size>\n{chosen.description}" +
+                    (string.IsNullOrEmpty(reason) ? string.Empty : $"\n<color=#DFA0A0>{reason}</color>");
+            var button = buttonObject.GetComponent<Button>();
+            if (button)
+            {
+                button.interactable = string.IsNullOrEmpty(reason);
+                button.onClick.AddListener(() => run.ChooseEventMod(choiceIndex, chosen));
+            }
+        }
+        var backObject = Instantiate(choiceButtonPrefab, choicesContainer);
+        backObject.name = "ModChoiceBack";
+        var backLabel = backObject.GetComponentInChildren<TMP_Text>();
+        if (backLabel) backLabel.text = "<b>Back</b>";
+        var back = backObject.GetComponent<Button>();
+        if (back) back.onClick.AddListener(() => Show(definition));
+        DealbreakUIStyle.ApplyHierarchy(panel.transform);
+        FinalizeChoiceList();
     }
 
     void ShowGearDiscardChoice(string title, string description,
@@ -512,40 +544,6 @@ public class RunEventUI : MonoBehaviour
             _discardChoiceIndex = -1;
             _selectedDiscardCardIds.Clear();
         }
-    }
-
-    void ShowUpgrade()
-    {
-        PrepareChoicesLayout();
-        PrepareDescriptionLayout();
-        if (panel == null || choicesContainer == null || choiceButtonPrefab == null || RunManager.Instance == null)
-            return;
-
-        if (titleLabel) titleLabel.text = "CARD ENHANCEMENT";
-        SetDescription("Choose one permanent enhancement for this run.");
-        ClearChoices();
-
-        var offers = RunManager.Instance.GetCurrentUpgradeOffers();
-        for (int i = 0; i < offers.Count; i++)
-        {
-            int choiceIndex = i;
-            var offer = offers[i];
-            var buttonObject = Instantiate(choiceButtonPrefab, choicesContainer);
-            buttonObject.name = $"EnhancementChoice_{choiceIndex + 1}";
-            var label = buttonObject.GetComponentInChildren<TMP_Text>();
-            if (label)
-            {
-                label.text = $"<b>{offer.Icon} {offer.DisplayName}</b>\n{offer.Description(CardManager.Instance)}";
-            }
-
-            var button = buttonObject.GetComponent<Button>();
-            if (button)
-                button.onClick.AddListener(() => { if (enhancementTargetUI) enhancementTargetUI.OpenUpgrade(choiceIndex); });
-        }
-
-        BoardPanelTransition.Show(panel);
-        FinalizeChoiceList();
-        panel.transform.SetAsLastSibling();
     }
 
     void ClearChoices()

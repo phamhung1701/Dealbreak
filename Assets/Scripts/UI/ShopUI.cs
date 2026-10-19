@@ -625,18 +625,6 @@ public class ShopUI : MonoBehaviour
         var run = RunManager.Instance;
         if (run == null) return;
         string selectedId = _selectedOfferId;
-        var offer = FindOffer(selectedId);
-        if (offer != null && offer.kind == ShopOfferKind.Enhancement)
-        {
-            var unavailable = run.GetShopOfferUnavailableReason(selectedId);
-            if (!string.IsNullOrEmpty(unavailable))
-            {
-                UpdateSelectionDetails(unavailable);
-                return;
-            }
-            if (enhancementTargetUI) enhancementTargetUI.OpenShop(selectedId);
-            return;
-        }
         if (run.PurchaseShopOffer(selectedId))
         {
             RefreshItems();

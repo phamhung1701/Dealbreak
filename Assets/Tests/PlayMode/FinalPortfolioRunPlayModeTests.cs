@@ -180,10 +180,6 @@ public sealed class FinalPortfolioRunPlayModeTests
                 run.OnShopDone();
                 run.OnShopDone();
             }
-            else if (run.ActiveNode.kind == MapNodeType.Upgrade)
-            {
-                Assert.That(run.ChooseUpgradeOffer(0, cards.hand[0].Id, true), Is.True);
-            }
             else
             {
                 bool chosen = false;

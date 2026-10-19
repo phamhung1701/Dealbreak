@@ -152,23 +152,6 @@ public sealed class Phase5BuildProgressionTests
     }
 
     [Test]
-    public void UpgradeChoice_AppliesExactlyOnceAndCompletesNode()
-    {
-        _run.StartRunWithSeed("PHASE5-UPGRADE");
-        var upgrade = _run.currentPath.First(node => node.kind == MapNodeType.Upgrade);
-        upgrade.accessible = true;
-        _run.OnPathChosen(upgrade.id);
-        var offer = _run.GetCurrentUpgradeOffers()[0];
-
-        var chosenCard = _cards.hand.First(card => card.Enhancement == null);
-        Assert.That(_run.ChooseUpgradeOffer(0, chosenCard.Id), Is.True);
-        Assert.That(_cards.FindOwnedCard(chosenCard.Id).Enhancement, Is.SameAs(offer.enhancement));
-        Assert.That(upgrade.completed, Is.True);
-        Assert.That(_run.ActiveNode, Is.Null);
-        Assert.That(_run.ChooseUpgradeOffer(0, chosenCard.Id), Is.False);
-    }
-
-    [Test]
     public void Restart_ClearsGearEnhancementsAndEconomyWhileConservingBaselineCards()
     {
         _run.StartRunWithSeed("PHASE5-RESET");

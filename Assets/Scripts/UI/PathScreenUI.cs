@@ -576,7 +576,6 @@ public class PathScreenUI : MonoBehaviour
         MapNodeType.Elite => "ELITE",
         MapNodeType.Shop => "SHOP",
         MapNodeType.Event => "EVENT",
-        MapNodeType.Upgrade => "UP",
         MapNodeType.Risk => "RISK",
         MapNodeType.Headliner => "BOSS",
         _ => "NODE"
@@ -594,7 +593,6 @@ public class PathScreenUI : MonoBehaviour
             MapNodeType.Elite => new Color(0.64f, 0.3f, 0.26f),
             MapNodeType.Shop => new Color(0.5f, 0.4f, 0.18f),
             MapNodeType.Event => new Color(0.28f, 0.45f, 0.58f),
-            MapNodeType.Upgrade => new Color(0.28f, 0.56f, 0.42f),
             MapNodeType.Risk => new Color(0.54f, 0.28f, 0.48f),
             MapNodeType.Headliner => new Color(0.64f, 0.24f, 0.28f),
             _ => new Color(0.26f, 0.43f, 0.68f)

@@ -43,7 +43,6 @@ public class DeckViewerUI : MonoBehaviour
             RunManager.Instance.OnHidePathScreen += Close;
             RunManager.Instance.OnShowShop += Close;
             RunManager.Instance.OnShowEvent += CloseForEvent;
-            RunManager.Instance.OnShowUpgrade += Close;
             RunManager.Instance.OnRunCompleted += Close;
         }
         if (CombatManager.Instance != null)
@@ -65,7 +64,6 @@ public class DeckViewerUI : MonoBehaviour
             RunManager.Instance.OnHidePathScreen -= Close;
             RunManager.Instance.OnShowShop -= Close;
             RunManager.Instance.OnShowEvent -= CloseForEvent;
-            RunManager.Instance.OnShowUpgrade -= Close;
             RunManager.Instance.OnRunCompleted -= Close;
         }
         if (CombatManager.Instance != null)

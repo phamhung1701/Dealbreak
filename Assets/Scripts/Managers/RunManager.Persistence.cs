@@ -7,7 +7,7 @@ public partial class RunManager
     public bool CanCaptureSave => !IsRunCompleted && HeadlinerTotal == 12 && !string.IsNullOrEmpty(runSeed) &&
         CombatManager.Instance != null && CombatManager.Instance.CanCapturePersistentState &&
         CardManager.Instance != null && !_shopTransaction &&
-        (_activeNode == null || _activeNode.kind is MapNodeType.Shop or MapNodeType.Event or MapNodeType.Risk or MapNodeType.Upgrade) &&
+        (_activeNode == null || _activeNode.kind is MapNodeType.Shop or MapNodeType.Event or MapNodeType.Risk) &&
         !_pendingHammerReward && !_hammerRetryPending && !_pendingBloodRitualReward &&
         _pendingContractSelectionEvent == null && _pendingConsumableRewards.Count == 0 &&
         (GameplayInputGate.Reasons & (GameplayInputBlockReason.GearChoice | GameplayInputBlockReason.ConsumableReward)) == 0;
@@ -28,7 +28,6 @@ public partial class RunManager
             resolvedRewardContexts = _resolvedConsumableRewardContexts.OrderBy(x => x, StringComparer.Ordinal).ToList(),
             alchemistChoices = _alchemistChoicesByMap.OrderBy(x => x.Key).Select(x => new AlchemistSaveData
                 { mapIndex = x.Key, choices = x.Value.Select(item => item.id).ToList() }).ToList(),
-            upgradeOffers = _activeUpgradeOffers.Select(CaptureOffer).ToList(),
             midShopGoods = new[] { midShopGoods.x, midShopGoods.y, midShopGoods.z },
             preBossShopGoods = new[] { preHeadlinerShopGoods.x, preHeadlinerShopGoods.y, preHeadlinerShopGoods.z }
         };
@@ -111,7 +110,6 @@ public partial class RunManager
             _madeSuccessfulPurchaseInCurrentShop = _activeShopState.MadePricedPurchase;
         }
         _activeEvent = string.IsNullOrEmpty(data.activeEventId) ? null : catalog.Event(data.activeEventId, _activeNode.kind);
-        _activeUpgradeOffers.AddRange(data.upgradeOffers.Select(o => RestoreOffer(o, catalog)));
         _pendingInvestmentStakes.AddRange(data.investmentStakes);
         _paidItemPurchaseCount = data.paidItemPurchases; _combatWinCount = data.combatWins;
         _merchantGiftRewardCount = data.merchantGiftRewards; _satchelRewardCount = data.satchelRewards;
@@ -138,7 +136,6 @@ public partial class RunManager
         OnCycleStarted?.Invoke(IsInfiniteMode ? $"District {CurrentCycle} / Infinite" : $"District {CurrentCycle} / {HeadlinerTotal}");
         if (_activeNode == null) OnShowPathScreen?.Invoke();
         else if (_activeNode.kind == MapNodeType.Shop) OnShowShop?.Invoke();
-        else if (_activeNode.kind == MapNodeType.Upgrade) OnShowUpgrade?.Invoke();
         else if (_activeEvent != null) OnShowEvent?.Invoke(_activeEvent);
     }
 

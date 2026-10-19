@@ -12,7 +12,6 @@ public sealed class DevModeWindow : EditorWindow
 
     Vector2 _shopScroll;
     string _selectedOfferId;
-    int _selectedTargetId;
     bool _infiniteHealth = true;
     bool _infiniteMoney = true;
     bool _unlimitedShopOffers = true;
@@ -37,7 +36,6 @@ public sealed class DevModeWindow : EditorWindow
         if (state == PlayModeStateChange.EnteredEditMode)
         {
             _selectedOfferId = null;
-            _selectedTargetId = 0;
             Repaint();
         }
     }
@@ -128,7 +126,6 @@ public sealed class DevModeWindow : EditorWindow
         if (string.IsNullOrEmpty(_selectedOfferId) || offers.All(offer => offer.StableId != _selectedOfferId))
         {
             _selectedOfferId = null;
-            _selectedTargetId = 0;
         }
 
         EditorGUILayout.LabelField($"DEV SHOP — {offers.Count} catalog offers", EditorStyles.boldLabel);
@@ -143,7 +140,6 @@ public sealed class DevModeWindow : EditorWindow
                     if (GUILayout.Button(offer.DisplayName, EditorStyles.linkLabel))
                     {
                         _selectedOfferId = offer.StableId;
-                        _selectedTargetId = 0;
                     }
                     GUILayout.FlexibleSpace();
                     GUILayout.Label($"{offer.price}g");
@@ -167,39 +163,16 @@ public sealed class DevModeWindow : EditorWindow
             return;
         }
 
-        if (selected.kind == ShopOfferKind.Gear)
+        if (GUILayout.Button("Buy Selected Offer"))
         {
-            if (GUILayout.Button("Buy Selected Gear"))
-            {
-                run.PurchaseShopOffer(selected.StableId);
-                Repaint();
-            }
-        }
-        else
-        {
-            var eligible = cards.ownedCards.Where(card => card != null && card.Enhancement == null).ToArray();
-            if (eligible.Length == 0)
-            {
-                EditorGUILayout.HelpBox("No eligible cards.", MessageType.Warning);
-                return;
-            }
-            var labels = eligible.Select(card => $"#{card.Id} {card.DisplayName}").ToArray();
-            int targetIndex = System.Array.FindIndex(eligible, card => card.Id == _selectedTargetId);
-            if (targetIndex < 0) targetIndex = 0;
-            targetIndex = EditorGUILayout.Popup("Target card", targetIndex, labels);
-            _selectedTargetId = eligible[targetIndex].Id;
-            if (GUILayout.Button("Buy and Apply to Selected Card"))
-            {
-                run.PurchaseShopEnhancement(selected.StableId, _selectedTargetId);
-                Repaint();
-            }
+            run.PurchaseShopOffer(selected.StableId);
+            Repaint();
         }
 
         if (GUILayout.Button("Continue Run"))
         {
             run.OnShopDone();
             _selectedOfferId = null;
-            _selectedTargetId = 0;
             Repaint();
         }
     }

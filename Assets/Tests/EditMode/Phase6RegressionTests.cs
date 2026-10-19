@@ -130,27 +130,6 @@ public sealed class Phase6RegressionTests
     }
 
     [Test]
-    public void UpgradeWithNoEligibleEnhancements_AutoCompletesAndUnlocksSuccessors()
-    {
-        _cards.Configure(null, null, null, new[] { _gear }, System.Array.Empty<CardEnhancementData>());
-        _run.StartRunWithSeed("PHASE6-EMPTY-UPGRADE");
-        var upgrade = _run.currentPath.First(node => node.kind == MapNodeType.Upgrade);
-        upgrade.accessible = true;
-        int showUpgradeCount = 0;
-        int showPathCount = 0;
-        _run.OnShowUpgrade += () => showUpgradeCount++;
-        _run.OnShowPathScreen += () => showPathCount++;
-
-        _run.OnPathChosen(upgrade.id);
-
-        Assert.That(showUpgradeCount, Is.Zero);
-        Assert.That(showPathCount, Is.EqualTo(1));
-        Assert.That(upgrade.completed, Is.True);
-        Assert.That(_run.ActiveNode, Is.Null);
-        Assert.That(upgrade.next.Select(id => _run.currentPath.First(node => node.id == id)).All(node => node.accessible), Is.True);
-    }
-
-    [Test]
     public void ShopWithNoCatalogOffers_ShowsSpecialDealsAndRemainsCompletableExactlyOnce()
     {
         _cards.Configure(null, null, null, System.Array.Empty<GearData>(), System.Array.Empty<CardEnhancementData>());

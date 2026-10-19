@@ -43,8 +43,6 @@ public partial class RunManager : Singleton<RunManager>
     public event Action OnHideShop;
     public event Action<RunEventDefinition> OnShowEvent;
     public event Action OnHideEvent;
-    public event Action OnShowUpgrade;
-    public event Action OnHideUpgrade;
     public event Action OnRunCompleted;
     public event Action<string> OnRunStarted;
     public event Action<string> OnCycleStarted;
@@ -361,18 +359,6 @@ public partial class RunManager : Singleton<RunManager>
                 PrepareShopOffers();
                 OnShowShop?.Invoke();
                 break;
-            case MapNodeType.Upgrade:
-                PrepareUpgradeOffers();
-                if (_activeUpgradeOffers.Count == 0)
-                {
-                    CompleteActiveNode();
-                    ShowPathAfterNode();
-                }
-                else
-                {
-                    OnShowUpgrade?.Invoke();
-                }
-                break;
             case MapNodeType.Event:
             case MapNodeType.Risk:
                 _activeEvent = FindEvent(node.kind, node.contentId);
@@ -504,7 +490,6 @@ public partial class RunManager : Singleton<RunManager>
             MapNodeType.Elite => "Enforcer Fight",
             MapNodeType.Shop => "Black Market",
             MapNodeType.Event => "Incident",
-            MapNodeType.Upgrade => "Training",
             MapNodeType.Risk => "Risk / Reward",
             MapNodeType.Headliner => CurrentHeadliner != null ? $"Headliner Fight: {CurrentHeadliner.enemyName}" : "Headliner Fight",
             _ => "Unknown"
@@ -528,7 +513,6 @@ public partial class RunManager : Singleton<RunManager>
                 : "Hard fight • better Credits",
             MapNodeType.Shop => "Spend Credits on Gear and card Mods",
             MapNodeType.Event => "An Incident choice with immediate effects",
-            MapNodeType.Upgrade => "Choose a free card Mod",
             MapNodeType.Risk => "Trade safety for a stronger reward",
             MapNodeType.Headliner => showStats
                 ? $"Major Headliner fight • {stats.hp} HP / {stats.attack} ATK"
@@ -573,7 +557,6 @@ public partial class RunManager : Singleton<RunManager>
             }
             case MapNodeType.Event:
             case MapNodeType.Risk:
-            case MapNodeType.Upgrade:
             {
                 var definition = FindEvent(node.kind, node.contentId);
                 return definition == null || string.IsNullOrEmpty(definition.title)
@@ -793,14 +776,12 @@ public partial class RunManager : Singleton<RunManager>
         _activeShopOffers = new List<ShopOffer>();
         _usedSpecialShopOffers = new HashSet<ShopOfferKind>();
         _purchasedConsumablesInShop = new HashSet<string>();
-        _activeUpgradeOffers.Clear();
         Timing.Reset();
         IsRunCompleted = false;
         IsInfiniteMode = false;
         GameplayInputGate.Set(GameplayInputBlockReason.GearChoice, false);
         OnHideShop?.Invoke();
         OnHideEvent?.Invoke();
-        OnHideUpgrade?.Invoke();
         GameplayInputGate.Set(GameplayInputBlockReason.ConsumableReward, false);
         GameplayInputGate.Set(GameplayInputBlockReason.GearChoice, false);
         _pendingConsumableRewards.Clear();

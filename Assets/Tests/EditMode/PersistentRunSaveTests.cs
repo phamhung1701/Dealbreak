@@ -473,6 +473,26 @@ public sealed class PersistentRunSaveTests
     }
 
     [Test]
+    public void MigrationFromVersion2_TurnsTrainingIntoTheStreetMechanicIncident()
+    {
+        var v2 = JsonClone(run.CaptureSave()); v2.version = 2;
+        var training = v2.nodes.First(node => node.kind != (int)MapNodeType.Headliner);
+        training.kind = (int)MapNodeType.Upgrade; training.type = "upgrade"; training.contentId = "upgrade";
+        training.accessible = false; training.completed = false;
+        v2.activeNodeId = training.id;
+        v2.activeEventId = null;
+        v2.visitedNodeTypes = new List<int> { (int)MapNodeType.Upgrade };
+
+        Assert.That(RunSaveMigrations.TryUpgrade(v2, out var error), Is.True, error);
+
+        Assert.That((MapNodeType)training.kind, Is.EqualTo(MapNodeType.Event));
+        Assert.That(training.contentId, Is.EqualTo("evt_005"));
+        Assert.That(v2.activeEventId, Is.EqualTo("evt_005"), "A run saved on Training resumes in the Incident.");
+        Assert.That(v2.visitedNodeTypes, Is.EqualTo(new[] { (int)MapNodeType.Event }));
+        Assert.That(RunSaveValidation.Validate(v2, catalog, out error), Is.True, error);
+    }
+
+    [Test]
     public void MigrationFromVersion1_MarksNodesRevealedAheadOfTravelAsScouted()
     {
         var v1 = JsonClone(run.CaptureSave()); v1.version = 1;

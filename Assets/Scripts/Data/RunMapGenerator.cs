@@ -166,7 +166,7 @@ public static class RunMapGenerator
         0 => new() { MapNodeType.Combat, MapNodeType.Combat, MapNodeType.Combat },
         1 => new() { MapNodeType.Event, MapNodeType.Combat, MapNodeType.Shop },
         2 => new() { MapNodeType.Elite, MapNodeType.Combat, MapNodeType.Risk },
-        3 => new() { MapNodeType.Upgrade, MapNodeType.Event, MapNodeType.Combat },
+        3 => new() { MapNodeType.Event, MapNodeType.Event, MapNodeType.Combat },
         _ => new() { MapNodeType.Elite, MapNodeType.Combat, MapNodeType.Shop }
     };
 
@@ -194,7 +194,7 @@ public static class RunMapGenerator
             return eligible[random.NextInt(0, eligible.Count)].name;
         }
 
-        if (kind == MapNodeType.Event || kind == MapNodeType.Upgrade || kind == MapNodeType.Risk)
+        if (kind == MapNodeType.Event || kind == MapNodeType.Risk)
         {
             var events = catalog != null ? catalog.GetEvents(kind) : null;
             if (events == null || events.Length == 0) return string.Empty;

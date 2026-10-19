@@ -18,7 +18,7 @@ MonoBehaviour:
   description: You help a street mechanic get rid of a hostile debt collector.
   choices:
   - label: Accept a Free Mod
-    description: Gain 1 Mod for a card
+    description: Gain 1 Mod as a Trick
     effects: []
     interaction: 1
     requiredDiscardValue: 0

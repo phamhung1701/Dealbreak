@@ -4,7 +4,7 @@ using System.Linq;
 
 public static class RunSaveValidation
 {
-    public const int Version = 2;
+    public const int Version = 3;
     public const int ContentVersion = 1;
     public static bool Validate(RunSaveData s, SaveContentCatalog catalog, out string error)
     {
@@ -91,7 +91,7 @@ public static class RunSaveValidation
         Require(s.activeNodeId == -1 || nodes.ContainsKey(s.activeNodeId), "Missing active node.");
         NodeSaveData active = s.activeNodeId < 0 ? null : nodes[s.activeNodeId];
         if (active != null) Require(!active.completed && !active.accessible && (MapNodeType)active.kind is
-            MapNodeType.Shop or MapNodeType.Event or MapNodeType.Risk or MapNodeType.Upgrade, "Unsupported active checkpoint.");
+            MapNodeType.Shop or MapNodeType.Event or MapNodeType.Risk, "Unsupported active checkpoint.");
         else Require(s.nodes.Any(x => x.accessible && !x.completed), "No available route.");
         bool eventActive = active != null && (MapNodeType)active.kind is MapNodeType.Event or MapNodeType.Risk;
         Require(eventActive ? s.activeEventId == active.contentId && c.Event(s.activeEventId, (MapNodeType)active.kind) != null
@@ -108,8 +108,7 @@ public static class RunSaveValidation
         }
         if (active != null && active.kind == (int)MapNodeType.Shop)
             Require(s.shops.Any(x => x.mapIndex == active.mapIndex && x.nodeId == active.id && !x.completed), "Missing active Shop inventory.");
-        Require(s.upgradeOffers != null, "Missing Upgrade offers.");
-        foreach (var offer in s.upgradeOffers) { Offer(offer, c); Require(offer.kind == (int)ShopOfferKind.Enhancement, "Invalid Upgrade offer."); }
+        Require(s.nodes.All(x => x.kind != (int)MapNodeType.Upgrade), "Retired Training node.");
         Require(s.investmentStakes != null && s.investmentStakes.All(x => x > 0) && s.paidItemPurchases >= 0 && s.combatWins >= 0 && s.merchantGiftRewards >= 0 && s.satchelRewards >= 0, "Invalid economy counters.");
         Require(s.visitedNodeTypes != null && s.visitedNodeTypes.All(Defined<MapNodeType>) && s.consumableDropContexts != null && s.resolvedRewardContexts != null, "Missing reward guards.");
         Require(s.alchemistChoices != null && s.alchemistChoices.All(x => x != null) &&

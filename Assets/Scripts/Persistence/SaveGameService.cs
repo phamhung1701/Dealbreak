@@ -84,7 +84,7 @@ public sealed class RunSaveAutosave : MonoBehaviour
         _run.OnRunCompleted += Terminal;
         _run.OnRunStarted += Started;
         _run.OnShowPathScreen += MarkDirty; _run.OnShowShop += MarkDirty; _run.OnHideShop += MarkDirty;
-        _run.OnShowEvent += MarkDirty; _run.OnHideEvent += MarkDirty; _run.OnShowUpgrade += MarkDirty;
+        _run.OnShowEvent += MarkDirty; _run.OnHideEvent += MarkDirty;
         _run.OnShopOffersChanged += MarkDirty; _run.OnMapRevealChanged += MarkDirty;
         _run.OnConsumableRewardChanged += MarkDirty; _run.OnCycleStarted += MarkDirty;
         if (_combat != null)
@@ -104,7 +104,7 @@ public sealed class RunSaveAutosave : MonoBehaviour
         {
             _run.OnRunCompleted -= Terminal; _run.OnRunStarted -= Started;
             _run.OnShowPathScreen -= MarkDirty; _run.OnShowShop -= MarkDirty; _run.OnHideShop -= MarkDirty;
-            _run.OnShowEvent -= MarkDirty; _run.OnHideEvent -= MarkDirty; _run.OnShowUpgrade -= MarkDirty;
+            _run.OnShowEvent -= MarkDirty; _run.OnHideEvent -= MarkDirty;
             _run.OnShopOffersChanged -= MarkDirty; _run.OnMapRevealChanged -= MarkDirty;
             _run.OnConsumableRewardChanged -= MarkDirty; _run.OnCycleStarted -= MarkDirty;
         }

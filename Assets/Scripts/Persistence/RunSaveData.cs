@@ -22,7 +22,6 @@ using System.Collections.Generic;
     public long nextActionId;
     public float criticalChance;
     public List<ShopSaveData> shops = new();
-    public List<OfferSaveData> upgradeOffers = new();
     public List<int> investmentStakes = new();
     public int paidItemPurchases, combatWins, merchantGiftRewards, satchelRewards, visitedMapIndex;
     public List<int> visitedNodeTypes = new();

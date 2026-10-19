@@ -46,7 +46,10 @@ public sealed class LowerEffortEventTests
         prefab.face = prefabObject.GetComponent<Image>();
         prefab.canvasGroup = prefabObject.GetComponent<CanvasGroup>();
         _cards = Make<CardManager>("Event Test Cards");
-        _cards.Configure(field, drag, prefab, System.Array.Empty<GearData>(), _enhancements);
+        _cards.Configure(field, drag, prefab, System.Array.Empty<GearData>(), _enhancements,
+            AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+            .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
+            .Where(asset => asset != null).ToArray());
         _cards.ConfigureRandom(new DeterministicRandom(803));
         _cards.BuildDeck();
         _cards.DealHand();
@@ -66,19 +69,32 @@ public sealed class LowerEffortEventTests
     }
 
     [Test]
-    public void Blacksmith_RegistersCanonicalChoiceAndEnhancesSelectedCard()
+    public void Blacksmith_RegistersCanonicalChoiceAndGrantsTheChosenModAsATrick()
     {
         Assert.That(_blacksmith.id, Is.EqualTo("evt_005"));
         Assert.That(_run.contentCatalog.events, Does.Contain(_blacksmith));
         OpenEvent(_blacksmith);
-        int cardId = _cards.hand.First(card => card.Enhancement == null).Id;
-        var enhancement = _run.GetEventEnhancementsForChoice(0).First();
-        Assert.That(enhancement, Is.Not.Null);
+        var mods = _run.GetEventEnhancementsForChoice(0);
+        Assert.That(mods.All(mod => _cards.FindModTrick(mod) != null), Is.True, "Every Mod has its Mod Trick.");
+        var enhancement = mods.First();
 
-        Assert.That(_run.ChooseEventEnhancementTarget(0, cardId, enhancement), Is.True);
+        Assert.That(_run.ChooseEventMod(0, enhancement), Is.True);
 
-        Assert.That(_cards.FindOwnedCard(cardId).Enhancement, Is.SameAs(enhancement));
+        Assert.That(_cards.GetConsumableAtSlot(0), Is.SameAs(_cards.FindModTrick(enhancement)));
+        Assert.That(_cards.ownedCards.All(card => card.Enhancement == null), Is.True, "No card is chosen here.");
         Assert.That(_run.ActiveEvent, Is.Null);
+    }
+
+    [Test]
+    public void Blacksmith_ModChoiceNeedsAFreeTrickSlot()
+    {
+        OpenEvent(_blacksmith);
+        var filler = _cards.consumableCatalog.First(value => value.effectType == ConsumableEffectType.Heal);
+        while (_cards.CanAddConsumable(filler)) Assert.That(_cards.AddConsumable(filler), Is.True);
+        var mod = _run.GetEventEnhancementsForChoice(0).First();
+        Assert.That(_run.GetEventOptionUnavailableReason(0), Is.EqualTo("Trick slots full"));
+        Assert.That(_run.ChooseEventMod(0, mod), Is.False);
+        Assert.That(_run.ActiveEvent, Is.SameAs(_blacksmith));
     }
 
     [Test]

@@ -92,11 +92,6 @@ public partial class RunManager
             if (_usedSpecialShopOffers.Contains(offer.kind)) return "Already purchased during this Black Market visit";
             if (!_madeSuccessfulPurchaseInCurrentShop) return "Purchase another Black Market item first";
         }
-        else if (offer.kind == ShopOfferKind.Enhancement)
-        {
-            if (offer.enhancement == null) return "Mod unavailable";
-            if (cards.hand.Count == 0) return "No cards in hand to target";
-        }
         else if (offer.kind == ShopOfferKind.Consumable)
         {
             if (offer.consumable == null || !offer.consumable.shopAvailable ||
@@ -126,7 +121,7 @@ public partial class RunManager
             : $"Need {requiredCredits} Credits (have {cards.credits} Credits)";
     }
 
-    // Gear purchases need no target. Enhancement purchases require an explicit card ID.
+    // No purchase needs a target: Mods are sold as Mod Tricks.
     public bool PurchaseShopOffer(string stableId)
     {
         if (GameplayInputGate.IsBlocked || !CanPurchaseShopOffer(stableId)) return false;
@@ -204,27 +199,6 @@ public partial class RunManager
         return true;
     }
 
-    public bool PurchaseShopEnhancement(string stableId, int cardId, bool replaceExisting = false)
-    {
-        if (GameplayInputGate.IsBlocked || !CanPurchaseShopOffer(stableId)) return false;
-        var offer = _activeShopOffers.First(candidate => candidate.StableId == stableId);
-        if (offer.kind != ShopOfferKind.Enhancement ||
-            !string.IsNullOrEmpty(GetEnhancementAcquisitionTargetUnavailableReason(cardId, offer.enhancement))) return false;
-        var cards = CardManager.Instance;
-        var purchaseModifiers = GearRules.CapturePurchaseModifiers(cards);
-        int creditsBefore = cards.credits;
-        _shopTransaction = true;
-        try
-        {
-            if (!cards.BuyEnhancement(cardId, offer.enhancement, offer.price, replaceExisting)) return false;
-            CompletePaidItemPurchase(creditsBefore - cards.credits, purchaseModifiers);
-            if (offer.price > 0) _madeSuccessfulPurchaseInCurrentShop = true;
-            MarkShopPurchase(offer);
-            return true;
-        }
-        finally { _shopTransaction = false; OnShopOffersChanged?.Invoke(); SaveGameService.Checkpoint(this); }
-    }
-
     public int GetSupplyMaximumQuantity()
     {
         var cards = CardManager.Instance;
@@ -265,7 +239,7 @@ public partial class RunManager
     }
 
     static bool IsEligiblePaidItem(ShopOfferKind kind) => kind is
-        ShopOfferKind.Gear or ShopOfferKind.Enhancement or ShopOfferKind.Consumable;
+        ShopOfferKind.Gear or ShopOfferKind.Consumable;
 
     void CompletePaidItemPurchase(int actualCreditsSpent, GearRules.PurchaseModifiers modifiers)
     {

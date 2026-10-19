@@ -13,7 +13,29 @@ public static class RunSaveMigrations
     static readonly Dictionary<int, Action<RunSaveData>> Steps = new()
     {
         [1] = MarkScoutedNodes,
+        [2] = RetireTrainingNodes,
     };
+
+    // The Street Mechanic Incident grants a free Mod, as Training did.
+    internal const string TrainingReplacementEventId = "evt_005";
+
+    // v2 had Training (Upgrade) nodes. Each becomes the Street Mechanic Incident; a run saved
+    // while standing on one resumes in that Incident. Its cached Training offers are dropped.
+    static void RetireTrainingNodes(RunSaveData data)
+    {
+        if (data.nodes == null) return;
+        foreach (var node in data.nodes)
+        {
+            if (node.kind != (int)MapNodeType.Upgrade) continue;
+            node.kind = (int)MapNodeType.Event;
+            node.type = "event";
+            node.contentId = TrainingReplacementEventId;
+            if (node.id == data.activeNodeId) data.activeEventId = TrainingReplacementEventId;
+        }
+        if (data.visitedNodeTypes != null)
+            for (int i = 0; i < data.visitedNodeTypes.Count; i++)
+                if (data.visitedNodeTypes[i] == (int)MapNodeType.Upgrade) data.visitedNodeTypes[i] = (int)MapNodeType.Event;
+    }
 
     // v1 had no scouted flag: a node revealed ahead of travel (unvisited and not yet accessible, or
     // a hidden Incident/Risk) was a scouted one.

@@ -60,7 +60,7 @@ public sealed class MapScoutingTests
             Assert.That(_run.LastScoutedNode.id, Is.EqualTo(scouted.id), "The same state scouts the same node.");
         }
         Assert.That(picks, Is.EquivalentTo(new[] { 1, 2, 3, 4 }),
-            "Fights (even reachable ones), hidden Incidents and Training are all candidates.");
+            "Fights (even reachable ones), hidden Incidents and unknown Risks are all candidates.");
     }
 
     [Test]
@@ -120,7 +120,7 @@ public sealed class MapScoutingTests
         Assert.That(_run.GetNodeDetail(elite), Does.Contain("HP"));
     }
 
-    // Start (accessible, known) -> unknown fight, hidden Incident, unknown Training; one orphan.
+    // Start (accessible, known) -> unknown fight, hidden Incident, unknown Risk; one orphan.
     void BuildRoute(out PathNode unreachable)
     {
         _run.currentPath.Clear();
@@ -130,7 +130,7 @@ public sealed class MapScoutingTests
             col = 1, row = 0, next = new List<int> { 4 } });
         _run.currentPath.Add(new PathNode { id = 3, mapIndex = 0, kind = MapNodeType.Event, contentId = "evt_006",
             hidden = true, col = 1, row = 1 });
-        _run.currentPath.Add(new PathNode { id = 4, mapIndex = 0, kind = MapNodeType.Upgrade, col = 2, row = 0 });
+        _run.currentPath.Add(new PathNode { id = 4, mapIndex = 0, kind = MapNodeType.Risk, col = 2, row = 0 });
         unreachable = new PathNode { id = 5, mapIndex = 0, kind = MapNodeType.Combat, contentId = "Brute",
             col = 2, row = 2 };
         _run.currentPath.Add(unreachable);

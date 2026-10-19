@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-// RunManager: Trick reward queue, enemy drops, Gear victory rewards and Upgrade (Training) offers.
+// RunManager: Trick reward queue, enemy drops and Gear victory rewards.
 public partial class RunManager
 {
-    readonly List<ShopOffer> _activeUpgradeOffers = new();
     readonly HashSet<int> _consumableDropResolvedContexts = new();
     readonly Queue<ConsumableRewardOffer> _pendingConsumableRewards = new();
     readonly HashSet<string> _resolvedConsumableRewardContexts = new(StringComparer.Ordinal);
@@ -37,8 +36,6 @@ public partial class RunManager
         var enhancement = common[enhancementRandom.NextInt(0, common.Length)];
         return cards.ApplyEnhancement(card.Id, enhancement);
     }
-
-    public IReadOnlyList<ShopOffer> GetCurrentUpgradeOffers() => _activeUpgradeOffers;
 
     public bool ClaimPendingConsumableReward(int choiceIndex)
     {
@@ -124,89 +121,6 @@ public partial class RunManager
         var card = CardManager.Instance != null ? CardManager.Instance.FindOwnedCard(cardId) : null;
         if (card == null) return "Target card unavailable";
         return card.Enhancement != null ? "Target already enhanced" : string.Empty;
-    }
-
-    // Shop, Upgrade, and direct Event acquisitions deliberately target the current hand only.
-    public string GetEnhancementAcquisitionTargetUnavailableReason(int cardId, CardEnhancementData enhancement = null)
-    {
-        var cards = CardManager.Instance;
-        var card = cards != null ? cards.FindOwnedCard(cardId) : null;
-        if (card == null || !cards.hand.Contains(card)) return "Target must be a card in your hand";
-        return enhancement != null && ReferenceEquals(card.Enhancement, enhancement)
-            ? "Card already has this Mod" : string.Empty;
-    }
-
-    public bool ChooseUpgradeOffer(int offerIndex, int cardId, bool replaceExisting = false)
-    {
-        if (GameplayInputGate.IsBlocked || _activeNode == null || _activeNode.completed ||
-            _activeNode.kind != MapNodeType.Upgrade || offerIndex < 0 || offerIndex >= _activeUpgradeOffers.Count)
-            return false;
-        var offer = _activeUpgradeOffers[offerIndex];
-        if (offer == null || !string.IsNullOrEmpty(GetEnhancementAcquisitionTargetUnavailableReason(cardId, offer.enhancement)) ||
-            offer.kind != ShopOfferKind.Enhancement || offer.enhancement == null ||
-            !CardManager.Instance.ApplyEnhancement(cardId, offer.enhancement, replaceExisting))
-            return false;
-
-        OnHideUpgrade?.Invoke();
-        _activeUpgradeOffers.Clear();
-        CompleteActiveNode();
-        ShowPathAfterNode();
-        return true;
-    }
-
-    void PrepareUpgradeOffers(int maximumOffers = 3)
-    {
-        _activeUpgradeOffers.Clear();
-        if (_activeNode == null || _activeNode.kind != MapNodeType.Upgrade) return;
-        int context = unchecked(_activeNode.mapIndex * 613 ^ _activeNode.id);
-        AddEnhancementOffers(
-            _activeUpgradeOffers,
-            maximumOffers,
-            "upgrade-cards",
-            "upgrade-enhancements",
-            context,
-            true);
-    }
-
-    void AddEnhancementOffers(
-        List<ShopOffer> destination,
-        int maximumOffers,
-        string cardStream,
-        string enhancementStream,
-        int context,
-        bool free,
-        Func<CardEnhancementData, bool> eligible = null)
-    {
-        var cards = CardManager.Instance;
-        if (cards == null || maximumOffers <= 0 || cards.enhancementCatalog.Count == 0) return;
-
-        var targets = cards.ownedCards
-            .Where(card => card != null && card.Enhancement == null)
-            .OrderBy(card => card.Id)
-            .ToList();
-        var enhancements = cards.enhancementCatalog
-            .Where(enhancement => enhancement != null && (eligible == null || eligible(enhancement)))
-            .OrderBy(enhancement => enhancement.id, StringComparer.Ordinal)
-            .ToList();
-        if (targets.Count == 0 || enhancements.Count == 0) return;
-
-        // Keep the original independent card stream's offer-generation consumption,
-        // but never bind its shuffled card to the purchased Enhancement.
-        targets.Shuffle(_randomContext.CreateStream(cardStream, context));
-        enhancements.Shuffle(_randomContext.CreateStream(enhancementStream, context));
-        int count = Mathf.Min(maximumOffers, targets.Count);
-        for (int i = 0; i < count; i++)
-        {
-            var enhancement = enhancements[i % enhancements.Count];
-            destination.Add(new ShopOffer
-            {
-                kind = ShopOfferKind.Enhancement,
-                enhancement = enhancement,
-                slot = i,
-                basePrice = free ? 0 : enhancement.price,
-                price = free ? 0 : CalculateEffectiveShopPrice(ShopOfferKind.Enhancement, enhancement.price)
-            });
-        }
     }
 
     void ApplyVictoryGearRewards(bool wasHeadliner)

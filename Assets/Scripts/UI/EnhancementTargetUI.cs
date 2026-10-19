@@ -84,7 +84,6 @@ public sealed class EnhancementTargetUI : MonoBehaviour
         if (run != null)
         {
             run.OnHideShop += Hide;
-            run.OnHideUpgrade += Hide;
             run.OnHideEvent += Hide;
             run.OnRunStarted += HandleRunStarted;
             run.OnShowPathScreen += Hide;
@@ -106,7 +105,6 @@ public sealed class EnhancementTargetUI : MonoBehaviour
         if (run != null)
         {
             run.OnHideShop -= Hide;
-            run.OnHideUpgrade -= Hide;
             run.OnHideEvent -= Hide;
             run.OnRunStarted -= HandleRunStarted;
             run.OnShowPathScreen -= Hide;
@@ -124,39 +122,6 @@ public sealed class EnhancementTargetUI : MonoBehaviour
 
     void HandleRunStarted(string seed) => Hide();
 
-    public void OpenShop(string stableId)
-    {
-        var run = RunManager.Instance;
-        if (run == null || GameplayInputGate.IsBlocked ||
-            !string.IsNullOrEmpty(run.GetShopOfferUnavailableReason(stableId))) return;
-        ShopOffer offer = null;
-        foreach (var candidate in run.GetCurrentShopOffers())
-            if (candidate.StableId == stableId) { offer = candidate; break; }
-        if (offer == null || offer.kind != ShopOfferKind.Enhancement) return;
-        _shopOfferId = stableId;
-        _upgradeIndex = -1;
-        _eventChoiceIndex = -1;
-        _consumableSlotIndex = -1;
-        BeginAcquisitionTargeting(offer);
-    }
-
-    public void OpenUpgrade(int index)
-    {
-        var run = RunManager.Instance;
-        if (run == null || GameplayInputGate.IsBlocked ||
-            run.ActiveNode == null || run.ActiveNode.kind != MapNodeType.Upgrade ||
-            index < 0 || index >= run.GetCurrentUpgradeOffers().Count) return;
-        var offer = run.GetCurrentUpgradeOffers()[index];
-        if (offer.kind != ShopOfferKind.Enhancement || offer.enhancement == null) return;
-        _shopOfferId = null;
-        _upgradeIndex = index;
-        _eventChoiceIndex = -1;
-        _consumableSlotIndex = -1;
-        BeginAcquisitionTargeting(offer);
-    }
-
-    public bool CanOpenEventEnhancementPicker => panel != null && cardsContainer != null &&
-        cardButtonPrefab != null && confirmButton != null;
     public bool CanOpenConsumableTarget => panel != null && confirmButton != null && backButton != null;
     public bool CanOpenDeckMutationTarget => CanOpenConsumableTarget;
 
@@ -246,107 +211,6 @@ public sealed class EnhancementTargetUI : MonoBehaviour
             grid.cellSize = new Vector2(184f, 54f);
             grid.spacing = new Vector2(10f, 10f);
         }
-    }
-
-    public void OpenEventEnhancement(int choiceIndex)
-    {
-        var run = RunManager.Instance;
-        if (run == null || IsInputBlockedForCurrentChoice() ||
-            !string.IsNullOrEmpty(run.GetEventOptionUnavailableReason(choiceIndex))) return;
-        _shopOfferId = null;
-        _upgradeIndex = -1;
-        _eventChoiceIndex = choiceIndex;
-        _eventEnhancement = null;
-        _consumableSlotIndex = -1;
-        _selectedCardId = 0;
-        ShowEventEnhancements();
-    }
-
-    void ShowEventEnhancements()
-    {
-        _mutationSlotIndex = -1;
-        _mutationCardIds.Clear();
-        var run = RunManager.Instance;
-        var candidates = run != null ? run.GetEventEnhancementsForChoice(_eventChoiceIndex) : null;
-        if (!panel || !cardsContainer || !cardButtonPrefab || candidates == null) return;
-        if (titleLabel) titleLabel.text = "CHOOSE AN ENHANCEMENT";
-        if (feedbackLabel) feedbackLabel.text = "Choose one Mod, then click a card in your hand to receive it.";
-        if (confirmButton) confirmButton.interactable = false;
-        ClearTargetCards();
-        foreach (var enhancement in candidates)
-        {
-            if (enhancement == null) continue;
-            var obj = Instantiate(cardButtonPrefab, cardsContainer);
-            obj.name = $"EventEnhancement_{enhancement.id}";
-            var label = obj.GetComponentInChildren<TMP_Text>();
-            if (label) label.text = $"{enhancement.icon} {enhancement.displayName}"+(ContextualTooltipUI.Instance?string.Empty:$"\n{enhancement.description}");
-            var detail=obj.GetComponent<ContextualInfoTrigger>()??obj.AddComponent<ContextualInfoTrigger>();
-            detail.category="Mod";detail.title=enhancement.displayName;detail.description=enhancement.description;detail.allowWhileBlocked=true;
-            var button = obj.GetComponent<Button>();
-            if (button) button.onClick.AddListener(() => SelectEventEnhancement(enhancement));
-        }
-        BoardPanelTransition.FadeIn(panel);
-        panel.transform.SetAsLastSibling();
-    }
-
-    void SelectEventEnhancement(CardEnhancementData enhancement)
-    {
-        if (IsInputBlockedForCurrentChoice() || enhancement == null || _eventChoiceIndex < 0) return;
-        _eventEnhancement = enhancement;
-        BeginAcquisitionTargeting(new ShopOffer { kind = ShopOfferKind.Enhancement, enhancement = enhancement, price = 0 });
-    }
-
-    void BeginAcquisitionTargeting(ShopOffer offer)
-    {
-        if (offer == null || offer.enhancement == null || CardManager.Instance == null) return;
-        _acquisitionTargetMode = true;
-        _targetingCombatState = CombatManager.Instance.currentState;
-        _targetingNode = RunManager.Instance?.ActiveNode;
-        _acquisitionEnhancement = offer.enhancement;
-        _selectedCardId = 0;
-        _replacementConfirmed = false;
-        _replacementToConfirm = null;
-        _mutationSlotIndex = -1;
-        _mutationCardIds.Clear();
-        _targetedHandView = null;
-        _originPanel = _shopOfferId != null ? FindFirstObjectByType<ShopUI>()?.panel :
-            _eventChoiceIndex >= 0 || _upgradeIndex >= 0 ? FindFirstObjectByType<RunEventUI>()?.panel : null;
-        if (_originPanel) _originPanel.SetActive(false);
-        if (titleLabel) titleLabel.text = $"{offer.Icon} {offer.DisplayName}";
-        if (feedbackLabel) feedbackLabel.text = "Click a card in your hand to target this Mod.";
-        if (confirmButton) confirmButton.interactable = false;
-        SaveAndCompactPanel();
-        if (panel) { BoardPanelTransition.FadeIn(panel); panel.transform.SetAsLastSibling(); }
-        ClearTargetCards();
-        CardManager.Instance.BeginHandTargeting(HandleHandCardTargeted, id =>
-            string.IsNullOrEmpty(RunManager.Instance.GetEnhancementAcquisitionTargetUnavailableReason(id, _acquisitionEnhancement)));
-    }
-
-    void HandleHandCardTargeted(CardView view)
-    {
-        if (!_acquisitionTargetMode || view == null || view.data == null || IsInputBlockedForCurrentChoice()) return;
-        int id = view.data.Id;
-        var run = RunManager.Instance;
-        string unavailableReason = run != null
-            ? run.GetEnhancementAcquisitionTargetUnavailableReason(id, _acquisitionEnhancement)
-            : "Mod unavailable";
-        if (!string.IsNullOrEmpty(unavailableReason))
-        {
-            if (_targetedHandView) _targetedHandView.SetSelected(false);
-            _targetedHandView = null;
-            _selectedCardId = 0;
-            _replacementConfirmed = false;
-            _replacementToConfirm = null;
-            UpdateFeedback(unavailableReason);
-            return;
-        }
-        if (_targetedHandView && _targetedHandView != view) _targetedHandView.SetSelected(false);
-        _targetedHandView = view;
-        _targetedHandView.SetSelected(true);
-        _selectedCardId = id;
-        _replacementConfirmed = false;
-        _replacementToConfirm = null;
-        UpdateFeedback();
     }
 
     void SaveAndCompactPanel()
@@ -475,19 +339,6 @@ public sealed class EnhancementTargetUI : MonoBehaviour
     void Back()
     {
         if (IsInputBlockedForCurrentChoice()) return;
-        if (_acquisitionTargetMode)
-        {
-            _restoreOriginOnClose = true;
-            Hide();
-            return;
-        }
-        if (_eventChoiceIndex >= 0 && _eventEnhancement != null)
-        {
-            _eventEnhancement = null;
-            _selectedCardId = 0;
-            ShowEventEnhancements();
-            return;
-        }
         Hide();
     }
 
@@ -508,7 +359,6 @@ public sealed class EnhancementTargetUI : MonoBehaviour
         ValidateTargeting();
         if (!panel.activeSelf || _resolving) return;
         CardManager.Instance?.RefreshHandTargetPresentation();
-        if (_acquisitionTargetMode) { UpdateFeedback(); return; }
         if (_sourceConsumable == null || !cardsContainer || !cardButtonPrefab) return;
         ClearTargetCards();
         var cards = CardManager.Instance;
@@ -590,17 +440,8 @@ public sealed class EnhancementTargetUI : MonoBehaviour
             if (confirmButton) confirmButton.interactable = valid;
             return;
         }
-        string reason = failure ?? (_selectedCardId == 0 ?
-            (_acquisitionTargetMode ? "Click a card in your hand to target this Mod." : "Select an owned card, then confirm.") :
-            _acquisitionTargetMode ? RunManager.Instance.GetEnhancementAcquisitionTargetUnavailableReason(_selectedCardId, _acquisitionEnhancement) :
-                RunManager.Instance.GetEnhancementTargetUnavailableReason(_selectedCardId));
-        var selectedCard = CardManager.Instance != null ? CardManager.Instance.FindOwnedCard(_selectedCardId) : null;
-        if (feedbackLabel) feedbackLabel.text = !string.IsNullOrEmpty(reason) ? reason :
-            selectedCard != null && selectedCard.Enhancement != null && _acquisitionTargetMode
-                ? (_replacementConfirmed ? $"Replace {selectedCard.Enhancement.displayName}? Confirm again to replace it." :
-                    $"Hand target: {selectedCard.DisplayName}. Confirm to review replacement.")
-                : $"Hand target: {selectedCard?.DisplayName}. Confirm to apply.";
-        if (confirmButton) confirmButton.interactable = _selectedCardId != 0 && string.IsNullOrEmpty(reason);
+        if (feedbackLabel && failure != null) feedbackLabel.text = failure;
+        if (confirmButton) confirmButton.interactable = false;
     }
 
     void Confirm()
@@ -627,59 +468,5 @@ public sealed class EnhancementTargetUI : MonoBehaviour
             else { ValidateTargeting(); UpdateFeedback("Trick or target unavailable"); }
             return;
         }
-        if (_selectedCardId == 0) return;
-        var run = RunManager.Instance;
-        if (run == null) return;
-        string offerId = _shopOfferId;
-        int index = _upgradeIndex;
-        int targetId = _selectedCardId;
-        var target = CardManager.Instance != null ? CardManager.Instance.FindOwnedCard(targetId) : null;
-        bool isAcquisition = _acquisitionTargetMode;
-        if (isAcquisition)
-        {
-            string targetReason = run.GetEnhancementAcquisitionTargetUnavailableReason(targetId, _acquisitionEnhancement);
-            if (!string.IsNullOrEmpty(targetReason))
-            {
-                UpdateFeedback(targetReason);
-                return;
-            }
-        }
-        if (isAcquisition && target != null && target.Enhancement != null && !_replacementConfirmed)
-        {
-            _replacementConfirmed = true;
-            _replacementToConfirm = target.Enhancement;
-            UpdateFeedback();
-            return;
-        }
-        if (_replacementConfirmed && target != null && target.Enhancement != _replacementToConfirm)
-        {
-            _replacementConfirmed = false;
-            _replacementToConfirm = null;
-            UpdateFeedback("The existing Mod changed. Review the replacement again.");
-            return;
-        }
-        bool replaceExisting = isAcquisition && target != null && target.Enhancement != null;
-        bool shopAcquisition = offerId != null;
-        bool success = _consumableSlotIndex >= 0
-            ? CardManager.Instance != null && CardManager.Instance.UseEnhancementConsumableAtSlot(_consumableSlotIndex, targetId)
-            : _eventChoiceIndex >= 0
-                ? run.ChooseEventEnhancementTarget(_eventChoiceIndex, targetId, _eventEnhancement, replaceExisting)
-                : shopAcquisition
-                    ? run.PurchaseShopEnhancement(offerId, targetId, replaceExisting)
-                    : run.ChooseUpgradeOffer(index, targetId, replaceExisting);
-        if (success)
-        {
-            _restoreOriginOnClose = shopAcquisition;
-            if (panel && panel.activeSelf) Hide();
-            return;
-        }
-        string reason = isAcquisition
-            ? run.GetEnhancementAcquisitionTargetUnavailableReason(targetId, _acquisitionEnhancement)
-            : run.GetEnhancementTargetUnavailableReason(targetId);
-        if (string.IsNullOrEmpty(reason))
-            reason = _consumableSlotIndex >= 0 ? "Trick or target unavailable" :
-                _eventChoiceIndex >= 0 ? "Incident Mod unavailable" :
-                offerId != null ? run.GetShopOfferUnavailableReason(offerId) : "Upgrade unavailable";
-        UpdateFeedback(string.IsNullOrEmpty(reason) ? "Mod unavailable" : reason);
     }
 }

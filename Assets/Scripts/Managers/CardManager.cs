@@ -141,6 +141,15 @@ public partial class CardManager : Singleton<CardManager>
     public bool CanAddConsumable(ConsumableData consumable, int count = 1) =>
         CanAddConsumables(new[] { (consumable, count) });
 
+    /// <summary>
+    /// The Trick that carries a Mod: a Mod earned outside the Black Market arrives in the backpack
+    /// as this item and is applied by dropping it on a hand card. Lowest id wins if several match.
+    /// </summary>
+    public ConsumableData FindModTrick(CardEnhancementData mod) => mod == null ? null :
+        consumableCatalog.Where(value => value != null && value.effectType == ConsumableEffectType.ApplyEnhancement &&
+                ReferenceEquals(value.enhancementToApply, mod))
+            .OrderBy(value => value.id, StringComparer.Ordinal).FirstOrDefault();
+
     // Simulates every requested addition in order, so a multi-Trick reward validates as a whole.
     public bool CanAddConsumables(IReadOnlyList<(ConsumableData consumable, int count)> requests)
     {

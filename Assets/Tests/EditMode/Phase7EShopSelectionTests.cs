@@ -236,7 +236,6 @@ public sealed class Phase7EShopSelectionTests
             "Purchasing the mapped Trick does not apply its Mod before the player selects a card and uses it.");
         Assert.That(_cards.credits, Is.EqualTo(50 - offer.price));
         Assert.That(_ui.SelectedOfferId, Is.Null);
-        Assert.That(_run.PurchaseShopEnhancement(offer.StableId, _cards.hand[0].Id), Is.False);
     }
 
     [Test]

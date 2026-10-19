@@ -221,15 +221,11 @@ public partial class RunManager
         if (IsHammerEvent())
             return choice.interaction is RunEventChoiceInteraction.HammerRetry or RunEventChoiceInteraction.HammerDecline
                 ? string.Empty : choice.interaction == RunEventChoiceInteraction.ChooseEnhancementTarget
-                    ? _pendingHammerEnhancements.Count == 3 && CardManager.Instance != null && CardManager.Instance.hand.Count > 0
-                        ? string.Empty : "No cards in hand to target"
+                    ? _pendingHammerEnhancements.Count == 3 ? GetModRewardUnavailableReason(_pendingHammerEnhancements)
+                        : "Choice unavailable"
                     : "Choice unavailable";
         if (choice.interaction == RunEventChoiceInteraction.ChooseEnhancementTarget)
-        {
-            var cards = CardManager.Instance;
-            if (cards == null || cards.hand.Count == 0) return "No cards in hand to target";
-            return GetEventEnhancements().Any() ? string.Empty : "No enhancements available";
-        }
+            return GetModRewardUnavailableReason(GetEventEnhancements());
         if (choice.interaction == RunEventChoiceInteraction.DiscardTwoForRandomEnhancement)
         {
             var cards = CardManager.Instance;
@@ -260,18 +256,40 @@ public partial class RunManager
                 ? GetEventEnhancements()
                 : Array.Empty<CardEnhancementData>();
 
-    public bool ChooseEventEnhancementTarget(int choiceIndex, int cardId, CardEnhancementData enhancement,
-        bool replaceExisting = false)
+    // An earned Mod arrives as its Mod Trick, applied later by dropping it on a hand card.
+    static string GetModRewardUnavailableReason(IReadOnlyList<CardEnhancementData> mods)
     {
-        IReadOnlyList<CardEnhancementData> allowedEnhancements = IsHammerEvent()
-            ? _pendingHammerEnhancements : GetEventEnhancements();
+        var cards = CardManager.Instance;
+        if (cards == null || mods == null) return "Choice unavailable";
+        bool any = false;
+        foreach (var mod in mods)
+        {
+            var trick = cards.FindModTrick(mod);
+            if (trick == null) continue;
+            any = true;
+            if (cards.CanAddConsumable(trick)) return string.Empty;
+        }
+        return any ? "Trick slots full" : "No Mods available";
+    }
+
+    /// <summary>Why one Mod of a Mod choice cannot be taken now, or empty when it can.</summary>
+    public string GetEventModUnavailableReason(int choiceIndex, CardEnhancementData mod)
+    {
+        var cards = CardManager.Instance;
+        if (cards == null || mod == null || !GetEventEnhancementsForChoice(choiceIndex).Contains(mod))
+            return "Choice unavailable";
+        var trick = cards.FindModTrick(mod);
+        if (trick == null) return "Mod unavailable";
+        return cards.CanAddConsumable(trick) ? string.Empty : "Trick slots full";
+    }
+
+    public bool ChooseEventMod(int choiceIndex, CardEnhancementData mod)
+    {
         if (GameplayInputGate.IsBlocked &&
                 !(IsHammerEvent() && GameplayInputGate.Reasons == GameplayInputBlockReason.GearChoice) ||
-            !IsActiveEventChoice(choiceIndex, RunEventChoiceInteraction.ChooseEnhancementTarget) || enhancement == null ||
-            !allowedEnhancements.Contains(enhancement) ||
-            !string.IsNullOrEmpty(GetEnhancementAcquisitionTargetUnavailableReason(cardId, enhancement))) return false;
-
-        if (!CardManager.Instance.ApplyEnhancement(cardId, enhancement, replaceExisting)) return false;
+            !IsActiveEventChoice(choiceIndex, RunEventChoiceInteraction.ChooseEnhancementTarget) ||
+            !string.IsNullOrEmpty(GetEventModUnavailableReason(choiceIndex, mod))) return false;
+        if (!CardManager.Instance.AddConsumable(CardManager.Instance.FindModTrick(mod))) return false;
         if (IsHammerEvent()) CompleteHammerReward();
         else CompleteEventChoice();
         return true;
@@ -442,25 +460,25 @@ public partial class RunManager
         }
         else if (!_hammerRetryPending) return;
 
-        bool hasTarget = cards.hand.Count > 0;
+        bool hasTarget = string.IsNullOrEmpty(GetModRewardUnavailableReason(_pendingHammerEnhancements));
         if (_hammerRetryPending && !hasTarget) return;
         _hammerRetryPending = false;
         _pendingHammerEvent = ScriptableObject.CreateInstance<RunEventDefinition>();
         _pendingHammerEvent.id = $"artifact-hammer:{_completedNodeCount}";
         _pendingHammerEvent.title = "HAMMER";
-        _pendingHammerEvent.category = MapNodeType.Upgrade;
+        _pendingHammerEvent.category = MapNodeType.Event;
         _pendingHammerEvent.flow = RunEventFlow.HammerReward;
         _pendingHammerEvent.description = hasTarget
-            ? "Choose one of three cached Common Mods, then target a card in your hand."
-            : "No card is in hand to target. Retry after another node, or decline this reward.";
+            ? "Choose one of three cached Common Mods."
+            : "Trick slots are full. Retry after another node, or decline this reward.";
         _pendingHammerEvent.choices = hasTarget
             ? new[]
             {
-                new RunEventChoice { label = "Choose Mod", description = "Select one of the three cached Common Mods, then click a card in your hand.", interaction = RunEventChoiceInteraction.ChooseEnhancementTarget }
+                new RunEventChoice { label = "Choose Mod", description = "Take one of the three cached Common Mods as a Trick.", interaction = RunEventChoiceInteraction.ChooseEnhancementTarget }
             }
             : new[]
             {
-                new RunEventChoice { label = "Retry Later", description = "Continue the run and retry when an eligible card is available.", interaction = RunEventChoiceInteraction.HammerRetry },
+                new RunEventChoice { label = "Retry Later", description = "Continue the run and retry when a Trick slot is free.", interaction = RunEventChoiceInteraction.HammerRetry },
                 new RunEventChoice { label = "Decline", description = "Leave the Hammer reward unused.", interaction = RunEventChoiceInteraction.HammerDecline }
             };
         _activeEvent = _pendingHammerEvent;
