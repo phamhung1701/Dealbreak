@@ -867,7 +867,8 @@ public partial class CardManager : Singleton<CardManager>
         int previous = _cards.HandCount;
         int drawn = _cards.DrawExistingToHand(quantity, HandCapacity);
         if (drawn <= 0) return 0;
-        credits -= drawn * pricePerCard;
+        // Payment commits with the zones; notifications follow. Dev infinite Credits pays nothing, like SpendCredits.
+        if (!HasInfiniteMoney) credits -= drawn * pricePerCard;
         if (CanCreateViews())
             for (int i = previous; i < _cards.HandCount; i++) CreateView(_cards.Hand[i]);
         OnCreditsChanged?.Invoke(credits);
