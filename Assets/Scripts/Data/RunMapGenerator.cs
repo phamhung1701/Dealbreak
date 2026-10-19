@@ -187,9 +187,8 @@ public static class RunMapGenerator
             if (enemies == null || enemies.Length == 0) return string.Empty;
             var eligible = new List<EnemyTypeData>(enemies.Length);
             foreach (var enemy in enemies)
-                if (enemy != null && (mapIndex >= 2 || enemy.enemyName != "Knight") &&
-                    (kind != MapNodeType.Elite ||
-                        (enemy.enemyName != "Shieldbearer" && enemy.enemyName != "Brute")))
+                if (enemy != null && mapIndex >= enemy.minMapIndex &&
+                    (kind != MapNodeType.Elite || enemy.eligibleAsEliteBase))
                     eligible.Add(enemy);
             if (eligible.Count == 0) return string.Empty;
             return eligible[random.NextInt(0, eligible.Count)].name;
@@ -201,13 +200,13 @@ public static class RunMapGenerator
             if (events == null || events.Length == 0) return string.Empty;
             if (kind == MapNodeType.Risk)
             {
-                var ritual = events.FirstOrDefault(value => value != null && value.id == "evt_100");
+                var ritual = events.FirstOrDefault(value => value != null && value.flow == RunEventFlow.BloodRitual);
                 if (ritual != null && randomContext != null)
                 {
                     int context = unchecked(mapIndex * 7919 ^ nodeId);
                     if (randomContext.CreateStream("blood-ritual-appearance", context).NextInt(0, 20) == 0)
                         return ritual.id;
-                    events = events.Where(value => value != null && value.id != "evt_100").ToArray();
+                    events = events.Where(value => value != null && value.flow != RunEventFlow.BloodRitual).ToArray();
                 }
             }
             if (events.Length == 0) return string.Empty;

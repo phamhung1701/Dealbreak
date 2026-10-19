@@ -24,6 +24,10 @@ public sealed class PathNodeButtonUI : MonoBehaviour
             return;
         }
 
+        // A Risk stays "?" until it is scouted; then it names its kind like other revealed nodes.
+        bool scouted = run.IsScoutedNode(node);
+        // Labels never break mid-word; multi-word labels carry explicit line breaks.
+        label.textWrappingMode = TextWrappingModes.NoWrap;
         label.text = node.kind switch
         {
             MapNodeType.Combat => "COMBAT",
@@ -31,7 +35,7 @@ public sealed class PathNodeButtonUI : MonoBehaviour
             MapNodeType.Shop => "BLACK\nMARKET",
             MapNodeType.Event => "INCIDENT",
             MapNodeType.Upgrade => "UPGRADE",
-            MapNodeType.Risk => "?",
+            MapNodeType.Risk => scouted ? "RISK" : "?",
             MapNodeType.Headliner => "HEADLINER",
             _ => "?"
         };

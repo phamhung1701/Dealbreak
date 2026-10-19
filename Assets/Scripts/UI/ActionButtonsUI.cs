@@ -19,7 +19,6 @@ public class ActionButtonsUI : MonoBehaviour
     public Button rankSortButton;
     public Button suitSortButton;
     public Field handField;
-    public Button takeDamageButton;
     public Button recoverButton;
     public Button[] backpackSlotButtons = new Button[CardManager.BACKPACK_CAPACITY];
     public TMP_Text playerHealthLabel;
@@ -29,6 +28,11 @@ public class ActionButtonsUI : MonoBehaviour
     public TMP_Text combatLogLabel;
 
     TMP_Text _primaryActionLabel;
+    readonly DisplayedNumber _shownHealth = new();
+    Color _healthLabelColor;
+    bool _healthLabelColorCaptured;
+    RectTransform _healthBar;
+    RectTransform _healthBarFill;
     UnityAction[] _backpackSlotListeners;
     ConsumableSlotDragUI[] _backpackSlotDragInputs;
     EnhancementTargetUI _enhancementTargetUI;
@@ -86,7 +90,6 @@ public class ActionButtonsUI : MonoBehaviour
         if (blockButton) { blockButton.onClick.AddListener(OnBlockClicked); KeyButtonBorderStyle.Apply(blockButton); }
         if (rankSortButton) rankSortButton.onClick.AddListener(OnRankSortClicked);
         if (suitSortButton) suitSortButton.onClick.AddListener(OnSuitSortClicked);
-        if (takeDamageButton) { takeDamageButton.onClick.AddListener(OnTakeDamageClicked); KeyButtonBorderStyle.Apply(takeDamageButton); }
         if (recoverButton) { recoverButton.onClick.AddListener(OnRecoverClicked); KeyButtonBorderStyle.Apply(recoverButton); }
         BindBackpackSlots();
         EnsureConsumableContextUI();
@@ -128,7 +131,6 @@ public class ActionButtonsUI : MonoBehaviour
         if (blockButton) blockButton.onClick.RemoveListener(OnBlockClicked);
         if (rankSortButton) rankSortButton.onClick.RemoveListener(OnRankSortClicked);
         if (suitSortButton) suitSortButton.onClick.RemoveListener(OnSuitSortClicked);
-        if (takeDamageButton) takeDamageButton.onClick.RemoveListener(OnTakeDamageClicked);
         if (recoverButton) recoverButton.onClick.RemoveListener(OnRecoverClicked);
         UnbindBackpackSlots();
         CancelEnemyTargeting();
@@ -144,11 +146,13 @@ public class ActionButtonsUI : MonoBehaviour
             RefreshEnemyTargetPresentation();
         }
         RefreshBoardGuidance();
+        if (_shownHealth.Tick(Time.unscaledDeltaTime)) RefreshPlayerHealthLabel(CombatManager.Instance);
     }
 
     void LateUpdate()
     {
         if (_consumableContextPanel && _consumableContextPanel.activeSelf) PositionConsumableContext();
+        LayoutPlayerHealthBar();
     }
 
     // These labels support encounters, not the Shop/Event objects occupying the same surface.
@@ -158,7 +162,7 @@ public class ActionButtonsUI : MonoBehaviour
         bool encounter = node != null && (node.kind == MapNodeType.Combat ||
             node.kind == MapNodeType.Elite || node.kind == MapNodeType.Headliner);
         if (turnStateLabel && turnStateLabel.enabled != encounter) turnStateLabel.enabled = encounter;
-        if (combatLogLabel && combatLogLabel.enabled != encounter) combatLogLabel.enabled = encounter;
+        if (combatLogLabel && combatLogLabel.gameObject.activeSelf) combatLogLabel.gameObject.SetActive(false);
         bool showSelection = node == null || encounter;
         if (selectionLabel && selectionLabel.enabled != showSelection) selectionLabel.enabled = showSelection;
     }
@@ -239,10 +243,76 @@ public class ActionButtonsUI : MonoBehaviour
     }
     void HandlePlayerHealthChanged(int _, int __) => RefreshAll();
 
+    // The combat log is kept for the Console and telemetry; the board shows state, not narration.
     void HandleCombatLog(string message)
     {
-        if (combatLogLabel) combatLogLabel.text = message;
+        if (combatLogLabel && combatLogLabel.gameObject.activeSelf) combatLogLabel.gameObject.SetActive(false);
         RefreshAll();
+    }
+
+    // HP changes count over a few frames with a loss/gain tint in play mode; the value itself is
+    // always read from the player.
+    void RefreshPlayerHealthLabel(CombatManager combat)
+    {
+        if (!playerHealthLabel || combat == null) return;
+        if (!_healthLabelColorCaptured)
+        {
+            _healthLabelColor = playerHealthLabel.color;
+            _healthLabelColorCaptured = true;
+        }
+        _shownHealth.SetTarget(combat.player.currentHealth, Application.isPlaying && isActiveAndEnabled);
+        string block = combat.player.EncounterBlock > 0 ? $"  •  BLOCK {combat.player.EncounterBlock}" : string.Empty;
+        string shield = combat.player.ShieldCharges > 0 ? $"  •  SHIELD {combat.player.ShieldCharges}" : string.Empty;
+        playerHealthLabel.text = combat.HasInfiniteHealthForDev
+            ? $"HP  ∞{block}{shield}"
+            : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}{block}{shield}";
+        playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
+        EnsurePlayerHealthBar();
+        if (_healthBarFill)
+        {
+            float fraction = combat.HasInfiniteHealthForDev || combat.player.maxHealth <= 0 ? 1f
+                : Mathf.Clamp01(_shownHealth.Value / combat.player.maxHealth);
+            _healthBarFill.anchorMax = new Vector2(fraction, 1f);
+        }
+    }
+
+    // A thin bar under the HP text, matching the enemy cards' health line.
+    void EnsurePlayerHealthBar()
+    {
+        if (_healthBar != null || !playerHealthLabel) return;
+        var theme = DealbreakUIStyle.Theme;
+        var bar = new GameObject("Player Health Bar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        _healthBar = (RectTransform)bar.transform;
+        _healthBar.SetParent(playerHealthLabel.transform, false);
+        _healthBar.anchorMin = _healthBar.anchorMax = new Vector2(0.5f, 0.5f);
+        _healthBar.pivot = new Vector2(0.5f, 1f);
+        var track = bar.GetComponent<Image>();
+        track.raycastTarget = false;
+        track.color = theme ? new Color(theme.ink.r, theme.ink.g, theme.ink.b, 0.22f) : new Color(0f, 0f, 0f, 0.22f);
+        var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        _healthBarFill = (RectTransform)fill.transform;
+        _healthBarFill.SetParent(_healthBar, false);
+        _healthBarFill.anchorMin = Vector2.zero;
+        _healthBarFill.anchorMax = Vector2.one;
+        _healthBarFill.offsetMin = _healthBarFill.offsetMax = Vector2.zero;
+        var fillImage = fill.GetComponent<Image>();
+        fillImage.raycastTarget = false;
+        fillImage.color = theme ? theme.brick : new Color(0.66f, 0.27f, 0.22f, 1f);
+        LayoutPlayerHealthBar();
+    }
+
+    // The HP panel changes shape between turn and defense, so the bar follows the rendered text.
+    void LayoutPlayerHealthBar()
+    {
+        if (_healthBar == null || !playerHealthLabel) return;
+        var label = playerHealthLabel.rectTransform;
+        var bounds = playerHealthLabel.textBounds;
+        float width = label.rect.width * 0.72f;
+        Vector2 under = bounds.size.x > 0f
+            ? new Vector2(label.rect.center.x, bounds.min.y - 6f)
+            : new Vector2(label.rect.center.x, label.rect.center.y - 18f);
+        _healthBar.sizeDelta = new Vector2(width, 6f);
+        _healthBar.anchoredPosition = under - label.rect.center;
     }
 
     void RefreshAll()
@@ -291,30 +361,18 @@ public class ActionButtonsUI : MonoBehaviour
                 _ => "ACTION"
             };
         }
-        if (takeDamageButton)
-        {
-            takeDamageButton.interactable = !targeting && canTakeDamage;
-            takeDamageButton.gameObject.SetActive(false);
-        }
         if (recoverButton) recoverButton.interactable = !targeting && canRecover;
 
         RefreshBackpackSlots(cards, combat);
 
-        if (playerHealthLabel)
-        {
-            string block = combat.player.EncounterBlock > 0 ? $"  •  BLOCK {combat.player.EncounterBlock}" : string.Empty;
-            string shield = combat.player.ShieldCharges > 0 ? $"  •  SHIELD {combat.player.ShieldCharges}" : string.Empty;
-            playerHealthLabel.text = combat.HasInfiniteHealthForDev
-                ? $"HP  ∞{block}{shield}"
-                : $"HP  {combat.player.currentHealth}/{combat.player.maxHealth}{block}{shield}";
-        }
+        RefreshPlayerHealthLabel(combat);
 
         if (turnStateLabel)
         {
             turnStateLabel.text = combat.currentState switch
             {
                 GameState.PlayerTurn => combat.IsBonusPlayerAction ? "PLAYER TURN  •  BONUS ACTION" : "PLAYER TURN",
-                GameState.EnemyAttacking => $"DEFENSE  ·  INCOMING {combat.pendingDamage}",
+                GameState.EnemyAttacking => "DEFENSE",
                 GameState.GameWon => "ENCOUNTER WON",
                 GameState.GameOver => "RUN DEFEAT",
                 _ => "CHOOSE A ROUTE"
@@ -327,40 +385,43 @@ public class ActionButtonsUI : MonoBehaviour
             pendingDamageLabel.gameObject.SetActive(showDamage);
             pendingDamageLabel.text = showDamage
                 ? combat.pendingDamage > 0
-                    ? $"INCOMING {combat.pendingDamage} · {combat.PendingAttackCount} ATTACKS"
-                    : "ALL ATTACKS BLOCKED"
+                    ? $"INCOMING {combat.pendingDamage}"
+                    : "ALL BLOCKED"
                 : string.Empty;
         }
 
         if (selectionLabel)
         {
-        if (cards.IsEnemyTargeting) selectionLabel.text = "Click a highlighted enemy to target it · Back or Esc cancels";
-        else if (cards.IsHandEnhancementTargeting) selectionLabel.text = "Select highlighted cards · Confirm to apply, Back to cancel";
+        // Only what the current selection will do; how to play is left to the tutorial.
+        if (cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting) selectionLabel.text = string.Empty;
         else selectionLabel.text = combat.currentState switch
             {
                 GameState.PlayerTurn when cards.HandCount == 0 =>
-                    $"Hand empty: Recover takes {combat.TotalEnemyAttack} damage, then draws 1 card",
+                    $"Recover: take {combat.TotalEnemyAttack}, draw 1",
                 GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilySelection(cards.SelectedCards.Select(view => view.data).ToArray(), cards) =>
-                    "Royal Family: exact 10/J/Q/K/A in one effective suit — instant defeat. Press Attack or drag to target",
+                    "Royal Family • instant defeat",
                 GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilyPartialSelection(cards.SelectedCards, cards) =>
-                    $"Royal Family selection ({selectedCount}/5)  •  exact 10/J/Q/K/A, one effective suit; target will be instantly defeated when complete",
+                    $"Royal Family {selectedCount}/5",
                 GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) =>
-                    $"Ace pair: {cards.SelectedCards[0].data.DisplayName} + {cards.SelectedCards[1].data.DisplayName}  •  Drag to an enemy to attack",
+                    $"Ace pair • {DamagePreview(cards, combat)}",
                 GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) =>
-                    $"Same-rank set ({selectedCount} cards): {cards.SelectedCards[0].data.Rank}  •  Drag to an enemy to attack",
-                GameState.PlayerTurn when hasSelected =>
-                    $"Selected: {cards.selectedCard.data.DisplayName}  •  Drag to an enemy to attack",
-                GameState.PlayerTurn => "Select a card to attack, or drag it to an enemy",
+                    $"Same rank ×{selectedCount} • {DamagePreview(cards, combat)}",
+                GameState.PlayerTurn when hasSelected => DamagePreview(cards, combat),
                 GameState.EnemyAttacking when hasSelected && combat.TryPreviewDefense(cards.SelectedCards, out int blocked, out int remaining) =>
-                    $"{selectedCount} selected  •  Blocks {blocked} of {combat.PendingAttackCount} pending attacks  •  Remaining damage {remaining}",
-                GameState.EnemyAttacking when hasSelected =>
-                    "Selected cards cannot each block a distinct pending attack",
-                GameState.EnemyAttacking => "Block attacks with cards, or take the remaining damage",
-                GameState.GameWon => "Encounter cleared — choose the next route",
-                GameState.GameOver => "The run has ended",
-                _ => "Choose an available route on the map"
+                    $"Blocks {blocked} of {combat.PendingAttackCount} • {remaining} damage left",
+                GameState.EnemyAttacking when hasSelected => "Can't block with this selection",
+                _ => string.Empty
             };
         }
+    }
+
+    // Shares the execution calculation; the critical roll and enemy defenses are not included.
+    static string DamagePreview(CardManager cards, CombatManager combat)
+    {
+        var selected = cards.SelectedCards.Select(view => view.data).ToArray();
+        int damage = combat.PreviewActionDamage(selected, combat.currentEnemy);
+        return GameplayEffectResolver.HasDoubleStrikeEffect(selected)
+            ? $"{damage} damage ×2 hits" : $"{damage} damage";
     }
 
     void OnPrimaryActionClicked()
@@ -373,13 +434,7 @@ public class ActionButtonsUI : MonoBehaviour
         if (combat.currentState == GameState.PlayerTurn)
             StartSelectedAttack(cards, combat);
         else if (combat.currentState == GameState.EnemyAttacking)
-        {
-            var presentation = AttackCardPresentationUI.Instance;
-            if (presentation != null)
-                presentation.TryDefendCards(selection, combat.currentEnemy);
-            else
-                combat.TryDefendWithCards(selection);
-        }
+            CombatCommands.Block(selection, combat.currentEnemy);
     }
 
     void OnPlayClicked()
@@ -471,13 +526,8 @@ public class ActionButtonsUI : MonoBehaviour
         if (!resolved) RefreshAll();
     }
 
-    bool ExecuteAttack(IReadOnlyList<CardView> selection, EnemyRuntime target, CombatManager combat)
-    {
-        var presentation = AttackCardPresentationUI.Instance;
-        return presentation != null
-            ? presentation.TryPlayCards(selection, target)
-            : combat.TryPlayCards(selection, target);
-    }
+    bool ExecuteAttack(IReadOnlyList<CardView> selection, EnemyRuntime target, CombatManager combat) =>
+        CombatCommands.Attack(selection, target);
 
     void CancelEnemyTargeting()
     {
@@ -512,12 +562,7 @@ public class ActionButtonsUI : MonoBehaviour
         var combat = CombatManager.Instance;
         if (cards != null && combat != null && combat.currentState == GameState.EnemyAttacking)
         {
-            var selected = cards.GetSelectedCardsSnapshot();
-            var presentation = AttackCardPresentationUI.Instance;
-            if (presentation != null)
-                presentation.TryDefendCards(selected, combat.currentEnemy);
-            else
-                combat.TryDefendWithCards(selected);
+            CombatCommands.Block(cards.GetSelectedCardsSnapshot(), combat.currentEnemy);
         }
     }
 
@@ -538,7 +583,6 @@ public class ActionButtonsUI : MonoBehaviour
         RefreshAll();
     }
 
-    void OnTakeDamageClicked() => CombatManager.Instance?.TakeRemainingDamage();
     void OnRecoverClicked() => CombatManager.Instance?.Recover();
 
     void BindBackpackSlots()
@@ -661,6 +705,7 @@ public class ActionButtonsUI : MonoBehaviour
         _consumableContextRect.anchorMin = _consumableContextRect.anchorMax = new Vector2(0.5f, 0.5f);
         _consumableContextRect.pivot = new Vector2(0.5f, 0.5f);
         _consumableContextRect.sizeDelta = new Vector2(270f, 150f);
+        ContextualTooltipUI.RegisterObstacle(_consumableContextRect);
         var background = _consumableContextPanel.GetComponent<Image>();
         background.color = new Color(0.08f, 0.12f, 0.16f, 0.96f);
         background.raycastTarget = true;
@@ -764,7 +809,7 @@ public class ActionButtonsUI : MonoBehaviour
                     ? validEnhancementTarget
                         ? $"\n<size=90%><color=#E8C66D>Selected target: {selectedEnhancementTarget.DisplayName}</color></size>"
                         : $"\n<size=85%><color=#DFA0A0>Selected card is unavailable (enhanced or outside the allowed zone).</color></size>"
-                    : "\n<size=85%><color=#C7D0DB>Select one card first; Use applies this effect to that card.</color></size>";
+                    : string.Empty;
             if (_discardConfirmationArmed)
                 _consumableContextText.text = $"Discard 1 of {stackCount} copies of {definition.displayName}? This removes this copy and all {_selectedConsumable.RemainingCharges} remaining charge(s). No reward.";
             else

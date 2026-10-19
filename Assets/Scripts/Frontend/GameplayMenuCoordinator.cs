@@ -50,7 +50,7 @@ public sealed class GameplayMenuCoordinator : MonoBehaviour
             reason = reason
         };
         _layers.Add(layer);
-        panel.SetActive(true);
+        BoardPanelTransition.FadeIn(panel);
         panel.transform.SetAsLastSibling();
         ApplyGateReasons();
         Select(defaultSelection);
@@ -114,6 +114,8 @@ public sealed class GameplayMenuCoordinator : MonoBehaviour
         Select(null, restoreSelection);
     }
 
+    // Only release reasons this coordinator applied; gameplay-owned reasons (pending
+    // rewards, Gear choices) must survive a menu opening and closing above them.
     void ApplyGateReasons()
     {
         var reasons = GameplayInputBlockReason.None;

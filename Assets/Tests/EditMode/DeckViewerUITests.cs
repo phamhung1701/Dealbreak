@@ -50,14 +50,15 @@ public sealed class DeckViewerUITests
         _viewer.toggleButton = _toggleButton;
         _cards.Configure(null, null, _viewer.cardPrefab, System.Array.Empty<GearData>());
         viewerObject.SetActive(true);
-        // EditMode does not dispatch the runtime subscription/initialization callback.
-        typeof(DeckViewerUI).GetMethod("OnEnable", System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(_viewer,null);
+        // EditMode does not consistently run MonoBehaviour lifecycle callbacks; reset then enable once.
+        InvokeViewer("OnDisable");
+        InvokeViewer("OnEnable");
     }
 
     [TearDown]
     public void TearDown()
     {
-        if(_viewer)typeof(DeckViewerUI).GetMethod("OnDisable", System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(_viewer,null);
+        if (_viewer != null) InvokeViewer("OnDisable");
         if (_cards != null) _cards.Reset();
         for (int i = _created.Count - 1; i >= 0; i--)
             if (_created[i] != null) Object.DestroyImmediate(_created[i]);
@@ -186,6 +187,10 @@ public sealed class DeckViewerUITests
         Assert.That(right, Is.LessThanOrEqualTo(_content.rect.width * 0.5f));
         Assert.That(_content.rect.height, Is.GreaterThan(300f));
     }
+
+    void InvokeViewer(string method) => typeof(DeckViewerUI)
+        .GetMethod(method, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+        .Invoke(_viewer, null);
 
     void OpenViewer()
     {

@@ -290,27 +290,44 @@ public sealed class Phase7EShopSelectionTests
         Assert.That(offer.price, Is.EqualTo(cachedPrice));
     }
 
+    // Gear sells like a Trick: select it on the Gear rail inside a Black Market, then Sell.
     [Test]
-    public void SellMode_RequiresExplicitConfirmationAndPaysHalfAuthoredGearPrice()
+    public void GearSellsFromTheGearRail_ForHalfItsAuthoredPrice_AndTheShopHasNoSellMode()
     {
+        Assert.That(_ui.panel.GetComponentsInChildren<Button>(true).Any(button => button.name == "ShopSellMode"), Is.False);
         var gear = GearOffer().gear;
         gear.price = 11; // Odd authored prices verify integer division rounds down.
         Assert.That(_cards.BuyGear(gear, 0), Is.True);
         long instanceId = _cards.OwnedGearInstances[0].Id;
         int creditsBefore = _cards.credits;
-        var sellMode = (Button)typeof(ShopUI).GetField("_sellModeButton",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(_ui);
-        sellMode.onClick.Invoke();
-        var row = _ui.itemsContainer.Cast<Transform>().Single(child => child.name == $"Sell_artifact_{instanceId}");
-        row.GetComponent<Button>().onClick.Invoke();
-        Assert.That(_cards.credits, Is.EqualTo(creditsBefore), "Selection must not commit a sale.");
-        Assert.That(_cards.GetGearInstanceById(instanceId), Is.Not.Null);
-        Assert.That(_ui.selectedOfferText.text, Does.Contain($"{gear.price / 2} Credits"));
 
-        _ui.buyButton.onClick.Invoke();
+        var canvas = new GameObject("Gear Rail Canvas", typeof(RectTransform), typeof(Canvas));
+        _objects.Add(canvas);
+        var slots = new GameObject("Gear Slots", typeof(RectTransform));
+        slots.transform.SetParent(canvas.transform, false);
+        var railObject = new GameObject("Gear Rail");
+        _objects.Add(railObject);
+        railObject.SetActive(false);
+        var rail = railObject.AddComponent<GearRailUI>();
+        rail.source = _cards;
+        rail.slotsRoot = (RectTransform)slots.transform;
+        railObject.SetActive(true);
+        typeof(GearRailUI).GetMethod("OnEnable", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .Invoke(rail, null);
+        rail.Refresh();
+
+        var slot = slots.GetComponentsInChildren<GearIconSlotUI>().Single(value => value.InstanceId == instanceId);
+        slot.OnPointerClick(new UnityEngine.EventSystems.PointerEventData(null)
+            { button = UnityEngine.EventSystems.PointerEventData.InputButton.Left });
+        Assert.That(rail.SellButton, Is.Not.Null);
+        Assert.That(rail.SellButton.gameObject.activeInHierarchy, Is.True);
+        Assert.That(rail.SellButton.interactable, Is.True);
+        Assert.That(_cards.credits, Is.EqualTo(creditsBefore), "Selecting Gear must not sell it.");
+
+        rail.SellButton.onClick.Invoke();
         Assert.That(_cards.credits, Is.EqualTo(creditsBefore + gear.price / 2));
         Assert.That(_cards.GetGearInstanceById(instanceId), Is.Null);
-        Assert.That(_ui.SellingMode, Is.True);
+        Assert.That(rail.SellButton.gameObject.activeInHierarchy, Is.False);
     }
 
     [Test]
@@ -359,7 +376,7 @@ public sealed class Phase7EShopSelectionTests
     {
         var labels = _ui.panel.GetComponentsInChildren<TMP_Text>(true);
         Assert.That(labels.Any(label => label.text == "GOODS"), Is.True);
-        Assert.That(labels.Any(label => label.text == "SERVICES — once per Shop"), Is.True);
+        Assert.That(labels.Any(label => label.text == "SERVICES"), Is.True);
         var services = _run.GetCurrentShopOffers().Where(offer => offer.IsService).ToArray();
         Assert.That(services.Length, Is.EqualTo(2));
         foreach (var service in services)

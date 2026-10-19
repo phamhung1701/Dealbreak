@@ -221,7 +221,7 @@ public sealed class RunProgressionTests
     }
 
     [Test]
-    public void EncounterStartupReactionFaultReportsOneDefeatWithoutCompletingNode()
+    public void EncounterStartupReactionFaultReportsOneAbortWithoutCompletingNode()
     {
         var runaway = ScriptableObject.CreateInstance<EnemyAbility>();
         _testOwnedAssets.Add(runaway);
@@ -240,7 +240,7 @@ public sealed class RunProgressionTests
         _runManager.OnPathChosen(selectedNode.id);
 
         Assert.That(_combatManager.currentState, Is.EqualTo(GameState.GameOver));
-        Assert.That(result, Is.EqualTo(EncounterResult.Defeat));
+        Assert.That(result, Is.EqualTo(EncounterResult.Aborted), "A rule fault aborts the encounter; it is not a defeat.");
         Assert.That(resultCount, Is.EqualTo(1));
         Assert.That(_runManager.ActiveNode, Is.Null);
         Assert.That(selectedNode.completed, Is.False);

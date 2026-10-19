@@ -187,7 +187,7 @@ public sealed class EnhancementTargetUI : MonoBehaviour
         // Outside combat the existing rules also allow deck/discard targets. Present only those
         // off-board cards, while the real hand remains clickable below this bounded panel.
         if (!cards.ConsumableRequiresHandTarget(slotIndex)) ShowOffHandChoicesLayout();
-        if (panel) { panel.SetActive(true); panel.transform.SetAsLastSibling(); }
+        if (panel) { BoardPanelTransition.FadeIn(panel); panel.transform.SetAsLastSibling(); }
         cards.BeginHandTargeting(view => SelectCard(view.data.Id), id => cards.CanTargetConsumableAtSlot(slotIndex, id));
         RefreshCards();
         UpdateFeedback();
@@ -285,7 +285,7 @@ public sealed class EnhancementTargetUI : MonoBehaviour
             var button = obj.GetComponent<Button>();
             if (button) button.onClick.AddListener(() => SelectEventEnhancement(enhancement));
         }
-        panel.SetActive(true);
+        BoardPanelTransition.FadeIn(panel);
         panel.transform.SetAsLastSibling();
     }
 
@@ -316,7 +316,7 @@ public sealed class EnhancementTargetUI : MonoBehaviour
         if (feedbackLabel) feedbackLabel.text = "Click a card in your hand to target this Mod.";
         if (confirmButton) confirmButton.interactable = false;
         SaveAndCompactPanel();
-        if (panel) { panel.SetActive(true); panel.transform.SetAsLastSibling(); }
+        if (panel) { BoardPanelTransition.FadeIn(panel); panel.transform.SetAsLastSibling(); }
         ClearTargetCards();
         CardManager.Instance.BeginHandTargeting(HandleHandCardTargeted, id =>
             string.IsNullOrEmpty(RunManager.Instance.GetEnhancementAcquisitionTargetUnavailableReason(id, _acquisitionEnhancement)));

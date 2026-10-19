@@ -64,8 +64,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     void BindControls()
     {
         if(!actions)return;
-        var buttons=new[]{actions.playButton,actions.blockButton,actions.passButton,actions.recoverButton,actions.takeDamageButton,actions.rankSortButton,actions.suitSortButton};
-        var details=new[]{"Play the selected card or valid combination against an exact enemy target.","Commit selected cards to block pending attacks. Inspect a card to compare its block value.","Pass the current action and face the enemy response.","Recover when your hand is empty.","Accept the current pending damage without committing more block cards.","Sort your current hand by rank.","Sort your current hand by suit."};
+        var buttons=new[]{actions.playButton,actions.blockButton,actions.passButton,actions.recoverButton,actions.rankSortButton,actions.suitSortButton};
+        var details=new[]{"Play the selected card or valid combination against an exact enemy target.","Commit selected cards to block pending attacks. Inspect a card to compare its block value.","Pass the current action; while blocking, take the pending damage.","Recover when your hand is empty.","Sort your current hand by rank.","Sort your current hand by suit."};
         for(int i=0;i<buttons.Length;i++)
         {
             var button=buttons[i];if(!button)continue;string description=details[i];
@@ -125,7 +125,6 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
                 actions.selectionLabel.text=CombatDetailPanelUI.SelectionSummary(cards);
             if(actions.playButton)actions.playButton.GetComponentInChildren<TMP_Text>().text=cards.IsEnemyTargeting?"CANCEL":"ATTACK";
             if(actions.recoverButton)actions.recoverButton.gameObject.SetActive(CombatManager.Instance.currentState==GameState.PlayerTurn&&cards.HandCount==0);
-            if(actions.takeDamageButton)actions.takeDamageButton.gameObject.SetActive(false);
         }
         if(Time.unscaledTime<_nextStyleCheck)return;_nextStyleCheck=Time.unscaledTime+.35f;
         if(market&&market.panel&&market.panel.activeInHierarchy&&CardManager.Instance)

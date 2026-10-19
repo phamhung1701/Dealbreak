@@ -86,7 +86,7 @@ public static class CombatUISliceAuthoring
         Place(actions.blockButton.transform, .53f, .06f, .81f, .94f);
         Place(actions.passButton.transform, .835f, .06f, .995f, .94f);
         foreach (var button in new[] {actions.playButton, actions.blockButton, actions.passButton,
-                     actions.rankSortButton, actions.suitSortButton, actions.takeDamageButton, actions.recoverButton})
+                     actions.rankSortButton, actions.suitSortButton, actions.recoverButton})
             StyleButton(button);
         var hp = player.Find("HealthPanel");
         detail.playerStatePanel = (RectTransform)hp;
@@ -96,7 +96,6 @@ public static class CombatUISliceAuthoring
         StyleText(actions.playerHealthLabel, 25, Ink);
         Place(actions.pendingDamageLabel.transform, .055f, .36f, .945f, .65f);
         StyleText(actions.pendingDamageLabel, 20, Rust);
-        Place(actions.takeDamageButton.transform, .055f, .04f, .945f, .32f);
         Place(actions.recoverButton.transform, .02f, .045f, .135f, .18f);
         var trickHeading = Child(player, "TricksHeading", typeof(TextMeshProUGUI));
         Place(trickHeading, .02f, .955f, .135f, 1);

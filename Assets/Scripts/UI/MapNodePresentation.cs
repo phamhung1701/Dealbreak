@@ -7,18 +7,18 @@ using UnityEngine.UI;
 public sealed class MapNodePresentation : MaskableGraphic
 {
     public MapNodeType kind;
-    public bool unknown,completed,available;
+    public bool unknown,completed,available,scouted;
     bool _focused;
     float _nextPulse;
     float _pulse=1f;
-    public static void Apply(GameObject obj,PathNode node)
+    public static void Apply(GameObject obj,PathNode node,bool scouted=false)
     {
         var surface=obj.GetComponent<EditorialSurface>();if(!surface)surface=obj.AddComponent<EditorialSurface>();surface.treatment=EditorialSurface.Treatment.Open;
         var rect=DealbreakUIStyle.Child(obj.transform,"Route Glyph",typeof(MapNodePresentation));
         DealbreakUIStyle.Place(rect,.02f,.02f,.98f,.98f);rect.SetAsFirstSibling();
         if(!rect.GetComponent<CanvasRenderer>())rect.gameObject.AddComponent<CanvasRenderer>();
         var glyph=rect.GetComponent<MapNodePresentation>();glyph.raycastTarget=false;glyph.kind=node.kind;glyph.unknown=obj.GetComponentInChildren<TMPro.TMP_Text>()?.text.Trim()=="?";
-        glyph.completed=node.completed;glyph.available=node.accessible&&!node.completed;glyph.SetVerticesDirty();
+        glyph.completed=node.completed;glyph.available=node.accessible&&!node.completed;glyph.scouted=scouted;glyph.SetVerticesDirty();
         var style=obj.GetComponent<EditorialButton>();if(style)style.enabled=false;
         var image=obj.GetComponent<Image>();if(image)image.color=Color.clear;
         var text=obj.GetComponentInChildren<TMPro.TMP_Text>();if(text){DealbreakUIStyle.Place(text.transform,-.4f,-.65f,1.4f,-.05f);text.raycastTarget=true;text.fontSize=19;text.alignment=TMPro.TextAlignmentOptions.Center;text.overflowMode=TMPro.TextOverflowModes.Overflow;}
@@ -27,8 +27,9 @@ public sealed class MapNodePresentation : MaskableGraphic
     {
         vh.Clear();var r=rectTransform.rect;float radius=Mathf.Min(r.width,r.height)*.5f;
         bool focus=EventSystem.current&&EventSystem.current.currentSelectedGameObject==transform.parent.gameObject;
-        Color edge=focus?DealbreakUIStyle.Theme.ochre:completed?DealbreakUIStyle.Theme.paper:available?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;
-        float thickness=available?6f:completed?4f:3f;
+        // A scouted node is known ahead of travel: an ochre edge marks it off the current frontier.
+        Color edge=focus?DealbreakUIStyle.Theme.ochre:completed?DealbreakUIStyle.Theme.paper:available||scouted?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;
+        float thickness=available?6f:completed||scouted?4f:3f;
         if(available)edge=Color.Lerp(edge,new Color(1f,.35f,.12f,1f),_pulse*.42f);
         Draw(vh,r.center,radius,edge);Draw(vh,r.center,radius-thickness,DealbreakUIStyle.Theme.ink);
         Draw(vh,r.center,radius-7,completed?DealbreakUIStyle.Theme.slate:DealbreakUIStyle.Theme.charcoal);

@@ -214,6 +214,7 @@ public sealed class Phase8RitualAndQuestTests
         var eventDefinition = ScriptableObject.CreateInstance<RunEventDefinition>();
         eventDefinition.id = "evt_100";
         eventDefinition.category = MapNodeType.Risk;
+        eventDefinition.flow = RunEventFlow.BloodRitual;
         eventDefinition.choices = new[]
         {
             new RunEventChoice { interaction = RunEventChoiceInteraction.Immediate },

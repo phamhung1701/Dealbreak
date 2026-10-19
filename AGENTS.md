@@ -15,7 +15,7 @@ Combat currently includes persistent player HP, optional defense by discarding c
 - Start with the files related to the requested change and their tests. Read broader documentation only when the task needs it.
 - `DEALBREAK_DEVELOPMENT.md` records historical implementation milestones and architecture; verify its claims against the current repository and use the confirmed Dealbreak GameData workbook for player-facing content names and terms.
 - `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` is the current source of truth for canonical content names and terminology. Workbook statuses distinguish implemented content from drafts; the workbook’s legacy-ID crosswalk does not authorize changing Unity or save IDs.
-- Important areas to locate as needed: `Assets/Scripts/Managers/CombatManager.cs`, `RunManager.cs`, `CardManager.cs`; card/runtime models under `Assets/Scripts/Data/`; randomness under `Assets/Scripts/Randomness/`; tests under `Assets/Tests/`.
+- Important areas to locate as needed: `Assets/Scripts/Managers/CombatManager.cs`; `RunManager.cs` and its partials (`.Shop`, `.Rewards`, `.Events`, `.Contracts`, `.Headliners`, `.Persistence`); `CardManager.cs` (`.Hand` holds views/selection); Gear special rules in `Assets/Scripts/Combat/GearRules*.cs`; encounter composition in `Data/EncounterComposer.cs`; card/runtime models under `Assets/Scripts/Data/`; randomness under `Assets/Scripts/Randomness/`; tests under `Assets/Tests/`.
 - For current behavior, the code, authored assets, and passing tests are primary evidence. For intended changes, follow the explicit task prompt and record ambiguities instead of guessing.
 
 ## Working rules
@@ -38,17 +38,19 @@ Combat currently includes persistent player HP, optional defense by discarding c
 - Fleeing is distinct from death and grants neither kill draw nor defeated-enemy gold. Death, reward, and terminal encounter results must each happen once. The final boss reward precedes run completion.
 - Event HP costs and explicit resource payments are separate from combat damage. They must not accidentally consume combat Shield or trigger combat reactions.
 
-## Current planned work: Phase 7B.5
+## Architecture contracts (accepted)
 
-The next proposed implementation is **Combat Resolution Foundation**. Implement it only when the task explicitly authorizes implementation. Its goal is one committed action, one or more independently resolved hits, structured damage requests/results, deterministic ordered reactions, and safe death/action completion. Shield and multi-hit are minimal validation mechanics, not a content rollout.
+Phase 7B.5 (Combat Resolution Foundation) is implemented and accepted: `DamageRequest`/`DamageResult`/`CombatResolver`, per-hit Shield, multi-hit, `CombatReactionQueue`. Recover is one aggregate hit that may consume one Shield charge. `DEALBREAK_ARCHITECTURE_AUDIT.md` records the October 2026 audit and how each finding was resolved. Keep these contracts:
 
-For this phase:
+- Every combat command ends through `CombatManager.TryResolveTerminalOutcome`; encounter results publish after the outermost command unwinds. A reaction-runaway fault resolves as `EncounterResult.Aborted` (save kept), never as Defeat.
+- Combat commands and selection rules operate on `CardInstance`; `CardView` overloads are UI adapters only. UI attack/block routing goes through `CombatCommands`.
+- Gear special rules live only in `GearRules*.cs`, keyed by `GearSpecialRule`, with persisted state under `GearCounterKeys` (values are save data; never renumber). Prefer typed `GameplayEffectDefinition` data over new special rules.
+- Enemy rules key on authored data and asset references (`EnemyTypeData.minMapIndex`, `eligibleAsEliteBase`, `allies`), never on `enemyName`. Spawns and route previews both use `EncounterComposer`.
+- Interactive events dispatch on `RunEventDefinition.flow`, never on ids. Headliner names, text, balance and ability pools live in `Resources/HeadlinerCatalog` (pool order is seeded).
+- `Resources/RunSaveContent` is the single content registry for play and saves; register new Gear, Mods, Tricks, Incidents and enemies there (`ContentRegistryTests` enforce it). Schema changes bump `RunSaveValidation.Version` and add a `RunSaveMigrations` step.
+- Input-gate reasons are owned: release only the reasons your code set.
+- The regression gate is the full EditMode suite plus PlayMode; it must be green before a change is accepted.
 
-- A multi-hit card commits once; card consumption, once-per-card effects, draw/heal/recycle, and turn counters occur once. Resolve each hit separately. Stop hitting a target once it dies; do not retarget automatically.
-- Shield is encounter-local block-instance charges on player and enemies. One charge blocks one otherwise-positive combat hit completely; zero or already fully prevented damage consumes no charge. Apply Shield per hit, never per entire action.
-- The **Recover–Shield interaction is an open gameplay decision**. Keep its policy explicit; do not present a temporary implementation choice as a final game rule.
-- Keep reactions as a small, deterministic FIFO operation queue with a simple, observable runaway guard. Use phase, source type, stable ownership/acquisition order, then authored handler order; numeric priority is exceptional.
-- Preserve existing behavior and RNG order throughout migration. Characterize fragile baseline behavior first, then add damage contracts, action context, ordered hooks, safe completion, Shield, multi-hit, and integration checks in coherent increments.
-- Do not add Ace pairing, criticals, tiers, consumables, AoE, wildcard/effective suits, Shifting, new shop pools, or a generic effect framework as part of this phase.
+## Current planned work
 
-If the current repository already completed part or all of this phase, inspect the implementation and tests before using these planned-work instructions. Update this section when the phase is accepted so it does not become stale.
+No phase is selected. Continue incremental content from the workbook, checking current support first.

@@ -44,6 +44,28 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     Outline _targetOutline;
     Vector3 _baseTargetScale;
 
+    // Presentation-only motion: HP drain, hit shake/flash, entrance and target emphasis.
+    // Gameplay values are read from EnemyRuntime; these only ease how they are shown.
+    const float HpSmoothTime = 0.14f;
+    const float ShakeTime = 0.24f;
+    const float HitFlashTime = 0.2f;
+    const float EntranceTime = 0.3f;
+    const float EmphasisSmoothTime = 0.07f;
+    float _shownHp = -1f;
+    float _hpVelocity;
+    float _hpHold;
+    float _shakeTime;
+    float _shakeStrength;
+    float _flashTime;
+    Color _flashColor;
+    Vector2 _portraitRestPosition;
+    float _entranceDelay;
+    float _entranceElapsed = EntranceTime;
+    float _targetAlpha = 1f;
+    float _targetScaleFactor = 1f;
+    float _scaleFactor = 1f;
+    float _scaleVelocity;
+
     public EnemyRuntime DisplayedEnemy => _hasExplicitBinding
         ? _boundEnemy
         : CombatManager.Instance != null ? CombatManager.Instance.currentEnemy : null;
@@ -101,13 +123,15 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         {frame.rim=_enemyTargeting&&_enemyTargetEligible?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;frame.border=_enemyTargeting&&_enemyTargetEligible?6:3;frame.Refresh();}
         if (!_enemyTargeting)
         {
-            if (_targetCanvasGroup != null) _targetCanvasGroup.alpha = 1f;
+            _targetAlpha = 1f;
+            if (_targetCanvasGroup != null && !IsEntering) _targetCanvasGroup.alpha = 1f;
             if (_targetOutline != null) _targetOutline.enabled = false;
-            if (_baseTargetScale != Vector3.zero) transform.localScale = _baseTargetScale;
+            SetEmphasis(1f);
             return;
         }
         if (statusText) statusText.text = _enemyTargetEligible ? "VALID TARGET" : "Not a valid target";
-        if (_targetCanvasGroup != null) _targetCanvasGroup.alpha = _enemyTargetEligible ? 1f : 0.38f;
+        _targetAlpha = _enemyTargetEligible ? 1f : 0.38f;
+        if (_targetCanvasGroup != null && !IsEntering) _targetCanvasGroup.alpha = _targetAlpha;
         if (_targetOutline != null)
         {
             _targetOutline.enabled = _enemyTargetEligible;
@@ -115,16 +139,146 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
                 ? new Color(0.87f, 0.67f, 0.28f, 1f)
                 : new Color(0.94f, 0.89f, 0.77f, 1f);
         }
-        float scale = _enemyTargetEligible ? (_enemyPointerHovered ? 1.07f : 1.035f) : 0.96f;
-        transform.localScale = _baseTargetScale * scale;
+        SetEmphasis(_enemyTargetEligible ? (_enemyPointerHovered ? 1.07f : 1.035f) : 0.96f);
     }
+
+    // Target emphasis eases in play mode; outside it (tests, editor) it applies at once.
+    void SetEmphasis(float factor)
+    {
+        _targetScaleFactor = factor;
+        if (Application.isPlaying || _baseTargetScale == Vector3.zero) return;
+        _scaleFactor = factor;
+        transform.localScale = _baseTargetScale * factor;
+    }
+
+    bool IsEntering => _entranceElapsed < EntranceTime;
+
+    public bool IsBoundTo(EnemyRuntime enemy) => _hasExplicitBinding && ReferenceEquals(_boundEnemy, enemy);
 
     public void Bind(EnemyRuntime enemy)
     {
+        if (!IsBoundTo(enemy))
+        {
+            // A recycled view must not drain or shake from the previous enemy's state.
+            _shownHp = -1f;
+            _hpHold = _shakeTime = _flashTime = 0f;
+        }
         _hasExplicitBinding = true;
         _boundEnemy = enemy;
         RefreshDisplay();
         RefreshStateGuidance();
+    }
+
+    /// <summary>Fades and grows the panel in after the delay; presentation only.</summary>
+    public void PlayEntrance(float delay)
+    {
+        if (!Application.isPlaying || !isActiveAndEnabled || _baseTargetScale == Vector3.zero) return;
+        if (_targetCanvasGroup == null && !TryGetComponent(out _targetCanvasGroup))
+            _targetCanvasGroup = gameObject.AddComponent<CanvasGroup>();
+        _entranceDelay = Mathf.Max(0f, delay);
+        _entranceElapsed = 0f;
+        _targetCanvasGroup.alpha = 0f;
+        transform.localScale = _baseTargetScale * _scaleFactor * 0.88f;
+    }
+
+    /// <summary>
+    /// Shakes and tints the portrait when a hit lands, and holds the HP drain until then.
+    /// The gameplay result has already been applied; only its presentation waits.
+    /// </summary>
+    public void PlayHitCue(bool blocked, float delay)
+    {
+        if (!Application.isPlaying || !isActiveAndEnabled) return;
+        _hpHold = _hpHold > 0f ? Mathf.Min(_hpHold, delay) : delay;
+        StartCoroutine(HitCueAfter(blocked, delay));
+    }
+
+    System.Collections.IEnumerator HitCueAfter(bool blocked, float delay)
+    {
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+        _shakeTime = ShakeTime;
+        _shakeStrength = blocked ? 5f : 10f;
+        _flashTime = HitFlashTime;
+        _flashColor = blocked ? new Color(0.55f, 0.9f, 1f, 1f) : new Color(1f, 0.42f, 0.36f, 1f);
+    }
+
+    void Update()
+    {
+        if (!Application.isPlaying) return;
+        float deltaTime = Time.deltaTime;
+        if (deltaTime <= 0f) return;
+        TickHp(deltaTime);
+        TickHitCue(deltaTime);
+        TickEmphasis(deltaTime);
+    }
+
+    void TickHp(float deltaTime)
+    {
+        var enemy = DisplayedEnemy;
+        if (enemy == null || _shownHp < 0f) return;
+        if (_hpHold > 0f)
+        {
+            _hpHold = Mathf.Max(0f, _hpHold - deltaTime);
+            return;
+        }
+        if (Mathf.Approximately(_shownHp, enemy.currentHp)) return;
+        _shownHp = Mathf.SmoothDamp(_shownHp, enemy.currentHp, ref _hpVelocity, HpSmoothTime, Mathf.Infinity, deltaTime);
+        if (Mathf.Abs(_shownHp - enemy.currentHp) < 0.05f) _shownHp = enemy.currentHp;
+        ApplyHp(enemy);
+    }
+
+    void ApplyHp(EnemyRuntime enemy)
+    {
+        if (hpText) hpText.text = $"HP  {Mathf.RoundToInt(_shownHp)}/{enemy.maxHp}";
+        if (healthBar)
+        {
+            healthBar.minValue = 0;
+            healthBar.maxValue = Mathf.Max(1, enemy.maxHp);
+            healthBar.value = _shownHp;
+        }
+    }
+
+    void TickHitCue(float deltaTime)
+    {
+        if (portrait == null) return;
+        if (_shakeTime > 0f)
+        {
+            _shakeTime = Mathf.Max(0f, _shakeTime - deltaTime);
+            float remaining = _shakeTime / ShakeTime;
+            float offset = Mathf.Sin((1f - remaining) * ShakeTime * 70f) * _shakeStrength * remaining;
+            portrait.rectTransform.anchoredPosition = _portraitRestPosition + new Vector2(offset, 0f);
+        }
+        if (_flashTime > 0f && _defeatCue == null)
+        {
+            _flashTime = Mathf.Max(0f, _flashTime - deltaTime);
+            var state = CombatManager.Instance != null ? CombatManager.Instance.currentState : GameState.Idle;
+            portrait.color = Color.Lerp(RestPortraitColor(state), _flashColor, _flashTime / HitFlashTime);
+        }
+    }
+
+    void TickEmphasis(float deltaTime)
+    {
+        if (_defeatCue != null || _baseTargetScale == Vector3.zero) return;
+        float entrance = 1f;
+        if (IsEntering)
+        {
+            if (_entranceDelay > 0f)
+            {
+                _entranceDelay -= deltaTime;
+                entrance = 0f;
+            }
+            else
+            {
+                _entranceElapsed += deltaTime;
+                float t = Mathf.Clamp01(_entranceElapsed / EntranceTime);
+                entrance = 1f - (1f - t) * (1f - t) * (1f - t);
+            }
+            if (_targetCanvasGroup != null) _targetCanvasGroup.alpha = _targetAlpha * entrance;
+        }
+        else if (Mathf.Approximately(_scaleFactor, _targetScaleFactor)) return;
+        _scaleFactor = Mathf.SmoothDamp(_scaleFactor, _targetScaleFactor, ref _scaleVelocity,
+            EmphasisSmoothTime, Mathf.Infinity, deltaTime);
+        if (Mathf.Abs(_scaleFactor - _targetScaleFactor) < 0.0005f) _scaleFactor = _targetScaleFactor;
+        transform.localScale = _baseTargetScale * (_scaleFactor * Mathf.Lerp(0.88f, 1f, entrance));
     }
 
     void OnEnable()
@@ -158,15 +312,18 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     public bool IsDefeatCuePlaying => _defeatCue != null;
     public bool IsPerfectBlockCueVisible => _perfectBlockCueText != null && _perfectBlockCueText.gameObject.activeSelf;
 
-    public void PlayDefeatCue()
+    /// <summary>Plays the defeat fade once the killing hit visibly lands.</summary>
+    public void PlayDefeatCue(float delay = 0f)
     {
         if (!isActiveAndEnabled) return;
         CancelDefeatCue();
+        _entranceElapsed = EntranceTime;
         _preDefeatScale = transform.localScale;
         _preDefeatPortraitColor = portrait != null ? portrait.color : Color.white;
         _defeatCanvasGroup = GetComponent<CanvasGroup>();
         if (_defeatCanvasGroup == null) _defeatCanvasGroup = gameObject.AddComponent<CanvasGroup>();
-        _defeatCue = StartCoroutine(DefeatCueRoutine());
+        _defeatCanvasGroup.alpha = _targetAlpha;
+        _defeatCue = StartCoroutine(DefeatCueRoutine(delay));
     }
 
     public void CancelDefeatCue()
@@ -178,12 +335,12 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (_defeatCanvasGroup != null) _defeatCanvasGroup.alpha = 1f;
     }
 
-    System.Collections.IEnumerator DefeatCueRoutine()
+    System.Collections.IEnumerator DefeatCueRoutine(float delay)
     {
+        if (delay > 0f) yield return new WaitForSeconds(delay);
         var rect = (RectTransform)transform;
         Vector3 initialScale = _preDefeatScale;
         float elapsed = 0f;
-        if (portrait != null) portrait.color = new Color(1f, 0.35f, 0.2f, 1f);
         // Brief warm impact flash, then a compact fade/shrink; presentation only.
         if (portrait != null) portrait.color = new Color(1f, 0.35f, 0.2f, 1f);
         yield return new WaitForSeconds(0.09f);
@@ -205,13 +362,23 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         bool hasEnemy = enemy != null;
 
         if (nameText) nameText.text = hasEnemy ? (combatPortraits?combatPortraits.DisplayName(enemy):enemy.DisplayName).ToUpperInvariant() : "AWAITING ENCOUNTER";
-        if (hpText) hpText.text = hasEnemy ? $"HP  {enemy.currentHp}/{enemy.maxHp}" : "HP  —";
         if (atkText) atkText.text = hasEnemy ? $"ATTACK  {enemy.EffectiveAttack}" : "ATTACK  —";
-        if (healthBar)
+        if (hasEnemy)
         {
-            healthBar.minValue = 0;
-            healthBar.maxValue = hasEnemy ? Mathf.Max(1, enemy.maxHp) : 1;
-            healthBar.value = hasEnemy ? enemy.currentHp : 0;
+            // In play mode HP changes drain over a few frames (see TickHp); otherwise show them at once.
+            if (_shownHp < 0f || !Application.isPlaying || !isActiveAndEnabled) _shownHp = enemy.currentHp;
+            ApplyHp(enemy);
+        }
+        else
+        {
+            _shownHp = -1f;
+            if (hpText) hpText.text = "HP  —";
+            if (healthBar)
+            {
+                healthBar.minValue = 0;
+                healthBar.maxValue = 1;
+                healthBar.value = 0;
+            }
         }
 
         RefreshPortrait(enemy);
@@ -245,6 +412,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             {rect.anchorMin=new Vector2(-.025f,-.07f);rect.anchorMax=new Vector2(1.025f,1.03f);}
             rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = Vector2.zero;
+            _portraitRestPosition = Vector2.zero;
         }
         else
         {
@@ -256,6 +424,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             rect.anchorMax = _portraitAnchorMax;
             rect.anchoredPosition = _portraitAnchoredPosition;
             rect.sizeDelta = _portraitSizeDelta;
+            _portraitRestPosition = _portraitAnchoredPosition;
         }
 
         if (_portraitGlyph)
@@ -357,21 +526,9 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         if (statusText)
         {
-            string guidance = state switch
-            {
-                GameState.PlayerTurn => "Choose a card to attack",
-                GameState.EnemyAttacking => "Enemy attack incoming",
-                GameState.GameWon => "Encounter cleared",
-                GameState.GameOver => "Player defeated",
-                _ => "Choose your next encounter"
-            };
+            // Enemy facts only: phase hints and the pending total live on the player side.
+            string guidance = string.Empty;
             var enemy = DisplayedEnemy;
-            if (enemy != null && state == GameState.EnemyAttacking)
-            {
-                int incoming = CombatManager.Instance != null
-                    ? CombatManager.Instance.GetPendingAttackDamage(enemy) : 0;
-                guidance += incoming > 0 ? $"\nINCOMING: {incoming} DAMAGE" : "\nBLOCKED";
-            }
             if (enemy != null && state == GameState.PlayerTurn && enemy.HasDoubleStrike)
             {
                 int budget = enemy.ResponseAttack + (enemy.HasOppression
@@ -402,6 +559,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
                 guidance += $"\nShield: {enemy.ShieldCharges}";
             if (enemy != null && enemy.CaptainAttackBonus > 0)
                 guidance += "\nCaptain alive: +1 ATK";
+            guidance = guidance.TrimStart('\n');
             DetailGuidance = guidance;
             string abilities = enemy?.AbilitySummary;
             statusText.text = CombatDetailPanelUI.IsCombatActive ? CompactIntent(enemy, state) : string.IsNullOrEmpty(abilities)
@@ -409,32 +567,31 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
                 : $"{guidance}\nTrait: {abilities}";
         }
 
-        if (portrait)
-        {
-            if (_isDisplayingHeadlinerCard || _isDisplayingAuthoredPortrait)
-            {
-                portrait.color = Color.white;
-                return;
-            }
+        // A running hit flash or defeat cue owns the tint until it ends.
+        if (portrait && _flashTime <= 0f && _defeatCue == null) portrait.color = RestPortraitColor(state);
+    }
 
-            bool isSelectedTarget = DisplayedEnemy != null &&
-                ReferenceEquals(CombatManager.Instance?.currentEnemy, DisplayedEnemy);
-            portrait.color = state == GameState.GameWon ? new Color(0.35f, 0.75f, 0.48f)
-                : state == GameState.GameOver ? new Color(0.75f, 0.28f, 0.3f)
-                : isSelectedTarget ? new Color(0.42f, 0.52f, 0.72f)
-                : new Color(0.32f, 0.38f, 0.5f);
-        }
+    Color RestPortraitColor(GameState state)
+    {
+        if (_isDisplayingHeadlinerCard || _isDisplayingAuthoredPortrait) return Color.white;
+        bool isSelectedTarget = DisplayedEnemy != null &&
+            ReferenceEquals(CombatManager.Instance?.currentEnemy, DisplayedEnemy);
+        return state == GameState.GameWon ? new Color(0.35f, 0.75f, 0.48f)
+            : state == GameState.GameOver ? new Color(0.75f, 0.28f, 0.3f)
+            : isSelectedTarget ? new Color(0.42f, 0.52f, 0.72f)
+            : new Color(0.32f, 0.38f, 0.5f);
     }
 
     static string CompactIntent(EnemyRuntime enemy, GameState state)
     {
         if (enemy == null) return string.Empty;
-        string intent = state == GameState.EnemyAttacking
-            ? $"INCOMING {CombatManager.Instance.GetPendingAttackDamage(enemy)}"
-            : enemy.NextAttackIsCharged ? "CHARGED ATTACK NEXT" : "ATTACK NEXT";
-        if (enemy.HasDoubleStrike) intent += " • 2 HITS";
-        if (enemy.ShieldCharges > 0) intent += $" • SHIELD {enemy.ShieldCharges}";
-        if (enemy.type.sourceCard) intent += $" • {enemy.type.sourceCard.DisplayName}";
-        return intent;
+        // Only intents that differ from an ordinary attack; the pending total is on the HP panel.
+        var parts = new System.Collections.Generic.List<string>(4);
+        if (state != GameState.EnemyAttacking && enemy.NextAttackIsCharged) parts.Add("CHARGED ATTACK NEXT");
+        else if (state != GameState.EnemyAttacking && enemy.HasRoyalGuard) parts.Add("+1 SHIELD NEXT");
+        if (enemy.HasDoubleStrike) parts.Add("2 HITS");
+        if (enemy.ShieldCharges > 0) parts.Add($"SHIELD {enemy.ShieldCharges}");
+        if (enemy.type.sourceCard) parts.Add(enemy.type.sourceCard.DisplayName);
+        return string.Join(" • ", parts);
     }
 }

@@ -94,7 +94,6 @@ public sealed class GameSceneReadabilityTests
 
         AssertHitTarget("Canvas/PlayerArea/ActionBar/PlayButton", 200f, 56f);
         AssertHitTarget("Canvas/PlayerArea/ActionBar/BlockButton", 180f, 56f);
-        AssertHitTarget("Canvas/PlayerArea/HealthPanel/TakeDamageButton", 220f, 38f);
     }
 
     void AssertReadable(string path, float minimumSize)

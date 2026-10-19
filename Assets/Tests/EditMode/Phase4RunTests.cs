@@ -48,6 +48,7 @@ public sealed class Phase4DeterminismTests
         var second = RunMapGenerator.Generate(new RunRandomContext("MAP-SEED"), 37, null, enemies);
 
         Assert.That(Signature(first), Is.EqualTo(Signature(second)));
+        // Route grid + Headliner + two mandatory Shop checkpoints (after Depths 2 and 5).
         Assert.That(first.Count, Is.EqualTo(RunMapGenerator.RowCount * RunMapGenerator.RouteColumnCount + 3));
         Assert.That(first.Count(node => node.isShopCheckpoint), Is.EqualTo(2));
         Assert.That(first.Count(node => node.kind == MapNodeType.Headliner), Is.EqualTo(1));
@@ -72,8 +73,10 @@ public sealed class Phase4DeterminismTests
         type.abilities = new[] { guard, fury };
         var enemy = new EnemyRuntime(type);
 
-        int dealt = enemy.TakeCardDamage(7, null);
-        enemy.NotifyPlayerCardResolved(null);
+        var action = new CombatActionContext(1, CombatActionOrigin.PlayerCard, targetEnemy: enemy);
+        int dealt = new CombatResolver().Resolve(
+            new DamageRequest(action, 0, CombatDamageOrigin.Card, null, enemy, 7), null).ActualHpLost;
+        foreach (var ability in type.abilities) ability.OnPlayerCardResolved(enemy, null);
 
         Assert.That(dealt, Is.EqualTo(5));
         Assert.That(enemy.currentHp, Is.EqualTo(15));

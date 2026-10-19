@@ -10,28 +10,10 @@ public class RunContentCatalog : ScriptableObject
     public EnemyTypeData[] eliteEnemies;
     public EnemyAbility eliteAbility;
 
-    [Header("Headliner Suit Abilities")]
-    [UnityEngine.Serialization.FormerlySerializedAs("clubsBossAbility")]
-    public EnemyAbility clubsHeadlinerAbility;
-    [UnityEngine.Serialization.FormerlySerializedAs("diamondsBossAbility")]
-    public EnemyAbility diamondsHeadlinerAbility;
-    [UnityEngine.Serialization.FormerlySerializedAs("heartsBossAbility")]
-    public EnemyAbility heartsHeadlinerAbility;
-    [UnityEngine.Serialization.FormerlySerializedAs("spadesBossAbility")]
-    public EnemyAbility spadesHeadlinerAbility;
-
     [Header("Route Content")]
     public RunEventDefinition[] events;
     public RunEventDefinition[] upgrades;
     public RunEventDefinition[] risks;
-
-    public EnemyAbility GetHeadlinerAbility(CardData.Suit suit) => suit switch
-    {
-        CardData.Suit.Clubs => clubsHeadlinerAbility,
-        CardData.Suit.Diamonds => diamondsHeadlinerAbility,
-        CardData.Suit.Hearts => heartsHeadlinerAbility,
-        _ => spadesHeadlinerAbility
-    };
 
     public RunEventDefinition[] GetEvents(MapNodeType category) => category switch
     {

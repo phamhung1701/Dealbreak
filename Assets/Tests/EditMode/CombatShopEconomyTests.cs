@@ -66,7 +66,7 @@ public sealed class CombatShopEconomyTests
     }
 
     [Test]
-    public void Supply_ChargesActualDraw_ConservesOwnership_RejectsRepeatAndReentrancy()
+    public void Supply_ChargesActualDraw_ConservesOwnership_RepeatsAndRejectsReentrancy()
     {
         var supply = OpenSupply();
         int owned = cards.ownedCards.Count, deck = cards.deck.Count, hand = cards.HandCount, credits = cards.credits;
@@ -78,7 +78,15 @@ public sealed class CombatShopEconomyTests
         Assert.That(cards.HandCount, Is.EqualTo(hand + 2));
         Assert.That(cards.deck.Count, Is.EqualTo(deck - 2));
         Assert.That(cards.ownedCards.Count, Is.EqualTo(owned));
-        Assert.That(run.PurchaseSupply(supply.StableId, 1), Is.False);
+
+        // Supply can be bought again at the same Black Market while Credits, cards and hand space last.
+        cards.AddCredits(3);
+        int handBefore = cards.HandCount;
+        bool roomForOne = cards.HandCount < cards.HandCapacity && cards.deck.Count > 0;
+        Assert.That(run.PurchaseSupply(supply.StableId, 1), Is.EqualTo(roomForOne));
+        Assert.That(cards.HandCount, Is.EqualTo(handBefore + (roomForOne ? 1 : 0)));
+        Assert.That(run.GetCurrentShopOffers().Contains(supply), Is.True);
+        Assert.That(supply.purchased, Is.False);
     }
 
     [Test]

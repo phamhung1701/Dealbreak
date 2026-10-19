@@ -17,6 +17,18 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     [SerializeField] EnemyGroupUI enemyGroup;
     [SerializeField] Sprite redCardBack;
 
+    // Presentation timing. The commit impact delay is derived from these, so hit numbers and enemy
+    // reactions land when the card arrives rather than when the command commits.
+    const float WindupTime = 0.08f;
+    const float AttackTravelTime = 0.2f;
+    const float DraggedTravelTime = 0.16f;
+    const float BlockTravelTime = 0.16f;
+    const float HitSpacing = 0.065f;
+    const float FlashTime = 0.12f;
+    const float FlipHalfTime = 0.07f;
+    const float ReturnTime = 0.26f;
+    const float HitNumberTime = 0.8f;
+
     readonly List<RectTransform> _activeCards = new();
     readonly List<GameObject> _flashes = new();
     readonly List<GameObject> _hitNumbers = new();
@@ -156,7 +168,8 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         Vector2 targetPoint, Vector2 deckPoint, System.Func<bool> commit, bool isBlock)
     {
         _pendingCommits++;
-        _commitImpactDelay = isBlock ? 0.14f : draggedFlags.Contains(true) ? 0.22f : 0.18f;
+        _commitImpactDelay = isBlock ? BlockTravelTime
+            : draggedFlags.Contains(true) ? WindupTime + DraggedTravelTime : AttackTravelTime;
         _wasBusy = true;
         bool committed;
         try
@@ -178,7 +191,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             return false;
         }
 
-        float stagger = isBlock ? 0.05f : 0.065f;
+        float stagger = isBlock ? 0.05f : HitSpacing;
         for (int i = 0; i < staged.Count; i++)
         {
             var clone = staged[i];
@@ -238,9 +251,15 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         canvas.sortingOrder = 66;
         _hitNumbers.Add(number);
         _wasBusy = true;
-        float delay = _pendingCommits > 0 ? _commitImpactDelay + Mathf.Min(result.Request.HitIndex, 7) * 0.065f : 0f;
-        StartCoroutine(AnimateHitNumber(number, label, point, delay));
+        StartCoroutine(AnimateHitNumber(number, label, point, ImpactDelay(result.Request.HitIndex)));
     }
+
+    /// <summary>
+    /// Seconds until the given hit of the command being committed visibly lands; zero outside a
+    /// presented commit (Tricks, enemy reactions), so those reactions play at once.
+    /// </summary>
+    public float ImpactDelay(int hitIndex) =>
+        _pendingCommits > 0 ? _commitImpactDelay + Mathf.Min(hitIndex, 7) * HitSpacing : 0f;
 
     public static string FormatHitNumber(DamageResult result)
     {
@@ -255,12 +274,15 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         label.enabled = true;
         var rect = (RectTransform)number.transform;
         float elapsed = 0f;
-        while (elapsed < 0.65f)
+        while (elapsed < HitNumberTime)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / 0.65f);
-            rect.anchoredPosition = point + Vector2.up * (45f * t);
-            label.alpha = 1f - Mathf.InverseLerp(0.45f, 1f, t);
+            float t = Mathf.Clamp01(elapsed / HitNumberTime);
+            // Pop in with a small overshoot, then drift up and fade.
+            float pop = Mathf.Clamp01(elapsed / 0.16f);
+            rect.localScale = Vector3.one * Mathf.LerpUnclamped(1.45f, 1f, EaseOutBack(pop));
+            rect.anchoredPosition = point + Vector2.up * (55f * EaseOutCubic(t));
+            label.alpha = 1f - Mathf.InverseLerp(0.6f, 1f, t);
             yield return null;
         }
         _hitNumbers.Remove(number);
@@ -386,14 +408,15 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         if (!isBlock && dragged)
         {
             Vector2 backward = (origin - impact).normalized * 32f;
-            yield return Move(card, origin, origin + backward, 0.07f);
+            yield return Move(card, origin, origin + backward, WindupTime, Ease.InOut);
             origin += backward;
         }
-        float travelTime = isBlock ? 0.14f : dragged ? 0.15f : 0.18f;
-        yield return Move(card, origin, impact, travelTime);
+        float travelTime = isBlock ? BlockTravelTime : dragged ? DraggedTravelTime : AttackTravelTime;
+        // Accelerate into the target so the hit lands with weight.
+        yield return Move(card, origin, impact, travelTime, Ease.In);
         yield return Flash(impact, isBlock);
         yield return FlipToBack(card);
-        yield return Move(card, impact, deck, 0.22f, true);
+        yield return Move(card, impact, deck, ReturnTime, Ease.InOut, true);
         _activeCards.Remove(card);
         DestroyVisual(card.gameObject);
         NotifyIfIdle();
@@ -409,7 +432,18 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         }
     }
 
-    static IEnumerator Move(RectTransform rect, Vector2 from, Vector2 to, float duration, bool shrink = false)
+    enum Ease { In, InOut }
+
+    static float EaseOutCubic(float t) => 1f - (1f - t) * (1f - t) * (1f - t);
+
+    static float EaseOutBack(float t)
+    {
+        const float overshoot = 1.7f;
+        float u = t - 1f;
+        return 1f + (overshoot + 1f) * u * u * u + overshoot * u * u;
+    }
+
+    static IEnumerator Move(RectTransform rect, Vector2 from, Vector2 to, float duration, Ease ease, bool shrink = false)
     {
         float elapsed = 0f;
         Vector3 originalScale = rect.localScale;
@@ -417,7 +451,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            float eased = t * t * (3f - 2f * t);
+            float eased = ease == Ease.In ? 1f - Mathf.Cos(t * Mathf.PI * 0.5f) : t * t * (3f - 2f * t);
             rect.anchoredPosition = Vector2.LerpUnclamped(from, to, eased);
             if (shrink) rect.localScale = originalScale * Mathf.Lerp(1f, 0.22f, eased);
             yield return null;
@@ -440,14 +474,15 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         flashCanvas.sortingOrder = 65;
         _flashes.Add(flash);
         float elapsed = 0f;
-        while (elapsed < 0.08f)
+        while (elapsed < FlashTime)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / 0.08f);
+            float t = Mathf.Clamp01(elapsed / FlashTime);
+            float fade = (1f - t) * (1f - t);
             image.color = isBlock
-                ? new Color(0.2f, 0.85f, 1f, 0.65f * (1f - t))
-                : new Color(1f, 0.45f, 0.18f, 0.65f * (1f - t));
-            rect.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.3f, t);
+                ? new Color(0.2f, 0.85f, 1f, 0.7f * fade)
+                : new Color(1f, 0.45f, 0.18f, 0.7f * fade);
+            rect.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.45f, EaseOutCubic(t));
             yield return null;
         }
         _flashes.Remove(flash);
@@ -458,10 +493,10 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     {
         Vector3 scale = card.localScale;
         float elapsed = 0f;
-        while (elapsed < 0.06f)
+        while (elapsed < FlipHalfTime)
         {
             elapsed += Time.deltaTime;
-            card.localScale = new Vector3(scale.x * (1f - Mathf.Clamp01(elapsed / 0.06f)), scale.y, scale.z);
+            card.localScale = new Vector3(scale.x * (1f - Mathf.Clamp01(elapsed / FlipHalfTime)), scale.y, scale.z);
             yield return null;
         }
         // Hide the complete front hierarchy, including stats/labels/badge; never edit the original view.
@@ -478,10 +513,10 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         image.preserveAspect = true;
         image.raycastTarget = false;
         elapsed = 0f;
-        while (elapsed < 0.06f)
+        while (elapsed < FlipHalfTime)
         {
             elapsed += Time.deltaTime;
-            card.localScale = new Vector3(scale.x * Mathf.Clamp01(elapsed / 0.06f), scale.y, scale.z);
+            card.localScale = new Vector3(scale.x * Mathf.Clamp01(elapsed / FlipHalfTime), scale.y, scale.z);
             yield return null;
         }
         card.localScale = scale;

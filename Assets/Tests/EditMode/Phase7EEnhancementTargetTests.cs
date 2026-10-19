@@ -178,7 +178,6 @@ public sealed class Phase7EEnhancementTargetTests
         var chosen = _cards.hand[0];
         var other = _cards.hand[1];
         _cards.AddCredits(18);
-        Assert.That(_run.ChooseUpgradeOffer(0), Is.False);
         Assert.That(_run.ChooseUpgradeOffer(0, chosen.Id), Is.True);
         Assert.That(chosen.Enhancement, Is.SameAs(offer.enhancement));
         Assert.That(other.Enhancement, Is.Null);

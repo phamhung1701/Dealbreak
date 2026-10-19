@@ -180,7 +180,7 @@ public sealed class DeckMutationTests
         try
         {
             Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { target.Id }), Is.False);
-            Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(3));
+            Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(_spade.uses));
         }
         finally { GameplayInputGate.Clear(); }
     }

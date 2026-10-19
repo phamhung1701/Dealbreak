@@ -137,9 +137,25 @@ public class PathScreenUI : MonoBehaviour
         }
         else if (_pendingMapShow)
         {
-            _pendingMapShow = false;
-            ShowImmediately();
+            // Let the cleared board breathe before the route slides in. Hide, a new run or a
+            // cancelled presentation clear the pending flag and so cancel the beat.
+            if (Application.isPlaying && isActiveAndEnabled) StartCoroutine(ShowAfterClearedBeat());
+            else
+            {
+                _pendingMapShow = false;
+                ShowImmediately();
+            }
         }
+    }
+
+    const float ClearedBeatSeconds = 0.35f;
+
+    System.Collections.IEnumerator ShowAfterClearedBeat()
+    {
+        yield return new WaitForSecondsRealtime(ClearedBeatSeconds);
+        if (!_pendingMapShow) yield break;
+        _pendingMapShow = false;
+        ShowImmediately();
     }
 
     void HandlePresentationCancelled()
@@ -291,9 +307,8 @@ public class PathScreenUI : MonoBehaviour
             var nodeButtonUI = buttonObject.GetComponent<PathNodeButtonUI>();
             if (nodeButtonUI == null) nodeButtonUI = buttonObject.AddComponent<PathNodeButtonUI>();
             nodeButtonUI.SetNode(node, run);
-            MapNodePresentation.Apply(buttonObject,node);
-            // Node labels are intentionally the only hover-free route identity presentation.
-            // Hidden nodes stay "?" and are never given a contextual description.
+            AttachNodeDetail(buttonObject, node, run);
+            MapNodePresentation.Apply(buttonObject, node, run.IsScoutedNode(node));
             DealbreakUIStyle.ApplyHierarchy(buttonObject.transform);
             PlaceNode(buttonObject.GetComponent<RectTransform>(), _nodePositions[node.id], nodeSize);
 
@@ -310,8 +325,26 @@ public class PathScreenUI : MonoBehaviour
                 int id = node.id;
                 button.onClick.AddListener(() => run.OnPathChosen(id));
             }
-            MapNodePresentation.Apply(buttonObject,node);
+            MapNodePresentation.Apply(buttonObject, node, run.IsScoutedNode(node));
         }
+    }
+
+    // Hovering a node opens the shared detail beside it: the enemies and totals of a fight, or the
+    // Incident, once the node is revealed. Unknown nodes say only that.
+    static void AttachNodeDetail(GameObject buttonObject, PathNode node, RunManager run)
+    {
+        if (!buttonObject.TryGetComponent<ContextualInfoTrigger>(out var detail))
+            detail = buttonObject.AddComponent<ContextualInfoTrigger>();
+        detail.describe = () =>
+        {
+            if (run == null || node == null) return null;
+            if (!node.revealed && !node.completed) return new ContextualInfo("Route", "Unknown", "Not yet scouted.");
+            string label = run.GetNodeLabel(node);
+            string body = run.GetNodeDetail(node);
+            if (body.StartsWith(label + " • ")) body = body.Substring(label.Length + 3);
+            else if (body == label) body = string.Empty;
+            return new ContextualInfo(run.IsScoutedNode(node) ? "Scouted" : "Route", label, body);
+        };
     }
 
     void CreateStartEndpoint(Vector2 position, Vector2 nodeSize)

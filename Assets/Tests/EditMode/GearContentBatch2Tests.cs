@@ -107,8 +107,8 @@ public sealed class GearContentBatch2Tests
         Assert.That(_cards.BuyGear(_lantern, 0), Is.True);
         var extra = _run.currentPath.Where(n => !before[n.id].revealed && n.revealed).ToArray();
         Assert.That(extra, Has.Length.EqualTo(1));
-        Assert.That(extra[0].hidden, Is.True);
-        Assert.That(extra[0].kind, Is.EqualTo(MapNodeType.Event).Or.EqualTo(MapNodeType.Risk));
+        Assert.That(_run.IsScoutedNode(extra[0]), Is.True, "Lantern scouts one reachable unknown node of any kind.");
+        Assert.That(_run.LastScoutedNode, Is.SameAs(extra[0]));
         foreach (var node in _run.currentPath)
         {
             var baseline = before[node.id];
@@ -127,15 +127,15 @@ public sealed class GearContentBatch2Tests
     public void Lantern_SameSeedReplaysReveal_AndRestartWithoutOwnershipUsesBaseline()
     {
         _cards.BuyGear(_lantern, 0);
-        int first = _run.currentPath.Single(n => n.hidden && n.revealed).id;
+        int first = _run.currentPath.Single(n => _run.IsScoutedNode(n)).id;
         _run.RestartRun();
         Assert.That(_cards.ownedGear, Is.Empty);
         Assert.That(_run.currentPath.Single(n => n.id == first).revealed, Is.False);
         _cards.BuyGear(_lantern, 0);
-        Assert.That(_run.currentPath.Single(n => n.hidden && n.revealed).id, Is.EqualTo(first));
+        Assert.That(_run.currentPath.Single(n => _run.IsScoutedNode(n)).id, Is.EqualTo(first));
         _run.StartRunWithSeed("LANTERN-DIFFERENT");
         Assert.That(_cards.ownedGear, Is.Empty);
-        Assert.That(_run.currentPath.Count(n => n.hidden && n.revealed), Is.Zero);
+        Assert.That(_run.currentPath.Count(n => _run.IsScoutedNode(n)), Is.Zero);
     }
 
     [Test]
@@ -148,10 +148,10 @@ public sealed class GearContentBatch2Tests
         typeof(RunManager).GetMethod("GenerateAndAnnounceCycle",
             BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(_run, null);
         Assert.That(_run.CurrentMapIndex, Is.EqualTo(1));
-        Assert.That(_run.currentPath.Count(n => n.hidden && n.revealed), Is.EqualTo(1));
+        Assert.That(_run.currentPath.Count(n => _run.IsScoutedNode(n)), Is.EqualTo(1));
         Assert.That(runtime.State.GetCounter(0), Is.EqualTo(2));
         _run.RefreshCurrentMapEffects();
-        Assert.That(_run.currentPath.Count(n => n.hidden && n.revealed), Is.EqualTo(1));
+        Assert.That(_run.currentPath.Count(n => _run.IsScoutedNode(n)), Is.EqualTo(1));
     }
 
     [Test]

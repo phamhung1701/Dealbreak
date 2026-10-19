@@ -28,31 +28,19 @@ public partial class CardManager : Singleton<CardManager>
     public List<ConsumableData> consumableCatalog = new();
 
     [Header("Runtime State")]
-    [UnityEngine.Serialization.FormerlySerializedAs("gold")]
-    public int credits;
-    public HashSet<string> gearIds = new();
-    [UnityEngine.Serialization.FormerlySerializedAs("ownedArtifacts")]
-    public List<GearData> ownedGear = new();
-    public CardView selectedCard;
+    // Credits change only through AddCredits/SpendCredits; tests may seed them internally.
+    public int credits { get; internal set; }
+    public HashSet<string> gearIds { get; } = new();
+    public List<GearData> ownedGear { get; } = new();
+    public CardView selectedCard { get; private set; }
 
     readonly CardCollection _cards = new();
-    readonly HashSet<CardView> _trackedViews = new();
-    readonly List<CardView> _selectedCards = new();
     readonly List<CardData> _generatedDefinitions = new();
     readonly List<GearRuntimeInstance> _orderedGearInstances = new();
     readonly List<ConsumableStack> _backpack = new(BASE_BACKPACK_CAPACITY);
-    CardView _activeDragCard;
     int _nextCardId = 1;
     bool _consumableUsedThisEncounter;
     bool _consumableUseInProgress;
-    Action<CardView> _handEnhancementTargetHandler;
-    Func<int, bool> _handTargetEligibility;
-    Action<EnemyRuntime> _enemyTargetHandler;
-    Func<EnemyRuntime, bool> _enemyTargetEligibility;
-
-    public bool IsHandEnhancementTargeting => _handEnhancementTargetHandler != null;
-    public bool IsEnemyTargeting => _enemyTargetHandler != null;
-    public event Action<bool> OnEnemyTargetingChanged;
 
     public IReadOnlyList<GearRuntimeInstance> OwnedGearInstances
     {
@@ -69,29 +57,13 @@ public partial class CardManager : Singleton<CardManager>
     public int GetConsumableStackCountAtSlot(int slotIndex) =>
         slotIndex >= 0 && slotIndex < _backpack.Count ? _backpack[slotIndex].Count : 0;
     public int BackpackSlotsUsed => _backpack.Count;
-    public int BackpackCapacity => HasGearSpecialRule(GearSpecialRule.TravelerPackCommon) ||
-        HasGearSpecialRule(GearSpecialRule.TravelerPackRare)
-            ? TRAVELER_BACKPACK_CAPACITY : BASE_BACKPACK_CAPACITY;
-    public int ConsumablesPerSlot => HasGearSpecialRule(GearSpecialRule.TravelerPackRare)
-        ? RARE_CONSUMABLES_PER_SLOT : 1;
+    public int BackpackCapacity => GearRules.BackpackCapacity(this);
+    public int ConsumablesPerSlot => GearRules.ConsumablesPerSlot(this);
     public int DistinctConsumableTypeCount => _backpack.Select(stack => stack.Definition).Distinct().Count();
     public bool IsBackpackFull => _backpack.Count >= BackpackCapacity;
     public int HandCount => _cards.HandCount;
     public int HandCapacity => GameplayEffectResolver.CalculateHandCapacity(HAND_SIZE, this);
-    public int OverflowCapacity
-    {
-        get
-        {
-            int capacity = 0;
-            for (int i = 0; i < ownedGear.Count; i++)
-            {
-                var rule = ownedGear[i]?.specialRule;
-                if (rule is GearSpecialRule.OverflowRare or GearSpecialRule.OverflowEpic) return 3;
-                if (rule == GearSpecialRule.OverflowCommon) capacity = 2;
-            }
-            return capacity;
-        }
-    }
+    public int OverflowCapacity => GearRules.OverflowCapacity(this);
     public bool HasInfiniteMoney
     {
         get
@@ -103,8 +75,6 @@ public partial class CardManager : Singleton<CardManager>
 #endif
         }
     }
-    public IReadOnlyList<CardView> SelectedCards => _selectedCards;
-    public CardView ActiveDragCard => _activeDragCard;
     public int GearCapacity => BASE_GEAR_CAPACITY;
     public int GearSlotsUsed
     {
@@ -120,10 +90,8 @@ public partial class CardManager : Singleton<CardManager>
     public event Action<int> OnCreditsChanged;
     public event Action OnDeckChanged;
     public event Action OnBuildChanged;
-    public event Action<CardView> OnCardSelected;
     public event Action OnConsumablesChanged;
     public event Action<ConsumableData> OnConsumableUsed;
-
 
     public void Configure(
         Field field,
@@ -170,33 +138,40 @@ public partial class CardManager : Singleton<CardManager>
         return count;
     }
 
-    public bool CanAddConsumable(ConsumableData consumable, int count = 1)
+    public bool CanAddConsumable(ConsumableData consumable, int count = 1) =>
+        CanAddConsumables(new[] { (consumable, count) });
+
+    // Simulates every requested addition in order, so a multi-Trick reward validates as a whole.
+    public bool CanAddConsumables(IReadOnlyList<(ConsumableData consumable, int count)> requests)
     {
-        if (consumable == null || count <= 0 || !consumableCatalog.Contains(consumable) ||
-            !IsBackpackWithinCurrentLimits()) return false;
+        if (requests == null || !IsBackpackWithinCurrentLimits()) return false;
         int capacity = BackpackCapacity;
         int maxPerSlot = ConsumablesPerSlot;
         var definitions = _backpack.Select(stack => stack.Definition).ToList();
         var stackCounts = _backpack.Select(stack => stack.Count).ToList();
-        for (int item = 0; item < count; item++)
+        foreach (var (consumable, count) in requests)
         {
-            int stackIndex = -1;
-            if (maxPerSlot > 1)
+            if (consumable == null || count <= 0 || !consumableCatalog.Contains(consumable)) return false;
+            for (int item = 0; item < count; item++)
             {
-                for (int i = 0; i < definitions.Count; i++)
-                    if (definitions[i] == consumable && stackCounts[i] < maxPerSlot)
-                    {
-                        stackIndex = i;
-                        break;
-                    }
+                int stackIndex = -1;
+                if (maxPerSlot > 1)
+                {
+                    for (int i = 0; i < definitions.Count; i++)
+                        if (definitions[i] == consumable && stackCounts[i] < maxPerSlot)
+                        {
+                            stackIndex = i;
+                            break;
+                        }
+                }
+                if (stackIndex >= 0) stackCounts[stackIndex]++;
+                else if (definitions.Count < capacity)
+                {
+                    definitions.Add(consumable);
+                    stackCounts.Add(1);
+                }
+                else return false;
             }
-            if (stackIndex >= 0) stackCounts[stackIndex]++;
-            else if (definitions.Count < capacity)
-            {
-                definitions.Add(consumable);
-                stackCounts.Add(1);
-            }
-            else return false;
         }
         return true;
     }
@@ -515,15 +490,7 @@ public partial class CardManager : Singleton<CardManager>
         }
         if (_consumableUsedThisEncounter) return;
         _consumableUsedThisEncounter = true;
-        for (int i = 0; i < ownedGear.Count; i++)
-        {
-            var gear = ownedGear[i];
-            if (gear == null) continue;
-            if (gear.specialRule == GearSpecialRule.ScavengersPouch)
-                DrawToHand(1);
-            else if (gear.specialRule == GearSpecialRule.FieldMedicsKit)
-                combat?.HealPlayer(3);
-        }
+        GearRules.OnFirstConsumableUsedInEncounter(this, combat);
     }
 
     void NormalizeBackpackStacks()
@@ -532,20 +499,6 @@ public partial class CardManager : Singleton<CardManager>
         var items = _backpack.SelectMany(stack => stack.Items).ToArray();
         _backpack.Clear();
         for (int i = 0; i < items.Length; i++) AddConsumableInstance(items[i]);
-    }
-
-    void RemoveTrackedViews(CardInstance card)
-    {
-        var views = new List<CardView>();
-        foreach (var view in _trackedViews)
-            if (view != null && ReferenceEquals(view.data, card)) views.Add(view);
-        foreach (var view in views)
-        {
-            _selectedCards.Remove(view);
-            view.SetSelectionOrder(0);
-            DetachAndDestroyView(view);
-        }
-        RefreshSelectionPresentation();
     }
 
     public bool HasGearId(string id) => gearIds.Contains(id);
@@ -579,34 +532,44 @@ public partial class CardManager : Singleton<CardManager>
             ? ownedGear.FirstOrDefault(value => value != null && value.canonicalId == gear.upgradeFromId)
             : null;
         if (!SpendCredits(price)) return false;
-        GearRuntimeInstance instance;
-        if (predecessor != null)
+        CompleteGearAcquisition(PlaceGear(gear, predecessor));
+        return true;
+    }
+
+    // Owning copies is intentional (they can be merged); the Shop alone refuses owned Gear.
+    // A replacement keeps the replaced item's acquisition slot, which defines reaction order.
+    GearRuntimeInstance PlaceGear(GearData gear, GearData replaced)
+    {
+        var instance = new GearRuntimeInstance(gear);
+        int index = replaced != null ? ownedGear.IndexOf(replaced) : -1;
+        if (index >= 0)
         {
-            int index = ownedGear.IndexOf(predecessor);
             ownedGear[index] = gear;
-            instance = _orderedGearInstances[index] = new GearRuntimeInstance(gear);
-            gearIds.Remove(predecessor.id);
+            _orderedGearInstances[index] = instance;
         }
         else
         {
             ownedGear.Add(gear);
-            instance = new GearRuntimeInstance(gear);
             _orderedGearInstances.Add(instance);
         }
-        gearIds.Add(gear.id);
+        // Rebuild rather than remove: another copy of the replaced Gear may still be owned.
+        RebuildGearIds();
+        return instance;
+    }
+
+    // The one post-acquisition path for purchases, rewards and merges.
+    void CompleteGearAcquisition(GearRuntimeInstance instance)
+    {
         var run = RunManager.Instance;
-        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance),
-            run != null ? run.CompletedNodeCount : 0);
-        if (gear.specialRule == GearSpecialRule.Hammer)
-            instance.State.SetCounter(-140, run != null ? run.CompletedNodeCount : 0);
-        if (gear.specialRule is GearSpecialRule.TravelerPackCommon or GearSpecialRule.TravelerPackRare)
+        int completedNodes = run != null ? run.CompletedNodeCount : 0;
+        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance), completedNodes);
+        if (GearRules.OnAcquired(instance, completedNodes))
         {
-            if (gear.specialRule == GearSpecialRule.TravelerPackRare) NormalizeBackpackStacks();
+            NormalizeBackpackStacks();
             OnConsumablesChanged?.Invoke();
         }
         run?.RefreshCurrentMapEffects();
         OnBuildChanged?.Invoke();
-        return true;
     }
 
     public bool GrantGearReward(GearData gear, GearData replacement = null)
@@ -626,32 +589,7 @@ public partial class CardManager : Singleton<CardManager>
         if (replacement == null && gear.OccupiesCapacitySlot && GearSlotsUsed >= GearCapacity)
             return false;
 
-        int index = replacement != null ? ownedGear.IndexOf(replacement) : ownedGear.Count;
-        if (replacement != null)
-        {
-            ownedGear[index] = gear;
-            _orderedGearInstances[index] = new GearRuntimeInstance(gear);
-            gearIds.Remove(replacement.id);
-        }
-        else
-        {
-            ownedGear.Add(gear);
-            _orderedGearInstances.Add(new GearRuntimeInstance(gear));
-        }
-        gearIds.Add(gear.id);
-        var instance = _orderedGearInstances[index];
-        var run = RunManager.Instance;
-        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance),
-            run != null ? run.CompletedNodeCount : 0);
-        if (gear.specialRule == GearSpecialRule.Hammer)
-            instance.State.SetCounter(-140, run != null ? run.CompletedNodeCount : 0);
-        if (gear.specialRule is GearSpecialRule.TravelerPackCommon or GearSpecialRule.TravelerPackRare)
-        {
-            if (gear.specialRule == GearSpecialRule.TravelerPackRare) NormalizeBackpackStacks();
-            OnConsumablesChanged?.Invoke();
-        }
-        run?.RefreshCurrentMapEffects();
-        OnBuildChanged?.Invoke();
+        CompleteGearAcquisition(PlaceGear(gear, replacement));
         return true;
     }
 
@@ -744,12 +682,7 @@ public partial class CardManager : Singleton<CardManager>
         ownedGear.Insert(firstPosition, next);
         _orderedGearInstances.Insert(firstPosition, merged);
         RebuildGearIds();
-        var run = RunManager.Instance;
-        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(merged), run != null ? run.CompletedNodeCount : 0);
-        if (next.specialRule == GearSpecialRule.Hammer)
-            merged.State.SetCounter(-140, run != null ? run.CompletedNodeCount : 0);
-        run?.RefreshCurrentMapEffects();
-        OnBuildChanged?.Invoke();
+        CompleteGearAcquisition(merged);
         return true;
     }
 
@@ -886,13 +819,13 @@ public partial class CardManager : Singleton<CardManager>
         int drawn = _cards.DrawToHand(count, drawCapacity);
         if (drawn <= 0) return 0;
 
-        if (CanCreateViews())
+        bool createViews = CanCreateViews();
+        for (int i = previousHandCount; i < _cards.HandCount; i++)
         {
-            for (int i = previousHandCount; i < _cards.HandCount; i++)
-            {
-                var view = CreateView(_cards.Hand[i]);
-                if (i >= normalCapacity && combat != null) combat.QueueOverflowAutoPlay(view);
-            }
+            var card = _cards.Hand[i];
+            if (createViews) CreateView(card);
+            // Overflow is a gameplay rule, so it must not depend on whether hand views exist.
+            if (i >= normalCapacity && combat != null) combat.QueueOverflowAutoPlay(card);
         }
 
         OnDeckChanged?.Invoke();
@@ -906,7 +839,8 @@ public partial class CardManager : Singleton<CardManager>
         int previous = _cards.HandCount;
         int drawn = _cards.DrawExistingToHand(quantity, HandCapacity);
         if (drawn <= 0) return 0;
-        credits -= drawn * pricePerCard;
+        // Payment commits with the zones; notifications follow. Dev infinite Credits pays nothing, like SpendCredits.
+        if (!HasInfiniteMoney) credits -= drawn * pricePerCard;
         if (CanCreateViews())
             for (int i = previous; i < _cards.HandCount; i++) CreateView(_cards.Hand[i]);
         OnCreditsChanged?.Invoke(credits);
@@ -953,46 +887,60 @@ public partial class CardManager : Singleton<CardManager>
     public bool TryDiscardCardsByIds(IReadOnlyList<int> cardIds)
     {
         if (cardIds == null || cardIds.Count == 0) return false;
-        var views = new List<CardView>(cardIds.Count);
+        var cards = new List<CardInstance>(cardIds.Count);
         var uniqueIds = new HashSet<int>();
         for (int i = 0; i < cardIds.Count; i++)
         {
             int id = cardIds[i];
-            if (id <= 0 || !uniqueIds.Add(id)) return false;
-            CardView found = null;
-            foreach (var view in _trackedViews)
-                if (view != null && view.data != null && view.data.Id == id && _cards.ContainsInHand(view.data))
-                { found = view; break; }
-            if (found == null) return false;
-            views.Add(found);
+            var card = FindOwnedCard(id);
+            if (id <= 0 || !uniqueIds.Add(id) || card == null || !_cards.ContainsInHand(card)) return false;
+            cards.Add(card);
         }
-        return TryDiscardCards(views);
+        return TryDiscardCards(cards);
     }
 
-    public bool TryDiscardCards(IReadOnlyList<CardView> cards) => TryCommitHandCards(cards, false);
+    public bool TryDiscardCards(IReadOnlyList<CardView> cards) => TryCommitHandViews(cards, false);
 
-    public bool TryRecycleDefenseCards(IReadOnlyList<CardView> cards) => TryCommitHandCards(cards, true);
+    public bool TryRecycleDefenseCards(IReadOnlyList<CardView> cards) => TryCommitHandViews(cards, true);
 
-    bool TryCommitHandCards(IReadOnlyList<CardView> cards, bool recycleToDeck)
+    public bool TryDiscardCards(IReadOnlyList<CardInstance> cards) => TryCommitHandCards(cards, false);
+
+    public bool TryRecycleDefenseCards(IReadOnlyList<CardInstance> cards) => TryCommitHandCards(cards, true);
+
+    // A UI selection must be tracked views of hand cards; the commit itself works on card data.
+    bool TryCommitHandViews(IReadOnlyList<CardView> cards, bool recycleToDeck)
     {
         if (cards == null || cards.Count == 0) return false;
-
-        var committedViews = new List<CardView>(cards.Count);
         var uniqueViews = new HashSet<CardView>();
         var instances = new List<CardInstance>(cards.Count);
         for (int i = 0; i < cards.Count; i++)
         {
             var view = cards[i];
-            if (view == null || view.data == null || !_trackedViews.Contains(view) ||
-                !uniqueViews.Add(view) || !_cards.ContainsInHand(view.data))
+            if (view == null || view.data == null || !_trackedViews.Contains(view) || !uniqueViews.Add(view))
                 return false;
             instances.Add(view.data);
-            committedViews.Add(view);
+        }
+        return TryCommitHandCards(instances, recycleToDeck);
+    }
+
+    bool TryCommitHandCards(IReadOnlyList<CardInstance> cards, bool recycleToDeck)
+    {
+        if (cards == null || cards.Count == 0) return false;
+        var instances = new List<CardInstance>(cards.Count);
+        var unique = new HashSet<CardInstance>();
+        for (int i = 0; i < cards.Count; i++)
+        {
+            var card = cards[i];
+            if (card == null || !unique.Add(card) || !_cards.ContainsInHand(card)) return false;
+            instances.Add(card);
         }
 
         if (!(recycleToDeck ? _cards.TryRecycleHandToDeck(instances) : _cards.TryDiscard(instances))) return false;
 
-        // Selection may be the input list; removing selected views must not shorten our iteration.
+        // Collect first: the selection may be the caller's input list.
+        var committedViews = new List<CardView>();
+        foreach (var view in _trackedViews)
+            if (view != null && view.data != null && unique.Contains(view.data)) committedViews.Add(view);
         for (int i = 0; i < committedViews.Count; i++)
         {
             var view = committedViews[i];
@@ -1007,74 +955,6 @@ public partial class CardManager : Singleton<CardManager>
     }
 
     public void NotifyDeckChanged() => OnDeckChanged?.Invoke();
-
-    public void BeginHandEnhancementTargeting(Action<CardView> onTarget) =>
-        BeginHandTargeting(onTarget, null);
-
-    public void BeginHandTargeting(Action<CardView> onTarget, Func<int, bool> isEligible)
-    {
-        EndEnemyTargeting();
-        EndHandEnhancementTargeting();
-        _handEnhancementTargetHandler = onTarget;
-        _handTargetEligibility = isEligible;
-        ClearSelection();
-        CancelCardInteractions();
-        RefreshHandTargetPresentation();
-    }
-
-    public void BeginEnemyTargeting(Action<EnemyRuntime> onTarget, Func<EnemyRuntime, bool> isEligible)
-    {
-        EndEnemyTargeting();
-        if (IsHandEnhancementTargeting) EndHandEnhancementTargeting();
-        if (onTarget == null) return;
-        _enemyTargetHandler = onTarget;
-        _enemyTargetEligibility = isEligible;
-        if (_activeDragCard != null) _activeDragCard.CancelActiveDrag();
-        _activeDragCard = null;
-        OnEnemyTargetingChanged?.Invoke(true);
-    }
-
-    public bool HandleEnemyTargetClick(EnemyRuntime enemy)
-    {
-        if (!IsEnemyTargeting) return false;
-        if (!GameplayInputGate.IsBlocked && enemy != null &&
-            (_enemyTargetEligibility == null || _enemyTargetEligibility(enemy)))
-            _enemyTargetHandler?.Invoke(enemy);
-        return true;
-    }
-
-    public void EndEnemyTargeting()
-    {
-        if (!IsEnemyTargeting) return;
-        _enemyTargetHandler = null;
-        _enemyTargetEligibility = null;
-        OnEnemyTargetingChanged?.Invoke(false);
-    }
-
-    public void EndHandEnhancementTargeting()
-    {
-        _handEnhancementTargetHandler = null;
-        _handTargetEligibility = null;
-        foreach (var view in _trackedViews)
-        {
-            if (view == null) continue;
-            view.SetHandTargetState(false, false);
-            view.SetSelected(false);
-        }
-        ClearSelection();
-    }
-
-    public void RefreshHandTargetPresentation()
-    {
-        foreach (var view in _trackedViews)
-        {
-            if (view == null) continue;
-            bool isHand = view.data != null && _cards.ContainsInHand(view.data);
-            bool targeting = IsHandEnhancementTargeting && isHand;
-            bool eligible = targeting && (_handTargetEligibility == null || _handTargetEligibility(view.data.Id));
-            view.SetHandTargetState(targeting, eligible);
-        }
-    }
 
     public ConsumableTargetType GetConsumableTargetTypeAtSlot(int slotIndex)
     {
@@ -1153,116 +1033,6 @@ public partial class CardManager : Singleton<CardManager>
         return true;
     }
 
-    public bool CanRouteHandEnhancementTargetClick => IsHandEnhancementTargeting &&
-        (!GameplayInputGate.IsBlocked || RunManager.Instance != null && RunManager.Instance.IsPendingHammerReward &&
-            GameplayInputGate.Reasons == GameplayInputBlockReason.GearChoice);
-
-    public void HandleCardClick(CardView card)
-    {
-        if (IsEnemyTargeting) return;
-        if (IsHandEnhancementTargeting)
-        {
-            if (CanRouteHandEnhancementTargetClick && IsTrackedHandView(card) &&
-                (_handTargetEligibility == null || _handTargetEligibility(card.data.Id)))
-                _handEnhancementTargetHandler?.Invoke(card);
-            return;
-        }
-        ToggleCardSelection(card);
-    }
-
-    bool IsTrackedHandView(CardView card) => card != null && card.data != null &&
-        _trackedViews.Contains(card) && _cards.ContainsInHand(card.data);
-
-    public void CancelCardInteractions()
-    {
-        EndEnemyTargeting();
-        ClearSelection();
-        if (_activeDragCard != null)
-            _activeDragCard.CancelActiveDrag();
-        _activeDragCard = null;
-
-        foreach (var view in _trackedViews)
-            if (view != null)
-                view.ForceToIdle();
-    }
-
-    public void SelectCard(CardView card) => ToggleCardSelection(card);
-
-    public void ToggleCardSelection(CardView card)
-    {
-        if (IsHandEnhancementTargeting)
-        {
-            if (CanRouteHandEnhancementTargetClick && IsTrackedHandView(card) &&
-                (_handTargetEligibility == null || _handTargetEligibility(card.data.Id)))
-                _handEnhancementTargetHandler?.Invoke(card);
-            return;
-        }
-        if (!CanSelect(card)) return;
-
-        if (_selectedCards.Remove(card))
-        {
-            card.SetSelectionOrder(0);
-            RefreshSelectionPresentation();
-            return;
-        }
-
-        var combat = CombatManager.Instance;
-        if (combat == null || !combat.CanAddCardToSelection(_selectedCards, card))
-            return;
-
-        if (combat.ShouldReplaceSelectionOnAdd &&
-            !combat.CanPairSelection(_selectedCards, card) &&
-            !GameplayEffectResolver.CanContinueAttackSelection(_selectedCards, card, this))
-            ClearSelection(false);
-
-        _selectedCards.Add(card);
-        RefreshSelectionPresentation();
-    }
-
-    public void SelectOnlyCard(CardView card)
-    {
-        if (!CanSelect(card)) return;
-        if (_selectedCards.Count == 1 && _selectedCards[0] == card) return;
-
-        var combat = CombatManager.Instance;
-        if (combat == null || !combat.CanAddCardToSelection(System.Array.Empty<CardView>(), card))
-            return;
-
-        ClearSelection(false);
-        _selectedCards.Add(card);
-        RefreshSelectionPresentation();
-    }
-
-    public bool PrepareDragSelection(CardView card)
-    {
-        if (!CanSelect(card)) return false;
-        if (_selectedCards.Contains(card)) return true;
-
-        ToggleCardSelection(card);
-        return _selectedCards.Contains(card);
-    }
-
-    public IReadOnlyList<CardView> GetSelectedCardsSnapshot()
-    {
-        return new List<CardView>(_selectedCards);
-    }
-
-    public void BeginCardDrag(CardView card)
-    {
-        if (card != null && _trackedViews.Contains(card))
-            _activeDragCard = card;
-    }
-
-    public void EndCardDrag(CardView card)
-    {
-        if (_activeDragCard == card)
-            _activeDragCard = null;
-    }
-
-    public void DeselectCard() => ClearSelection();
-
-    public void ClearSelection() => ClearSelection(true);
-
     public void AddCredits(int amount)
     {
         if (HasInfiniteMoney)
@@ -1316,18 +1086,6 @@ public partial class CardManager : Singleton<CardManager>
         base.OnDestroy();
     }
 
-    bool CanCreateViews() => handField != null && handField.cardsHolder != null && cardPrefab != null && dragCanvas != null;
-
-    CardView CreateView(CardInstance cardInstance)
-    {
-        var view = Instantiate(cardPrefab);
-        _trackedViews.Add(view);
-        handField.AddCard(view, cardInstance);
-        if (IsHandEnhancementTargeting)
-            view.SetHandTargetState(true, _handTargetEligibility == null || _handTargetEligibility(cardInstance.Id));
-        return view;
-    }
-
     void ClearCardState()
     {
         EndEnemyTargeting();
@@ -1355,57 +1113,6 @@ public partial class CardManager : Singleton<CardManager>
         _cards.Clear();
         DestroyGeneratedDefinitions();
         _nextCardId = 1;
-    }
-
-    bool CanSelect(CardView card)
-    {
-        return !IsHandEnhancementTargeting && !IsEnemyTargeting && !GameplayInputGate.IsBlocked && card != null && card.data != null &&
-            _trackedViews.Contains(card) && _cards.ContainsInHand(card.data);
-    }
-
-    void ClearSelection(bool notify)
-    {
-        for (int i = 0; i < _selectedCards.Count; i++)
-            if (_selectedCards[i] != null)
-                _selectedCards[i].SetSelectionOrder(0);
-
-        _selectedCards.Clear();
-        selectedCard = null;
-        if (notify)
-            OnCardSelected?.Invoke(null);
-    }
-
-    void RefreshSelectionPresentation()
-    {
-        for (int i = 0; i < _selectedCards.Count; i++)
-            if (_selectedCards[i] != null)
-                _selectedCards[i].SetSelectionOrder(i + 1);
-
-        selectedCard = _selectedCards.Count > 0 ? _selectedCards[^1] : null;
-        OnCardSelected?.Invoke(selectedCard);
-    }
-
-    void RefreshTrackedView(CardInstance card)
-    {
-        foreach (var view in _trackedViews)
-        {
-            if (view != null && ReferenceEquals(view.data, card))
-            {
-                view.Setup(card);
-                return;
-            }
-        }
-    }
-
-    void DetachAndDestroyView(CardView view)
-    {
-        _trackedViews.Remove(view);
-        if (view == null) return;
-
-        view.homeField = null;
-        view.transform.SetParent(null, false);
-        view.gameObject.SetActive(false);
-        DestroyRuntimeObject(view.gameObject);
     }
 
     void DestroyGeneratedDefinitions()

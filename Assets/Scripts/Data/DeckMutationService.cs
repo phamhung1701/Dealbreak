@@ -30,7 +30,4 @@ public static class DeckMutationService
 
     public static bool Destroy(CardCollection collection, IReadOnlyList<CardInstance> targets, bool inCombat) =>
         CanDestroy(collection, targets, inCombat) && collection.TryRemoveOwnedCards(targets);
-
-    public static bool ChangeSuit(CardCollection collection, CardInstance target, CardData.Suit suit, bool inCombat) =>
-        CanTarget(collection, target, inCombat) && target.TryChangeSuit(suit);
 }

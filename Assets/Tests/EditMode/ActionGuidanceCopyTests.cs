@@ -40,29 +40,31 @@ public sealed class ActionGuidanceCopyTests
             if (item) Object.DestroyImmediate(item);
     }
 
+    // In-game guidance was removed in favour of the tutorial: idle phases show no hint, and the
+    // selection line only states what the current selection will do.
     [Test]
-    public void AttackAndDefensePromptsDoNotRepeatAdjacentButtonLabels()
+    public void IdlePhasesShowNoHint_SelectionsShowWhatTheyWillDo()
     {
         Refresh();
-        Assert.That(_selection.text, Is.EqualTo("Select a card to attack, or drag it to an enemy"));
+        Assert.That(_selection.text, Is.Empty);
 
         typeof(CombatManager).GetMethod("BeginEnemyAttack", BindingFlags.Instance | BindingFlags.NonPublic)
             .Invoke(_combat, null);
         Refresh();
-        Assert.That(_selection.text, Is.EqualTo("Block attacks with cards, or take the remaining damage"));
+        Assert.That(_selection.text, Is.Empty);
     }
 
     [Test]
-    public void TargetingPromptsStayActionableAndExplicitAboutCancel()
+    public void TargetingModesShowNoInstructionText()
     {
         _cards.BeginEnemyTargeting(_ => { }, _ => true);
         Refresh();
-        Assert.That(_selection.text, Is.EqualTo("Click a highlighted enemy to target it · Back or Esc cancels"));
+        Assert.That(_selection.text, Is.Empty);
 
         _cards.CancelCardInteractions();
         _cards.BeginHandEnhancementTargeting(_ => { });
         Refresh();
-        Assert.That(_selection.text, Is.EqualTo("Select highlighted cards · Confirm to apply, Back to cancel"));
+        Assert.That(_selection.text, Is.Empty);
     }
 
     void Refresh() => typeof(ActionButtonsUI).GetMethod("RefreshAll", BindingFlags.Instance | BindingFlags.NonPublic)

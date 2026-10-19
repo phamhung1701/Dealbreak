@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 public static class RunEffectResolver
 {
@@ -22,6 +23,8 @@ public static class RunEffectResolver
         int simulatedCredits = infiniteCredits ? int.MaxValue : cards.credits;
         int simulatedHealth = infiniteHealth ? int.MaxValue : combat.player.currentHealth;
         int simulatedMaxHealth = infiniteHealth ? int.MaxValue : combat.player.maxHealth;
+        // Validates the whole choice first, so Apply never stops part-way with effects already granted.
+        var consumableRequests = new List<(ConsumableData, int)>();
         foreach (var effect in choice.effects ?? Array.Empty<RunEffect>())
         {
             switch (effect.type)
@@ -56,8 +59,8 @@ public static class RunEffectResolver
                 case RunEffectType.GainConsumable:
                     var consumable = cards.FindConsumable(effect.consumableId);
                     if (consumable == null || !consumable.eventAvailable) return "Trick unavailable";
-                    int slotCount = Math.Max(1, effect.amount);
-                    if (!cards.CanAddConsumable(consumable, slotCount))
+                    consumableRequests.Add((consumable, Math.Max(1, effect.amount)));
+                    if (!cards.CanAddConsumables(consumableRequests))
                         return "Backpack Full";
                     break;
                 case RunEffectType.RandomGearEnhancementOrNothing:
