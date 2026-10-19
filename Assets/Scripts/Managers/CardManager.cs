@@ -578,26 +578,40 @@ public partial class CardManager : Singleton<CardManager>
             ? ownedGear.FirstOrDefault(value => value != null && value.canonicalId == gear.upgradeFromId)
             : null;
         if (!SpendCredits(price)) return false;
-        GearRuntimeInstance instance;
-        if (predecessor != null)
+        CompleteGearAcquisition(PlaceGear(gear, predecessor));
+        return true;
+    }
+
+    // Owning copies is intentional (they can be merged); the Shop alone refuses owned Gear.
+    // A replacement keeps the replaced item's acquisition slot, which defines reaction order.
+    GearRuntimeInstance PlaceGear(GearData gear, GearData replaced)
+    {
+        var instance = new GearRuntimeInstance(gear);
+        int index = replaced != null ? ownedGear.IndexOf(replaced) : -1;
+        if (index >= 0)
         {
-            int index = ownedGear.IndexOf(predecessor);
             ownedGear[index] = gear;
-            instance = _orderedGearInstances[index] = new GearRuntimeInstance(gear);
-            gearIds.Remove(predecessor.id);
+            _orderedGearInstances[index] = instance;
         }
         else
         {
             ownedGear.Add(gear);
-            instance = new GearRuntimeInstance(gear);
             _orderedGearInstances.Add(instance);
         }
-        gearIds.Add(gear.id);
+        // Rebuild rather than remove: another copy of the replaced Gear may still be owned.
+        RebuildGearIds();
+        return instance;
+    }
+
+    // The one post-acquisition path for purchases, rewards and merges.
+    void CompleteGearAcquisition(GearRuntimeInstance instance)
+    {
+        var gear = instance.Definition;
         var run = RunManager.Instance;
-        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance),
-            run != null ? run.CompletedNodeCount : 0);
+        int completedNodes = run != null ? run.CompletedNodeCount : 0;
+        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance), completedNodes);
         if (gear.specialRule == GearSpecialRule.Hammer)
-            instance.State.SetCounter(-140, run != null ? run.CompletedNodeCount : 0);
+            instance.State.SetCounter(-140, completedNodes);
         if (gear.specialRule is GearSpecialRule.TravelerPackCommon or GearSpecialRule.TravelerPackRare)
         {
             if (gear.specialRule == GearSpecialRule.TravelerPackRare) NormalizeBackpackStacks();
@@ -605,7 +619,6 @@ public partial class CardManager : Singleton<CardManager>
         }
         run?.RefreshCurrentMapEffects();
         OnBuildChanged?.Invoke();
-        return true;
     }
 
     public bool GrantGearReward(GearData gear, GearData replacement = null)
@@ -625,32 +638,7 @@ public partial class CardManager : Singleton<CardManager>
         if (replacement == null && gear.OccupiesCapacitySlot && GearSlotsUsed >= GearCapacity)
             return false;
 
-        int index = replacement != null ? ownedGear.IndexOf(replacement) : ownedGear.Count;
-        if (replacement != null)
-        {
-            ownedGear[index] = gear;
-            _orderedGearInstances[index] = new GearRuntimeInstance(gear);
-            gearIds.Remove(replacement.id);
-        }
-        else
-        {
-            ownedGear.Add(gear);
-            _orderedGearInstances.Add(new GearRuntimeInstance(gear));
-        }
-        gearIds.Add(gear.id);
-        var instance = _orderedGearInstances[index];
-        var run = RunManager.Instance;
-        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance),
-            run != null ? run.CompletedNodeCount : 0);
-        if (gear.specialRule == GearSpecialRule.Hammer)
-            instance.State.SetCounter(-140, run != null ? run.CompletedNodeCount : 0);
-        if (gear.specialRule is GearSpecialRule.TravelerPackCommon or GearSpecialRule.TravelerPackRare)
-        {
-            if (gear.specialRule == GearSpecialRule.TravelerPackRare) NormalizeBackpackStacks();
-            OnConsumablesChanged?.Invoke();
-        }
-        run?.RefreshCurrentMapEffects();
-        OnBuildChanged?.Invoke();
+        CompleteGearAcquisition(PlaceGear(gear, replacement));
         return true;
     }
 
@@ -743,12 +731,7 @@ public partial class CardManager : Singleton<CardManager>
         ownedGear.Insert(firstPosition, next);
         _orderedGearInstances.Insert(firstPosition, merged);
         RebuildGearIds();
-        var run = RunManager.Instance;
-        GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(merged), run != null ? run.CompletedNodeCount : 0);
-        if (next.specialRule == GearSpecialRule.Hammer)
-            merged.State.SetCounter(-140, run != null ? run.CompletedNodeCount : 0);
-        run?.RefreshCurrentMapEffects();
-        OnBuildChanged?.Invoke();
+        CompleteGearAcquisition(merged);
         return true;
     }
 

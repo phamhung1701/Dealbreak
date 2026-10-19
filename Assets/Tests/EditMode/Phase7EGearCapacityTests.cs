@@ -72,10 +72,11 @@ public sealed class Phase7EGearCapacityTests
     }
 
     [Test]
-    public void DuplicateRuleStillWinsAtCapacity_AndInvalidPriceDoesNotGrant()
+    // Since Gear merging (57afa28), owning copies is allowed; only the Black Market refuses owned Gear.
+    public void CapacityRuleWinsForCopiesAtCapacity_AndInvalidPriceDoesNotGrant()
     {
         for (int i = 0; i < 5; i++) Assert.That(_cards.BuyGear(_gears[i], 0), Is.True);
-        Assert.That(_cards.GetGearAcquisitionUnavailableReason(_gears[0]), Is.EqualTo("Already owned"));
+        Assert.That(_cards.GetGearAcquisitionUnavailableReason(_gears[0]), Is.EqualTo("Gear Capacity Full"));
         Assert.That(_cards.BuyGear(_gears[0], 0), Is.False);
         Assert.That(_cards.BuyGear(_gears[5], -1), Is.False);
         Assert.That(_cards.ownedGear, Has.Count.EqualTo(5));
@@ -83,7 +84,7 @@ public sealed class Phase7EGearCapacityTests
     }
 
     [Test]
-    public void NonSlotGear_IsOwnedButDoesNotConsumeCapacity_AndDuplicateStillRejected()
+    public void NonSlotGear_IsOwnedButDoesNotConsumeCapacity_AndCopiesStayTrackedOnce()
     {
         for (int i = 0; i < 5; i++) Assert.That(_cards.BuyGear(_gears[i], 0), Is.True);
         var contract = Gear("contract", 0);
@@ -92,9 +93,30 @@ public sealed class Phase7EGearCapacityTests
         Assert.That(_cards.BuyGear(contract, 0), Is.True);
         Assert.That(_cards.ownedGear, Has.Count.EqualTo(6));
         Assert.That(_cards.GearSlotsUsed, Is.EqualTo(5));
-        Assert.That(_cards.BuyGear(contract, 0), Is.False);
+        Assert.That(_cards.BuyGear(contract, 0), Is.True, "A NonSlot copy needs no capacity.");
+        Assert.That(_cards.gearIds.Count(id => id == contract.id), Is.EqualTo(1));
         Assert.That(_cards.BuyGear(_gears[5], 0), Is.False);
         Assert.That(_cards.ownedGear, Does.Contain(contract));
+    }
+
+    [Test]
+    public void UpgradingOneOfTwoCopies_KeepsTheOtherCopyOwned()
+    {
+        var common = Gear("copy_common", 0);
+        common.canonicalId = "copy_common";
+        var rare = Gear("copy_rare", 0);
+        rare.canonicalId = "copy_rare";
+        rare.tier = 2;
+        rare.upgradeFromId = common.canonicalId;
+        _cards.gearCatalog.AddRange(new[] { common, rare });
+        Assert.That(_cards.BuyGear(common, 0), Is.True);
+        Assert.That(_cards.BuyGear(common, 0), Is.True);
+
+        Assert.That(_cards.BuyGear(rare, 0), Is.True);
+
+        Assert.That(_cards.ownedGear, Is.EqualTo(new[] { rare, common }));
+        Assert.That(_cards.HasGear(common), Is.True, "The remaining copy must stay owned for rules and the Shop.");
+        Assert.That(_cards.HasGear(rare), Is.True);
     }
 
     [Test]
