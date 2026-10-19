@@ -94,7 +94,7 @@ public sealed class LowerEffortShopTests
     [Test]
     public void Guidance_CostsFiveCreditsRevealsOneReachableHiddenEventOrRiskAndIsOneTime()
     {
-        var shop = Shop(3, 0, 2, 3);
+        var shop = Shop(1, 0, 2, 3);
         var farther = new PathNode { id = 2, mapIndex = 0, kind = MapNodeType.Event, hidden = true, col = 2, row = 0 };
         var nearer = new PathNode { id = 3, mapIndex = 0, kind = MapNodeType.Risk, hidden = true, col = 1, row = 0 };
         _run.currentPath.Clear();

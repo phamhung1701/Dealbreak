@@ -753,13 +753,12 @@ public partial class RunManager : Singleton<RunManager>
     {
         var enemy = FindEnemy(node.contentId);
         if (enemy == null) return $"Street Fight • {stats.hp} HP / {stats.attack} ATK";
-        string allyName = enemy.enemyName == "War Drummer" ? "2 Goblins" : null;
-        if (allyName == null) return $"Street Fight • primary enemy {stats.hp} HP / {stats.attack} ATK";
-        var ally = FindNormalEnemyExact(allyName);
+        if (enemy.enemyName != "War Drummer") return $"Street Fight • primary enemy {stats.hp} HP / {stats.attack} ATK";
+        var ally = FindNormalEnemyExact("Goblin");
         if (ally == null) return $"Street Fight • {enemy.enemyName} • {stats.hp} HP / {stats.attack} ATK";
-        int count = enemy.enemyName == "War Drummer" ? 2 : 1;
-            var allyStats = ScaleEncounterStats(ally.maxHp, ally.baseAttack, node.mapIndex);
-        return $"Street Fight • {enemy.enemyName} + {allyName} • {AddCappedStats(stats.hp, allyStats.hp, count)} HP / {AddCappedStats(stats.attack, allyStats.attack, count)} ATK total";
+        const int count = 2;
+        var allyStats = ScaleEncounterStats(ally.maxHp, ally.baseAttack, node.mapIndex);
+        return $"Street Fight • {enemy.enemyName} + {count} {ally.enemyName} • {AddCappedStats(stats.hp, allyStats.hp, count)} HP / {AddCappedStats(stats.attack, allyStats.attack, count)} ATK total";
     }
 
     string GetElitePreviewDescription(PathNode node, (int hp, int attack) stats)
@@ -767,7 +766,7 @@ public partial class RunManager : Singleton<RunManager>
         var authored = FindAuthoredElite(node.contentId);
         if (IsCaptainType(authored))
         {
-            var goblin = GetNormalEnemies().FirstOrDefault(enemy => enemy != null && enemy.enemyName == "Goblin");
+            var goblin = FindNormalEnemyExact("Goblin");
             if (goblin != null)
             {
                 var ally = ScaleEncounterStats(goblin.maxHp, goblin.baseAttack, node.mapIndex);

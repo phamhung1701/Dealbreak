@@ -27,7 +27,7 @@ MonoBehaviour:
 
     Uses: 3'
   price: 5
-  uses: 1
+  uses: 3
   effectType: 5
   healAmount: 0
   damageAmount: 0

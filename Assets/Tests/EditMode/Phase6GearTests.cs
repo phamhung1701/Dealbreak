@@ -94,10 +94,11 @@ public sealed class Phase6GearTests
         Assert.That(_cards.BuyGear(rare, 0), Is.True);
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
         Assert.That(_cards.GetConsumableStackCountAtSlot(0), Is.EqualTo(3));
-        var target = _cards.ownedCards.First(card => card.Suit != CardData.Suit.Spades);
+        _cards.DrawToHand(8);
+        var target = _cards.hand.First(card => card.Suit != CardData.Suit.Spades);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { target.Id }), Is.True);
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
-        target = _cards.ownedCards.First(card => card.Suit != CardData.Suit.Spades);
+        target = _cards.hand.First(card => card.Suit != CardData.Suit.Spades);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { target.Id }), Is.True);
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(1),
             "The partially used physical rune is consumed before untouched runes.");

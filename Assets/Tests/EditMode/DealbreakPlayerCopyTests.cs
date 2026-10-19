@@ -41,8 +41,8 @@ public sealed class DealbreakPlayerCopyTests
         var tagline = Find(_mainMenuScene, "Canvas/FrontendRoot/HomePanel/HomeCard/Tagline");
         Assert.That(title, Is.Not.Null);
         Assert.That(title.text, Is.EqualTo("DEALBREAK"));
-        Assert.That(tagline, Is.Not.Null);
-        Assert.That(tagline.activeSelf, Is.False, "The user requested removal rather than replacement of the tagline.");
+        Assert.That(tagline == null || !tagline.activeSelf, Is.True,
+            "A removed or disabled tagline must not be shown.");
 
         var texts = new List<TMP_Text>();
         foreach (var root in _mainMenuScene.GetRootGameObjects())

@@ -26,8 +26,25 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     {
         if(!handFrame&&actions&&actions.handField)handFrame=actions.handField.transform.parent as RectTransform;
         if(handFrame){_handAnchorMin=handFrame.anchorMin;_handAnchorMax=handFrame.anchorMax;}
-        RefreshStyles();BindTricks();BindControls();
+        RefreshStyles();BindTricks();BindControls();PositionSortControls();
     }
+    void PositionSortControls()
+    {
+        if (!actions || !actions.playButton) return;
+        var bar = actions.playButton.transform.parent as RectTransform;
+        if (!bar) return;
+        var min = bar.anchorMin;
+        var size = bar.anchorMax - min;
+        // The action bar reserves its first 18% before Attack. Stack sorting there,
+        // using anchors so authored offsets cannot push the controls over player HP.
+        if (actions.rankSortButton && actions.rankSortButton.transform.parent == bar.parent)
+            DealbreakUIStyle.Place(actions.rankSortButton.transform, min.x + size.x * .01f,
+                min.y + size.y * .52f, min.x + size.x * .17f, min.y + size.y * .94f);
+        if (actions.suitSortButton && actions.suitSortButton.transform.parent == bar.parent)
+            DealbreakUIStyle.Place(actions.suitSortButton.transform, min.x + size.x * .01f,
+                min.y + size.y * .06f, min.x + size.x * .17f, min.y + size.y * .48f);
+    }
+
     public void RefreshStyles(){DealbreakUIStyle.ApplyHierarchy(transform);}
     void BindTricks()
     {

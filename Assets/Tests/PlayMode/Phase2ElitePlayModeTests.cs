@@ -66,19 +66,20 @@ public sealed class Phase2ElitePlayModeTests
         yield return null;
 
         Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
-        Assert.That(_status.text, Does.Contain("Next: +1 Shield and 5 damage"));
+        Assert.That(_status.text, Is.Not.Empty);
+        Assert.That(_display.DetailGuidance, Does.Contain("Next: +1 Shield and 5 damage"));
 
         var attack = HandViews().OrderBy(view => _combat.CalculateCardAttackDamage(view.data)).FirstOrDefault();
         Assert.That(attack, Is.Not.Null, "The deterministic fixture should provide an attack card.");
         Assert.That(_combat.TryPlayCards(new[] { attack }, knight), Is.True);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
         Assert.That((_combat.pendingDamage, knight.ShieldCharges), Is.EqualTo((5, 1)));
-        Assert.That(_status.text, Does.Contain("Shield: 1"), "The state-change subscription should refresh the live display.");
+        Assert.That(_display.DetailGuidance, Does.Contain("Shield: 1"), "The state-change subscription should refresh the live display.");
 
         _combat.TakeRemainingDamage();
         Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
         Assert.That(knight.ShieldCharges, Is.EqualTo(1));
-        Assert.That(_status.text, Does.Contain("charged attack next (10 damage)"),
+        Assert.That(_display.DetailGuidance, Does.Contain("charged attack next (10 damage)"),
             "Taking the response advances Royal Guard intent and the subscribed UI updates without a manual refresh.");
 
         attack = HandViews().OrderBy(view => _combat.CalculateCardAttackDamage(view.data)).FirstOrDefault();
@@ -88,8 +89,38 @@ public sealed class Phase2ElitePlayModeTests
         Assert.That((knight.currentHp, knight.ShieldCharges, _combat.pendingDamage), Is.EqualTo((knightHp, 0, 10)),
             "The next card consumes Royal Guard's shield and starts the charged response.");
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
-        Assert.That(_status.text, Does.Contain("Charged attack incoming (10 damage)"),
+        Assert.That(_display.DetailGuidance, Does.Contain("Charged attack incoming (10 damage)"),
             "The EnemyAttacking state event should update the charged-attack warning without a manual refresh.");
+    }
+
+    [UnityTest]
+    public IEnumerator SilenceGuidance_ReportsOnlyTheCurrentHealthThresholdState()
+    {
+        GameplayInputGate.Clear();
+        _cards = CreateComponent<CardManager>("Silence QA Cards");
+        _cards.Configure(null, null, null, System.Array.Empty<GearData>());
+        _cards.BuildDeck();
+        _combat = CreateComponent<CombatManager>("Silence QA Combat");
+        _combat.ConfigurePlayer(30);
+        var type = EnemyTypeData.Create("Silence QA", 20, 1, 0);
+        _created.Add(type);
+        var silence = ScriptableObject.CreateInstance<EnemyAbility>();
+        _created.Add(silence);
+        silence.effect = EnemyAbilityEffect.Silence;
+        type.abilities = new[] { silence };
+        var enemy = new EnemyRuntime(type);
+        _display = CreateComponent<EnemyDisplayUI>("Silence QA Display");
+        _status = CreateGameObject("Silence QA Text", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+        _display.statusText = _status;
+        _combat.StartEnemy(enemy);
+        _display.Bind(enemy);
+        yield return null;
+        Assert.That(_display.DetailGuidance, Does.Contain("Silence active"));
+        Assert.That(_display.DetailGuidance, Does.Not.Contain("Silence inactive"));
+        enemy.currentHp = 10;
+        _display.RefreshStateGuidance();
+        Assert.That(_display.DetailGuidance, Does.Contain("Silence inactive"));
+        Assert.That(_display.DetailGuidance, Does.Not.Contain("Silence active"));
     }
 
     IEnumerable<CardView> HandViews() => _field.cardsHolder.GetComponentsInChildren<CardView>()

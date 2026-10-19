@@ -60,7 +60,7 @@ public sealed class Phase2EliteCombatTests
         var allyStats = EnemyMapScaling.Scale(3, 2, mapNumber - 1);
         foreach (var goblin in _combat.Enemies.Skip(1))
         {
-            Assert.That(goblin.type.enemyName, Is.EqualTo("Goblin"));
+            Assert.That(goblin.type, Is.SameAs(LoadEnemy("Goblin")));
             Assert.That((goblin.maxHp, goblin.currentAttack, goblin.EffectiveAttack),
                 Is.EqualTo((allyStats.hp, allyStats.attack, allyStats.attack + 1)));
         }

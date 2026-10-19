@@ -48,7 +48,8 @@ public sealed class Phase4DeterminismTests
         var second = RunMapGenerator.Generate(new RunRandomContext("MAP-SEED"), 37, null, enemies);
 
         Assert.That(Signature(first), Is.EqualTo(Signature(second)));
-        Assert.That(first.Count, Is.EqualTo(RunMapGenerator.RowCount * RunMapGenerator.RouteColumnCount + 1));
+        Assert.That(first.Count, Is.EqualTo(RunMapGenerator.RowCount * RunMapGenerator.RouteColumnCount + 3));
+        Assert.That(first.Count(node => node.isShopCheckpoint), Is.EqualTo(2));
         Assert.That(first.Count(node => node.kind == MapNodeType.Headliner), Is.EqualTo(1));
         Assert.That(first.Any(node => node.next.Count > 1), Is.True, "Expected at least one fork.");
 

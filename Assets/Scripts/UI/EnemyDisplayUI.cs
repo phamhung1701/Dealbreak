@@ -384,7 +384,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
                 guidance += $"\nCalled suit: {enemy.AnnouncedSuit}{(enemy.DuelistCallConsumed ? " (used)" : " (first matching hit -50%)")}";
             if (enemy != null && enemy.HasSilence)
                 guidance += "\nSilence active: held-card effects disabled";
-            if (enemy != null && enemy.HasAbilityEffect(EnemyAbilityEffect.Silence))
+            else if (enemy != null && enemy.HasAbilityEffect(EnemyAbilityEffect.Silence))
                 guidance += "\nSilence inactive at/below 50% HP";
             if (enemy != null && enemy.HasWithering)
                 guidance += "\nWithering active: player healing prevented";
