@@ -19,7 +19,6 @@ public class ActionButtonsUI : MonoBehaviour
     public Button rankSortButton;
     public Button suitSortButton;
     public Field handField;
-    public Button takeDamageButton;
     public Button recoverButton;
     public Button[] backpackSlotButtons = new Button[CardManager.BACKPACK_CAPACITY];
     public TMP_Text playerHealthLabel;
@@ -89,7 +88,6 @@ public class ActionButtonsUI : MonoBehaviour
         if (blockButton) { blockButton.onClick.AddListener(OnBlockClicked); KeyButtonBorderStyle.Apply(blockButton); }
         if (rankSortButton) rankSortButton.onClick.AddListener(OnRankSortClicked);
         if (suitSortButton) suitSortButton.onClick.AddListener(OnSuitSortClicked);
-        if (takeDamageButton) { takeDamageButton.onClick.AddListener(OnTakeDamageClicked); KeyButtonBorderStyle.Apply(takeDamageButton); }
         if (recoverButton) { recoverButton.onClick.AddListener(OnRecoverClicked); KeyButtonBorderStyle.Apply(recoverButton); }
         BindBackpackSlots();
         EnsureConsumableContextUI();
@@ -131,7 +129,6 @@ public class ActionButtonsUI : MonoBehaviour
         if (blockButton) blockButton.onClick.RemoveListener(OnBlockClicked);
         if (rankSortButton) rankSortButton.onClick.RemoveListener(OnRankSortClicked);
         if (suitSortButton) suitSortButton.onClick.RemoveListener(OnSuitSortClicked);
-        if (takeDamageButton) takeDamageButton.onClick.RemoveListener(OnTakeDamageClicked);
         if (recoverButton) recoverButton.onClick.RemoveListener(OnRecoverClicked);
         UnbindBackpackSlots();
         CancelEnemyTargeting();
@@ -313,11 +310,6 @@ public class ActionButtonsUI : MonoBehaviour
                 GameState.EnemyAttacking => "CONFIRM BLOCK",
                 _ => "ACTION"
             };
-        }
-        if (takeDamageButton)
-        {
-            takeDamageButton.interactable = !targeting && canTakeDamage;
-            takeDamageButton.gameObject.SetActive(false);
         }
         if (recoverButton) recoverButton.interactable = !targeting && canRecover;
 
@@ -547,7 +539,6 @@ public class ActionButtonsUI : MonoBehaviour
         RefreshAll();
     }
 
-    void OnTakeDamageClicked() => CombatManager.Instance?.TakeRemainingDamage();
     void OnRecoverClicked() => CombatManager.Instance?.Recover();
 
     void BindBackpackSlots()

@@ -38,7 +38,6 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         if (visible && actions)
         {
             if (actions.recoverButton) actions.recoverButton.gameObject.SetActive(true);
-            if (actions.takeDamageButton) actions.takeDamageButton.gameObject.SetActive(true);
         }
     }
 
@@ -66,7 +65,6 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
             bool defense = CombatManager.Instance.currentState == GameState.EnemyAttacking;
             if (actions.recoverButton) actions.recoverButton.gameObject.SetActive(
                 CombatManager.Instance.currentState == GameState.PlayerTurn && cards != null && cards.HandCount == 0);
-            if (actions.takeDamageButton) actions.takeDamageButton.gameObject.SetActive(defense);
             if (playerStatePanel)
             {
                 playerStatePanel.anchorMax = new Vector2(playerStatePanel.anchorMax.x, defense ? .55f : .21f);

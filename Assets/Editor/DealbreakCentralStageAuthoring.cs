@@ -126,7 +126,6 @@ public static class DealbreakCentralStageAuthoring
         actions.playerHealthLabel.fontSize = 29;
         DealbreakUIStyle.Place(actions.pendingDamageLabel.transform, .045f, .02f, .955f, .43f);
         actions.pendingDamageLabel.fontSize = 20;
-        actions.takeDamageButton.gameObject.SetActive(false);
         foreach (var control in new[] { actions.playButton, actions.blockButton, actions.passButton })
             control.GetComponentInChildren<TMP_Text>(true).fontSize = 30;
         var pause = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<PauseMenuUI>(true)).First();
