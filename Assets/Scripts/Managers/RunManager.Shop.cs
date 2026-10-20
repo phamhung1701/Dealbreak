@@ -408,6 +408,8 @@ public partial class RunManager
         var services = new List<ShopOfferKind> { ShopOfferKind.Guidance, ShopOfferKind.Contract,
             ShopOfferKind.Investment, ShopOfferKind.Supply };
         services.Shuffle(_randomContext.CreateStream("shop-services", context));
+        // Intel scouts the route ahead; the last Black Market before the Headliner has none left.
+        if (_activeNode.isShopCheckpoint && _activeNode.col > 4) services.Remove(ShopOfferKind.Guidance);
         bool supplyAtMid = _randomContext.CreateStream("shop-supply-checkpoint", _activeNode.mapIndex).NextInt(0, 2) == 0;
         bool isMid = _activeNode.col < 2f;
         if (_activeNode.isShopCheckpoint && supplyAtMid == isMid && services.IndexOf(ShopOfferKind.Supply) >= 2)

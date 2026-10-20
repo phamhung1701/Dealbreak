@@ -181,6 +181,21 @@ public sealed class CombatShopEconomyTests
         Assert.That(cards.credits, Is.EqualTo(credits));
     }
 
+    [Test]
+    public void Intel_IsNeverOfferedInTheLastBlackMarketBeforeTheHeadliner()
+    {
+        bool midOffersIntel = false;
+        for (int map = 0; map < 12; map++)
+        {
+            Open(map, true);
+            Assert.That(run.GetCurrentShopOffers().Any(o => o.kind == ShopOfferKind.Guidance), Is.False, $"District {map + 1}");
+            Assert.That(run.GetCurrentShopOffers().Count(o => o.IsService), Is.EqualTo(2), "It still offers two services.");
+            Open(map, false);
+            midOffersIntel |= run.GetCurrentShopOffers().Any(o => o.kind == ShopOfferKind.Guidance);
+        }
+        Assert.That(midOffersIntel, Is.True, "Earlier Black Markets still offer Intel.");
+    }
+
     int[] Counts() => new[] { ShopOfferKind.Gear, ShopOfferKind.Enhancement, ShopOfferKind.Consumable }
         .Select(kind => run.GetCurrentShopOffers().Count(o => o.kind == kind)).ToArray();
     ShopOffer OpenSupply()
