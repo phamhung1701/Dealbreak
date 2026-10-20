@@ -22,6 +22,8 @@ public static class DealbreakPrintTextureAuthoring
     public const string CleanAccents = TextureFolder + "/InkAccents_Clean.png";
     public const string SlotEmpty = SpriteFolder + "/Slot_Empty.png";
     public const string SlotSelected = SpriteFolder + "/Slot_Selected.png";
+    // Shown in the enemy portrait window until an enemy has authored art.
+    public const string PortraitUnknown = SpriteFolder + "/Portrait_Unknown.png";
 
     static readonly Color Charcoal = new(.105f, .13f, .155f), Slate = new(.29f, .36f, .41f), Ochre = new(.82f, .61f, .26f);
 
@@ -36,6 +38,19 @@ public static class DealbreakPrintTextureAuthoring
         Write(CleanAccents, 2912, 1440, (x, y, w, h) => InkOnWhite(CleanCorner(x, y, w, h)));
         Write(SlotEmpty, 129, 129, (x, y, w, h) => SlotPixel(x, y, Slate, 3));
         Write(SlotSelected, 129, 129, (x, y, w, h) => SlotPixel(x, y, Ochre, 5));
+        Write(PortraitUnknown, 512, 512, UnknownPortraitPixel);
+        AsSprite(PortraitUnknown);
+    }
+
+    static void AsSprite(string path)
+    {
+        var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+        if (importer.textureType == TextureImporterType.Sprite && importer.spriteImportMode == SpriteImportMode.Single) return;
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.SaveAndReimport();
     }
 
     // x, y are pixel coordinates with y = 0 at the top of the image.
@@ -83,7 +98,9 @@ public static class DealbreakPrintTextureAuthoring
     static Color SlateGrainPixel(int x, int y, int w, int h)
     {
         float v = .95f + (Fbm(x / 2.5f, y / 2.5f, 2, 71) - .5f) * .08f - Fbm(x / 200f, y / 200f, 3, 72) * .05f;
-        if (Halftone(x, y, 9, 15, .06f + .12f * Fbm(x / 260f, y / 260f, 2, 73))) v -= .14f;
+        // Sparse, patchy dots: grain on the panel veils, never a visible grid.
+        float patch = Mathf.Clamp01((Fbm(x / 180f, y / 180f, 3, 73) - .45f) * 2.2f);
+        if (Halftone(x, y, 9, 15, .10f * patch)) v -= .07f;
         v = Speck(x, y, v, 74, .9f);
         return Gray(v);
     }
@@ -156,6 +173,35 @@ public static class DealbreakPrintTextureAuthoring
             if (Mathf.Abs(y - (poleY + sag)) < 1.2f) return true;
         }
         return false;
+    }
+
+    // ---- Unknown enemy: an ink silhouette on a slate print, like an unsolved wanted poster ----
+
+    static readonly Color Ink = new(.055f, .065f, .075f), Brick = new(.66f, .27f, .22f), Paper = new(.94f, .90f, .81f);
+
+    static Color UnknownPortraitPixel(int x, int y, int w, int h)
+    {
+        var c = Slate;
+        if (Halftone(x, y, 10, 45, (float)y / h * .55f)) c = Charcoal;
+        if (Fbm(x / 2.5f, y / 2.5f, 2, 81) > .86f) c = Color.Lerp(c, Paper, .25f);
+        // Hazard stripes across the top-right corner.
+        if (x - (h - y) > w * .62f && Mathf.Repeat(x + y, 44) < 18) c = Ink;
+        float jx = (Fbm(x / 7f, y / 7f, 2, 82) - .5f) * 6, jy = (Fbm(x / 7f, y / 7f, 2, 83) - .5f) * 6;
+        if (Bust(x - 14 + jx, y - 10 + jy, w, h)) c = Brick;                 // misregistered red pass
+        if (Bust(x + jx, y + jy, w, h)) c = Fbm(x / 2.2f, y / 2.2f, 2, 84) > .84f ? Color.Lerp(Ink, Slate, .5f) : Ink;
+        c.a = 1; return c;
+    }
+
+    static bool Bust(float x, float y, int w, int h)
+    {
+        float cx = w * .5f;
+        float hx = (x - cx) / (w * .145f), hy = (y - h * .40f) / (h * .175f);
+        if (hx * hx + hy * hy < 1) return true;                                // head
+        if (Mathf.Abs(x - cx) < w * .075f && y > h * .5f && y < h * .66f) return true;   // neck
+        float top = h * .63f, spread = (y - top) / (h - top);
+        if (y < top || y > h) return false;
+        float half = w * (.17f + .26f * Mathf.Sqrt(Mathf.Clamp01(spread * 1.6f)));  // rounded shoulders
+        return Mathf.Abs(x - cx) < half;
     }
 
     // ---- Ink accents (black on white; the Ink Accent shader turns white into transparency) ----

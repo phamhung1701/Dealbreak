@@ -154,6 +154,10 @@ public static class DealbreakUIArtCorrectionAuthoring
         var window=DealbreakUIStyle.Child(root,"PortraitWindow",typeof(Image),typeof(RectMask2D));DealbreakUIStyle.Place(window,.065f,.31f,.935f,.945f);window.GetComponent<Image>().color=DealbreakUIStyle.Theme.paper;window.GetComponent<Image>().raycastTarget=false;
         mount.SetSiblingIndex(1);window.SetSiblingIndex(2);
         enemy.portrait.transform.SetParent(window,false);DealbreakUIStyle.Place(enemy.portrait.transform,-.025f,-.07f,1.025f,1.03f);enemy.portrait.raycastTarget=false;
+        // Placeholder until the enemy has authored art; the name sits right below, so no label.
+        enemy.portrait.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(DealbreakPrintTextureAuthoring.PortraitUnknown);
+        enemy.portrait.type=Image.Type.Simple;enemy.portrait.preserveAspect=false;enemy.portrait.color=Color.white;
+        var glyph=enemy.portrait.GetComponentInChildren<TMPro.TMP_Text>(true);if(glyph)glyph.text=string.Empty;
         DealbreakUIStyle.Place(enemy.nameText.transform,.065f,.19f,.94f,.29f);DealbreakUIStyle.Place(enemy.hpText.transform,.065f,.09f,.51f,.18f);
         DealbreakUIStyle.Place(enemy.atkText.transform,.52f,.09f,.94f,.18f);DealbreakUIStyle.Place(enemy.statusText.transform,.065f,.02f,.94f,.08f);
         DealbreakUIStyle.ApplyHierarchy(root);
