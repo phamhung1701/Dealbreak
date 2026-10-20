@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
 /// A thick HP bar drawn behind an HP label, so the bar covers the "HP n/m" text. It sits as the
@@ -40,23 +39,36 @@ public sealed class HealthBarBacking : MonoBehaviour
         _label = GetComponent<TMP_Text>();
         if (_bar || !_label || !transform.parent) return;
         var theme = DealbreakUIStyle.Theme;
-        var bar = new GameObject($"{name} Bar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        // Track and fill are rough cut-paper strips; the bar leans as one piece so the fill stays inside.
+        var bar = new GameObject($"{name} Bar", typeof(RectTransform), typeof(CanvasRenderer), typeof(EditorialFrame));
         _bar = (RectTransform)bar.transform;
         _bar.SetParent(transform.parent, false);
         _bar.SetSiblingIndex(transform.GetSiblingIndex());
         _bar.anchorMin = _bar.anchorMax = _bar.pivot = new Vector2(.5f, .5f);
-        var track = bar.GetComponent<Image>();
-        track.raycastTarget = false;
-        track.color = theme ? new Color(theme.ink.r, theme.ink.g, theme.ink.b, .88f) : new Color(.08f, .08f, .08f, .88f);
-        var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        var trackColor = theme ? new Color(theme.ink.r, theme.ink.g, theme.ink.b, .88f) : new Color(.08f, .08f, .08f, .88f);
+        Strip(bar.GetComponent<EditorialFrame>(), trackColor, theme ? theme.brick : trackColor);
+        _bar.localRotation = Quaternion.Euler(0, 0, DealbreakUIStyle.Noise(DealbreakUIStyle.HierarchySeed(transform), 3) * 1.2f);
+        var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(EditorialFrame));
         _fill = (RectTransform)fill.transform;
         _fill.SetParent(_bar, false);
         _fill.anchorMin = Vector2.zero;
         _fill.offsetMin = _fill.offsetMax = Vector2.zero;
-        var fillImage = fill.GetComponent<Image>();
-        fillImage.raycastTarget = false;
-        fillImage.color = theme ? theme.brick : new Color(.66f, .27f, .22f, 1f);
+        Strip(fill.GetComponent<EditorialFrame>(), theme ? theme.brick : new Color(.66f, .27f, .22f, 1f), null);
         SetFraction(_fraction);
+    }
+
+    static void Strip(EditorialFrame strip, Color color, Color? shadow)
+    {
+        strip.raycastTarget = false;
+        strip.ink = strip.rim = strip.fill = color;
+        strip.border = 0;
+        strip.corner = 3;
+        strip.showAccent = false;
+        strip.showShadow = shadow.HasValue;
+        if (shadow.HasValue) { strip.shadowColor = shadow.Value; strip.shadowOffset = new Vector2(4, -5); }
+        strip.roughness = 2.2f;
+        strip.tiltRange = 0f;
+        strip.Refresh();
     }
 
     void LateUpdate()

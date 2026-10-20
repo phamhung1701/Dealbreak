@@ -9,6 +9,7 @@ public sealed class MapNodePresentation : MaskableGraphic
     public MapNodeType kind;
     public bool unknown,completed,available,scouted;
     bool _focused;
+    int _seed;
     float _nextPulse;
     float _pulse=1f;
     public static void Apply(GameObject obj,PathNode node,bool scouted=false)
@@ -31,15 +32,24 @@ public sealed class MapNodePresentation : MaskableGraphic
         Color edge=focus?DealbreakUIStyle.Theme.ochre:completed?DealbreakUIStyle.Theme.paper:available||scouted?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;
         float thickness=available?6f:completed||scouted?4f:3f;
         if(available)edge=Color.Lerp(edge,new Color(1f,.35f,.12f,1f),_pulse*.42f);
+        // Printed off true: each node leans a little, its sides are slightly uneven and a brick
+        // second ink sits misregistered beneath it. Stable per node (hierarchy hash).
+        if(_seed==0)_seed=DealbreakUIStyle.HierarchySeed(transform.parent);
+        Draw(vh,r.center+new Vector2(4,-5),radius,DealbreakUIStyle.Theme.brick);
         Draw(vh,r.center,radius,edge);Draw(vh,r.center,radius-thickness,DealbreakUIStyle.Theme.ink);
         Draw(vh,r.center,radius-7,completed?DealbreakUIStyle.Theme.slate:DealbreakUIStyle.Theme.charcoal);
     }
     void Draw(VertexHelper vh,Vector2 center,float radius,Color tint)
     {
         int sides=unknown?24:kind is MapNodeType.Event or MapNodeType.Risk?24:kind==MapNodeType.Headliner?6:4;
-        float angle=kind==MapNodeType.Shop&&!unknown?45:0;
+        float angle=(kind==MapNodeType.Shop&&!unknown?45:0)+DealbreakUIStyle.Noise(_seed,-1)*8f;
         int start=vh.currentVertCount;var v=UIVertex.simpleVert;v.color=tint;v.position=center;vh.AddVert(v);
-        for(int i=0;i<sides;i++){float a=(i*360f/sides+angle)*Mathf.Deg2Rad;v.position=center+new Vector2(Mathf.Cos(a),Mathf.Sin(a))*radius;vh.AddVert(v);}
+        for(int i=0;i<sides;i++)
+        {
+            float a=(i*360f/sides+angle)*Mathf.Deg2Rad;
+            float wobble=1f+DealbreakUIStyle.Noise(_seed,i)*(sides>8?.035f:.06f);
+            v.position=center+new Vector2(Mathf.Cos(a),Mathf.Sin(a))*radius*wobble;vh.AddVert(v);
+        }
         for(int i=0;i<sides;i++)vh.AddTriangle(start,start+1+i,start+1+(i+1)%sides);
     }
     void Update()
