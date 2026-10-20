@@ -48,7 +48,10 @@ public static class CombatUISliceAuthoring
         Place(run.runProgressLabel.transform, .12f, .45f, .57f, .95f);
         Place(run.headlinerProgressLabel.transform, .12f, .03f, .72f, .44f);
         StyleText(run.runProgressLabel, 23, Paper);
-        StyleText(run.headlinerProgressLabel, 18, Paper);
+        // 23/21 are the largest that fit the 70 px header at the global text scale (GameSceneReadabilityTests).
+        StyleText(run.headlinerProgressLabel, 21, Paper);
+        // One line each: overflow a pixel rather than let truncation drop the whole line.
+        run.runProgressLabel.overflowMode = run.headlinerProgressLabel.overflowMode = TextOverflowModes.Overflow;
         Place(run.creditsLabel.transform, .81f, .928f, .97f, .978f);
         StyleText(run.creditsLabel, 24, Paper);
         var seed = root.Find("RunHeader/SeedDisplayLabel");

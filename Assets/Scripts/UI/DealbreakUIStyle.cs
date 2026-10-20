@@ -74,7 +74,8 @@ public static class DealbreakUIStyle
             Text(label,paper?Theme.bodyFont:offer?label.name.Contains("Price")?Theme.numericFont:Theme.bodyFont:Theme.headingFont,
                 button.name is "PlayButton" or "BlockButton" or "PassButton"?30:
                 paper?21:open?29:Mathf.Max(18,Mathf.Min(24,label.fontSize)),paper||!open&&role==EditorialButton.Role.Primary?Theme.ink:Theme.paper);
-            label.margin=new Vector4(8,2,8,2);label.fontStyle=FontStyles.Normal;
+            // Single-line labels overflow a short button rather than truncating to nothing.
+            label.margin=new Vector4(8,2,8,2);label.fontStyle=FontStyles.Normal;label.overflowMode=TextOverflowModes.Overflow;
         }
         style.Refresh();
     }
@@ -132,7 +133,8 @@ public static class DealbreakUIStyle
                 if(text==enemy.nameText){Text(text,Theme.headingFont,24,Theme.ink);text.overflowMode=TextOverflowModes.Overflow;}
                 else if(text==enemy.hpText||text==enemy.atkText)
                 {
-                    Text(text,Theme.numericFont,20,text==enemy.atkText?Theme.brick:Theme.paper);
+                    // 18, not 20: at the global text scale "ATTACK n" otherwise runs into the HP bar.
+                    Text(text,Theme.numericFont,18,text==enemy.atkText?Theme.brick:Theme.paper);
                     text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Overflow;
                 }
                 else if(text==enemy.statusText)Text(text,Theme.bodyFont,15,Theme.ink);

@@ -10,6 +10,7 @@ using UnityEngine.UI;
 /// <summary>Safe, repeatable authoring of the shared visual system into the existing scene/prefab bindings.</summary>
 public static class DealbreakUIOverhaulAuthoring
 {
+    const float TextScale=1.2f;
     public static DealbreakUITheme BuildDesignSystem()
     {
         AssetDatabase.Refresh();
@@ -18,10 +19,12 @@ public static class DealbreakUIOverhaulAuthoring
         if(!theme){theme=ScriptableObject.CreateInstance<DealbreakUITheme>();AssetDatabase.CreateAsset(theme,"Assets/Resources/DealbreakUITheme.asset");}
         theme.symbolFont=FontAsset("Assets/TextMesh Pro/Fonts/LiberationSans.ttf","Dealbreak Symbols");
         theme.headingFont=FontAsset("Assets/Art/Fonts/Anton-Regular.ttf","Anton UI");
-        // Anton's caps are 23% taller than Barlow Condensed's; scaling to its cap height keeps authored sizes and layouts.
-        var heading=theme.headingFont.faceInfo;heading.scale=.815f;theme.headingFont.faceInfo=heading;
         theme.bodyFont=FontAsset("Assets/Art/Fonts/SpaceGrotesk.ttf","Space Grotesk UI");
         theme.numericFont=FontAsset("Assets/Art/Fonts/IBMPlexMono-Regular.ttf","IBM Plex Mono UI");
+        // Every label renders TextScale larger than its authored size. Anton's caps are 23% taller than
+        // Barlow Condensed's, so it also scales to that cap height to keep authored layouts.
+        foreach(var font in new[]{theme.headingFont,theme.bodyFont,theme.numericFont,theme.symbolFont})
+        {var face=font.faceInfo;face.scale=TextScale*(font==theme.headingFont?.815f:1f);font.faceInfo=face;EditorUtility.SetDirty(font);}
         foreach(var font in new[]{theme.headingFont,theme.bodyFont,theme.numericFont})
         {font.fallbackFontAssetTable=new System.Collections.Generic.List<TMP_FontAsset>{theme.symbolFont};EditorUtility.SetDirty(font);}
         theme.paperTexture=Texture(DealbreakPrintTextureAuthoring.PaperGrain);theme.slateTexture=Texture(DealbreakPrintTextureAuthoring.PaperPoster);
@@ -270,8 +273,8 @@ public static class DealbreakUIOverhaulAuthoring
                     var frame=root.transform.Find("Editorial Frame").GetComponent<EditorialFrame>();
                     var drop=root.GetComponent<CardActionDropTarget>();if(drop)drop.feedbackGraphic=frame;
                     DealbreakUIStyle.Text(enemy.nameText,DealbreakUIStyle.Theme.headingFont,27,DealbreakUIStyle.Theme.ink);
-                    DealbreakUIStyle.Text(enemy.hpText,DealbreakUIStyle.Theme.numericFont,20,DealbreakUIStyle.Theme.ink);
-                    DealbreakUIStyle.Text(enemy.atkText,DealbreakUIStyle.Theme.numericFont,20,DealbreakUIStyle.Theme.brick);
+                    DealbreakUIStyle.Text(enemy.hpText,DealbreakUIStyle.Theme.numericFont,18,DealbreakUIStyle.Theme.ink);
+                    DealbreakUIStyle.Text(enemy.atkText,DealbreakUIStyle.Theme.numericFont,18,DealbreakUIStyle.Theme.brick);
                     DealbreakUIStyle.Text(enemy.statusText,DealbreakUIStyle.Theme.bodyFont,15,DealbreakUIStyle.Theme.ink);
                 }
                 if(path.Contains("PathNode"))foreach(var text in root.GetComponentsInChildren<TMP_Text>(true))DealbreakUIStyle.Text(text,DealbreakUIStyle.Theme.headingFont,21,DealbreakUIStyle.Theme.paper);

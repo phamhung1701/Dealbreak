@@ -85,7 +85,7 @@ MonoBehaviour:
     m_FamilyName: IBM Plex Mono
     m_StyleName: Regular
     m_PointSize: 64
-    m_Scale: 1
+    m_Scale: 1.2
     m_UnitsPerEM: 1000
     m_LineHeight: 83.2
     m_AscentLine: 65.6
