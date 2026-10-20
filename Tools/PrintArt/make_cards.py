@@ -179,18 +179,22 @@ def compose(layers, seed):
     return out
 
 
+# The corner index is what reads in a hand of small cards, so it is sized for that, not for print.
+INDEX_CAP, INDEX_MAX_W, INDEX_PIP, INDEX_X, INDEX_TOP = 110, 88, 56, 70, 36
+
+
 def corner_index(rank, suit, red):
     m = Image.new("L", (W * SS, H * SS), 0)
-    rank_img = text_mask(rank, 70 * SS, letter_spacing=-2 * SS if rank == "10" else 0)
-    if rank_img.width > 70 * SS:   # "10" stays inside the corner column
-        rank_img = rank_img.resize((70 * SS, int(rank_img.height * 70 * SS / rank_img.width)), Image.LANCZOS)
-    pip = Image.new("L", (60 * SS, 60 * SS), 0)
-    draw_suit(ImageDraw.Draw(pip), suit, 30 * SS, 30 * SS, 46 * SS)
-    cx = 62 * SS
+    rank_img = text_mask(rank, INDEX_CAP * SS, letter_spacing=-4 * SS if rank == "10" else 0)
+    if rank_img.width > INDEX_MAX_W * SS:   # "10" stays inside the corner column
+        rank_img = rank_img.resize((INDEX_MAX_W * SS, int(rank_img.height * INDEX_MAX_W * SS / rank_img.width)), Image.LANCZOS)
+    pip = Image.new("L", (int(INDEX_PIP * 1.3) * SS, int(INDEX_PIP * 1.3) * SS), 0)
+    draw_suit(ImageDraw.Draw(pip), suit, pip.width / 2, pip.height / 2, INDEX_PIP * SS)
+    cx = INDEX_X * SS
     for rotate in (False, True):
         block = Image.new("L", (W * SS, H * SS), 0)
-        paste_center(block, rank_img, cx, 36 * SS + rank_img.height / 2)
-        paste_center(block, pip, cx, 36 * SS + rank_img.height + 38 * SS)
+        paste_center(block, rank_img, cx, INDEX_TOP * SS + rank_img.height / 2)
+        paste_center(block, pip, cx, INDEX_TOP * SS + rank_img.height + (14 + INDEX_PIP / 2) * SS)
         if rotate:
             block = block.rotate(180)
         m.paste(255, (0, 0), block)
@@ -210,8 +214,9 @@ def number_card(rank, suit, red, seed):
         draw_suit(ImageDraw.Draw(pips), suit, W * SS / 2, H * SS / 2, size)
         draw_suit(ImageDraw.Draw(shadow), suit, W * SS / 2 + 16 * SS, H * SS / 2 + 14 * SS, size)
     else:
-        x0, x1, y0, y1 = 168, 365, 170, 594
-        size = (86 if int(rank) <= 8 else 78) * SS
+        # Narrower than a print deck's pip field so the large corner indices stay clear of it.
+        x0, x1, y0, y1 = 200, 333, 172, 592
+        size = (80 if int(rank) <= 8 else 72) * SS
         for fx, fy in PIPS[int(rank)]:
             px, py = (x0 + (x1 - x0) * fx) * SS, (y0 + (y1 - y0) * fy) * SS
             pip = Image.new("L", (int(size * 1.2), int(size * 1.2)), 0)
@@ -230,7 +235,7 @@ def face_card(rank, suit, red, seed):
     border = Image.new("L", shape.size, 0)
     ImageDraw.Draw(border).rounded_rectangle([3 * SS, 3 * SS, (W - 4) * SS, (H - 4) * SS], radius=34 * SS, outline=255, width=9 * SS)
     # Poster panel with a clipped corner, the shape language of the Dealbreak frames.
-    px0, py0, px1, py1, cut = 118, 128, 415, 636, 46
+    px0, py0, px1, py1, cut = 132, 128, 401, 636, 46   # inset to clear the corner indices
     panel = Image.new("L", shape.size, 0)
     ImageDraw.Draw(panel).polygon([(px0 * SS, py0 * SS), ((px1 - cut) * SS, py0 * SS), (px1 * SS, (py0 + cut) * SS),
                                    (px1 * SS, py1 * SS), ((px0 + cut) * SS, py1 * SS), (px0 * SS, (py1 - cut) * SS)], fill=255)
