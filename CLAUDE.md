@@ -57,7 +57,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 ## Owner UX decisions
 
 - **No in-game guidance; a tutorial is coming.** Show state and numbers (damage and block previews, Recover cost, enemy intents, choice requirements), never how-to hints. `ActionGuidanceCopyTests` pins this.
-- **No bloated UI:** show each fact once. For example, pending damage appears only on the HP panel as "INCOMING n".
+- **No bloated UI:** show each fact once. For example, pending damage appears only under the enemies as "INCOMING n".
 - **Hover info opens next to the hovered object**, never in a fixed panel.
 - No Take Damage button; PASS skips the blocking phase.
 - Supply is repeatable within a Black Market.
@@ -85,7 +85,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Driving Unity (Locus MCP)
 
-- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 40 s). Baseline: **EditMode 670 passed + 1 skipped, PlayMode 10/10**.
+- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 40 s). Baseline: **EditMode 672 passed + 1 skipped, PlayMode 10/10**.
 - Tool calls are capped at about 5 minutes.
   - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap).
   - After the soak, wait until `Application.isPlaying` is false, then read `C:\Users\Admin\AppData\LocalLow\hwng\Dealbreak\TestResults.xml` and check its timestamp.
