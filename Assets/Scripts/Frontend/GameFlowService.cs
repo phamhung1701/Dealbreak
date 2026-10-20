@@ -52,6 +52,7 @@ public sealed class GameFlowService : MonoBehaviour
         DevModeRuntime.Disable();
         RestoreGlobalRuntimeState();
         FrontendLaunchContext.RequestContinue(data);
+        LoadingScreenUI.Show();
         SceneManager.LoadScene(GameSceneName);
         return true;
     }
@@ -66,6 +67,7 @@ public sealed class GameFlowService : MonoBehaviour
     {
         RestoreGlobalRuntimeState();
         FrontendLaunchContext.RequestRun(seed);
+        LoadingScreenUI.Show();
         SceneManager.LoadScene(GameSceneName);
     }
 
@@ -75,6 +77,7 @@ public sealed class GameFlowService : MonoBehaviour
         DevModeRuntime.Disable();
         RestoreGlobalRuntimeState();
         FrontendLaunchContext.RequestMainMenu(destination);
+        LoadingScreenUI.Show();
         SceneManager.LoadScene(MainMenuSceneName);
     }
 
