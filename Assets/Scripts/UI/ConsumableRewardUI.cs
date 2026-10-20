@@ -137,15 +137,50 @@ public sealed class ConsumableRewardUI : MonoBehaviour
 
     void ClaimSelected()
     {
+        var item = SelectedItem(out var origin);
         if (RunManager.Instance != null && RunManager.Instance.ClaimPendingConsumableReward(_selectedChoice))
+        {
+            FlyIntoBackpack(item, origin);
             Refresh();
+        }
     }
 
     void ReplaceSelected(int slotIndex)
     {
+        var item = SelectedItem(out var origin);
         if (RunManager.Instance != null &&
             RunManager.Instance.ReplacePendingConsumableReward(_selectedChoice, slotIndex))
+        {
+            FlyIntoBackpack(item, origin);
             Refresh();
+        }
+    }
+
+    ConsumableData SelectedItem(out Vector3 origin)
+    {
+        origin = panel ? panel.transform.position : transform.position;
+        var reward = RunManager.Instance?.PendingConsumableReward;
+        if (reward == null || _selectedChoice < 0 || _selectedChoice >= reward.Choices.Count) return null;
+        var item = reward.Choices[_selectedChoice];
+        var choice = choicesContainer ? choicesContainer.Find($"RewardChoice_{_selectedChoice}_{item.id}") : null;
+        if (choice) origin = choice.position;
+        return item;
+    }
+
+    // The claimed Trick drops into the backpack slot that now holds it.
+    static void FlyIntoBackpack(ConsumableData item, Vector3 origin)
+    {
+        var cards = CardManager.Instance;
+        var actions = FindFirstObjectByType<ActionButtonsUI>();
+        if (item == null || cards == null || actions == null || actions.backpackSlotButtons == null) return;
+        for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
+        {
+            if (cards.GetConsumableAtSlot(i) != item || !actions.backpackSlotButtons[i]) continue;
+            string icon = string.IsNullOrEmpty(item.icon) ? item.displayName : item.icon;
+            ItemDragUI.Get()?.FlyIntoSlot(origin, (RectTransform)actions.backpackSlotButtons[i].transform,
+                icon.Length > 6 ? icon.Substring(0, 6) : icon);
+            return;
+        }
     }
 
     void Decline()

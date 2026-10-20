@@ -39,6 +39,7 @@ public sealed class ItemDragUI : MonoBehaviour
     CanvasGroup _sourceGroup;
     ItemDropTarget _target;
     bool _targetValid;
+    Coroutine _settle;
     readonly List<RaycastResult> _hits = new();
     readonly List<CardInstance> _cardTargets = new();
     readonly Vector3[] _corners = new Vector3[4];
@@ -99,7 +100,8 @@ public sealed class ItemDragUI : MonoBehaviour
     void Begin(RectTransform source, PointerEventData eventData)
     {
         // A drop's return/vanish animation must not hide the next drag's ghost.
-        StopAllCoroutines();
+        if (_settle != null) StopCoroutine(_settle);
+        _settle = null;
         RestoreSource();
         if (_ghost) _ghost.localScale = Vector3.one;
         _dragging = true;
@@ -139,8 +141,65 @@ public sealed class ItemDragUI : MonoBehaviour
         HideFeedback();
         SetHandTargetState(false);
         _dragging = false;
-        StopAllCoroutines();
-        StartCoroutine(committed || target.Kind == ItemDropKind.TrickSlot ? Vanish() : ReturnToSource());
+        if (_settle != null) StopCoroutine(_settle);
+        _settle = StartCoroutine(committed || target.Kind == ItemDropKind.TrickSlot ? Vanish() : ReturnToSource());
+    }
+
+    /// <summary>
+    /// Flies an item from where it was earned into its backpack slot: it rises, then drops along
+    /// an arc and the slot pops as it lands. Presentation only; the item is already in the slot.
+    /// </summary>
+    public void FlyIntoSlot(Vector3 fromWorld, RectTransform slot, string label)
+    {
+        if (!slot) return;
+        EnsureVisuals();
+        var flyer = Instantiate(_ghost.gameObject, _root).GetComponent<RectTransform>();
+        flyer.name = "Item Drop";
+        flyer.gameObject.SetActive(true);
+        flyer.sizeDelta = SizeIn(_root, slot) * 1.1f;
+        var text = flyer.GetComponentInChildren<TMP_Text>();
+        if (text) text.text = label;
+        var frame = flyer.GetComponent<EditorialFrame>();
+        if (frame && DealbreakUIStyle.Theme) { frame.rim = DealbreakUIStyle.Theme.ochre; frame.Refresh(); }
+        StartCoroutine(Fly(flyer, (Vector2)_root.InverseTransformPoint(fromWorld) - _root.rect.center, slot));
+    }
+
+    IEnumerator Fly(RectTransform flyer, Vector2 start, RectTransform slot)
+    {
+        const float Rise = .18f, Fall = .42f;
+        Vector2 peak = start + new Vector2(0f, 70f);
+        float elapsed = 0f;
+        while (elapsed < Rise && flyer)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / Rise);
+            flyer.anchoredPosition = Vector2.Lerp(start, peak, 1f - (1f - t) * (1f - t));
+            flyer.localScale = Vector3.one * Mathf.Lerp(.6f, 1.2f, t);
+            yield return null;
+        }
+        elapsed = 0f;
+        while (elapsed < Fall && flyer && slot)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / Fall);
+            Vector2 end = CenterIn(_root, slot);
+            Vector2 control = new((peak.x + end.x) * .5f, Mathf.Max(peak.y, end.y) + 120f);
+            float eased = t * t;
+            flyer.anchoredPosition = (1 - eased) * (1 - eased) * peak + 2 * (1 - eased) * eased * control + eased * eased * end;
+            flyer.localScale = Vector3.one * Mathf.Lerp(1.2f, .9f, t);
+            yield return null;
+        }
+        if (flyer) Destroy(flyer.gameObject);
+        if (!slot) yield break;
+        elapsed = 0f;
+        Vector3 rest = slot.localScale;
+        while (elapsed < .16f && slot)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            slot.localScale = rest * (1f + Mathf.Sin(Mathf.Clamp01(elapsed / .16f) * Mathf.PI) * .18f);
+            yield return null;
+        }
+        if (slot) slot.localScale = rest;
     }
 
     /// <summary>Ends a drag without effect, for example when a menu opens mid-drag.</summary>
