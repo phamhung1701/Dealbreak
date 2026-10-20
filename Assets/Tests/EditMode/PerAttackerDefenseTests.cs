@@ -503,6 +503,80 @@ public sealed class PerAttackerDefenseTests
     }
 
     [Test]
+    public void DoubleStrike_HitsShareOneBlockPool_SoAnExactTotalIsAPerfectBlock()
+    {
+        var pair = DefensePair(12, 8);
+        var striker = StartDoubleStrikeWindow(17, pair);
+        Assert.That(_combat.pendingDamage, Is.EqualTo(20), "17 × 60% rounds to 10 per hit.");
+        var results = new List<DefenseAttackResult>();
+        _combat.OnDefenseAttackResolved += results.Add;
+        Assert.That(_combat.TryPreviewDefense(pair, out int blocked, out int remaining), Is.True);
+        Assert.That(blocked, Is.EqualTo(2));
+        Assert.That(remaining, Is.Zero, "The 12's spare 2 carries onto the second hit.");
+
+        int before = _cards.HandCount;
+        Assert.That(_combat.TryDefendWithCards(pair, striker), Is.True);
+        Assert.That(_combat.PendingAttackCount, Is.Zero);
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(30));
+        Assert.That(_cards.HandCount, Is.EqualTo(before - 1), "Perfect Block draws one card.");
+        Assert.That(results, Has.Count.EqualTo(2));
+        Assert.That(results.All(result => result.IsPerfectBlock), Is.True);
+    }
+
+    [Test]
+    public void DoubleStrike_OverblockAcrossThePoolIsNotAPerfectBlock()
+    {
+        var pair = DefensePair(12, 9);
+        var striker = StartDoubleStrikeWindow(17, pair);
+        int before = _cards.HandCount;
+        Assert.That(_combat.TryDefendWithCards(pair, striker), Is.True);
+        Assert.That(_combat.PendingAttackCount, Is.Zero);
+        Assert.That(_cards.HandCount, Is.EqualTo(before - 2));
+    }
+
+    [Test]
+    public void DoubleStrike_WithFullCoverageBlock_DoesNotCarryBlockBetweenHits()
+    {
+        var pair = DefensePair(12, 8);
+        var striker = StartDoubleStrikeWindow(17, pair, EnemyAbilityEffect.FullCoverageBlock);
+        Assert.That(_combat.CanDefendWithCards(pair, striker), Is.False,
+            "Each hit still needs one card that covers it alone.");
+    }
+
+    CardView[] DefensePair(int first, int second)
+    {
+        var pair = HandViews().Skip(1).Take(2).ToArray();
+        int[] targets = { first, second };
+        for (int i = 0; i < pair.Length; i++)
+        {
+            var enhancement = ScriptableObject.CreateInstance<CardEnhancementData>();
+            _created.Add(enhancement);
+            enhancement.defenseBonus = targets[i] - _combat.CalculateCardDefense(pair[i].data);
+            Assert.That(_cards.ApplyEnhancement(pair[i].data.Id, enhancement), Is.True);
+            Assert.That(_combat.CalculateCardDefense(pair[i].data), Is.EqualTo(targets[i]));
+        }
+        return pair;
+    }
+
+    EnemyRuntime StartDoubleStrikeWindow(int attack, CardView[] reserved, params EnemyAbilityEffect[] extraAbilities)
+    {
+        var type = EnemyTypeData.Create("Double Strike Pool", 1000, attack, 0);
+        type.abilities = extraAbilities.Prepend(EnemyAbilityEffect.DoubleStrike).Select(effect =>
+        {
+            var ability = ScriptableObject.CreateInstance<EnemyAbility>();
+            ability.effect = effect;
+            _created.Add(ability);
+            return ability;
+        }).ToArray();
+        _created.Add(type);
+        var striker = new EnemyRuntime(type);
+        _combat.StartEnemy(striker);
+        Assert.That(_combat.TryPlayCards(new[] { HandViews().First(view => !reserved.Contains(view)) }, striker), Is.True);
+        Assert.That(_combat.PendingAttackCount, Is.EqualTo(2));
+        return striker;
+    }
+
+    [Test]
     public void StrictDraw_EmptyDeckNeverRecyclesDiscard_AndHonorsCapacity()
     {
         var collection = new CardCollection();

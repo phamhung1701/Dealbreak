@@ -141,16 +141,25 @@ public partial class CombatManager : Singleton<CombatManager>
         public int AttackIndex { get; }
         public int AttackDamageBeforeBlock { get; }
         public int BlockedDamage { get; }
+        // The share of the card's Block spent on this hit, including any unused excess.
+        public int EffectiveBlock { get; }
+        // Excess Block carried onto another hit from the same attacker; not a separate block.
+        public bool IsCarryOver { get; }
 
         public DefenseAssignment(CardInstance blockingCard, int cardOrder, int attackIndex,
-            int attackDamageBeforeBlock, int blockedDamage)
+            int attackDamageBeforeBlock, int blockedDamage, int effectiveBlock, bool isCarryOver)
         {
             BlockingCard = blockingCard;
             CardOrder = cardOrder;
             AttackIndex = attackIndex;
             AttackDamageBeforeBlock = attackDamageBeforeBlock;
             BlockedDamage = blockedDamage;
+            EffectiveBlock = effectiveBlock;
+            IsCarryOver = isCarryOver;
         }
+
+        public DefenseAssignment WithEffectiveBlock(int effectiveBlock) =>
+            new(BlockingCard, CardOrder, AttackIndex, AttackDamageBeforeBlock, BlockedDamage, effectiveBlock, IsCarryOver);
     }
 
     protected override void Awake()
@@ -462,23 +471,56 @@ public partial class CombatManager : Singleton<CombatManager>
             int before = remaining[attackIndex];
             int blocked = Mathf.Min(defense, before);
             remaining[attackIndex] -= blocked;
-            matched.Add(new DefenseAssignment(cards[cardIndex], cardIndex, attackIndex, before, blocked));
+            matched.Add(new DefenseAssignment(cards[cardIndex], cardIndex, attackIndex, before, blocked, blocked, false));
+            int spare = defense - blocked;
+            if (spare > 0 && SharesBlockAcrossHits(attackIndex))
+            {
+                var attacker = _pendingAttackSources[attackIndex];
+                for (int i = 0; i < remaining.Length && spare > 0; i++)
+                {
+                    if (i == attackIndex || remaining[i] <= 0 || !ReferenceEquals(_pendingAttackSources[i], attacker)) continue;
+                    int hitBefore = remaining[i];
+                    int carried = Mathf.Min(spare, hitBefore);
+                    remaining[i] -= carried;
+                    spare -= carried;
+                    matched.Add(new DefenseAssignment(cards[cardIndex], cardIndex, i, hitBefore, carried, carried, true));
+                }
+            }
+            if (spare > 0)
+            {
+                int last = matched.Count - 1;
+                matched[last] = matched[last].WithEffectiveBlock(matched[last].EffectiveBlock + spare);
+            }
         }
         return matched;
     }
+
+    // An attacker's hits (Double Strike) share one Block pool unless each hit needs full coverage.
+    bool SharesBlockAcrossHits(int attackIndex) =>
+        _pendingAttackSources[attackIndex] != null && !_pendingAttackSources[attackIndex].RequiresFullCoverageBlock;
 
     int FindDefenseTarget(IReadOnlyList<int> remaining, int defense,
         bool requiresFullCoverage, bool mustFullyCover)
     {
         int best = -1;
+        long bestDamage = 0;
         for (int i = 0; i < remaining.Count; i++)
         {
-            int damage = remaining[i];
-            if (damage <= 0 || i >= _pendingAttackSources.Count) continue;
+            if (remaining[i] <= 0 || i >= _pendingAttackSources.Count) continue;
             bool restricted = _pendingAttackSources[i] != null &&
                 _pendingAttackSources[i].RequiresFullCoverageBlock;
-            if (restricted != requiresFullCoverage || mustFullyCover && defense < damage) continue;
-            if (best < 0 || damage > remaining[best]) best = i;
+            if (restricted != requiresFullCoverage) continue;
+            long damage = remaining[i];
+            if (SharesBlockAcrossHits(i))
+                for (int j = 0; j < remaining.Count && j < _pendingAttackSources.Count; j++)
+                    if (j != i && remaining[j] > 0 && ReferenceEquals(_pendingAttackSources[j], _pendingAttackSources[i]))
+                        damage += remaining[j];
+            if (mustFullyCover && defense < damage) continue;
+            if (best < 0 || damage > bestDamage)
+            {
+                best = i;
+                bestDamage = damage;
+            }
         }
         return best;
     }
@@ -935,17 +977,18 @@ public partial class CombatManager : Singleton<CombatManager>
             var attackSources = _pendingAttackSources.ToArray();
             var reductions = new int[incomingAttacks.Length];
             var effectiveBlocks = new int[incomingAttacks.Length];
-            for (int blockOrder = 0; blockOrder < assignments.Count; blockOrder++)
+            int blockOrder = 0;
+            foreach (var assignment in assignments)
             {
-                var assignment = assignments[blockOrder];
                 int attackIndex = assignment.AttackIndex;
                 var attacker = _pendingAttackSources[attackIndex];
                 blockedDamage += assignment.BlockedDamage;
                 reductions[attackIndex] += assignment.BlockedDamage;
-                effectiveBlocks[attackIndex] += CalculateCardDefense(assignment.BlockingCard);
+                effectiveBlocks[attackIndex] += assignment.EffectiveBlock;
+                if (assignment.IsCarryOver) continue;
                 GameplayEffectResolver.EnqueueAttackBlocked(
                     new AttackBlockedEffectContext(_activeAction, assignment.BlockingCard, attacker,
-                        assignment.AttackDamageBeforeBlock, blockOrder, this, cardManager), _reactions);
+                        assignment.AttackDamageBeforeBlock, blockOrder++, this, cardManager), _reactions);
             }
 
             int blockedAttacks = 0;
