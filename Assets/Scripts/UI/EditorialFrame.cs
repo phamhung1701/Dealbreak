@@ -17,6 +17,9 @@ public sealed class EditorialFrame : MaskableGraphic
     public float border = 8, corner = 22;
     public bool showShadow = true, showAccent = true, compact;
     public Vector2 shadowOffset = new(8,-9);
+    /// <summary>The outline's silhouette: each kind of control is cut differently.</summary>
+    public enum Cut { Chamfer, Torn, Tag, Ticket, Arrow, Tape, Shield }
+    public Cut cut;
     [Header("Print chaos")]
     [Tooltip("Shadow colour; brick reads as a misregistered second ink.")]
     public Color shadowColor = new(.055f,.065f,.075f);
@@ -71,17 +74,10 @@ public sealed class EditorialFrame : MaskableGraphic
     void Polygon(VertexHelper vh, Rect r, float inset, Vector2 offset, Color tint, Quaternion rotation, Vector2 centre)
     {
         float x1=r.xMin+inset,x2=r.xMax-inset,y1=r.yMin+inset,y2=r.yMax-inset;
-        float cut=Mathf.Min(corner,Mathf.Max(0,Mathf.Min(x2-x1,y2-y1)*.22f));
-        var corners=new[]{new Vector2(x1+cut,y2),new Vector2(x2-cut*.6f,y2),new Vector2(x2,y2-cut*.6f),
-            new Vector2(x2,y1+cut),new Vector2(x2-cut,y1),new Vector2(x1+cut*.35f,y1),
-            new Vector2(x1,y1+cut*.35f),new Vector2(x1,y2-cut)};
         // Every layer is cut from the outer outline's segment count with the same wobble per point,
         // so border, rim and fill stay parallel.
-        float ox1=r.xMin,ox2=r.xMax,oy1=r.yMin,oy2=r.yMax;
-        float ocut=Mathf.Min(corner,Mathf.Max(0,Mathf.Min(ox2-ox1,oy2-oy1)*.22f));
-        var outer=new[]{new Vector2(ox1+ocut,oy2),new Vector2(ox2-ocut*.6f,oy2),new Vector2(ox2,oy2-ocut*.6f),
-            new Vector2(ox2,oy1+ocut),new Vector2(ox2-ocut,oy1),new Vector2(ox1+ocut*.35f,oy1),
-            new Vector2(ox1,oy1+ocut*.35f),new Vector2(ox1,oy2-ocut)};
+        var corners=Outline(r,x1,x2,y1,y2);
+        var outer=Outline(r,r.xMin,r.xMax,r.yMin,r.yMax);
         float wobble=Mathf.Min(roughness,Mathf.Min(r.width,r.height)*.04f);
 
         int start=vh.currentVertCount;
@@ -99,6 +95,74 @@ public sealed class EditorialFrame : MaskableGraphic
             }
         }
         for(int i=0;i<point;i++) vh.AddTriangle(start,start+1+i,start+1+(i+1)%point);
+    }
+
+    /// <summary>
+    /// The outline's corners, clockwise from the top left, for a box inset inside <paramref name="r"/>.
+    /// Shape sizes (slant, notch, point, teeth) come from the outer box, so every layer has the same
+    /// corners and the same number of points.
+    /// </summary>
+    Vector2[] Outline(Rect r,float x1,float x2,float y1,float y2)
+    {
+        float h=r.height,ym=(y1+y2)*.5f;
+        switch(cut)
+        {
+            case Cut.Torn:
+            {
+                // Paper torn off a pad: both short ends are ragged.
+                const int teeth=6;
+                float tear=Mathf.Min(7f,h*.12f);
+                var points=new Vector2[4+teeth*2];int i=0;
+                points[i++]=new Vector2(x1,y2);points[i++]=new Vector2(x2,y2);
+                for(int t=1;t<=teeth;t++)points[i++]=new Vector2(x2+DealbreakUIStyle.Noise(_seed,100+t)*tear,Mathf.Lerp(y2,y1,t/(teeth+1f)));
+                points[i++]=new Vector2(x2,y1);points[i++]=new Vector2(x1,y1);
+                for(int t=1;t<=teeth;t++)points[i++]=new Vector2(x1+DealbreakUIStyle.Noise(_seed,200+t)*tear,Mathf.Lerp(y1,y2,t/(teeth+1f)));
+                return points;
+            }
+            case Cut.Tag:
+            {
+                float slant=Mathf.Min(h*.38f,(r.width)*.2f);
+                return new[]{new Vector2(x1+slant,y2),new Vector2(x2,y2),new Vector2(x2-slant,y1),new Vector2(x1,y1)};
+            }
+            case Cut.Ticket:
+            {
+                // A ticket stub: a round notch bitten out of each short end.
+                float n=h*.2f;
+                return new[]{new Vector2(x1,y2),new Vector2(x2,y2),new Vector2(x2,ym+n),new Vector2(x2-n*.7f,ym+n*.7f),
+                    new Vector2(x2-n,ym),new Vector2(x2-n*.7f,ym-n*.7f),new Vector2(x2,ym-n),new Vector2(x2,y1),new Vector2(x1,y1),
+                    new Vector2(x1,ym-n),new Vector2(x1+n*.7f,ym-n*.7f),new Vector2(x1+n,ym),new Vector2(x1+n*.7f,ym+n*.7f),new Vector2(x1,ym+n)};
+            }
+            case Cut.Arrow:
+            {
+                float point=Mathf.Min(h*.45f,r.width*.25f);
+                return new[]{new Vector2(x1,y2),new Vector2(x2-point,y2),new Vector2(x2,ym),new Vector2(x2-point,y1),new Vector2(x1,y1),new Vector2(x1+point*.3f,ym)};
+            }
+            case Cut.Tape:
+            {
+                // A strip of tape: zigzag tears at both ends.
+                const int teeth=3;
+                float bite=Mathf.Min(6f,h*.18f);
+                var points=new Vector2[4+teeth*4];int i=0;
+                points[i++]=new Vector2(x1,y2);points[i++]=new Vector2(x2,y2);
+                for(int t=0;t<teeth*2;t++)points[i++]=new Vector2(x2-(t%2==0?bite:0),Mathf.Lerp(y2,y1,(t+1)/(teeth*2+1f)));
+                points[i++]=new Vector2(x2,y1);points[i++]=new Vector2(x1,y1);
+                for(int t=0;t<teeth*2;t++)points[i++]=new Vector2(x1+(t%2==0?bite:0),Mathf.Lerp(y1,y2,(t+1)/(teeth*2+1f)));
+                return points;
+            }
+            case Cut.Shield:
+            {
+                float bevel=Mathf.Min(h*.38f,r.width*.15f);
+                return new[]{new Vector2(x1,y2),new Vector2(x2,y2),new Vector2(x2,y1+bevel),new Vector2(x2-bevel,y1),
+                    new Vector2(x1+bevel,y1),new Vector2(x1,y1+bevel)};
+            }
+            default:
+            {
+                float c=Mathf.Min(corner,Mathf.Max(0,Mathf.Min(r.width,h)*.22f));
+                return new[]{new Vector2(x1+c,y2),new Vector2(x2-c*.6f,y2),new Vector2(x2,y2-c*.6f),
+                    new Vector2(x2,y1+c),new Vector2(x2-c,y1),new Vector2(x1+c*.35f,y1),
+                    new Vector2(x1,y1+c*.35f),new Vector2(x1,y2-c)};
+            }
+        }
     }
 
     static Vector2 Rotate(Vector2 point, Quaternion rotation, Vector2 centre) =>

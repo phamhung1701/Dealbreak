@@ -134,7 +134,18 @@ public static class DealbreakUIStyle
     {
         if(!button||!Theme)return;
         var style=button.GetComponent<EditorialButton>()??button.gameObject.AddComponent<EditorialButton>();
+        bool frameless=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
+        var cut=EditorialFrame.Cut.Chamfer;
+        if(!frameless)(cut,role)=Look(button.name,role);
         style.button=button;style.role=role;style.frame=Frame(button.transform,false,true);
+        if(style.frame)
+        {
+            style.frame.cut=cut;
+            style.frame.tiltRange=cut is EditorialFrame.Cut.Tag or EditorialFrame.Cut.Tape?3f:cut==EditorialFrame.Cut.Torn?1.6f:style.frame.tiltRange;
+            // Tape lies flat on the page: no shadow under it.
+            if(cut==EditorialFrame.Cut.Tape)style.frame.showShadow=false;
+            style.frame.Refresh();
+        }
         button.transition=Selectable.Transition.None;
         foreach(var label in button.GetComponentsInChildren<TMP_Text>(true))
         {
@@ -145,12 +156,38 @@ public static class DealbreakUIStyle
                 button.name is "PlayButton" or "BlockButton" or "PassButton"?30:
                 paper?21:open?29:Mathf.Max(18,Mathf.Min(24,label.fontSize)),paper||!open&&role==EditorialButton.Role.Primary?Theme.ink:Theme.paper);
             // Single-line labels overflow a short button rather than truncating to nothing.
-            label.margin=new Vector4(8,2,8,2);label.fontStyle=FontStyles.Normal;label.overflowMode=TextOverflowModes.Overflow;
+            // Slanted and pointed cuts lose width at the ends; the label stays clear of them.
+            label.margin=cut==EditorialFrame.Cut.Arrow?new Vector4(10,2,28,2):cut==EditorialFrame.Cut.Tag?new Vector4(16,2,16,2):new Vector4(8,2,8,2);
+            label.fontStyle=FontStyles.Normal;label.overflowMode=TextOverflowModes.Overflow;
             // Frameless menu words sit crooked like cut-out letters pasted in a column.
             if(open){Crooked(label,2.6f);Misprint(label);}
         }
         style.Refresh();
     }
+    // Each kind of control has its own silhouette and stock, so no two read alike: a torn ochre slab
+    // to attack, a slate shield to block, an ink stamp to pass or back out, a brick tag for pause and
+    // risky choices, a ticket for prices, an arrow sign to move on and tape for small utilities.
+    static (EditorialFrame.Cut cut,EditorialButton.Role role) Look(string name,EditorialButton.Role role)
+    {
+        name=name.ToLowerInvariant();
+        if(name.Contains("backpackslot"))return (EditorialFrame.Cut.Chamfer,role);
+        if(name is "playbutton" or "resumebutton")return (EditorialFrame.Cut.Torn,EditorialButton.Role.Primary);
+        if(name=="blockbutton")return (EditorialFrame.Cut.Shield,EditorialButton.Role.Secondary);
+        if(name is "passbutton" or "leavedrop")return (EditorialFrame.Cut.Chamfer,EditorialButton.Role.Stamp);
+        if(name is "recoverbutton" or "pausebutton")return (EditorialFrame.Cut.Tag,EditorialButton.Role.Destructive);
+        if(name=="offerbuy")return (EditorialFrame.Cut.Ticket,EditorialButton.Role.Primary);
+        if(name.Contains("sort")||name.Contains("refresh")||name.Contains("random")||name.Contains("min")||
+           name.Contains("max"))return (EditorialFrame.Cut.Tape,EditorialButton.Role.Paper);
+        if(name.Contains("continue")||name is "newrunbutton" or "mainmenubutton" or "backtomainmenubutton")
+            return (EditorialFrame.Cut.Arrow,EditorialButton.Role.Paper);
+        if(name.Contains("map"))return (EditorialFrame.Cut.Tag,EditorialButton.Role.Secondary);
+        if(role==EditorialButton.Role.Destructive)return (EditorialFrame.Cut.Tag,role);
+        if(role==EditorialButton.Role.Primary)return (EditorialFrame.Cut.Torn,role);
+        if(name.Contains("back")||name.Contains("cancel")||name.Contains("decline")||name.Contains("close"))
+            return (EditorialFrame.Cut.Chamfer,EditorialButton.Role.Stamp);
+        return (EditorialFrame.Cut.Chamfer,role);
+    }
+
     public static void Text(TMP_Text text,TMP_FontAsset font,float size,Color color)
     {
         if(!text)return;text.font=font;text.fontSize=size;text.fontSizeMin=size;text.fontSizeMax=size;
