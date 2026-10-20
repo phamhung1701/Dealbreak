@@ -673,6 +673,7 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - Played cards return to the draw pile at once: attacks now share Block's path (`CardManager.TryReturnToDrawPile`, one seeded shuffle per commit), and so do Incident discard costs. The discard pile stays as a save zone but no longer fills in play. Ace Protocol and Diamond Driver take their card from the draw pile (`TryTakeCardToHand`). Save version 4: the v3 step moves a saved discard pile under the draw pile without RNG.
 - Gear merges by dragging one copy onto a matching copy (`ItemDropKind.GearSlot`); the Merge/Confirm/Cancel mode is gone. The merged Gear takes the target's slot.
 - No hover detail on the ATTACK/BLOCK buttons or on unscouted route nodes.
+- Black Market Goods: every slot rolls Gear 75% / Trick 25% (`shop-goods-kind`), Gear rarity 6:3:1 Common/Rare/Epic (`shop-gear-rarity`), no Legendary. Shop Gear is bought standalone (`CardManager.BuyStandaloneGear`); the old tier-upgrade preference and "Already owned" refusal are gone. The persisted `midShopGoods`/`preHeadlinerShopGoods` vectors now only give the Goods count (their sum).
 
 ## 10. Instructions for Future Locus Sessions
 

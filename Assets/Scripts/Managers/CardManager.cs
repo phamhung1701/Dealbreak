@@ -534,6 +534,25 @@ public partial class CardManager : Singleton<CardManager>
             ? "Gear Capacity Full" : string.Empty;
     }
 
+    /// <summary>
+    /// Black Market Gear is a standalone item of any rarity: it needs only a free Gear slot and
+    /// never replaces a lower tier. Owned copies may be bought (two copies merge).
+    /// </summary>
+    public string GetStandaloneGearUnavailableReason(GearData gear)
+    {
+        if (gear == null || string.IsNullOrWhiteSpace(gear.id)) return "Gear unavailable";
+        return gear.OccupiesCapacitySlot && GearSlotsUsed >= GearCapacity ? "Gear Capacity Full" : string.Empty;
+    }
+
+    public bool BuyStandaloneGear(GearData gear, int price)
+    {
+        EnsureGearInstances();
+        if (price < 0 || !string.IsNullOrEmpty(GetStandaloneGearUnavailableReason(gear))) return false;
+        if (!SpendCredits(price)) return false;
+        CompleteGearAcquisition(PlaceGear(gear, null));
+        return true;
+    }
+
     public bool BuyGear(GearData gear) => BuyGear(gear, gear != null ? gear.price : -1);
 
     public bool BuyGear(GearData gear, int price)

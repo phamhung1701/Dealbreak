@@ -6,7 +6,8 @@ using UnityEngine;
 // RunManager: Black Market goods, Services, Investments, sales and pricing.
 public partial class RunManager
 {
-    [Header("Black Market Goods slots: Gear / Mod / Trick")]
+    // The sum of each vector is the number of Goods; every Goods slot rolls Gear or a Trick.
+    [Header("Black Market Goods count (x + y + z)")]
     public Vector3Int midShopGoods = new(2, 2, 1);
 
     [UnityEngine.Serialization.FormerlySerializedAs("preBossShopGoods")]
@@ -78,11 +79,7 @@ public partial class RunManager
 
         if (offer.kind == ShopOfferKind.Gear)
         {
-            if (offer.gear != null && (cards.HasGear(offer.gear) ||
-                cards.ownedGear.Any(owned => owned != null &&
-                    string.Equals(owned.id, offer.gear.id, StringComparison.Ordinal))))
-                return "Already owned";
-            string reason = cards.GetGearAcquisitionUnavailableReason(offer.gear);
+            string reason = cards.GetStandaloneGearUnavailableReason(offer.gear);
             if (!string.IsNullOrEmpty(reason)) return reason;
         }
         else if (offer.kind == ShopOfferKind.Contract)
@@ -159,7 +156,7 @@ public partial class RunManager
         int creditsBefore = cards.credits;
         bool success;
         if (offer.kind == ShopOfferKind.Gear)
-            success = cards.BuyGear(offer.gear, offer.price);
+            success = cards.BuyStandaloneGear(offer.gear, offer.price);
         else if (offer.kind == ShopOfferKind.Contract)
         {
             success = ShowContractSelection(offer.price);
@@ -341,45 +338,76 @@ public partial class RunManager
         AddSpecialShopOffers(context);
     }
 
+    // Each Goods slot is Gear 75% of the time and a Trick 25%. Gear rolls its rarity 6:3:1 for
+    // Common, Rare and Epic, then a Gear of that rarity; Legendary Gear is never sold. Owned Gear
+    // and Gear tiers are not considered: every Gear is sold as a standalone item.
+    public const int ShopGearPercent = 75;
+    static readonly (string rarity, int weight)[] ShopGearRarityWeights = { ("Common", 6), ("Rare", 3), ("Epic", 1) };
+
     List<ShopOffer> GenerateShopGoods(int generation)
     {
         var cards = CardManager.Instance;
         var result = new List<ShopOffer>();
         int context = unchecked((_activeNode.mapIndex * 397 ^ _activeNode.id) + generation * 104729);
         var slots = _activeNode.isShopCheckpoint && _activeNode.col > 4 ? preHeadlinerShopGoods : midShopGoods;
-        int gearSlots = Mathf.Clamp(slots.x, 1, 20);
-        int enhancementSlots = Mathf.Clamp(slots.y, 1, 20);
-        int consumableSlots = Mathf.Clamp(slots.z, 1, 20);
+        int goodsCount = Mathf.Clamp(slots.x + slots.y + slots.z, 1, 20);
         bool WasBought(ShopOfferKind kind, string id) => _activeShopState != null &&
             _activeShopState.PurchasedGoods.Contains(ShopOffer.PersistentGoodsPrefix(kind) + ":" + id);
-        var gearItems = cards.gearCatalog.Where(value => value != null &&
-            !WasBought(ShopOfferKind.Gear, value.id) &&
-            string.IsNullOrEmpty(cards.GetGearAcquisitionUnavailableReason(value)))
+        var gearPool = cards.gearCatalog.Where(value => value != null && !string.IsNullOrWhiteSpace(value.id) &&
+            !WasBought(ShopOfferKind.Gear, value.id))
             .OrderBy(value => value.id, StringComparer.Ordinal).ToList();
-        gearItems.Shuffle(_randomContext.CreateStream("shop-artifacts", context));
-        // Preserve the existing eligible-upgrade preference.
-        var upgrade = gearItems.FirstOrDefault(value => value.tier > 1);
-        if (upgrade != null) { gearItems.Remove(upgrade); gearItems.Insert(0, upgrade); }
-        foreach (var gear in gearItems.Take(gearSlots))
-            result.Add(new ShopOffer { kind = ShopOfferKind.Gear, gear = gear,
-                basePrice = gear.price, price = CalculateEffectiveShopPrice(ShopOfferKind.Gear, gear.price), generation = generation });
-        var enhancementItems = cards.consumableCatalog.Where(value => value != null && value.shopAvailable &&
-            value.effectType == ConsumableEffectType.ApplyEnhancement && value.enhancementToApply != null &&
+        var trickPool = cards.consumableCatalog.Where(value => value != null && value.shopAvailable &&
             !WasBought(ShopOfferKind.Consumable, value.id) && !_purchasedConsumablesInShop.Contains(value.id))
             .OrderBy(value => value.id, StringComparer.Ordinal).ToList();
-        enhancementItems.Shuffle(_randomContext.CreateStream("shop-enhancement-consumables", context));
-        foreach (var consumable in enhancementItems.Take(enhancementSlots))
+        var kindRandom = _randomContext.CreateStream("shop-goods-kind", context);
+        var rarityRandom = _randomContext.CreateStream("shop-gear-rarity", context);
+        var gearRandom = _randomContext.CreateStream("shop-artifacts", context);
+        var trickRandom = _randomContext.CreateStream("shop-consumables", context);
+        for (int slot = 0; slot < goodsCount; slot++)
+        {
+            bool gearSlot = kindRandom.NextInt(0, 100) < ShopGearPercent;
+            var gear = gearSlot ? TakeShopGear(gearPool, rarityRandom, gearRandom) : null;
+            if (gear != null)
+            {
+                result.Add(new ShopOffer { kind = ShopOfferKind.Gear, gear = gear,
+                    basePrice = gear.price, price = CalculateEffectiveShopPrice(ShopOfferKind.Gear, gear.price), generation = generation });
+                continue;
+            }
+            // A Trick slot, or a Gear slot with no Gear left to sell.
+            if (trickPool.Count == 0)
+            {
+                if (!gearSlot && (gear = TakeShopGear(gearPool, rarityRandom, gearRandom)) != null)
+                    result.Add(new ShopOffer { kind = ShopOfferKind.Gear, gear = gear,
+                        basePrice = gear.price, price = CalculateEffectiveShopPrice(ShopOfferKind.Gear, gear.price), generation = generation });
+                continue;
+            }
+            int index = trickRandom.NextInt(0, trickPool.Count);
+            var consumable = trickPool[index];
+            trickPool.RemoveAt(index);
             result.Add(new ShopOffer { kind = ShopOfferKind.Consumable, consumable = consumable,
                 basePrice = consumable.price, price = CalculateEffectiveShopPrice(ShopOfferKind.Consumable, consumable.price), generation = generation });
-        var consumables = cards.consumableCatalog.Where(value => value != null && value.shopAvailable &&
-            value.effectType != ConsumableEffectType.ApplyEnhancement &&
-            !WasBought(ShopOfferKind.Consumable, value.id) && !_purchasedConsumablesInShop.Contains(value.id))
-            .OrderBy(value => value.id, StringComparer.Ordinal).ToList();
-        consumables.Shuffle(_randomContext.CreateStream("shop-consumables", context));
-        foreach (var consumable in consumables.Take(consumableSlots))
-            result.Add(new ShopOffer { kind = ShopOfferKind.Consumable, consumable = consumable,
-                basePrice = consumable.price, price = CalculateEffectiveShopPrice(ShopOfferKind.Consumable, consumable.price), generation = generation });
+        }
         return result;
+    }
+
+    // Rolls a rarity, then takes one Gear of it out of the pool. A rarity with none left falls
+    // back to the next rarity in Common, Rare, Epic order, wrapping round.
+    static GearData TakeShopGear(List<GearData> pool, IRandomSource rarityRandom, IRandomSource gearRandom)
+    {
+        int totalWeight = ShopGearRarityWeights.Sum(entry => entry.weight);
+        int roll = rarityRandom.NextInt(0, totalWeight);
+        int rolled = 0;
+        while (roll >= ShopGearRarityWeights[rolled].weight) roll -= ShopGearRarityWeights[rolled++].weight;
+        for (int offset = 0; offset < ShopGearRarityWeights.Length; offset++)
+        {
+            string rarity = ShopGearRarityWeights[(rolled + offset) % ShopGearRarityWeights.Length].rarity;
+            var candidates = pool.Where(value => string.Equals(value.rarity, rarity, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (candidates.Count == 0) continue;
+            var gear = candidates[gearRandom.NextInt(0, candidates.Count)];
+            pool.Remove(gear);
+            return gear;
+        }
+        return null;
     }
 
     public bool CanRefreshGoods => !GameplayInputGate.IsBlocked && !_shopTransaction && IsActiveShopForSale() &&
@@ -428,8 +456,7 @@ public partial class RunManager
     void PrepareAllDevShopOffers(CardManager cards)
     {
         foreach (var gear in cards.gearCatalog
-            .Where(value => value != null &&
-                string.IsNullOrEmpty(cards.GetGearAcquisitionUnavailableReason(value)))
+            .Where(value => value != null && !string.IsNullOrWhiteSpace(value.id))
             .OrderBy(value => value.id, StringComparer.Ordinal))
         {
             _activeShopOffers.Add(new ShopOffer

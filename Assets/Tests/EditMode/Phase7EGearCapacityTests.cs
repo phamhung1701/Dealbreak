@@ -127,9 +127,9 @@ public sealed class Phase7EGearCapacityTests
         var shopGear = _run.GetCurrentShopOffers().Where(o => o.kind == ShopOfferKind.Gear).ToArray();
         var shopEnhancement = _run.GetCurrentShopOffers().First(o => o.kind == ShopOfferKind.Consumable &&
             o.consumable == _enhancementPatch);
-        Assert.That(shopGear.Length, Is.EqualTo(2));
-        foreach (var gear in _gears.Where(a => shopGear.All(o => o.gear != a)).Take(5))
-            Assert.That(_cards.BuyGear(gear, 0), Is.True);
+        Assert.That(shopGear.Length, Is.GreaterThanOrEqualTo(1));
+        foreach (var gear in _gears.Where(a => shopGear.All(o => o.gear != a)).Concat(_gears).Take(5))
+            Assert.That(_cards.BuyStandaloneGear(gear, 0), Is.True);
         var offer = shopGear[0];
         string id = offer.StableId;
         int price = offer.price;
@@ -139,7 +139,7 @@ public sealed class Phase7EGearCapacityTests
         Assert.That(_run.CanPurchaseShopOffer(id), Is.False);
         Assert.That(_run.PurchaseShopOffer(id), Is.False);
         Assert.That(_cards.credits, Is.EqualTo(credits));
-        Assert.That(_cards.HasGear(offer.gear), Is.False);
+        Assert.That(_cards.GearSlotsUsed, Is.EqualTo(5));
         Assert.That(_run.GetCurrentShopOffers(), Does.Contain(offer));
         Assert.That(offer.StableId, Is.EqualTo(id));
         Assert.That(offer.price, Is.EqualTo(price));

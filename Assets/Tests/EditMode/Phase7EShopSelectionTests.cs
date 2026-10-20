@@ -201,7 +201,7 @@ public sealed class Phase7EShopSelectionTests
     }
 
     [Test]
-    public void InsufficientCredits_AndAlreadyOwnedGear_FailWithoutSpending()
+    public void InsufficientCredits_FailsWithoutSpending_AndOwnedGearCanBeBoughtAgain()
     {
         var offer = GearOffer();
         Click(offer);
@@ -210,12 +210,11 @@ public sealed class Phase7EShopSelectionTests
         Assert.That(_cards.HasGear(offer.gear), Is.False);
         Assert.That(_ui.selectedOfferText.text, Does.Contain("Need"));
         _cards.AddCredits(50);
+        Assert.That(_cards.BuyStandaloneGear(offer.gear, 0), Is.True); // Already own one copy.
         Click(offer);
-        _cards.gearIds.Add(offer.gear.id); // Simulate ownership changing after selection, without a UI refresh.
         _ui.buyButton.onClick.Invoke();
-        Assert.That(_cards.credits, Is.EqualTo(50));
-        Assert.That(_cards.ownedGear, Is.Empty);
-        Assert.That(_ui.selectedOfferText.text, Does.Contain("Already owned"));
+        Assert.That(_cards.credits, Is.EqualTo(50 - offer.price));
+        Assert.That(_cards.ownedGear, Is.EqualTo(new[] { offer.gear, offer.gear }), "The Black Market sells copies of owned Gear.");
     }
 
     [Test]

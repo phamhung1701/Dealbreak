@@ -16,7 +16,7 @@ Each District keeps five route depths and has two mandatory, zero-depth Black Ma
 
 Black Markets present two sections:
 
-- **Goods:** Gear, Mods and Tricks. Mid-District inventory favors Gear and Mods; the pre-Headliner Black Market favors Tricks. All three categories retain configurable offer slots when eligible stock exists.
+- **Goods:** five slots, each Gear 75% of the time and a Trick (Mod Tricks included) 25%. Gear rolls its rarity 6:3:1 for Common, Rare and Epic; Legendary Gear is never sold. Every Gear is a standalone item: owned Gear and its tiers are not considered, a higher tier never replaces a lower one, and copies of owned Gear can be bought (two copies merge).
 - **Services:** the workbook currently names Stake, Intel and Contract. The runtime also has a Supply service; Supply is not listed in the workbook and is recorded as a GameData mismatch in the task report.
 
 **Supply** draws a player-chosen quantity exclusively from the existing Draw Pile into the Hand for 3 Credits per card. Quantity is capped by available Credits, Draw Pile count and free Hand capacity. It never recycles discards or creates cards. The paid **Refresh Goods** action replaces Goods only and leaves Services unchanged. Its price increases within each Black Market from 3 → 5 → 8 → 12 → 17 → 23 → … Credits, then resets at the next checkpoint. Goods already purchased in that Black Market are not offered again.

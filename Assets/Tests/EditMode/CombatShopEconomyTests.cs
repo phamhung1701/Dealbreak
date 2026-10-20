@@ -146,10 +146,11 @@ public sealed class CombatShopEconomyTests
     [Test]
     public void PurchasedGoodsNeverReturn_AndStaleOffersAreRejected()
     {
-        Open(0, false);
+        int map = 0;
+        while (Open(map, false) == null || !run.GetCurrentShopOffers().Any(o => o.kind == ShopOfferKind.Gear) ||
+               !run.GetCurrentShopOffers().Any(o => o.kind == ShopOfferKind.Consumable)) map++;
         var offer = run.GetCurrentShopOffers().First(o => o.kind == ShopOfferKind.Gear);
-        var stale = run.GetCurrentShopOffers().First(o => o.kind == ShopOfferKind.Consumable &&
-            o.consumable.effectType == ConsumableEffectType.ApplyEnhancement).StableId;
+        var stale = run.GetCurrentShopOffers().First(o => o.kind == ShopOfferKind.Consumable).StableId;
         Assert.That(run.PurchaseShopOffer(offer.StableId), Is.True);
         Assert.That(run.PurchaseShopOffer(offer.StableId), Is.False);
         Assert.That(run.RefreshGoods(0), Is.True);
@@ -158,12 +159,55 @@ public sealed class CombatShopEconomyTests
     }
 
     [Test]
-    public void GoodsDistribution_ContainsEveryCategoryAndFavorsCheckpointPurpose()
+    public void Goods_AreThreeQuartersGear_WithRarity631_AndNoLegendary()
     {
-        Open(0, false);
-        Assert.That(Counts(), Is.EqualTo(new[] { 2, 0, 3 }));
-        Open(0, true);
-        Assert.That(Counts(), Is.EqualTo(new[] { 1, 0, 4 }));
+        var gear = new List<GearData>();
+        void Add(string rarity, int count, int tier = 1)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var item = ScriptableObject.CreateInstance<GearData>(); created.Add(item);
+                item.id = $"{rarity}-{tier}-{i}"; item.rarity = rarity; item.tier = tier; item.price = 10; gear.Add(item);
+            }
+        }
+        Add("Common", 20);
+        Add("Rare", 20, 2);
+        Add("Epic", 20, 3);
+        Add("Legendary", 5);
+        cards.gearCatalog.Clear();
+        cards.gearCatalog.AddRange(gear);
+
+        var goods = new List<ShopOffer>();
+        for (int map = 0; map < 400; map++)
+        {
+            Open(map, false);
+            goods.AddRange(run.GetCurrentShopOffers().Where(o => !o.IsService));
+        }
+        var sold = goods.Where(o => o.kind == ShopOfferKind.Gear).Select(o => o.gear).ToList();
+        Assert.That(goods, Has.Count.EqualTo(400 * 5), "Every Goods slot is filled.");
+        Assert.That(sold.Count / (double)goods.Count, Is.EqualTo(0.75).Within(0.03), "Goods are Gear 75% of the time.");
+        Assert.That(sold.Any(item => item.rarity == "Legendary"), Is.False, "Legendary Gear is never sold.");
+        Assert.That(sold.Count(item => item.rarity == "Common") / (double)sold.Count, Is.EqualTo(0.6).Within(0.03));
+        Assert.That(sold.Count(item => item.rarity == "Rare") / (double)sold.Count, Is.EqualTo(0.3).Within(0.03));
+        Assert.That(sold.Count(item => item.rarity == "Epic") / (double)sold.Count, Is.EqualTo(0.1).Within(0.02));
+    }
+
+    [Test]
+    public void ShopGear_IsStandalone_AndIgnoresOwnedTiers()
+    {
+        var common = ScriptableObject.CreateInstance<GearData>(); created.Add(common);
+        common.id = "family-common"; common.canonicalId = "family-common"; common.rarity = "Common"; common.price = 10;
+        var rare = ScriptableObject.CreateInstance<GearData>(); created.Add(rare);
+        rare.id = "family-rare"; rare.canonicalId = "family-rare"; rare.rarity = "Rare"; rare.tier = 2;
+        rare.upgradeFromId = common.canonicalId; rare.price = 10;
+        cards.gearCatalog.Clear();
+        cards.gearCatalog.AddRange(new[] { common, rare });
+
+        Assert.That(cards.GetStandaloneGearUnavailableReason(rare), Is.Empty, "A Rare tier needs no Common to be bought.");
+        Assert.That(cards.BuyStandaloneGear(common, 0), Is.True);
+        Assert.That(cards.BuyStandaloneGear(common, 0), Is.True, "An owned Gear can be bought again as a copy.");
+        Assert.That(cards.BuyStandaloneGear(rare, 0), Is.True);
+        Assert.That(cards.ownedGear, Is.EqualTo(new[] { common, common, rare }), "Buying a higher tier never replaces a lower one.");
     }
 
     [Test]
@@ -196,8 +240,6 @@ public sealed class CombatShopEconomyTests
         Assert.That(midOffersIntel, Is.True, "Earlier Black Markets still offer Intel.");
     }
 
-    int[] Counts() => new[] { ShopOfferKind.Gear, ShopOfferKind.Enhancement, ShopOfferKind.Consumable }
-        .Select(kind => run.GetCurrentShopOffers().Count(o => o.kind == kind)).ToArray();
     ShopOffer OpenSupply()
     {
         Open(0, false);
@@ -206,11 +248,12 @@ public sealed class CombatShopEconomyTests
         Open(0, true);
         return run.GetCurrentShopOffers().Single(o => o.kind == ShopOfferKind.Supply);
     }
-    void Open(int map, bool preHeadliner)
+    object Open(int map, bool preHeadliner)
     {
         Set("_activeNode", new PathNode { id = preHeadliner ? 17 : 16, mapIndex = map,
             kind = MapNodeType.Shop, col = preHeadliner ? 4.5f : 1.5f, isShopCheckpoint = true });
         typeof(RunManager).GetMethod("PrepareShopOffers", Private).Invoke(run, new object[] { 4 });
+        return run;
     }
     void Set(string field, object value) => typeof(RunManager).GetField(field, Private).SetValue(run, value);
     T Make<T>() where T : Component
