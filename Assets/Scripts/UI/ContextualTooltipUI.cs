@@ -48,6 +48,15 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     public void Inspect(MonoBehaviour source){if(!source)return;_source=source;_dismissed=null;_leaveUntil=float.PositiveInfinity;}
     public void Leave(MonoBehaviour source){if(_source==source)_leaveUntil=Time.unscaledTime+.18f;}
     public void Pin(MonoBehaviour source){_pinned=_pinned==source?null:source;_dismissed=null;}
+    /// <summary>Drops any hover or pinned detail coming from this object, e.g. when it is picked up to drag.</summary>
+    public void Release(Component owner)
+    {
+        if(!owner)return;
+        bool owned(MonoBehaviour value)=>value&&value.transform.IsChildOf(owner.transform);
+        if(owned(_source)){_source=null;_leaveUntil=0;}
+        if(owned(_pinned))_pinned=null;
+        Hide();
+    }
     public bool DismissPinned()
     {
         var card=CardManager.Instance?.selectedCard?.GetComponent<CombatInspectUI>();
@@ -61,6 +70,8 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     void LateUpdate()
     {
         if(!panel||!body||!title)return;
+        // While an item is dragged its drop preview is the detail; nothing else opens.
+        if(ItemDragUI.IsDragging){if(panel.activeSelf)Hide();return;}
         bool overPanel=panel.activeSelf&&Mouse.current!=null&&RectTransformUtility.RectangleContainsScreenPoint(
             (RectTransform)panel.transform,Mouse.current.position.ReadValue(),null);
         bool inspected=_source is CombatInspectUI combat?combat.IsInspected:_source is ContextualInfoTrigger data&&data.IsInspected;

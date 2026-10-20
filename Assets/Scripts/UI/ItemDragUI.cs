@@ -106,6 +106,12 @@ public sealed class ItemDragUI : MonoBehaviour
         if (_ghost) _ghost.localScale = Vector3.one;
         _dragging = true;
         _source = source;
+        // Pressing a slot selects it, and a selected slot keeps its hover detail open; picking it
+        // up ends both so the detail does not linger after the drop.
+        var events = EventSystem.current;
+        if (events && events.currentSelectedGameObject && events.currentSelectedGameObject.transform.IsChildOf(source))
+            events.SetSelectedGameObject(null);
+        if (ContextualTooltipUI.Instance) ContextualTooltipUI.Instance.Release(source);
         _sourceGroup = source.GetComponent<CanvasGroup>();
         if (!_sourceGroup) _sourceGroup = source.gameObject.AddComponent<CanvasGroup>();
         _sourceGroup.blocksRaycasts = false;
