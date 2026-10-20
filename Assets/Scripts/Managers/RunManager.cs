@@ -314,7 +314,8 @@ public partial class RunManager : Singleton<RunManager>
 
     public void OnPathChosen(int id)
     {
-        if (GameplayInputGate.IsBlocked || _activeNode != null || IsRunCompleted) return;
+        // A drop waiting on the board holds the run until it is claimed or left.
+        if (GameplayInputGate.IsBlocked || _activeNode != null || IsRunCompleted || _pendingEnemyDrop != null) return;
 
         var node = FindNode(id);
         if (node == null || !node.accessible || node.completed) return;

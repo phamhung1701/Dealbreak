@@ -130,6 +130,9 @@ public sealed class BreadConsumableTests
         typeof(RunManager).GetField("_afterEnemyDrop", System.Reflection.BindingFlags.Instance |
             System.Reflection.BindingFlags.NonPublic).SetValue(_run, (System.Action)(() => continued++));
         Assert.That(_run.CanCaptureSave, Is.False, "No checkpoint while a drop waits.");
+        var route = _run.currentPath.First(candidate => candidate.accessible && !candidate.completed);
+        _run.OnPathChosen(route.id);
+        Assert.That(_run.ActiveNode, Is.Null, "No route can be taken while a drop waits.");
 
         Assert.That(_run.CanClaimPendingEnemyDrop, Is.False);
         Assert.That(_run.ClaimPendingEnemyDrop(), Is.False);

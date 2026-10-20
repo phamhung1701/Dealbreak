@@ -146,6 +146,14 @@ public sealed class FinalPortfolioRunPlayModeTests
             var group = UnityEngine.Object.FindFirstObjectByType<EnemyGroupUI>();
             if (group != null && group.IsDefeatPresentationBusy) { yield return null; continue; }
             Assert.That(GameplayInputGate.IsBlocked, Is.False, "Unexpected modal lock at route boundary.");
+            if (run.PendingEnemyDrop != null)
+            {
+                // A drop that did not fit waits on the board; this bot never makes room, so it leaves it.
+                Assert.That(run.CanCaptureSave, Is.False, "No checkpoint while a drop waits.");
+                Assert.That(run.ClaimPendingEnemyDrop() || run.LeavePendingEnemyDrop(), Is.True);
+                yield return null;
+                continue;
+            }
             if (run.CurrentMapIndex > restoredDistrict)
             {
                 Assert.That(cards.ownedCards.Count(c => c.Definition.IsFaceCard), Is.EqualTo(run.CurrentMapIndex));
