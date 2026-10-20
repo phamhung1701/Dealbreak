@@ -734,8 +734,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: AWAITING ENCOUNTER
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 67379df4d4d9aa34c87f33d8bd2e7f95, type: 2}
-  m_sharedMaterial: {fileID: -3152149539497129849, guid: 67379df4d4d9aa34c87f33d8bd2e7f95, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4fd88b75b6b1e3a46ac5630b173445cc, type: 2}
+  m_sharedMaterial: {fileID: -3239640280579628281, guid: 4fd88b75b6b1e3a46ac5630b173445cc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04a5074b35760184393d2df064bd89a7, type: 3}
   m_Name: DealbreakUITheme
   m_EditorClassIdentifier: Dealbreak.Runtime::DealbreakUITheme
-  headingFont: {fileID: 11400000, guid: 67379df4d4d9aa34c87f33d8bd2e7f95, type: 2}
+  headingFont: {fileID: 11400000, guid: 4fd88b75b6b1e3a46ac5630b173445cc, type: 2}
   bodyFont: {fileID: 11400000, guid: 1b23379eac9aa3e45b84db5a627bba9b, type: 2}
   numericFont: {fileID: 11400000, guid: d9c38d644eefb5544adab4b0149956ae, type: 2}
   symbolFont: {fileID: 11400000, guid: 724819b14cddd6c4f80462bcd5e7e931, type: 2}

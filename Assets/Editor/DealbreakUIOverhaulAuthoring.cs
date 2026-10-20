@@ -17,7 +17,9 @@ public static class DealbreakUIOverhaulAuthoring
         var theme=AssetDatabase.LoadAssetAtPath<DealbreakUITheme>("Assets/Resources/DealbreakUITheme.asset");
         if(!theme){theme=ScriptableObject.CreateInstance<DealbreakUITheme>();AssetDatabase.CreateAsset(theme,"Assets/Resources/DealbreakUITheme.asset");}
         theme.symbolFont=FontAsset("Assets/TextMesh Pro/Fonts/LiberationSans.ttf","Dealbreak Symbols");
-        theme.headingFont=FontAsset("Assets/Art/Fonts/BarlowCondensed-Bold.ttf","Barlow Condensed UI");
+        theme.headingFont=FontAsset("Assets/Art/Fonts/Anton-Regular.ttf","Anton UI");
+        // Anton's caps are 23% taller than Barlow Condensed's; scaling to its cap height keeps authored sizes and layouts.
+        var heading=theme.headingFont.faceInfo;heading.scale=.815f;theme.headingFont.faceInfo=heading;
         theme.bodyFont=FontAsset("Assets/Art/Fonts/SpaceGrotesk.ttf","Space Grotesk UI");
         theme.numericFont=FontAsset("Assets/Art/Fonts/IBMPlexMono-Regular.ttf","IBM Plex Mono UI");
         foreach(var font in new[]{theme.headingFont,theme.bodyFont,theme.numericFont})
