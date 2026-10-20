@@ -39,35 +39,31 @@ public sealed class HealthBarBacking : MonoBehaviour
         _label = GetComponent<TMP_Text>();
         if (_bar || !_label || !transform.parent) return;
         var theme = DealbreakUIStyle.Theme;
-        // Track and fill are rough cut-paper strips; the bar leans as one piece so the fill stays inside.
+        // Track and fill are flat strips.
         var bar = new GameObject($"{name} Bar", typeof(RectTransform), typeof(CanvasRenderer), typeof(EditorialFrame));
         _bar = (RectTransform)bar.transform;
         _bar.SetParent(transform.parent, false);
         _bar.SetSiblingIndex(transform.GetSiblingIndex());
         _bar.anchorMin = _bar.anchorMax = _bar.pivot = new Vector2(.5f, .5f);
         var trackColor = theme ? new Color(theme.ink.r, theme.ink.g, theme.ink.b, .88f) : new Color(.08f, .08f, .08f, .88f);
-        Strip(bar.GetComponent<EditorialFrame>(), trackColor, theme ? theme.brick : trackColor);
-        _bar.localRotation = Quaternion.Euler(0, 0, DealbreakUIStyle.Noise(DealbreakUIStyle.HierarchySeed(transform), 3) * 1.2f);
+        Strip(bar.GetComponent<EditorialFrame>(), trackColor);
         var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(EditorialFrame));
         _fill = (RectTransform)fill.transform;
         _fill.SetParent(_bar, false);
         _fill.anchorMin = Vector2.zero;
         _fill.offsetMin = _fill.offsetMax = Vector2.zero;
-        Strip(fill.GetComponent<EditorialFrame>(), theme ? theme.brick : new Color(.66f, .27f, .22f, 1f), null);
+        Strip(fill.GetComponent<EditorialFrame>(), theme ? theme.brick : new Color(.91f, .2f, .17f, 1f));
         SetFraction(_fraction);
     }
 
-    static void Strip(EditorialFrame strip, Color color, Color? shadow)
+    static void Strip(EditorialFrame strip, Color color)
     {
         strip.raycastTarget = false;
         strip.ink = strip.rim = strip.fill = color;
         strip.border = 0;
-        strip.corner = 3;
+        strip.corner = 0;
         strip.showAccent = false;
-        strip.showShadow = shadow.HasValue;
-        if (shadow.HasValue) { strip.shadowColor = shadow.Value; strip.shadowOffset = new Vector2(4, -5); }
-        strip.roughness = 2.2f;
-        strip.tiltRange = 0f;
+        strip.showShadow = false;
         strip.Refresh();
     }
 

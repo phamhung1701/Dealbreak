@@ -121,7 +121,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         var frame=transform.Find("Editorial Frame")?.GetComponent<EditorialFrame>();
         if(frame&&DealbreakUIStyle.Theme)
-        {frame.rim=_enemyTargeting&&_enemyTargetEligible?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;frame.border=_enemyTargeting&&_enemyTargetEligible?9:6;frame.Refresh();}
+        {frame.rim=_enemyTargeting&&_enemyTargetEligible?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;frame.border=_enemyTargeting&&_enemyTargetEligible?2:1;frame.Refresh();}
         if (!_enemyTargeting)
         {
             _targetAlpha = 1f;
