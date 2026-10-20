@@ -25,6 +25,70 @@ public static class DealbreakCentralStageAuthoring
         AssetDatabase.SaveAssets();
     }
 
+    /// <summary>Re-applies only the Gear and Trick slot columns to Game.unity.</summary>
+    public static void ApplyInventoryLayout() => Edit("Assets/Scenes/Game.unity", scene =>
+    {
+        var root = scene.GetRootGameObjects().First(g => g.name == "Canvas");
+        InventoryLayout(root.transform, root.GetComponent<ActionButtonsUI>(), root.GetComponent<DealbreakUIRuntime>());
+    });
+
+    // Gear and Trick slots stand as two tall columns down the left margin, between the run header
+    // and the HP panel, clear of the hand (x 326+). Measured in 1920x1080 reference pixels, y down.
+    const float RefWidth = 1920, RefHeight = 1080;
+    const float ItemSlot = 120, ItemGap = 12, ColumnTop = 150, SlotsTop = 235, SlotRows = 5;
+    const float GearLeft = 34, GearRight = 166, TrickLeft = 172, TrickRight = 316;
+
+    static void InventoryLayout(Transform root, ActionButtonsUI actions, DealbreakUIRuntime runtime)
+    {
+        var canvas = new Rect(0, 0, RefWidth, RefHeight);
+        float slotsBottom = SlotsTop + SlotRows * ItemSlot + (SlotRows - 1) * ItemGap;
+
+        var gear = root.GetComponentInChildren<GearRailUI>(true);
+        var bar = PlacePx(gear.transform, canvas, GearLeft, ColumnTop, GearRight, slotsBottom + 8);
+        PlacePx(gear.transform.Find("GearHeader"), bar, GearLeft, ColumnTop, GearRight, ColumnTop + 40);
+        PlacePx(gear.capacityLabel.transform, bar, GearLeft, ColumnTop + 40, GearRight, ColumnTop + 72);
+        if (gear.slotsRoot.parent is RectTransform gearViewport)
+            PlacePx(gearViewport, bar, GearLeft, SlotsTop, GearRight, slotsBottom + 8);
+        gear.slotSize = ItemSlot;
+        foreach (var slot in gear.slotsRoot.GetComponentsInChildren<GearIconSlotUI>(true))
+            ((RectTransform)slot.transform).sizeDelta = new Vector2(ItemSlot, ItemSlot);
+        var vertical = gear.slotsRoot.GetComponent<VerticalLayoutGroup>();
+        if (vertical) vertical.spacing = ItemGap;
+        var grid = gear.slotsRoot.GetComponent<GridLayoutGroup>();
+        if (grid) { grid.cellSize = new Vector2(ItemSlot, ItemSlot); grid.spacing = new Vector2(ItemGap, ItemGap); }
+        gear.capacityLabel.fontSize = 25;
+        gear.transform.Find("GearHeader").GetComponent<TMP_Text>().fontSize = 32;
+
+        // The Trick column stays under PlayerArea, so its anchors run above that area's top edge.
+        var player = (RectTransform)root.Find("PlayerArea");
+        var area = PxRect(player, canvas);
+        float trickInset = (TrickRight - TrickLeft - ItemSlot) / 2;
+        PlacePx(player.Find("TricksHeading"), area, TrickLeft, ColumnTop, TrickRight, ColumnTop + 40);
+        player.Find("TricksHeading").GetComponent<TMP_Text>().fontSize = 32;
+        PlacePx(runtime.trickCapacity.transform, area, TrickLeft, ColumnTop + 40, TrickRight, ColumnTop + 72);
+        runtime.trickCapacity.fontSize = 25;
+        for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
+        {
+            if (!actions.backpackSlotButtons[i]) continue;
+            float top = SlotsTop + i * (ItemSlot + ItemGap);
+            PlacePx(actions.backpackSlotButtons[i].transform, area,
+                TrickLeft + trickInset, top, TrickRight - trickInset, top + ItemSlot);
+        }
+    }
+
+    /// <summary>Anchors <paramref name="t"/> to a reference-pixel box inside <paramref name="parent"/> and returns the box.</summary>
+    static Rect PlacePx(Transform t, Rect parent, float left, float top, float right, float bottom)
+    {
+        DealbreakUIStyle.Place(t, (left - parent.x) / parent.width, 1 - (bottom - parent.y) / parent.height,
+            (right - parent.x) / parent.width, 1 - (top - parent.y) / parent.height);
+        return new Rect(left, top, right - left, bottom - top);
+    }
+
+    /// <summary>A stretched RectTransform's box in reference pixels (y down), from its anchors in <paramref name="parent"/>.</summary>
+    static Rect PxRect(RectTransform r, Rect parent) => new(
+        parent.x + r.anchorMin.x * parent.width, parent.y + (1 - r.anchorMax.y) * parent.height,
+        (r.anchorMax.x - r.anchorMin.x) * parent.width, (r.anchorMax.y - r.anchorMin.y) * parent.height);
+
     static void Edit(string path, System.Action<Scene> action)
     {
         var scene = SceneManager.GetSceneByPath(path);
@@ -68,27 +132,8 @@ public static class DealbreakCentralStageAuthoring
         runtime.incident.titleLabel.fontSize = 42;
         runtime.incident.descriptionLabel.fontSize = 25;
 
-        var gear = root.GetComponentInChildren<GearRailUI>(true);
-        DealbreakUIStyle.Place(gear.transform, .035f, .41f, .15f, .86f);
-        gear.slotSize = 62;
-        if (gear.slotsRoot.parent is RectTransform gearViewport)
-            DealbreakUIStyle.Place(gearViewport, .05f, .05f, .95f, .79f);
-        var vertical = gear.slotsRoot.GetComponent<VerticalLayoutGroup>();
-        if (vertical) vertical.spacing = 10;
-        gear.capacityLabel.fontSize = 25;
-        var heading = gear.transform.Find("GearHeader");
-        heading.GetComponent<TMP_Text>().fontSize = 32;
-        var grid = gear.slotsRoot.GetComponent<GridLayoutGroup>();
-        if (grid) { grid.cellSize = new Vector2(62, 62); grid.spacing = new Vector2(10, 10); }
+        InventoryLayout(root.transform, actions, runtime);
         var player = root.transform.Find("PlayerArea");
-        DealbreakUIStyle.Place(player.Find("TricksHeading"), .025f, .89f, .155f, .995f);
-        player.Find("TricksHeading").GetComponent<TMP_Text>().fontSize = 32;
-        for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
-            if (actions.backpackSlotButtons[i])
-                DealbreakUIStyle.Place(actions.backpackSlotButtons[i].transform,
-                    .025f + i * .045f, .67f, .064f + i * .045f, .85f);
-        DealbreakUIStyle.Place(runtime.trickCapacity.transform, .025f, .54f, .155f, .63f);
-        runtime.trickCapacity.fontSize = 24;
         var deck = root.GetComponentInChildren<DrawDeckStackUI>(true);
         DealbreakUIStyle.Place(deck.transform, .905f, .285f, .98f, .50f);
         DealbreakUIStyle.Place(deck.stackRoot, .15f, .29f, .85f, .90f);

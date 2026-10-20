@@ -581,8 +581,8 @@ public class ActionButtonsUI : MonoBehaviour
                 label.alignment = hasSprite ? TextAlignmentOptions.TopRight : _backpackLabelAlignment[label];
                 if (hasSprite && label.text.Length > 0)
                 {
-                    // Over the sprite the count prints small on an ink tab so it stays legible.
-                    label.text = $"<size=62%><mark=#0E1113EE padding=6,6,2,2>{label.text}</mark></size>";
+                    // Over the sprite the count prints on an ink tab so it stays legible.
+                    label.text = $"<mark=#0E1113EE padding=6,6,2,2>{label.text}</mark>";
                     label.transform.SetAsLastSibling();
                 }
                 label.gameObject.SetActive(consumable != null);
