@@ -186,10 +186,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &14506732
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -895,10 +892,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &126967990
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1932,10 +1926,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &246410789
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2011,10 +2002,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &289574765
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2152,7 +2140,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: DEALBREAK
+  m_text: DEAL<color=#E8322B>BREAK</color>
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4fd88b75b6b1e3a46ac5630b173445cc, type: 2}
   m_sharedMaterial: {fileID: -3239640280579628281, guid: 4fd88b75b6b1e3a46ac5630b173445cc, type: 2}
@@ -2616,10 +2604,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!224 &391242125
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2789,10 +2774,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &434616851
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4129,10 +4111,7 @@ MonoBehaviour:
   showAccent: 1
   compact: 0
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &685203393
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4653,10 +4632,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &747490254
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4944,10 +4920,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &818997220
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5023,10 +4996,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &842606906
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5610,10 +5580,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &962954090
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5764,10 +5731,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1042367294
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -7059,10 +7023,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1227749859
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -7864,10 +7825,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1357513140
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9064,10 +9022,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1517937731
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9967,10 +9922,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1627765353
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10814,10 +10766,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1756137720
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11734,10 +11683,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1911716401
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -12003,10 +11949,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!224 &1946170713
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12104,10 +12047,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &1958231451
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -12773,10 +12713,7 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
-  cut: 0
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  roughness: 2.5
-  tiltRange: 0.8
 --- !u!222 &2079774104
 CanvasRenderer:
   m_ObjectHideFlags: 0

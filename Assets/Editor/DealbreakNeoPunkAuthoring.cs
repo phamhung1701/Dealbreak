@@ -33,7 +33,22 @@ public static class DealbreakNeoPunkAuthoring
         var theme = Resources.Load<DealbreakUITheme>("DealbreakUITheme");
         theme.ink = Ink; theme.charcoal = Charcoal; theme.slate = Slate;
         theme.paper = Paper; theme.brick = Signal; theme.ochre = Lime;
+        theme.labelFont = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/Fonts/Barlow Condensed UI.asset");
         EditorUtility.SetDirty(theme);
+    }
+
+    // The wordmark: DEAL in off-white, BREAK in signal red.
+    const string Wordmark = "DEAL<color=#E8322B>BREAK</color>";
+
+    static void Wordmarks(Scene scene)
+    {
+        foreach (var text in scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<TMPro.TMP_Text>(true))
+                     .Where(t => t.name is "GameTitle" or "Dealbreak Shell Title"))
+        {
+            text.richText = true;
+            text.text = Wordmark;
+            EditorUtility.SetDirty(text);
+        }
     }
 
     // A near-black stage with one faint photocopy grain; panels no longer carry their own blue field.
@@ -51,6 +66,7 @@ public static class DealbreakNeoPunkAuthoring
             foreach (var environment in root.GetComponentsInChildren<Transform>(true).Where(t => t.name == "Environmental Slate"))
                 environment.gameObject.SetActive(false);
         }
+        Wordmarks(scene);
     }
 
     static void Edit(string path, System.Action<Scene> action)

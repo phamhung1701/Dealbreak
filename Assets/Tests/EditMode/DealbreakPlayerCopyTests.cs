@@ -40,7 +40,8 @@ public sealed class DealbreakPlayerCopyTests
         var title = Find(_mainMenuScene, "Canvas/FrontendRoot/HomePanel/HomeCard/GameTitle")?.GetComponent<TMP_Text>();
         var tagline = Find(_mainMenuScene, "Canvas/FrontendRoot/HomePanel/HomeCard/Tagline");
         Assert.That(title, Is.Not.Null);
-        Assert.That(title.text, Is.EqualTo("DEALBREAK"));
+        // The wordmark styles BREAK with rich-text tags; the words themselves stay DEALBREAK.
+        Assert.That(System.Text.RegularExpressions.Regex.Replace(title.text, "<[^>]*>", ""), Is.EqualTo("DEALBREAK"));
         Assert.That(tagline == null || !tagline.activeSelf, Is.True,
             "A removed or disabled tagline must not be shown.");
 

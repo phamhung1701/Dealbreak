@@ -5,6 +5,8 @@ using UnityEngine;
 public sealed class DealbreakUITheme : ScriptableObject
 {
     public TMP_FontAsset headingFont, bodyFont, numericFont, symbolFont;
+    [Tooltip("Condensed caps for small section heads, labels and secondary buttons.")]
+    public TMP_FontAsset labelFont;
     public Texture2D paperTexture, slateTexture, darkTexture, dryAccents, cleanAccents;
     public Material inkAccentMaterial;
     public Color ink = new(0.055f, .065f, .075f);

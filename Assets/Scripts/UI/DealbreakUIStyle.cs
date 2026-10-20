@@ -51,11 +51,16 @@ public static class DealbreakUIStyle
             bool offer=button.GetComponent<ShopOfferUI>()!=null;
             bool paper=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper;
             bool open=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
-            Text(label,paper?Theme.bodyFont:offer?label.name.Contains("Price")?Theme.numericFont:Theme.bodyFont:Theme.headingFont,
-                button.name is "PlayButton" or "BlockButton" or "PassButton"?30:
-                paper?21:open?29:Mathf.Max(18,Mathf.Min(24,label.fontSize)),paper||role==EditorialButton.Role.Paper?Theme.ink:Theme.paper);
+            bool action=button.name is "PlayButton" or "BlockButton" or "PassButton";
+            var color=paper||role==EditorialButton.Role.Paper?Theme.ink:Theme.paper;
+            label.fontStyle=FontStyles.Normal;label.characterSpacing=0;
+            // The three combat actions and the frameless menu words are Anton display type; other
+            // buttons use condensed tracked caps.
+            if(action||open)Text(label,Theme.headingFont,action?30:29,color);
+            else if(paper||offer)Text(label,paper?Theme.bodyFont:label.name.Contains("Price")?Theme.numericFont:Theme.bodyFont,paper?21:Mathf.Max(18,Mathf.Min(24,label.fontSize)),color);
+            else Label(label,Mathf.Max(18,Mathf.Min(22,label.fontSize)),color);
             // Single-line labels overflow a short button rather than truncating to nothing.
-            label.margin=new Vector4(8,2,8,2);label.fontStyle=FontStyles.Normal;label.overflowMode=TextOverflowModes.Overflow;
+            label.margin=new Vector4(8,2,8,2);label.overflowMode=TextOverflowModes.Overflow;
         }
         style.Refresh();
     }
@@ -75,6 +80,14 @@ public static class DealbreakUIStyle
            name.Contains("cancel")||name.Contains("decline")||name.Contains("close"))return EditorialButton.Role.Outline;
         return role;
     }
+    // Small section heads, labels and secondary button text: condensed caps, tracked out.
+    public static void Label(TMP_Text text,float size,Color color)
+    {
+        if(!text)return;
+        Text(text,Theme.labelFont?Theme.labelFont:Theme.headingFont,size,color);
+        text.fontStyle=FontStyles.UpperCase;text.characterSpacing=6;
+    }
+
     public static void Text(TMP_Text text,TMP_FontAsset font,float size,Color color)
     {
         if(!text)return;text.font=font;text.fontSize=size;text.fontSizeMin=size;text.fontSizeMax=size;
@@ -122,7 +135,9 @@ public static class DealbreakUIStyle
                 var surface=parent.Find("Editorial Frame")?.GetComponent<EditorialFrame>();
                 if(surface){tint=surface.fill==Theme.paper?Theme.ink:Theme.paper;break;}
             }
-            Text(text,numeric?Theme.numericFont:heading?Theme.headingFont:Theme.bodyFont,size,tint);
+            // Big titles stay Anton; small section heads become condensed tracked caps.
+            if(heading&&size<40)Label(text,size,tint);
+            else Text(text,numeric?Theme.numericFont:heading?Theme.headingFont:Theme.bodyFont,size,tint);
             var enemy=text.GetComponentInParent<EnemyDisplayUI>();
             if(enemy)
             {
