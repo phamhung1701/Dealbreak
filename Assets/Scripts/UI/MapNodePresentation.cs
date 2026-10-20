@@ -30,14 +30,14 @@ public sealed class MapNodePresentation : MaskableGraphic
         bool focus=EventSystem.current&&EventSystem.current.currentSelectedGameObject==transform.parent.gameObject;
         // A scouted node is known ahead of travel: an ochre edge marks it off the current frontier.
         Color edge=focus?DealbreakUIStyle.Theme.ochre:completed?DealbreakUIStyle.Theme.paper:available||scouted?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;
-        float thickness=available?6f:completed||scouted?4f:3f;
+        float thickness=available?8f:completed||scouted?6f:5f;
         if(available)edge=Color.Lerp(edge,new Color(1f,.35f,.12f,1f),_pulse*.42f);
         // Printed off true: each node leans a little, its sides are slightly uneven and a brick
         // second ink sits misregistered beneath it. Stable per node (hierarchy hash).
         if(_seed==0)_seed=DealbreakUIStyle.HierarchySeed(transform.parent);
         Draw(vh,r.center+new Vector2(4,-5),radius,DealbreakUIStyle.Theme.brick);
         Draw(vh,r.center,radius,edge);Draw(vh,r.center,radius-thickness,DealbreakUIStyle.Theme.ink);
-        Draw(vh,r.center,radius-7,completed?DealbreakUIStyle.Theme.slate:DealbreakUIStyle.Theme.charcoal);
+        Draw(vh,r.center,radius-thickness-2,completed?DealbreakUIStyle.Theme.slate:DealbreakUIStyle.Theme.charcoal);
     }
     void Draw(VertexHelper vh,Vector2 center,float radius,Color tint)
     {

@@ -481,7 +481,7 @@ public sealed class ItemDragUI : MonoBehaviour
         _ghost = Child("Item Ghost", typeof(CanvasRenderer), typeof(EditorialFrame));
         _ghostFrame = _ghost.GetComponent<EditorialFrame>();
         _ghostFrame.raycastTarget = false;
-        _ghostFrame.border = 5f;
+        _ghostFrame.border = 8f;
         _ghostFrame.corner = 8f;
         _ghostFrame.showAccent = false;
         if (theme) { _ghostFrame.fill = theme.charcoal; _ghostFrame.ink = theme.ink; }

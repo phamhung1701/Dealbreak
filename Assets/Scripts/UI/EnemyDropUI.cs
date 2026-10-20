@@ -54,7 +54,7 @@ public sealed class EnemyDropUI : MonoBehaviour
         _token.anchorMin = _token.anchorMax = new Vector2(.5f, .62f);
         _token.sizeDelta = new Vector2(150f, 150f);
         var frame = token.GetComponent<EditorialFrame>();
-        frame.border = 6f;
+        frame.border = 9f;
         frame.corner = 12f;
         frame.showAccent = false;
         if (theme) { frame.fill = theme.charcoal; frame.ink = theme.ink; frame.rim = theme.ochre; }

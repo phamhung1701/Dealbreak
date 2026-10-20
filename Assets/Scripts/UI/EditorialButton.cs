@@ -51,7 +51,7 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
         Color rim=_pressed&&available&&emphasized?theme.brick:selected||available&&(_hover||_focus)?theme.paper:emphasized?theme.ochre:theme.slate;
         // A stamp's paper rule is always printed; it brightens to ochre under the pointer.
         if(role==Role.Stamp)rim=available&&(_hover||_focus||selected)?theme.ochre:theme.paper;
-        float border=emphasized?Mathf.Max(4f,frame.border):role==Role.Stamp?Mathf.Max(6f,frame.border):frame.border;
+        float border=emphasized?Mathf.Max(6f,frame.border):role==Role.Stamp?Mathf.Max(8f,frame.border):frame.border;
         if(fill!=frame.fill||rim!=frame.rim||border!=frame.border){frame.border=border;frame.fill=fill;frame.rim=rim;frame.Refresh();}
         return true;
     }

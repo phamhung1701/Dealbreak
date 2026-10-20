@@ -50,7 +50,7 @@ public sealed class EditorialFrame : MaskableGraphic
         vh.Clear(); var bounds = rectTransform.rect;
         if (bounds.width <= 0 || bounds.height <= 0) return;
         if (_seed == 0) _seed = DealbreakUIStyle.HierarchySeed(transform);
-        float edge = Mathf.Min(border, Mathf.Min(bounds.width,bounds.height)*.1f);
+        float edge = Mathf.Min(border, Mathf.Min(bounds.width,bounds.height)*.16f);
         // Long thin frames tilt less, so a wide bar never swings its ends far.
         float span = Mathf.Max(bounds.width, bounds.height);
         float tilt = DealbreakUIStyle.Noise(_seed, -1) * tiltRange * Mathf.Clamp01(260f / span * 1.6f);

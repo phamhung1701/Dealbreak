@@ -85,7 +85,7 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         var buy=(RectTransform)purchaseButton.transform;buy.anchorMin=new Vector2(.58f,0);buy.anchorMax=new Vector2(.95f,0);buy.offsetMin=new Vector2(0,12);buy.offsetMax=new Vector2(0,12+ButtonRowHeight-14);
         RefreshBorder();
     }
-    void RefreshBorder(){var frame=transform.Find("Editorial Frame")?.GetComponent<EditorialFrame>();var theme=DealbreakUIStyle.Theme;if(frame&&theme){frame.rim=_selected?theme.brick:_hover||_focus?theme.ochre:theme.ink;frame.border=_selected||_hover||_focus?5:3;frame.Refresh();}}
+    void RefreshBorder(){var frame=transform.Find("Editorial Frame")?.GetComponent<EditorialFrame>();var theme=DealbreakUIStyle.Theme;if(frame&&theme){frame.rim=_selected?theme.brick:_hover||_focus?theme.ochre:theme.ink;frame.border=_selected||_hover||_focus?8:6;frame.Refresh();}}
     public void OnPointerEnter(PointerEventData _){_hover=true;RefreshBorder();}
     public void OnPointerExit(PointerEventData _){_hover=false;RefreshBorder();}
     public void OnSelect(BaseEventData _){_focus=true;RefreshBorder();}

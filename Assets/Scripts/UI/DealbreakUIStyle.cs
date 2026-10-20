@@ -83,17 +83,17 @@ public static class DealbreakUIStyle
         if(!rect.GetComponent<CanvasRenderer>())rect.gameObject.AddComponent<CanvasRenderer>();
         var frame=rect.GetComponent<EditorialFrame>();frame.raycastTarget=false;
         frame.ink=Theme.ink;frame.rim=Theme.slate;frame.fill=paper?Theme.paper:Theme.charcoal;
-        frame.accent=Theme.brick;frame.compact=compact;frame.border=compact?4:9;frame.corner=compact?13:25;frame.Refresh();
+        frame.accent=Theme.brick;frame.compact=compact;frame.border=compact?6:12;frame.corner=compact?13:25;frame.Refresh();
         var surface=target.GetComponent<EditorialSurface>();
         frame.enabled=!surface||surface.treatment!=EditorialSurface.Treatment.Open;
         if(surface)
         {
             frame.corner=surface.treatment==EditorialSurface.Treatment.Dialog?25:surface.treatment==EditorialSurface.Treatment.Node?26:0;
-            frame.border=surface.treatment==EditorialSurface.Treatment.Open?0:3;
+            frame.border=surface.treatment==EditorialSurface.Treatment.Open?0:6;
             frame.fill=surface.treatment is EditorialSurface.Treatment.Paper or EditorialSurface.Treatment.Portrait?Theme.paper:Theme.charcoal;
             frame.showAccent=false;frame.showShadow=surface.treatment is EditorialSurface.Treatment.Paper or EditorialSurface.Treatment.Portrait or EditorialSurface.Treatment.Dialog;
         }
-        else if(compact){frame.corner=0;frame.border=2;frame.showAccent=false;frame.showShadow=false;}
+        else if(compact){frame.corner=0;frame.border=4;frame.showAccent=false;frame.showShadow=false;}
         // Print chaos: big panels barely lean; paper tiles, buttons and slots sit visibly off true,
         // with a misregistered brick shadow like the item icons.
         var treatment=surface?surface.treatment:(EditorialSurface.Treatment?)null;
@@ -300,7 +300,7 @@ public static class DealbreakUIStyle
         foreach(var toggle in root.GetComponentsInChildren<Toggle>(true))
         {
             var backing=toggle.transform.Find("Background")??toggle.transform.Find("Box");if(!backing||!Fresh(toggle))continue;
-            var frame=Frame(backing,false,true);frame.corner=4;frame.border=2;frame.showAccent=false;frame.Refresh();
+            var frame=Frame(backing,false,true);frame.corner=4;frame.border=4;frame.showAccent=false;frame.Refresh();
             toggle.transition=Selectable.Transition.None;if(toggle.graphic)toggle.graphic.color=Theme.ochre;
         }
     }
