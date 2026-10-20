@@ -6,6 +6,8 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(100)]
 public sealed class DealbreakUIRuntime : MonoBehaviour
 {
+    /// <summary>An attack is still landing or an enemy's defeat is still playing.</summary>
+    public static bool BoardPresentationBusy => AttackCardPresentationUI.Instance && AttackCardPresentationUI.Instance.IsBusy;
     public static bool CombatActive => CombatManager.Instance!=null&&CombatManager.Instance.Enemies.Count>0&&
         CombatManager.Instance.currentState is GameState.PlayerTurn or GameState.EnemyAttacking;
     public TMP_Text handCount,trickCapacity;
@@ -22,6 +24,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     int _lastShopCredits=int.MinValue;
     bool? _lastDefenseLayout;
     bool _compactHealthLayout;
+    RectTransform _enemyContainer;
     Vector2 _handAnchorMin,_handAnchorMax,_countAnchorMin,_countAnchorMax;
     // The compact hand fills the strip under route, Black Market and Incident panels, so its
     // size counter moves beside it instead of under it.
@@ -31,6 +34,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     {
         if(!handFrame&&actions&&actions.handField)handFrame=actions.handField.transform.parent as RectTransform;
         if(handFrame){_handAnchorMin=handFrame.anchorMin;_handAnchorMax=handFrame.anchorMax;}
+        var enemies=FindFirstObjectByType<EnemyGroupUI>();
+        _enemyContainer=enemies?enemies.enemyContainer:null;
         if(handCount){_countAnchorMin=handCount.rectTransform.anchorMin;_countAnchorMax=handCount.rectTransform.anchorMax;}
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
         var canvas=actions?actions.GetComponentInParent<Canvas>():GetComponentInParent<Canvas>();
@@ -97,8 +102,12 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(handCount&&CardManager.Instance!=null)handCount.text=$"{CardManager.Instance.HandCount}/{CardManager.Instance.HandCapacity}";
         if(trickCapacity&&CardManager.Instance!=null)trickCapacity.text=$"{CardManager.Instance.BackpackSlotsUsed}/{CardManager.Instance.BackpackCapacity}";
         // A drop waiting on the board after a fight also brings the hand up, so Tricks can make room.
+        // The board stays up until the last card lands and the last enemy's defeat has played.
+        bool presenting=BoardPresentationBusy;
+        bool board=CombatActive||presenting;
         bool overlay=map&&map.panel&&map.panel.activeInHierarchy||market&&market.panel&&market.panel.activeInHierarchy||
-            incident&&incident.panel&&incident.panel.activeInHierarchy||RunManager.Instance!=null&&RunManager.Instance.PendingEnemyDrop!=null;
+            incident&&incident.panel&&incident.panel.activeInHierarchy||
+            !presenting&&RunManager.Instance!=null&&RunManager.Instance.PendingEnemyDrop!=null;
         bool compactHand=overlay&&!RunResultUI.IsShowingResult;
         float ease=1f-Mathf.Exp(-Time.unscaledDeltaTime*9f);
         if(handFrame)
@@ -123,7 +132,10 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             // The HP panel stays beside the compact hand: healing Tricks are dropped on it.
             bool health=compactHand&&playerState&&group.transform==playerState;
             bool kept=handVisual||handCounter||health;
-            bool hidden=overlay&&!kept||RunResultUI.IsShowingResult||!CombatActive&&!choosingCard&&!kept||choosingCard&&i>1;
+            // After the fight ends only the enemies, hand and HP stay up while the last defeat plays.
+            bool shownWhilePresenting=CombatActive||i<=1||playerState&&group.transform==playerState||
+                _enemyContainer&&_enemyContainer.IsChildOf(group.transform);
+            bool hidden=overlay&&!kept||RunResultUI.IsShowingResult||(!board||!shownWhilePresenting)&&!choosingCard&&!kept||choosingCard&&i>1;
             group.alpha=hidden?0:1;group.blocksRaycasts=!hidden;group.interactable=!hidden;
         }
         // Beside the compact hand the HP panel is a single short bar in the bottom-left corner.

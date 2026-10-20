@@ -345,8 +345,8 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     }
 
     // The killing hit plays in full (flash, shake, HP draining to zero) before the enemy fades.
-    const float DefeatHitTime = 0.42f;
-    const float DefeatFadeTime = 0.75f;
+    const float DefeatHitTime = 0.3f;
+    const float DefeatFadeTime = 0.35f;
 
     System.Collections.IEnumerator DefeatCueRoutine(float delay)
     {

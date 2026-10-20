@@ -101,6 +101,9 @@ public sealed class EnemyDropUI : MonoBehaviour
     void Update()
     {
         if (_run != RunManager.Instance) Subscribe(RunManager.Instance);
+        // A waiting drop appears once the last enemy's defeat has finished playing.
+        bool waiting = _run != null && _run.PendingEnemyDrop != null && !DealbreakUIRuntime.BoardPresentationBusy;
+        if (_token && _token.gameObject.activeSelf != waiting) Refresh();
         var enemies = FindFirstObjectByType<EnemyGroupUI>();
         if (enemies && enemies.isActiveAndEnabled) _lastEnemyArea = enemies.transform.position;
     }
@@ -127,7 +130,7 @@ public sealed class EnemyDropUI : MonoBehaviour
     {
         if (!_token) return;
         var drop = _run != null ? _run.PendingEnemyDrop : null;
-        bool waiting = drop != null;
+        bool waiting = drop != null && !DealbreakUIRuntime.BoardPresentationBusy;
         _token.gameObject.SetActive(waiting);
         _leave.gameObject.SetActive(waiting);
         if (!waiting) return;
