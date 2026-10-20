@@ -124,8 +124,10 @@ public static class DealbreakCentralStageAuthoring
         DealbreakUIStyle.Place(runtime.playerState, .025f, .035f, .235f, .25f);
         DealbreakUIStyle.Place(actions.playerHealthLabel.transform, .055f, .42f, .945f, .94f);
         actions.playerHealthLabel.fontSize = 29;
-        DealbreakUIStyle.Place(actions.pendingDamageLabel.transform, .045f, .02f, .955f, .43f);
-        actions.pendingDamageLabel.fontSize = 20;
+        // Incoming damage reads under the enemies, below the DEFENSE label, not on the HP panel.
+        actions.pendingDamageLabel.transform.SetParent(actions.turnStateLabel.transform.parent, false);
+        DealbreakUIStyle.Place(actions.pendingDamageLabel.transform, .02f, -.85f, .98f, -.05f);
+        actions.pendingDamageLabel.fontSize = 30;
         foreach (var control in new[] { actions.playButton, actions.blockButton, actions.passButton })
             control.GetComponentInChildren<TMP_Text>(true).fontSize = 30;
         var pause = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<PauseMenuUI>(true)).First();

@@ -61,13 +61,13 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         {
             var attackLabel = actions.playButton ? actions.playButton.GetComponentInChildren<TMP_Text>() : null;
             if (attackLabel) attackLabel.text = cards != null && cards.IsEnemyTargeting ? "CANCEL" : "ATTACK";
-            bool defense = CombatManager.Instance.currentState == GameState.EnemyAttacking;
             if (actions.recoverButton) actions.recoverButton.gameObject.SetActive(
                 CombatManager.Instance.currentState == GameState.PlayerTurn && cards != null && cards.HandCount == 0);
+            // Incoming damage shows under the enemies, so the HP panel keeps one shape in both phases.
             if (playerStatePanel)
             {
-                playerStatePanel.anchorMax = new Vector2(playerStatePanel.anchorMax.x, defense ? .55f : .21f);
-                actions.playerHealthLabel.rectTransform.anchorMin = new Vector2(.055f, defense ? .67f : .1f);
+                playerStatePanel.anchorMax = new Vector2(playerStatePanel.anchorMax.x, .21f);
+                actions.playerHealthLabel.rectTransform.anchorMin = new Vector2(.055f, .1f);
             }
         }
         if (actions && actions.selectionLabel && cards != null)

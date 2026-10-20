@@ -154,7 +154,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             if(playerState&&_lastDefenseLayout!=defending)
             {
                 DealbreakUIStyle.Place(playerState,.025f,.035f,.235f,.25f);
-                DealbreakUIStyle.Place(actions.playerHealthLabel.transform,.055f,defending?.42f:.1f,.945f,.94f);
+                DealbreakUIStyle.Place(actions.playerHealthLabel.transform,.055f,.1f,.945f,.94f);
                 _lastDefenseLayout=defending;
                 _compactHealthLayout=false;
             }

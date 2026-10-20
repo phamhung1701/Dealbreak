@@ -311,6 +311,13 @@ public class ActionButtonsUI : MonoBehaviour
 
         if (pendingDamageLabel)
         {
+            var theme = DealbreakUIStyle.Theme;
+            if (theme && pendingDamageLabel.color != theme.brick)
+            {
+                DealbreakUIStyle.Text(pendingDamageLabel, theme.headingFont, 30, theme.brick);
+                pendingDamageLabel.alignment = TextAlignmentOptions.Center;
+            }
+            DealbreakUIStyle.Outline(pendingDamageLabel, .12f);
             bool showDamage = combat.currentState == GameState.EnemyAttacking;
             pendingDamageLabel.gameObject.SetActive(showDamage);
             pendingDamageLabel.text = showDamage
