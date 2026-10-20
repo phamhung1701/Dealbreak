@@ -131,7 +131,15 @@ public static class DealbreakCentralStageAuthoring
         foreach (var control in new[] { actions.playButton, actions.blockButton, actions.passButton })
             control.GetComponentInChildren<TMP_Text>(true).fontSize = 30;
         var pause = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<PauseMenuUI>(true)).First();
-        DealbreakUIStyle.Place(pause.pauseButton.transform, .90f, .94f, .98f, .98f);
+        // A square "||" icon pinned to the run header's top-right corner.
+        var pauseRect = (RectTransform)pause.pauseButton.transform;
+        pauseRect.anchorMin = pauseRect.anchorMax = pauseRect.pivot = Vector2.one;
+        pauseRect.sizeDelta = new Vector2(58.34f, 58.34f);
+        pauseRect.anchoredPosition = new Vector2(17.2f, -5.93f);
+        var pauseGlyph = pause.pauseButton.GetComponentInChildren<TMP_Text>(true);
+        pauseGlyph.text = "||";
+        // Button styling caps label size; the transform scale makes the thin bars read as an icon.
+        pauseGlyph.rectTransform.localScale = new Vector3(1.6f, 1.6f, 1f);
         pause.restartButton.GetComponentInChildren<TMP_Text>(true).text = "BACK TO MAIN MENU";
         pause.restartButton.name = "BackToMainMenuButton";
         var result = root.GetComponent<RunResultUI>();
