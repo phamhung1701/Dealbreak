@@ -19,6 +19,7 @@ public class PathScreenUI : MonoBehaviour
     // The route map can be looked at (not used) from a fight, Incident or Black Market.
     bool _peeking;
     int _peekSiblingIndex = -1;
+    RectTransform _peekBackdrop;
     Button _mapVisibilityButton;
     TMP_Text _mapVisibilityLabel;
 
@@ -35,6 +36,7 @@ public class PathScreenUI : MonoBehaviour
     {
         if (!_deckViewer) _deckViewer = GetComponent<DeckViewerUI>();
         if (_peeking && (RunManager.Instance == null || RunManager.Instance.ActiveNode == null)) EndPeek();
+        if (_peeking) FitPeekBackdrop();
         if (_mapVisibilityButton)
         {
             bool visible = (_peeking || CanPeekMap()) &&
@@ -204,6 +206,7 @@ public class PathScreenUI : MonoBehaviour
     {
         EndPeek();
         if (headerText) headerText.text = "VICTORY!";
+        if (_peekBackdrop) _peekBackdrop.gameObject.SetActive(false);
         BoardPanelTransition.Show(panel);
         SetMapVisibilityControl(false);
     }
@@ -225,6 +228,7 @@ public class PathScreenUI : MonoBehaviour
     {
         _pendingMapShow = false;
         BuildMap();
+        if (_peekBackdrop) _peekBackdrop.gameObject.SetActive(false);
         BoardPanelTransition.Show(panel);
         // Choosing a route has no map button: the map simply stays open.
         SetMapVisibilityControl(false);
@@ -570,6 +574,12 @@ public class PathScreenUI : MonoBehaviour
         _peekSiblingIndex = panel.transform.GetSiblingIndex();
         panel.transform.SetAsLastSibling();
         if (_mapVisibilityButton) _mapVisibilityButton.transform.SetAsLastSibling();
+        EnsurePeekBackdrop();
+        if (_peekBackdrop)
+        {
+            _peekBackdrop.gameObject.SetActive(true);
+            FitPeekBackdrop();
+        }
         BoardPanelTransition.Show(panel);
         SetMapVisibilityControl(true);
     }
@@ -583,8 +593,48 @@ public class PathScreenUI : MonoBehaviour
             BoardPanelTransition.Hide(panel);
             if (_peekSiblingIndex >= 0) panel.transform.SetSiblingIndex(_peekSiblingIndex);
         }
+        // The backdrop fades out inside the panel; route choice and victory switch it off.
         _peekSiblingIndex = -1;
         if (_mapVisibilityButton) SetMapVisibilityControl(CanPeekMap());
+    }
+
+    // An opened map covers the whole screen behind it, so the fight, Incident or Black Market
+    // underneath neither shows through nor takes clicks. It lives inside the panel to fade with it.
+    void EnsurePeekBackdrop()
+    {
+        if (_peekBackdrop != null || panel == null) return;
+        var backdrop = new GameObject("MapPeekBackdrop", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        backdrop.layer = panel.layer;
+        backdrop.transform.SetParent(panel.transform, false);
+        backdrop.transform.SetAsFirstSibling();
+        _peekBackdrop = backdrop.GetComponent<RectTransform>();
+        _peekBackdrop.anchorMin = Vector2.zero;
+        _peekBackdrop.anchorMax = Vector2.one;
+
+        var image = backdrop.GetComponent<Image>();
+        var board = transform.Find("Background")?.GetComponent<Image>();
+        if (board != null)
+        {
+            image.sprite = board.sprite;
+            image.type = board.type;
+            image.pixelsPerUnitMultiplier = board.pixelsPerUnitMultiplier;
+            image.color = new Color(board.color.r, board.color.g, board.color.b, 1f);
+        }
+        else image.color = DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.charcoal : new Color(0.1f, 0.12f, 0.13f);
+        image.raycastTarget = true;
+        backdrop.SetActive(false);
+    }
+
+    // Stretches past the panel to the edges of its parent screen, with overscan so the panel's
+    // show/hide scale never uncovers a sliver of the board.
+    void FitPeekBackdrop()
+    {
+        if (_peekBackdrop == null || panel == null || panel.transform is not RectTransform panelRect ||
+            panelRect.parent is not RectTransform screen) return;
+        Vector2 size = screen.rect.size;
+        Vector2 overscan = size * 0.05f;
+        _peekBackdrop.offsetMin = -(Vector2.Scale(panelRect.anchorMin, size) + panelRect.offsetMin) - overscan;
+        _peekBackdrop.offsetMax = size - Vector2.Scale(panelRect.anchorMax, size) - panelRect.offsetMax + overscan;
     }
 
     static string GetNodeHeading(PathNode node, RunManager run)

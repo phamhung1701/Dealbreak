@@ -154,6 +154,18 @@ public sealed class Phase7DMapVisibilityTests
             Assert.That(panelObject.transform.GetSiblingIndex(), Is.GreaterThan(market.transform.GetSiblingIndex()),
                 "The map opens above the screen it is looked at from.");
             Assert.That(control.GetComponentInChildren<TMPro.TMP_Text>().text, Is.EqualTo("CLOSE MAP"));
+            var backdrop = panelObject.transform.Find("MapPeekBackdrop") as RectTransform;
+            Assert.That(backdrop, Is.Not.Null);
+            Assert.That(backdrop.gameObject.activeSelf, Is.True, "An opened map covers the screen behind it.");
+            Assert.That(backdrop.GetComponent<Image>().raycastTarget, Is.True, "The screen behind takes no clicks.");
+            var screenCorners = new Vector3[4];
+            var backdropCorners = new Vector3[4];
+            ((RectTransform)root.transform).GetWorldCorners(screenCorners);
+            backdrop.GetWorldCorners(backdropCorners);
+            Assert.That(backdropCorners[0].x, Is.LessThanOrEqualTo(screenCorners[0].x));
+            Assert.That(backdropCorners[0].y, Is.LessThanOrEqualTo(screenCorners[0].y));
+            Assert.That(backdropCorners[2].x, Is.GreaterThanOrEqualTo(screenCorners[2].x));
+            Assert.That(backdropCorners[2].y, Is.GreaterThanOrEqualTo(screenCorners[2].y));
             InvokePrivate(ui, "ToggleMapVisibility");
             Assert.That(panelObject.activeSelf, Is.False);
             Assert.That(panelObject.transform.GetSiblingIndex(), Is.LessThan(market.transform.GetSiblingIndex()),
@@ -170,6 +182,9 @@ public sealed class Phase7DMapVisibilityTests
                 System.Reflection.BindingFlags.NonPublic).SetValue(run, null);
             InvokePrivate(ui, "LateUpdate");
             Assert.That(panelObject.activeSelf, Is.False, "Leaving the node ends the look-ahead.");
+
+            InvokePrivate(ui, "ShowImmediately");
+            Assert.That(backdrop.gameObject.activeSelf, Is.False, "Choosing a route keeps the board visible.");
 
             InvokePrivate(ui, "HandleRunCompleted");
             Assert.That(control.gameObject.activeSelf, Is.False, "The map button is hidden for final victory.");
