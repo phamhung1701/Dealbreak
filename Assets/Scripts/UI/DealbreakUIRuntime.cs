@@ -21,6 +21,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     public RunEventUI incident;
     float _nextStyleCheck;
     int _lastSignature;
+    readonly System.Collections.Generic.HashSet<Object> _styled=new();
     int _lastShopCredits=int.MinValue;
     bool? _lastDefenseLayout;
     bool _compactHealthLayout;
@@ -58,7 +59,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
                 min.y + size.y * .06f, min.x + size.x * .17f, min.y + size.y * .48f);
     }
 
-    public void RefreshStyles(){DealbreakUIStyle.ApplyHierarchy(transform);}
+    // Styles each control once; restyling live ones reset fonts and colors for a frame (a visible flash).
+    public void RefreshStyles(){_styled.RemoveWhere(item=>!item);DealbreakUIStyle.ApplyHierarchy(transform,_styled);}
     void BindTricks()
     {
         if(!actions)return;

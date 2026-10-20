@@ -17,8 +17,18 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
     bool? _lastAvailable;
     void LateUpdate()
     {
+        if(!Refresh())return;
+        var rect=frame.rectTransform;
+        bool available=_lastAvailable==true;
+        var target=new Vector2(0,_pressed&&available?-2:available&&(_hover||_focus)?2:0);
+        rect.anchoredPosition=Vector2.Lerp(rect.anchoredPosition,target,1-Mathf.Exp(-Time.unscaledDeltaTime*24));
+    }
+    // Fill, rim and label colors for the current state. Styling calls it at once, so a button built
+    // mid-frame is never drawn for a frame with its default dark fill.
+    public bool Refresh()
+    {
         var theme=DealbreakUIStyle.Theme;
-        if (!button || !frame || !theme) return;
+        if (!button || !frame || !theme) return false;
         bool available=button.IsInteractable();
         if(_lastAvailable!=available)
         {
@@ -39,9 +49,7 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
         Color rim=_pressed&&available&&emphasized?theme.brick:selected||available&&(_hover||_focus)?theme.paper:emphasized?theme.ochre:theme.slate;
         float border=emphasized?Mathf.Max(4f,frame.border):frame.border;
         if(fill!=frame.fill||rim!=frame.rim||border!=frame.border){frame.border=border;frame.fill=fill;frame.rim=rim;frame.Refresh();}
-        var rect=frame.rectTransform;
-        var target=new Vector2(0,_pressed&&available?-2:available&&(_hover||_focus)?2:0);
-        rect.anchoredPosition=Vector2.Lerp(rect.anchoredPosition,target,1-Mathf.Exp(-Time.unscaledDeltaTime*24));
+        return true;
     }
     public void OnPointerEnter(PointerEventData _) => _hover=true;
     public void OnPointerExit(PointerEventData _) { _hover=false;_pressed=false; }

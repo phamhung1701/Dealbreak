@@ -448,6 +448,9 @@ public class ShopUI : MonoBehaviour
             }
         }
         RefreshInlinePrices();
+        // Style the rebuilt rows now; left to the periodic check they show default fonts for a few frames.
+        var styles = GetComponentInParent<DealbreakUIRuntime>();
+        if (styles) styles.RefreshStyles();
         Canvas.ForceUpdateCanvases();
         if (_offersScroll != null)
         {

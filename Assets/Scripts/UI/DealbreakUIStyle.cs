@@ -76,6 +76,7 @@ public static class DealbreakUIStyle
                 paper?21:open?29:Mathf.Max(18,Mathf.Min(24,label.fontSize)),paper||!open&&role==EditorialButton.Role.Primary?Theme.ink:Theme.paper);
             label.margin=new Vector4(8,2,8,2);label.fontStyle=FontStyles.Normal;
         }
+        style.Refresh();
     }
     public static void Text(TMP_Text text,TMP_FontAsset font,float size,Color color)
     {
@@ -101,11 +102,15 @@ public static class DealbreakUIStyle
         }
         if(changed)text.UpdateMeshPadding();
     }
-    public static void ApplyHierarchy(Transform root)
+    // With a styled set, only controls not in it yet are styled (and added); live controls keep
+    // the state their owners set, so a late restyle cannot flash them back to defaults.
+    public static void ApplyHierarchy(Transform root,System.Collections.Generic.HashSet<UnityEngine.Object> styled=null)
     {
         if(!root||!Theme)return;
+        bool Fresh(UnityEngine.Object item)=>styled==null||styled.Add(item);
         foreach(var text in root.GetComponentsInChildren<TMP_Text>(true))
         {
+            if(!Fresh(text))continue;
             if(text.GetComponentInParent<CardView>()!=null||text.GetComponentInParent<ShopOfferUI>()!=null)continue;
             string name=text.name.ToLowerInvariant();
             bool numeric=name.Contains("health")||name.Contains("hp")||name.Contains("credits")||name.Contains("count")||name.Contains("capacity")||name.Contains("damage");
@@ -136,7 +141,7 @@ public static class DealbreakUIStyle
         foreach(var button in root.GetComponentsInChildren<Button>(true))
         {
             string name=button.name.ToLowerInvariant();
-            if(name=="blocker"||button.GetComponent<ShopOfferUI>())continue;
+            if(name=="blocker"||button.GetComponent<ShopOfferUI>()||!Fresh(button))continue;
             var role=name.Contains("discard")||name.Contains("abandon")||name.Contains("delete")||name.Contains("quit")||name.Contains("replace")?EditorialButton.Role.Destructive:
                 name.Contains("confirm")||name.Contains("buy")||name.Contains("play")||name.Contains("newrun")||name.Contains("start")||name.Contains("apply")||name.StartsWith("use")?EditorialButton.Role.Primary:
                 name.Contains("back")||name.Contains("cancel")||name.Contains("sort")||name.Contains("pass")||name.Contains("pause")||name.Contains("build")?EditorialButton.Role.Quiet:EditorialButton.Role.Secondary;
@@ -146,12 +151,14 @@ public static class DealbreakUIStyle
         }
         foreach(var tooltip in root.GetComponentsInChildren<ContextualTooltipUI>(true))
         {
+            if(!Fresh(tooltip))continue;
             Text(tooltip.title,Theme.headingFont,27,Theme.paper);
             tooltip.title.overflowMode=TextOverflowModes.Overflow;tooltip.title.alignment=TextAlignmentOptions.TopLeft;
             Text(tooltip.body,Theme.bodyFont,19,Theme.ink);
         }
         foreach(var dropdown in root.GetComponentsInChildren<TMP_Dropdown>(true))
         {
+            if(!Fresh(dropdown))continue;
             Frame(dropdown.transform,false,true);dropdown.transition=Selectable.Transition.None;
             var arrow=dropdown.transform.Find("Arrow");
             if(arrow)
@@ -177,10 +184,10 @@ public static class DealbreakUIStyle
             }
         }
         foreach(var input in root.GetComponentsInChildren<TMP_InputField>(true))
-        {Frame(input.transform,false,true);input.transition=Selectable.Transition.None;}
+        if(Fresh(input)){Frame(input.transform,false,true);input.transition=Selectable.Transition.None;}
         foreach(var toggle in root.GetComponentsInChildren<Toggle>(true))
         {
-            var backing=toggle.transform.Find("Background")??toggle.transform.Find("Box");if(!backing)continue;
+            var backing=toggle.transform.Find("Background")??toggle.transform.Find("Box");if(!backing||!Fresh(toggle))continue;
             var frame=Frame(backing,false,true);frame.corner=4;frame.border=2;frame.showAccent=false;frame.Refresh();
             toggle.transition=Selectable.Transition.None;if(toggle.graphic)toggle.graphic.color=Theme.ochre;
         }
