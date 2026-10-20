@@ -26,8 +26,7 @@ public sealed class Phase2EliteRouteTests
                 var nodes = RunMapGenerator.Generate(new RunRandomContext(seed), mapIndex, null);
                 var elites = nodes.Where(node => node.kind == MapNodeType.Elite).ToArray();
 
-                Assert.That(elites.Length, mapIndex < 2 ? Is.Zero : Is.InRange(0, 2),
-                    $"map={mapIndex}, seed={seed}");
+                Assert.That(elites.Length, Is.InRange(0, 2), $"map={mapIndex}, seed={seed}");
                 Assert.That(elites.All(node => node.col > 0 && node.revealed && !node.hidden), Is.True);
                 AssertAlternativeForEachElitePredecessor(nodes, mapIndex, seed);
 
@@ -95,10 +94,8 @@ public sealed class Phase2EliteRouteTests
                 var fallback = RunMapGenerator.Generate(new RunRandomContext($"elite-roster-{seed}"), mapIndex, null, new[] { goblin });
                 Assert.That(fallback.Where(node => node.kind == MapNodeType.Combat).All(node => node.contentId == goblin.name), Is.True);
             }
-            if (mapIndex < 2)
-                Assert.That(selected, Is.Empty, $"Map {mapIndex + 1} is protected from Elite nodes.");
-            else
-                CollectionAssert.AreEquivalent(new[] { captain.name, knight.name }, selected, $"Map {mapIndex + 1}");
+            // Enforcers can appear from District 1 on.
+            CollectionAssert.AreEquivalent(new[] { captain.name, knight.name }, selected, $"Map {mapIndex + 1}");
         }
     }
 
