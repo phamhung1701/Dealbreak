@@ -42,6 +42,17 @@ public static class ItemIconUI
         return true;
     }
 
+    /// <summary>Shows <paramref name="sprite"/> as a fixed square pinned to <paramref name="parent"/>'s top-left corner.</summary>
+    public static bool ShowTopLeft(Transform parent, Sprite sprite, float size, Vector2 inset)
+    {
+        if (!Show(parent, sprite)) return false;
+        var rect = (RectTransform)parent.Find(ChildName);
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+        rect.sizeDelta = new Vector2(size, size);
+        rect.anchoredPosition = new Vector2(inset.x, -inset.y);
+        return true;
+    }
+
     /// <summary>The sprite currently shown in <paramref name="parent"/>, if any.</summary>
     public static Sprite Shown(Transform parent)
     {

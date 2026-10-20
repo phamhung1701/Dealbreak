@@ -12,6 +12,10 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
 {
     const float TitleHeight = 58f;
     const float ButtonRowHeight = 60f;
+    // Gear and Trick offers show their item art down the tile's left side; name and status sit to its
+    // right. It fits the tile's base height (TitleHeight + ButtonRowHeight + 12), so tiles don't grow.
+    const float IconSize = 106f;
+    const float IconInset = 12f;
     /// <summary>Height of the Supply/Stake quantity row, which sits above the price button.</summary>
     public const float QuantityRowHeight = 56f;
     public static float QuantityRowBottom => ButtonRowHeight + 6f;
@@ -40,6 +44,7 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         DealbreakUIStyle.Frame(transform,true);
         var old=GetComponent<EditorialButton>();if(old)old.enabled=false;
         titleLabel.text=offer.DisplayName;
+        ItemIconUI.ShowTopLeft(transform,offer.IconSprite,IconSize,new Vector2(IconInset,IconInset));
         statusLabel.text=availability?.Replace("Backpack Full","Trick slots full");
         // The price lives on the buy button and the rules text in the click detail.
         if(priceLabel)priceLabel.gameObject.SetActive(false);
@@ -66,13 +71,15 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
     {
         _selected=selected;
         if(Offer==null||!statusLabel)return;
-        float width=Mathf.Max(180,((RectTransform)transform.parent).rect.width*.90f);
+        bool hasIcon=ItemIconUI.Shown(transform)!=null;
+        float textLeft=hasIcon?IconInset+IconSize+14:0;float textAnchor=hasIcon?0:.05f;
+        float width=Mathf.Max(180,((RectTransform)transform.parent).rect.width*.90f-textLeft);
         bool hasStatus=!string.IsNullOrEmpty(statusLabel.text);
         float statusHeight=hasStatus?statusLabel.GetPreferredValues(statusLabel.text,width,0).y+6:0;
         float height=TitleHeight+statusHeight+ButtonRowHeight+12+(HasQuantityControls?QuantityRowHeight:0);
         var layout=GetComponent<LayoutElement>();if(!layout)layout=gameObject.AddComponent<LayoutElement>();layout.minHeight=layout.preferredHeight=height;
-        var title=titleLabel.rectTransform;title.anchorMin=new Vector2(.05f,1);title.anchorMax=new Vector2(.95f,1);title.offsetMin=new Vector2(0,-TitleHeight);title.offsetMax=new Vector2(0,-14);
-        var status=statusLabel.rectTransform;status.anchorMin=new Vector2(.05f,1);status.anchorMax=new Vector2(.95f,1);status.pivot=new Vector2(.5f,1);status.anchoredPosition=new Vector2(0,-TitleHeight);status.sizeDelta=new Vector2(0,statusHeight);
+        var title=titleLabel.rectTransform;title.anchorMin=new Vector2(textAnchor,1);title.anchorMax=new Vector2(.95f,1);title.offsetMin=new Vector2(textLeft,-TitleHeight);title.offsetMax=new Vector2(0,-14);
+        var status=statusLabel.rectTransform;status.anchorMin=new Vector2(textAnchor,1);status.anchorMax=new Vector2(.95f,1);status.pivot=new Vector2(.5f,1);status.anchoredPosition=new Vector2(textLeft/2,-TitleHeight);status.sizeDelta=new Vector2(-textLeft,statusHeight);
         statusLabel.gameObject.SetActive(hasStatus);
         purchaseButton.gameObject.SetActive(true);
         var buy=(RectTransform)purchaseButton.transform;buy.anchorMin=new Vector2(.58f,0);buy.anchorMax=new Vector2(.95f,0);buy.offsetMin=new Vector2(0,12);buy.offsetMax=new Vector2(0,12+ButtonRowHeight-14);

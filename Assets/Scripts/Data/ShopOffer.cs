@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 public enum ShopOfferKind
 {
@@ -70,6 +71,14 @@ public sealed class ShopOffer
         ShopOfferKind.Guidance => "MAP",
         ShopOfferKind.Consumable => consumable != null ? consumable.icon : string.Empty,
         _ => string.Empty
+    };
+
+    /// <summary>The authored item sprite of a Gear or Trick offer; services have none.</summary>
+    public Sprite IconSprite => kind switch
+    {
+        ShopOfferKind.Gear => gear != null ? gear.iconSprite : null,
+        ShopOfferKind.Consumable => consumable != null ? consumable.iconSprite : null,
+        _ => null
     };
 
     public string Description(CardManager cards)

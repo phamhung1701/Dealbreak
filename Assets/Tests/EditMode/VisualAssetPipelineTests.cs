@@ -75,6 +75,16 @@ public sealed class VisualAssetPipelineTests
     }
 
     [Test]
+    public void ShopOffer_IconSprite_IsTheItemArt_AndServicesHaveNone()
+    {
+        var gear = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Dagger.asset");
+        var trick = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Mirror.asset");
+        Assert.AreSame(gear.iconSprite, new ShopOffer { kind = ShopOfferKind.Gear, gear = gear }.IconSprite);
+        Assert.AreSame(trick.iconSprite, new ShopOffer { kind = ShopOfferKind.Consumable, consumable = trick }.IconSprite);
+        Assert.IsNull(new ShopOffer { kind = ShopOfferKind.Supply }.IconSprite);
+    }
+
+    [Test]
     public void EveryGearAndTrick_HasAnAuthoredIconSprite()
     {
         var missing = AssetDatabase.FindAssets("t:GearData").Concat(AssetDatabase.FindAssets("t:ConsumableData"))
