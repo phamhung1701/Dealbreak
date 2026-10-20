@@ -132,9 +132,11 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             // The HP panel stays beside the compact hand: healing Tricks are dropped on it.
             bool health=compactHand&&playerState&&group.transform==playerState;
             bool kept=handVisual||handCounter||health;
-            // After the fight ends only the enemies, hand and HP stay up while the last defeat plays.
+            // After the fight ends only the enemies, hand and HP stay up while the last defeat plays,
+            // and the draw pile while a Headliner reward card flies into it.
+            var rewardDeck=AttackCardPresentationUI.Instance?AttackCardPresentationUI.Instance.RewardDeckTarget:null;
             bool shownWhilePresenting=CombatActive||i<=1||playerState&&group.transform==playerState||
-                _enemyContainer&&_enemyContainer.IsChildOf(group.transform);
+                _enemyContainer&&_enemyContainer.IsChildOf(group.transform)||rewardDeck&&rewardDeck.IsChildOf(group.transform);
             bool hidden=overlay&&!kept||RunResultUI.IsShowingResult||(!board||!shownWhilePresenting)&&!choosingCard&&!kept||choosingCard&&i>1;
             group.alpha=hidden?0:1;group.blocksRaycasts=!hidden;group.interactable=!hidden;
         }

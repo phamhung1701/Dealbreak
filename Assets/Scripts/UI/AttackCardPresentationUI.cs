@@ -42,7 +42,10 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     public int ActiveVisualCount => _activeCards.Count;
     public int ActiveHitNumberCount => _hitNumbers.Count;
     public bool IsBusy => _pendingCommits > 0 || _activeCards.Count > 0 || _hitNumbers.Count > 0 ||
-        enemyGroup != null && enemyGroup.IsDefeatPresentationBusy;
+        _rewardFlights.Count > 0 || enemyGroup != null && enemyGroup.IsDefeatPresentationBusy;
+    readonly List<GameObject> _rewardFlights = new();
+    /// <summary>The draw pile a Headliner reward card is flying into, while it flies; otherwise null.</summary>
+    public RectTransform RewardDeckTarget => _rewardFlights.Count > 0 ? deckTarget : null;
     public event Action OnPresentationCompleted;
     public event Action OnPresentationCancelled;
 
@@ -63,7 +66,11 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             _combat.OnEnemiesChanged += HandleEnemiesChanged;
             _combat.OnDamageResolved += HandleDamageResolved;
         }
-        if (_run != null) _run.OnRunStarted += HandleRunStarted;
+        if (_run != null)
+        {
+            _run.OnRunStarted += HandleRunStarted;
+            _run.OnHeadlinerRewardGranted += HandleHeadlinerRewardGranted;
+        }
         if (enemyGroup != null) enemyGroup.OnDefeatPresentationCompleted += HandleDefeatPresentationCompleted;
     }
 
@@ -74,7 +81,11 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             _combat.OnEnemiesChanged -= HandleEnemiesChanged;
             _combat.OnDamageResolved -= HandleDamageResolved;
         }
-        if (_run != null) _run.OnRunStarted -= HandleRunStarted;
+        if (_run != null)
+        {
+            _run.OnRunStarted -= HandleRunStarted;
+            _run.OnHeadlinerRewardGranted -= HandleHeadlinerRewardGranted;
+        }
         if (enemyGroup != null) enemyGroup.OnDefeatPresentationCompleted -= HandleDefeatPresentationCompleted;
         _combat = null;
         _run = null;
@@ -244,6 +255,9 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         for (int i = 0; i < _hitNumbers.Count; i++)
             if (_hitNumbers[i] != null) DestroyVisual(_hitNumbers[i]);
         _hitNumbers.Clear();
+        for (int i = 0; i < _rewardFlights.Count; i++)
+            if (_rewardFlights[i] != null) DestroyVisual(_rewardFlights[i]);
+        _rewardFlights.Clear();
         for (int i = 0; i < _activeCards.Count; i++)
             if (_activeCards[i] != null) DestroyVisual(_activeCards[i].gameObject);
         _activeCards.Clear();
@@ -455,6 +469,85 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         _activeCards.Remove(card);
         DestroyVisual(card.gameObject);
         NotifyIfIdle();
+    }
+
+    void HandleHeadlinerRewardGranted(CardInstance reward)
+    {
+        var prefab = CardManager.Instance != null ? CardManager.Instance.cardPrefab : null;
+        var sprite = prefab != null && reward != null ? prefab.ResolveCardSprite(reward) : null;
+        if (sprite == null || !isActiveAndEnabled || presentationCanvas == null || deckTarget == null) return;
+        var canvasRect = (RectTransform)presentationCanvas.transform;
+        if (!TryPoint(canvasRect, deckTarget, out var deckPoint)) return;
+        Vector2 origin = enemyGroup != null && enemyGroup.enemyContainer != null &&
+            TryPoint(canvasRect, enemyGroup.enemyContainer, out var area) ? area : Vector2.zero;
+        var card = new GameObject("Headliner Reward Card", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        var rect = (RectTransform)card.transform;
+        rect.SetParent(canvasRect, false);
+        rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+        rect.sizeDelta = new Vector2(170f, 238f);
+        rect.anchoredPosition = origin;
+        rect.localScale = Vector3.zero;
+        var image = card.GetComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        _rewardFlights.Add(card);
+        _wasBusy = true;
+        StartCoroutine(FlyRewardIntoDeck(rect, origin, deckPoint));
+    }
+
+    IEnumerator FlyRewardIntoDeck(RectTransform card, Vector2 origin, Vector2 deck)
+    {
+        // It appears once the Headliner's own defeat has played.
+        float waited = 0f;
+        while (enemyGroup != null && enemyGroup.IsDefeatPresentationBusy && waited < 2f)
+        {
+            waited += Time.deltaTime;
+            yield return null;
+        }
+        float elapsed = 0f;
+        while (elapsed < .28f && card)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / .28f);
+            card.localScale = Vector3.one * Mathf.LerpUnclamped(0f, 1f, EaseOutBack(t));
+            card.anchoredPosition = origin + Vector2.up * (40f * EaseOutCubic(t));
+            yield return null;
+        }
+        yield return Wait(.45f);
+        Vector2 start = origin + Vector2.up * 40f;
+        Vector2 control = new((start.x + deck.x) * .5f, Mathf.Max(start.y, deck.y) + 140f);
+        elapsed = 0f;
+        while (elapsed < .5f && card)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / .5f);
+            float eased = t * t;
+            card.anchoredPosition = (1 - eased) * (1 - eased) * start + 2 * (1 - eased) * eased * control + eased * eased * deck;
+            card.localScale = Vector3.one * Mathf.Lerp(1f, .55f, t);
+            card.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, -12f, t));
+            yield return null;
+        }
+        if (card)
+        {
+            _rewardFlights.Remove(card.gameObject);
+            DestroyVisual(card.gameObject);
+        }
+        if (deckTarget) yield return PopDeck();
+        NotifyIfIdle();
+    }
+
+    IEnumerator PopDeck()
+    {
+        Vector3 rest = deckTarget.localScale;
+        float elapsed = 0f;
+        while (elapsed < .16f && deckTarget)
+        {
+            elapsed += Time.deltaTime;
+            deckTarget.localScale = rest * (1f + Mathf.Sin(Mathf.Clamp01(elapsed / .16f) * Mathf.PI) * .12f);
+            yield return null;
+        }
+        if (deckTarget) deckTarget.localScale = rest;
     }
 
     static IEnumerator Wait(float duration)
