@@ -283,6 +283,31 @@ public sealed class PerAttackerDefenseTests
     }
 
     [Test]
+    public void PreviewBlockedAttackers_NamesEachCardsAttackerWithoutChangingState()
+    {
+        var views = HandViews().Skip(1).ToArray();
+        var first = views[0];
+        var second = views.First(view => _combat.CalculateCardDefense(view.data) != _combat.CalculateCardDefense(first.data));
+        var pair = new[] { first, second };
+        int[] values = pair.Select(view => _combat.CalculateCardDefense(view.data)).ToArray();
+        StartDefenseWindow(values);
+        int pending = _combat.pendingDamage;
+        int handCount = _cards.HandCount;
+
+        var preview = _combat.PreviewBlockedAttackers(pair.Select(view => view.data).ToArray());
+
+        Assert.That(preview, Has.Length.EqualTo(2));
+        Assert.That(_combat.pendingDamage, Is.EqualTo(pending));
+        Assert.That(_cards.HandCount, Is.EqualTo(handCount));
+        var results = new List<DefenseAttackResult>();
+        _combat.OnDefenseAttackResolved += results.Add;
+        Assert.That(_combat.TryDefendWithCards(pair), Is.True);
+        for (int i = 0; i < pair.Length; i++)
+            Assert.That(preview[i], Is.SameAs(results.Single(result => result.IncomingDamage == values[i]).Attacker),
+                $"Card {i} blocks the attack it fully covers.");
+    }
+
+    [Test]
     public void DefenseAttackResult_ZeroDamageDoesNotReportCardBlock()
     {
         var defense = HandViews()[0];

@@ -424,6 +424,22 @@ public partial class CombatManager : Singleton<CombatManager>
 
     // Full-coverage attacks require one sufficient card. Ordinary attacks accept partial
     // Block and can receive multiple cards. Stronger cards/attacks win deterministic ties.
+    /// <summary>
+    /// Read-only preview of which attacker each defense card would block, aligned with
+    /// <paramref name="cards"/>; null when the selection is not a valid block. Changes no state.
+    /// </summary>
+    public EnemyRuntime[] PreviewBlockedAttackers(IReadOnlyList<CardInstance> cards)
+    {
+        if (cards == null || currentState != GameState.EnemyAttacking) return null;
+        var matched = MatchDefenseAssignments(cards);
+        if (matched == null) return null;
+        var attackers = new EnemyRuntime[cards.Count];
+        foreach (var assignment in matched)
+            if (assignment.AttackIndex >= 0 && assignment.AttackIndex < _pendingAttackSources.Count)
+                attackers[assignment.CardOrder] = _pendingAttackSources[assignment.AttackIndex];
+        return attackers;
+    }
+
     List<DefenseAssignment> MatchDefenseAssignments(IReadOnlyList<CardInstance> cards)
     {
         var cardOrder = new List<int>(cards.Count);

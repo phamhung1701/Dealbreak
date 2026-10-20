@@ -23,6 +23,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     const float AttackTravelTime = 0.2f;
     const float DraggedTravelTime = 0.16f;
     const float BlockTravelTime = 0.16f;
+    const float BlockStagger = 0.05f;
     const float HitSpacing = 0.065f;
     const float FlashTime = 0.12f;
     const float FlipHalfTime = 0.07f;
@@ -127,8 +128,31 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
 
         if (!TryCaptureVisuals(cards, canvasRect, true, null, out var staged, out var origins, out var draggedFlags))
             return combat.TryDefendWithCards(cards, target);
-        return CommitAndAnimate(staged, origins, draggedFlags, blockPoint, deckPoint,
+        // Each block card hits the attacker whose attack it blocks, as an attack card would.
+        var instances = new CardInstance[cards.Length];
+        for (int i = 0; i < cards.Length; i++) instances[i] = cards[i] != null ? cards[i].data : null;
+        var attackers = combat.PreviewBlockedAttackers(instances);
+        var impacts = new Vector2[cards.Length];
+        for (int i = 0; i < impacts.Length; i++)
+            impacts[i] = attackers != null && attackers[i] != null &&
+                TryGetEnemyPoint(attackers[i], out _, out var attackerPoint) ? attackerPoint : blockPoint;
+        bool committed = CommitAndAnimate(staged, origins, draggedFlags, impacts, deckPoint,
             () => combat.TryDefendWithCards(cards, target), isBlock: true);
+        if (committed && attackers != null) PlayBlockedReactions(attackers);
+        return committed;
+    }
+
+    void PlayBlockedReactions(EnemyRuntime[] attackers)
+    {
+        if (enemyGroup == null) return;
+        var reacted = new HashSet<EnemyRuntime>();
+        for (int i = 0; i < attackers.Length; i++)
+        {
+            if (attackers[i] == null || !reacted.Add(attackers[i])) continue;
+            foreach (var view in enemyGroup.ActiveViews)
+                if (view != null && ReferenceEquals(view.DisplayedEnemy, attackers[i]))
+                    view.PlayHitCue(true, BlockTravelTime + i * BlockStagger);
+        }
     }
 
     bool TryCaptureVisuals(CardView[] cards, RectTransform canvasRect, bool isBlock, CardView draggedCard,
@@ -167,6 +191,14 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     bool CommitAndAnimate(List<RectTransform> staged, List<Vector2> origins, List<bool> draggedFlags,
         Vector2 targetPoint, Vector2 deckPoint, System.Func<bool> commit, bool isBlock)
     {
+        var impacts = new Vector2[staged.Count];
+        for (int i = 0; i < impacts.Length; i++) impacts[i] = targetPoint;
+        return CommitAndAnimate(staged, origins, draggedFlags, impacts, deckPoint, commit, isBlock);
+    }
+
+    bool CommitAndAnimate(List<RectTransform> staged, List<Vector2> origins, List<bool> draggedFlags,
+        IReadOnlyList<Vector2> targetPoints, Vector2 deckPoint, System.Func<bool> commit, bool isBlock)
+    {
         _pendingCommits++;
         _commitImpactDelay = isBlock ? BlockTravelTime
             : draggedFlags.Contains(true) ? WindupTime + DraggedTravelTime : AttackTravelTime;
@@ -191,12 +223,12 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             return false;
         }
 
-        float stagger = isBlock ? 0.05f : HitSpacing;
+        float stagger = isBlock ? BlockStagger : HitSpacing;
         for (int i = 0; i < staged.Count; i++)
         {
             var clone = staged[i];
             _activeCards.Add(clone);
-            StartCoroutine(AnimateCard(clone, origins[i], targetPoint, deckPoint,
+            StartCoroutine(AnimateCard(clone, origins[i], targetPoints[i], deckPoint,
                 isBlock ? false : draggedFlags[i], i * stagger, isBlock));
         }
         NotifyIfIdle();
