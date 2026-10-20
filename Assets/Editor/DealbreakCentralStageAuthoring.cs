@@ -23,6 +23,7 @@ public static class DealbreakCentralStageAuthoring
         }
         finally { PrefabUtility.UnloadPrefabContents(enemy); }
         AssetDatabase.SaveAssets();
+        DealbreakNeoPunkAuthoring.Apply();
     }
 
     /// <summary>Re-applies only the Gear and Trick slot columns to Game.unity.</summary>

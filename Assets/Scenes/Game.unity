@@ -677,6 +677,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &38360879
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -752,6 +756,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &38909463
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2003,6 +2011,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &103654533
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2078,6 +2090,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &107208231
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3735,6 +3751,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &228117012
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3810,6 +3830,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &228679528
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4657,6 +4681,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &278680756
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4879,7 +4907,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &286332749
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5001,6 +5029,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &287980907
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -6238,6 +6270,10 @@ MonoBehaviour:
   showAccent: 1
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &386845968
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -6522,6 +6558,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &393999152
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -7979,6 +8019,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!224 &554001821
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8073,6 +8117,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &594960657
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -8562,6 +8610,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &618780087
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -8777,6 +8829,10 @@ MonoBehaviour:
   showAccent: 1
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &624276099
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9101,7 +9157,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &630703492
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9360,6 +9416,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &653666496
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9956,6 +10016,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &698398680
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10243,6 +10307,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &706319562
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10745,6 +10813,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &729054068
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11258,6 +11330,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &771254720
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11508,7 +11584,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &786618100
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11630,6 +11706,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &789757154
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -13601,6 +13681,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &876519395
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -14760,6 +14844,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &939017511
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -15351,7 +15439,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  m_Color: {r: 0.043137256, g: 0.043137256, b: 0.047058824, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -17020,6 +17108,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1157419052
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -17045,7 +17137,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1158526487
 RectTransform:
   m_ObjectHideFlags: 0
@@ -17638,6 +17730,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1189253274
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -18050,6 +18146,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1216068314
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -18357,6 +18457,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1231524990
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -18641,6 +18745,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1257168085
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -18856,6 +18964,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1287144483
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -18931,6 +19043,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1299719042
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -19006,6 +19122,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1337243236
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -19673,6 +19793,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1359766137
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -20264,6 +20388,10 @@ MonoBehaviour:
   showAccent: 1
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1384910434
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -20418,6 +20546,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1392765223
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -21181,6 +21313,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1422149640
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -21954,6 +22090,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1445827170
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -22260,6 +22400,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1478054287
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -22338,6 +22482,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1487675685
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -23143,6 +23291,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1525038187
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -23429,6 +23581,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!224 &1550283530
 RectTransform:
   m_ObjectHideFlags: 0
@@ -24799,7 +24955,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
   m_Material: {fileID: 0}
-  m_Color: {r: 0.6, g: 0.7, b: 0.8, a: 0.34}
+  m_Color: {r: 0.9254902, g: 0.91764706, b: 0.89411765, a: 0.045}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -26031,6 +26187,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1752183689
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -26109,6 +26269,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1753777700
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -26861,6 +27025,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1786985461
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -26936,6 +27104,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1790397687
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -28047,6 +28219,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1873146562
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -28473,6 +28649,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1921843867
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -28548,6 +28728,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1925004924
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -28919,6 +29103,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1961270160
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -28994,6 +29182,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1977617882
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -29069,6 +29261,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &1979285310
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -29372,6 +29568,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &2004157715
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -30370,6 +30570,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &2071919511
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -31183,6 +31387,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &2109709609
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -31702,6 +31910,10 @@ MonoBehaviour:
   showAccent: 0
   compact: 1
   shadowOffset: {x: 8, y: -9}
+  cut: 0
+  shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}
+  roughness: 2.5
+  tiltRange: 0.8
 --- !u!222 &2140828591
 CanvasRenderer:
   m_ObjectHideFlags: 0
