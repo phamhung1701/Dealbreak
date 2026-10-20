@@ -1,10 +1,10 @@
 """Dealbreak Gear and Trick icons: painted item art -> punk-poster screen print.
 
-Each source is cut to its silhouette and reprinted in the game palette: cream paper body,
-brick where the painting is warm and saturated, ink shading as solid fills and halftone dots,
-ink linework, a thick ink keyline and a misregistered brick shadow. The background stays
-transparent so the icon sits on the slot's own frame. Seeded noise only: a rerun reproduces
-the files exactly.
+Each source is cut to its silhouette and reprinted as a screen print in its own colours: the
+painting is separated into a few flat spot inks (muted toward the paper; greys print as paper,
+slate or charcoal), with ink shading as solid fills and halftone dots, ink linework, a paper
+sticker edge and a misregistered brick shadow. The background stays transparent so the icon
+sits on the slot's own frame. Seeded noise only: a rerun reproduces the files exactly.
 
     pip install -r Tools/PrintArt/requirements.txt
     python Tools/PrintArt/make_item_icons.py                    # writes Assets/Art/Items/**
@@ -29,10 +29,12 @@ PAPER = np.array([240, 230, 207], np.float32)
 BRICK = np.array([168, 69, 56], np.float32)
 SLATE = np.array([74, 92, 105], np.float32)
 CHARCOAL = (27, 33, 40)
+CHARCOAL_INK = np.array(CHARCOAL, np.float32)
 
 WORK = 512               # processing canvas; the object fits inside FIT
 FIT = 404
 OUT = 256                # written texture size
+SPOTS = 4                # flat colour inks per icon
 
 # Output file (Assets/Art/Items/<path>.png) -> source painting (Tools/PrintArt/item_sources/<pack>/<n>.png).
 # One icon per Gear family: every tier of a family shares it.
@@ -212,29 +214,70 @@ def badge(out, a, suit):
     a[grow(disc, 5) | shift(grow(disc, 5), 8, 7)] = 1
 
 
+def spot_fill(rgb, body, rng):
+    """The object's flat colour layer: its paint clustered into SPOTS inks by hue, each printed at
+    its lit tone (the ink halftone adds the shading) and muted toward the paper. Near-grey inks print
+    as paper or slate so neutral metal and cloth stay in the house palette."""
+    h, w = body.shape
+    L = rgb @ np.array([0.299, 0.587, 0.114], np.float32)
+    # Cluster on chroma with a little luminance, so shade changes don't split one colour in two.
+    feat = np.dstack([(rgb - L[..., None]) * 2.2, L[..., None] * 0.6])
+    px = feat[body]
+    sample = px[rng.choice(len(px), min(6000, len(px)), replace=False)]
+    centers = [sample[rng.integers(len(sample))]]
+    for _ in range(SPOTS - 1):  # k-means++ seeding
+        d = np.min([((sample - c) ** 2).sum(1) for c in centers], axis=0)
+        centers.append(sample[rng.choice(len(sample), p=d / d.sum())])
+    centers = np.array(centers)
+    for _ in range(15):
+        lab = ((sample[:, None] - centers[None]) ** 2).sum(2).argmin(1)
+        centers = np.array([sample[lab == k].mean(0) if (lab == k).any() else centers[k] for k in range(SPOTS)])
+    label = ((feat.reshape(-1, 1, 4) - centers[None]) ** 2).sum(2).argmin(1).reshape(h, w)
+    # Clean flat shapes, like a cut stencil.
+    label = np.asarray(Image.fromarray(label.astype(np.uint8)).filter(ImageFilter.ModeFilter(7)))
+
+    out = np.zeros((h, w, 3), np.float32)
+    out[:] = PAPER
+    tone = np.zeros((h, w), np.float32)
+    for k in range(SPOTS):
+        m = body & (label == k)
+        if m.sum() < 40:
+            continue
+        bright = 0.5 * L[m] + 0.5 * rgb[m].max(1)
+        lo, hi = np.percentile(bright, [5, 95])
+        tone[m] = np.clip((bright - lo) / max(hi - lo, 1e-3), 0, 1)
+        # Hue and saturation from the whole area (highlights are white or shifted); tone from its lit half.
+        hh, s, _ = colorsys.rgb_to_hsv(*rgb[m].mean(0))
+        v = colorsys.rgb_to_hsv(*rgb[m][L[m] >= np.percentile(L[m], 50)].mean(0))[2]
+        if s < 0.18:
+            ink = PAPER if v > 0.55 else SLATE if v > 0.32 else CHARCOAL_INK
+        else:
+            r, g, b = colorsys.hsv_to_rgb(hh, min(s * 1.1, 0.8) * 0.92, np.clip(v, 0.48, 0.90))
+            ink = np.array([r, g, b], np.float32) * 255 * 0.86 + PAPER * 0.14
+        out[m] = ink
+    return out, tone
+
+
 def treat(path, seed, suit=None):
     rng = np.random.default_rng(seed)
     rgb, alpha = fit(path)
     body = alpha > 0.5
     h, w = body.shape
 
-    # Tone: luma normalised over the object only.
-    L = rgb @ np.array([0.299, 0.587, 0.114], np.float32)
+    # Tone: brightness between luma and the brightest channel, so a saturated red is not read as
+    # a shadow; normalised over the object only.
+    L = 0.5 * (rgb @ np.array([0.299, 0.587, 0.114], np.float32)) + 0.5 * rgb.max(2)
     lo, hi = np.percentile(L[body], [4, 96])
     L = np.clip((L - lo) / max(hi - lo, 1e-3), 0, 1)
-    L = blur(L, 1.2)
+    # Spot colours: the painting's own colours, separated into a few flat inks. Shading reads half
+    # against the whole object and half against each colour's own range, so a dark red stays red.
+    fill, local = spot_fill(rgb, body, rng)
+    L = blur(0.5 * L + 0.5 * local, 1.2)
 
-    # Spot colour: warm, saturated paint prints brick; everything else prints on paper.
-    mx, mn = rgb.max(2), rgb.min(2)
-    sat = np.where(mx > 1e-3, (mx - mn) / np.maximum(mx, 1e-3), 0)
-    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
-    hue = np.degrees(np.arctan2(np.sqrt(3) * (g - b), 2 * r - g - b)) % 360
-    warm = ((hue < 48) | (hue > 300)) & (sat > 0.42) & (mx > 0.18)
-    warm = blur(warm.astype(np.float32), 2.0) > 0.5
-
-    # Ink: solid shadows, halftone mid-tones, XDoG linework. Deep reds keep their brick.
-    solid = L < np.where(warm, 0.08, 0.24) + (fbm(h, w, rng, 20) - 0.5) * 0.05
-    dots = halftone((0.70 - L) / 0.46, 9, 45) & ~solid
+    # Ink: solid shadows, halftone mid-tones, XDoG linework. Kept lighter than a one-colour print
+    # so the spot colours carry the object.
+    solid = L < 0.10 + (fbm(h, w, rng, 20) - 0.5) * 0.04
+    dots = halftone((0.42 - L) / 0.34, 9, 45) & ~solid
     dog = blur(L, 1.6) - blur(L, 5.0)
     lines = dog < -0.045
     ink = (solid | lines | dots) & body
@@ -244,9 +287,7 @@ def treat(path, seed, suit=None):
     keyline = grow(body, 11)
     shadow = shift(keyline, 14, 12) & ~keyline
 
-    out = np.zeros((h, w, 3), np.float32)
-    out[:] = PAPER
-    out[warm] = BRICK
+    out = fill
     out[wear(ink, rng, 0.08)] = INK
     out[contour] = INK
     out[shadow] = BRICK

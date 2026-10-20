@@ -73,7 +73,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## UI architecture (new look)
 
-- Gear and Trick icons are painted item art reprinted in the print palette by `Tools/PrintArt/make_item_icons.py` (sources in `Tools/PrintArt/item_sources`, output in `Assets/Art/Items`), assigned as `iconSprite` and drawn through `ItemIconUI`. One icon per Gear family; every tier shares it.
+- Gear and Trick icons are painted item art reprinted as screen prints in their own colours by `Tools/PrintArt/make_item_icons.py` (sources in `Tools/PrintArt/item_sources`, output in `Assets/Art/Items`), assigned as `iconSprite` and drawn through `ItemIconUI`. One icon per Gear family; every tier shares it.
 - Styling: `DealbreakUIRuntime` and `DealbreakUIStyle`. Theme colors: ink, charcoal, slate, paper, brick, ochre. Components: `EditorialFrame`, `EditorialButton`, `EditorialSurface`.
 - Many layouts are written by editor authoring scripts in `Assets/Editor/` (for example `DealbreakUIArtCorrectionAuthoring`). When moving an element, change the scene and its authoring script together.
 - `ContextualTooltipUI` is the single hover detail. Sources are `CombatInspectUI` (cards, enemies, Gear) and `ContextualInfoTrigger` (everything else, including map nodes).
