@@ -17,7 +17,7 @@ public sealed class DealbreakUIOverhaulTests
             Assert.That(font.sourceFontFile,Is.Not.Null);Assert.That(font.material.mainTexture,Is.Not.Null);
             foreach(char symbol in "♥♦♣♠")Assert.That(font.HasCharacter(symbol,true,true),Is.True,$"{font.name}: {symbol}");
         }
-        foreach(var texture in new[]{theme.paperTexture,theme.slateTexture,theme.darkTexture,theme.dryAccents,theme.cleanAccents,theme.frameReference})
+        foreach(var texture in new[]{theme.paperTexture,theme.slateTexture,theme.darkTexture,theme.dryAccents,theme.cleanAccents})
             Assert.That(texture,Is.Not.Null);
         Assert.That(theme.inkAccentMaterial.shader.name,Is.EqualTo("UI/Dealbreak Ink Accent"));
     }

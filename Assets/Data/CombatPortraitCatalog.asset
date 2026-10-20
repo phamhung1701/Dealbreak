@@ -14,69 +14,69 @@ MonoBehaviour:
   m_EditorClassIdentifier: Dealbreak.Runtime::CombatPortraitCatalog
   enemies:
   - definition: {fileID: 11400000, guid: d1bd1b5f338bb314187873c9dc5563c8, type: 2}
-    portrait: {fileID: -6388466307291303496, guid: 5ef520ae275a4ef44b41286174cb0cfb, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Scrapper
   - definition: {fileID: 11400000, guid: 4cf02a4bcf7b3ac4aa246a0da053d4eb, type: 2}
-    portrait: {fileID: 2440415452319302727, guid: 18474b7906161ed4aa7c24b2e0e33013, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Pickpocket
   - definition: {fileID: 11400000, guid: 190c7f06bbf4153429c9f2f030089994, type: 2}
-    portrait: {fileID: 1691377203916232407, guid: e21db34ce53a4ad418149e2d8cf321fc, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Security Guard
   - definition: {fileID: 11400000, guid: 3fc15e9ace73cec4598577014da993f0, type: 2}
-    portrait: {fileID: 8733140402306408335, guid: 2426df5d4d1b1d241ad29a918d376bf4, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Heavy
   - definition: {fileID: 11400000, guid: eebe928cdd822a84d9a73cadc36ea448, type: 2}
-    portrait: {fileID: 5062841606394520084, guid: 4ee544ff5f085c146b067e1e2c3a557a, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Riot Guard
   - definition: {fileID: 11400000, guid: e53fded2dea04734981d7a2006cf3d2c, type: 2}
-    portrait: {fileID: 2732753779605786464, guid: 9a77e86b084fc4d419be1d8d0fd118c9, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Crew Leader
   - definition: {fileID: 11400000, guid: f750125b5fbe30d46830bcb2df989055, type: 2}
-    portrait: {fileID: -6047057306361254735, guid: 3e2c3956169093d4da8c88a0c88ca8b5, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Riot Captain
   - definition: {fileID: 11400000, guid: 2fd812602f602b84088a41990d9297fd, type: 2}
-    portrait: {fileID: -8018291690119317969, guid: f2251e03bead3e948932adfae11afdad, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Hype Man
   - definition: {fileID: 11400000, guid: a7b7391a4df62ac4d91b57554a41935b, type: 2}
-    portrait: {fileID: -5899927303015767666, guid: 9d9ce87ceacd6294da7fd9437d93c9a8, type: 3}
-    displayName: 
+    portrait: {fileID: 0}
+    displayName: Ghost
   - definition: {fileID: 11400000, guid: 29081c6be0723fe49b906e0abf538194, type: 2}
     portrait: {fileID: 0}
     displayName: Challenger
   headliners:
   - rank: 10
     suit: 0
-    portrait: {fileID: 4742054853519213900, guid: 34ac7f519999a1e408b16ecd44eea6d7, type: 3}
+    portrait: {fileID: 0}
   - rank: 10
     suit: 1
-    portrait: {fileID: 3093263157261658991, guid: 50e4951a94f375b47bc3ab3a323ff440, type: 3}
+    portrait: {fileID: 0}
   - rank: 10
     suit: 2
-    portrait: {fileID: 8606931961757609225, guid: 83f4aa81f67ec8149bdf5338830b539d, type: 3}
+    portrait: {fileID: 0}
   - rank: 10
     suit: 3
-    portrait: {fileID: 80990270107690029, guid: 7a761c12b7cf6554eb1e7d0f3215a97c, type: 3}
+    portrait: {fileID: 0}
   - rank: 11
     suit: 0
-    portrait: {fileID: -8563812716224367430, guid: 196642198294ce142968c459eba4b61c, type: 3}
+    portrait: {fileID: 0}
   - rank: 11
     suit: 1
-    portrait: {fileID: 1566254517678948084, guid: 1a5a53bf17368ba4ba13b78d20a045fc, type: 3}
+    portrait: {fileID: 0}
   - rank: 11
     suit: 2
-    portrait: {fileID: -1631715209950051794, guid: 333abcba6c5202a45b5a860aeb02a580, type: 3}
+    portrait: {fileID: 0}
   - rank: 11
     suit: 3
-    portrait: {fileID: 3225458172907586870, guid: e420cb7f74caa6f40a7b0d455485ceb5, type: 3}
+    portrait: {fileID: 0}
   - rank: 12
     suit: 0
-    portrait: {fileID: 6698298125309412578, guid: d4129fb4d41c0ac43aa63510685a6a1b, type: 3}
+    portrait: {fileID: 0}
   - rank: 12
     suit: 1
-    portrait: {fileID: 7358693531370239811, guid: 9749619650e0bbf49832ba8db09acc84, type: 3}
+    portrait: {fileID: 0}
   - rank: 12
     suit: 2
-    portrait: {fileID: 7524834151810675183, guid: a134d07c384d84b4094e07b4f35c06ba, type: 3}
+    portrait: {fileID: 0}
   - rank: 12
     suit: 3
-    portrait: {fileID: -1638435953689872466, guid: 70c1a0fe254777b4d815bceb0a80987e, type: 3}
+    portrait: {fileID: 0}

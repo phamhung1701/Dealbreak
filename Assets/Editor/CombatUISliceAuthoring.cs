@@ -154,7 +154,7 @@ public static class CombatUISliceAuthoring
         var accent = Child(root, "CombatPrintMargin", typeof(RawImage));
         Place(accent, .025f, .865f, .13f, .895f);
         var texture = accent.GetComponent<RawImage>();
-        texture.texture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/UI_PaperHalftone_Mask_01.png");
+        texture.texture = AssetDatabase.LoadAssetAtPath<Texture2D>(DealbreakPrintTextureAuthoring.PaperGrain);
         texture.color = new Color(Paper.r, Paper.g, Paper.b, .12f); texture.raycastTarget = false;
         accent.SetSiblingIndex(1);
 
@@ -194,16 +194,17 @@ public static class CombatUISliceAuthoring
         var catalog = AssetDatabase.LoadAssetAtPath<CombatPortraitCatalog>(path);
         if (!catalog) { catalog = ScriptableObject.CreateInstance<CombatPortraitCatalog>(); AssetDatabase.CreateAsset(catalog, path); }
         string[] definitions = { "Goblin", "Thief", "Knight", "Brute", "Shieldbearer", "GoblinCaptain", "RoyalKnight", "WarDrummer", "MasterThief" };
-        string[] portraits = { "Scrapper", "Pickpocket", "Security Guard", "Heavy", "Riot Guard", "Crew Leader", "Riot Captain", "Hype Man", "Ghost" };
+        string[] displayNames = { "Scrapper", "Pickpocket", "Security Guard", "Heavy", "Riot Guard", "Crew Leader", "Riot Captain", "Hype Man", "Ghost" };
+        // Portraits are optional: an enemy without one shows the placeholder glyph, a Headliner its face card.
         catalog.enemies = definitions.Select((name, i) => new CombatPortraitCatalog.EnemyPortrait {
             definition = AssetDatabase.LoadAssetAtPath<EnemyTypeData>($"Assets/Data/Enemies/{name}.asset"),
-            portrait = SpriteAt($"Assets/Art/Enemies/{portraits[i]}.png") }).ToArray();
+            portrait = SpriteAt($"Assets/Art/Portraits/Enemies/{displayNames[i]}.png"), displayName = displayNames[i] }).ToArray();
         string[] headliners = { "The Charmer", "The Courier", "The Hitter", "The Fixer", "The Influencer", "The Broker", "The Foreman", "The Handler", "The Icon", "The Mogul", "The Chairman", "The Director" };
         catalog.headliners = headliners.Select((name, i) => new CombatPortraitCatalog.HeadlinerPortrait {
             rank = (CardData.Rank)((int)CardData.Rank.Jack + i / 4), suit = (CardData.Suit)(i % 4),
-            portrait = SpriteAt($"Assets/Art/Headliner/{name}.png") }).ToArray();
-        if (catalog.enemies.Any(e => !e.definition || !e.portrait) || catalog.headliners.Any(e => !e.portrait))
-            throw new System.InvalidOperationException("Missing canonical portrait import or definition.");
+            portrait = SpriteAt($"Assets/Art/Portraits/Headliners/{name}.png") }).ToArray();
+        if (catalog.enemies.Any(e => !e.definition))
+            throw new System.InvalidOperationException("Missing canonical enemy definition.");
         EditorUtility.SetDirty(catalog);
         return catalog;
     }

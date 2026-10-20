@@ -22,18 +22,18 @@ public static class DealbreakUIOverhaulAuthoring
         theme.numericFont=FontAsset("Assets/Art/Fonts/IBMPlexMono-Regular.ttf","IBM Plex Mono UI");
         foreach(var font in new[]{theme.headingFont,theme.bodyFont,theme.numericFont})
         {font.fallbackFontAssetTable=new System.Collections.Generic.List<TMP_FontAsset>{theme.symbolFont};EditorUtility.SetDirty(font);}
-        theme.paperTexture=Texture("UI_PaperHalftone_Mask_01");theme.slateTexture=Texture("UI_SlatePosterField_Mask_01");
-        theme.darkTexture=Texture("UI_DarkSlate_HUDBacking_Mask_01");theme.dryAccents=Texture("UI_DryInk_CornerAccents_Atlas_01");
-        theme.cleanAccents=Texture("UI_CleanGraphicAccents_Atlas_01");theme.frameReference=Texture("UI_FrameConcept_Sample_01");
-        var material=AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/UI/DealbreakInkAccent.mat");
-        if(!material){material=new Material(Shader.Find("UI/Dealbreak Ink Accent"));AssetDatabase.CreateAsset(material,"Assets/Art/UI/DealbreakInkAccent.mat");}
+        theme.paperTexture=Texture(DealbreakPrintTextureAuthoring.PaperGrain);theme.slateTexture=Texture(DealbreakPrintTextureAuthoring.PaperPoster);
+        theme.darkTexture=Texture(DealbreakPrintTextureAuthoring.SlateGrain);theme.dryAccents=Texture(DealbreakPrintTextureAuthoring.RoughAccents);
+        theme.cleanAccents=Texture(DealbreakPrintTextureAuthoring.CleanAccents);
+        var material=AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Shaders/DealbreakInkAccent.mat");
+        if(!material){material=new Material(Shader.Find("UI/Dealbreak Ink Accent"));AssetDatabase.CreateAsset(material,"Assets/Art/Shaders/DealbreakInkAccent.mat");}
         theme.inkAccentMaterial=material;DealbreakUIStyle.SetTheme(theme);EditorUtility.SetDirty(theme);AssetDatabase.SaveAssets();
         var scope=new GameObject("Angular Panel",typeof(RectTransform));
         try{((RectTransform)scope.transform).sizeDelta=new Vector2(460,300);DealbreakUIStyle.Frame(scope.transform,true);PrefabUtility.SaveAsPrefabAsset(scope,"Assets/Prefabs/EditorialPanel.prefab");}
         finally{Object.DestroyImmediate(scope);}
         return theme;
     }
-    static Texture2D Texture(string name)=>AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Art/UI/{name}.png");
+    static Texture2D Texture(string path)=>AssetDatabase.LoadAssetAtPath<Texture2D>(path);
     static TMP_FontAsset FontAsset(string sourcePath,string name)
     {
         string path=$"Assets/Art/Fonts/{name}.asset";
@@ -228,7 +228,8 @@ public static class DealbreakUIOverhaulAuthoring
         if(poster)poster.SetParent(homeCard,false);else poster=DealbreakUIStyle.Child(homeCard,"Headliner Editorial Art",typeof(Image));
         DealbreakUIStyle.Place(poster,.60f,.07f,.95f,.93f);
         var oldFrame=poster.Find("Editorial Frame");if(oldFrame)Object.DestroyImmediate(oldFrame.gameObject);
-        var portrait=poster.GetComponent<Image>();portrait.sprite=AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Headliner/The Fixer.png").OfType<Sprite>().First();portrait.color=Color.white;portrait.preserveAspect=true;portrait.raycastTarget=false;
+        var portrait=poster.GetComponent<Image>();portrait.sprite=AssetDatabase.LoadAllAssetsAtPath("Assets/Art/Portraits/Headliners/The Fixer.png").OfType<Sprite>().FirstOrDefault();portrait.color=Color.white;portrait.preserveAspect=true;portrait.raycastTarget=false;
+        poster.gameObject.SetActive(portrait.sprite);
         var menu=front.GetComponent<MainMenuUI>()??home.GetComponent<MainMenuUI>();
         if(menu)
         {

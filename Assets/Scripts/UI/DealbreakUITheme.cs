@@ -5,7 +5,7 @@ using UnityEngine;
 public sealed class DealbreakUITheme : ScriptableObject
 {
     public TMP_FontAsset headingFont, bodyFont, numericFont, symbolFont;
-    public Texture2D paperTexture, slateTexture, darkTexture, dryAccents, cleanAccents, frameReference;
+    public Texture2D paperTexture, slateTexture, darkTexture, dryAccents, cleanAccents;
     public Material inkAccentMaterial;
     public Color ink = new(0.055f, .065f, .075f);
     public Color charcoal = new(.105f, .13f, .155f);
