@@ -36,4 +36,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 4
+  bonusCredits: 4
