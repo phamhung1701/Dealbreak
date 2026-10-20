@@ -214,8 +214,8 @@ public sealed class GearRuleBatchTests
             "No committed overflow card remains queued after the root action resolves.");
         Assert.That(_cards.HandCount, Is.LessThanOrEqualTo(_cards.HandCapacity));
         foreach (var result in results)
-            Assert.That(_cards.discardPile, Does.Contain(result.Request.Action.Card),
-                "Each auto-played card has the normal discard disposition.");
+            Assert.That(_cards.hand.Contains(result.Request.Action.Card) || _cards.deck.Contains(result.Request.Action.Card), Is.True,
+                "Each auto-played card returns to the draw pile like any played card.");
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
         _combat.TakeRemainingDamage();
         var beforeSecondAction = results.Count;
@@ -416,7 +416,7 @@ public sealed class GearRuleBatchTests
         Assert.That(second.currentHp, Is.EqualTo(200), "Remaining committed cards must not retarget the surviving enemy.");
         Assert.That(damageResults, Has.Count.EqualTo(1), "Only the first card's attack reached the 1-HP target.");
         Assert.That(damageResults[0].Request.HitIndex, Is.EqualTo(0));
-        Assert.That(group.All(view => _cards.discardPile.Contains(view.data)), Is.True,
+        Assert.That(group.All(view => _cards.deck.Contains(view.data) || _cards.hand.Contains(view.data)), Is.True,
             "All committed cards are disposed even though the first one defeated the target.");
         Assert.That(committedIds.OrderBy(id => id), Is.EqualTo(selectionOrder.OrderBy(id => id)));
         Assert.That(_combat.player.currentHealth, Is.EqualTo(16), "Every committed card's on-play effect resolves exactly once.");
@@ -526,7 +526,8 @@ public sealed class GearRuleBatchTests
         Assert.That(_combat.player.currentHealth, Is.EqualTo(25), "All five on-play heals resolve before the defeat outcome.");
         Assert.That(random.Calls, Is.Zero, "The instant-defeat action does not spend a critical roll.");
         Assert.That(playLogs, Has.Count.EqualTo(1), "The group is logged as one action.");
-        Assert.That(committedIds.All(id => _cards.discardPile.Any(card => card.Id == id)), Is.True);
+        Assert.That(committedIds.All(id => _cards.deck.Any(card => card.Id == id) || _cards.hand.Any(card => card.Id == id)), Is.True,
+            "Played cards return to the draw pile.");
         Assert.That(_combat.TryPlayCards(royal, headliner), Is.False, "A resolved encounter cannot award victory twice.");
         Assert.That(encounterResults, Has.Count.EqualTo(1));
         Assert.That(_cards.credits, Is.EqualTo(13));

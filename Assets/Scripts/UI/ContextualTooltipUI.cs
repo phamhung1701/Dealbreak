@@ -141,7 +141,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         if(source.TryGetComponent<GearIconSlotUI>(out var gear)&&gear.Gear)
         {info=new("Gear",gear.Gear.displayName,gear.Gear.description);return true;}
         if(source.TryGetComponent<DrawDeckStackUI>(out _)&&CardManager.Instance!=null)
-        {var c=CardManager.Instance;info=new("Deck","Draw Pile",$"Draw {c.deck.Count}\nDiscard {c.discardPile.Count}\nHand {c.HandCount}/{c.HandCapacity}");return true;}
+        {var c=CardManager.Instance;info=new("Deck","Draw Pile",$"Draw {c.deck.Count}\nHand {c.HandCount}/{c.HandCapacity}");return true;}
         return false;
     }
     // Every detail opens next to what it describes. Hand cards sit on the bottom edge, so theirs

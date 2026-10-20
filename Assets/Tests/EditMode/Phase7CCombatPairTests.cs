@@ -64,7 +64,7 @@ public sealed class Phase7CCombatPairTests
 
         Assert.That(target.currentHp, Is.EqualTo(100 - expected));
         Assert.That(_cards.HandCount, Is.EqualTo(before - 2));
-        Assert.That(_cards.discardPile.Count, Is.EqualTo(2));
+        Assert.That(pair.All(view => _cards.deck.Contains(view.data)), Is.True, "Both cards return to the draw pile.");
         Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
     }
 

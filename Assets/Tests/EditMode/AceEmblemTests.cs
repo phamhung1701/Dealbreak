@@ -138,7 +138,7 @@ public sealed class AceEmblemTests
         Assert.That(target.currentHp, Is.EqualTo(494), "Three Ace cards deal 3, then the Ace Emblem critical doubles the action to 6.");
         Assert.That(random.Calls, Is.EqualTo(1), "Multiple committed Aces still produce one roll for the action.");
         foreach (int id in aceIds)
-            Assert.That(_cards.discardPile.Count(card => card.Id == id), Is.EqualTo(1), "Each committed Ace is discarded exactly once.");
+            Assert.That(_cards.deck.Count(card => card.Id == id), Is.EqualTo(1), "Each committed Ace returns to the draw pile exactly once.");
         Assert.That(aceIds.Distinct().Count(), Is.EqualTo(3));
     }
 

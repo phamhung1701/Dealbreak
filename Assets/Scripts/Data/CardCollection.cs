@@ -173,7 +173,7 @@ public sealed class CardCollection
 
     public bool TryDiscard(IReadOnlyList<CardInstance> cards) => TryMoveHandCards(cards, _discardPile);
 
-    /// <summary>Commits Block cards directly to the draw deck, then shuffles once using the run's card stream.</summary>
+    /// <summary>Returns played hand cards straight to the draw deck, then shuffles once using the run's card stream.</summary>
     public bool TryRecycleHandToDeck(IReadOnlyList<CardInstance> cards)
     {
         if (!TryMoveHandCards(cards, _deck)) return false;
@@ -202,9 +202,10 @@ public sealed class CardCollection
         return true;
     }
 
-    public bool TryReturnDiscardToHand(CardInstance card, int handCapacity)
+    /// <summary>Moves one exact card from the draw deck or the discard pile into the hand.</summary>
+    public bool TryTakeToHand(CardInstance card, int handCapacity)
     {
-        if (card == null || _hand.Count >= handCapacity || !_discardPile.Remove(card)) return false;
+        if (card == null || _hand.Count >= handCapacity || !_deck.Remove(card) && !_discardPile.Remove(card)) return false;
         _hand.Add(card);
         return true;
     }

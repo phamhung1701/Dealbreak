@@ -426,6 +426,8 @@ public sealed class PerAttackerDefenseTests
         foreach (var card in collection.Deck.ToArray()) collection.RemoveOwnedCard(card);
         var defense = HandViews()[1];
         StartDefenseWindow(_combat.CalculateCardDefense(defense.data));
+        // The attack that opened the window went back to the draw pile; empty it again.
+        foreach (var card in collection.Deck.ToArray()) collection.RemoveOwnedCard(card);
         int before = _cards.HandCount;
         Assert.That(_cards.deck, Is.Empty);
         Assert.That(_combat.TryDefendWithCards(new[] { defense }), Is.True);

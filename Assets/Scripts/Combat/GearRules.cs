@@ -221,7 +221,7 @@ public static partial class GearRules
             var state = instance.State;
             if (state.GetEncounterCounter(GearCounterKeys.AceReturnUsed) != 0) continue;
             var ace = committedCards.FirstOrDefault(card => card != null && card.Rank == CardData.Rank.Ace);
-            if (ace == null || !cards.TryReturnDiscardCardToHand(ace)) continue;
+            if (ace == null || !cards.TryTakeCardToHand(ace)) continue;
             state.SetEncounterCounter(GearCounterKeys.AceReturnUsed, 1);
             log?.Invoke($"{gear.displayName}: returned the physical Ace to hand.");
             return;

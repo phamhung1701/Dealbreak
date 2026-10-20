@@ -107,7 +107,7 @@ public sealed class Phase7AInteractionTests
         Assert.That(target.TryCommit(card), Is.True);
         Assert.That(enemy.currentHp, Is.EqualTo(enemy.maxHp - expectedDamage));
         Assert.That(_cards.HandCount, Is.EqualTo(7));
-        Assert.That(_cards.discardPile.Count, Is.EqualTo(1));
+        Assert.That(_cards.discardPile, Is.Empty, "The played card returns to the draw pile.");
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
 
         var bonus = ScriptableObject.CreateInstance<GearData>();

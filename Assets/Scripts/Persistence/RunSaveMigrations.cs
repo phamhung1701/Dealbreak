@@ -14,7 +14,19 @@ public static class RunSaveMigrations
     {
         [1] = MarkScoutedNodes,
         [2] = RetireTrainingNodes,
+        [3] = FoldDiscardIntoDrawPile,
     };
+
+    // v3 sent attack cards to a discard pile that came back only when the draw pile ran out. Played
+    // cards now return to the draw pile at once, so a saved discard pile joins the bottom of it
+    // (draws take from the top), keeping the order of every card already in the draw pile.
+    static void FoldDiscardIntoDrawPile(RunSaveData data)
+    {
+        var cards = data.cards;
+        if (cards?.deck == null || cards.discard == null || cards.discard.Count == 0) return;
+        cards.deck.InsertRange(0, cards.discard);
+        cards.discard.Clear();
+    }
 
     // The Street Mechanic Incident grants a free Mod, as Training did.
     internal const string TrainingReplacementEventId = "evt_005";

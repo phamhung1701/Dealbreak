@@ -318,7 +318,7 @@ public partial class RunManager
             .OrderBy(card => card.Id)
             .ElementAt(random.NextInt(0, cards.ownedCards.Count(card => card != null && card.Enhancement == null)));
 
-        if (!cards.TryDiscardCardsByIds(cardIds)) return false;
+        if (!cards.TryReturnToDrawPileByIds(cardIds)) return false;
         if (!cards.ApplyEnhancement(target.Id, enhancement))
         {
             Debug.LogError("RunManager: random event enhancement could not be applied after validated discard.", this);
@@ -370,7 +370,7 @@ public partial class RunManager
         var cards = CardManager.Instance;
         if (GameplayInputGate.IsBlocked || cards == null ||
             !CanChooseEventDiscardForTotalValue(choiceIndex, cardIds) ||
-            !cards.TryDiscardCardsByIds(cardIds)) return false;
+            !cards.TryReturnToDrawPileByIds(cardIds)) return false;
         CompleteEventChoice();
         return true;
     }

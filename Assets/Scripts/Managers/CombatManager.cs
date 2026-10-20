@@ -643,7 +643,7 @@ public partial class CombatManager : Singleton<CombatManager>
 
         try
         {
-            if (!cm.TryDiscardCards(cardInstances)) return false;
+            if (!cm.TryReturnToDrawPile(cardInstances)) return false;
             _playerAttackActionCount++;
             GameplayBalanceTelemetry.Record("attack_action", "", cards.Count);
             _pendingDiamondDrawChoices += GearRules.AdvanceActionState(cm, cardInstances, _activeGearBonuses,
@@ -837,29 +837,29 @@ public partial class CombatManager : Singleton<CombatManager>
         CardManager cards, CardInstance[] committedCards)
     {
         if (remainingChoices <= 0 || cards == null) return false;
-        if (cards.discardPile.Count == 0)
+        if (cards.deck.Count == 0)
         {
-            Log("Diamond Emblem: no discarded cards are available to choose.");
+            Log("Diamond Emblem: the draw pile is empty.");
             return false;
         }
         if (cards.HandCount >= cards.HandCapacity)
         {
-            Log("Diamond Emblem: the hand is full; the discard draw was skipped.");
+            Log("Diamond Emblem: the hand is full; the draw was skipped.");
             return false;
         }
         if (DiscardChoiceRequester == null) return false;
-        var candidates = cards.discardPile.ToArray();
+        var candidates = cards.deck.ToArray();
         bool opened = DiscardChoiceRequester("DIAMOND EMBLEM",
-            "Choose one physical card from the discard pile to return to your hand. Cancel skips this draw.",
+            "Choose one card from the draw pile to put into your hand. Cancel skips this draw.",
             candidates, cardId =>
             {
                 if (cardId > 0)
                 {
-                    var chosen = cards.discardPile.FirstOrDefault(card => card != null && card.Id == cardId);
-                    if (chosen != null && cards.TryReturnDiscardCardToHand(chosen))
-                        Log($"Diamond Emblem: returned {chosen.DisplayName} from discard to hand.");
+                    var chosen = cards.deck.FirstOrDefault(card => card != null && card.Id == cardId);
+                    if (chosen != null && cards.TryTakeCardToHand(chosen))
+                        Log($"Diamond Emblem: drew {chosen.DisplayName} from the draw pile.");
                     else if (chosen != null)
-                        Log("Diamond Emblem: the hand is full; the discard draw was skipped.");
+                        Log("Diamond Emblem: the hand is full; the draw was skipped.");
                 }
                 if (remainingChoices > 1 && OpenNextDiamondDrawChoice(
                     remainingChoices - 1, completedAction, cards, committedCards)) return;
@@ -964,7 +964,7 @@ public partial class CombatManager : Singleton<CombatManager>
             var cardManager = CardManager.Instance;
             long effectiveBlock = 0;
             foreach (var card in cards) effectiveBlock += CalculateCardDefense(card);
-            if (cardManager == null || !cardManager.TryRecycleDefenseCards(cards)) return false;
+            if (cardManager == null || !cardManager.TryReturnToDrawPile(cards)) return false;
             _parryEffectiveBlock += effectiveBlock;
 
             assignments.Sort((left, right) =>

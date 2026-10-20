@@ -57,7 +57,7 @@ public sealed class Phase7B5CombatCharacterizationTests
         Assert.That(first.currentAttack, Is.EqualTo(3));
         Assert.That(second.currentAttack, Is.EqualTo(4));
         Assert.That(_cards.HandCount, Is.EqualTo(handBefore - 1));
-        Assert.That(_cards.discardPile.Count, Is.EqualTo(1));
+        Assert.That(_cards.discardPile, Is.Empty, "The played card returns to the draw pile.");
     }
 
     [Test]
@@ -150,7 +150,7 @@ public sealed class Phase7B5CombatCharacterizationTests
 
         Assert.That(_combat.player.currentHealth, Is.EqualTo(27));
         Assert.That(enemy.currentAttack, Is.EqualTo(Mathf.Max(0, 8 - baseValue) + 1));
-        Assert.That(_cards.discardPile.Count, Is.EqualTo(1));
+        Assert.That(_cards.discardPile, Is.Empty, "The played card returns to the draw pile.");
     }
 
     [Test]

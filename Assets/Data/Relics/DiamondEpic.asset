@@ -22,13 +22,13 @@ MonoBehaviour:
     manually played Diamond
 
     Effect: Keep Rare draw 2; every third manually played
-    Diamond choose a card from discard to draw.
+    Diamond choose a card from the draw pile to draw.
 
-    Value: Choose 1 physical discard
-    card to return to hand
+    Value: Choose 1 physical draw pile
+    card to put into hand
 
     Limit: Every third manually played Diamond; strict
-    hand capacity; empty discard/full hand skips with log; cancel skips draw'
+    hand capacity; empty draw pile/full hand skips with log; cancel skips draw'
   price: 30
   capacityCategory: 0
   canonicalId: rel_108

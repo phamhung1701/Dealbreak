@@ -101,7 +101,7 @@ public sealed class LowerEffortEventTests
     public void Blacksmith_OtherChoicesDrawTwoOrGrantTenCredits()
     {
         OpenEvent(_blacksmith);
-        Assert.That(_cards.TryDiscardCardsByIds(_cards.hand.Take(2).Select(card => card.Id).ToArray()), Is.True);
+        Assert.That(_cards.TryReturnToDrawPileByIds(_cards.hand.Take(2).Select(card => card.Id).ToArray()), Is.True);
         int handBefore = _cards.HandCount;
         Assert.That(_run.ChooseEventOption(1), Is.True);
         Assert.That(_cards.HandCount, Is.EqualTo(handBefore + 2));
@@ -119,13 +119,13 @@ public sealed class LowerEffortEventTests
         Assert.That(_run.contentCatalog.events, Does.Contain(_stranger));
         OpenEvent(_stranger);
         int handBefore = _cards.HandCount;
-        int discardBefore = _cards.discardPile.Count;
+        int deckBefore = _cards.deck.Count;
         int[] ids = _cards.hand.Take(2).Select(card => card.Id).ToArray();
 
         Assert.That(_run.ChooseEventDiscardAndReward(0, ids), Is.True);
 
         Assert.That(_cards.HandCount, Is.EqualTo(handBefore - 2));
-        Assert.That(_cards.discardPile.Count, Is.EqualTo(discardBefore + 2));
+        Assert.That(_cards.deck.Count, Is.EqualTo(deckBefore + 2), "Discarded cards return to the draw pile.");
         Assert.That(_cards.ownedCards.Count(card => card.Enhancement != null), Is.EqualTo(1));
         Assert.That(_run.ActiveEvent, Is.Null);
     }
@@ -161,7 +161,7 @@ public sealed class LowerEffortEventTests
         int[] ids = FindHandCombination(6);
         Assert.That(ids, Is.Not.Empty);
         int handBefore = _cards.HandCount;
-        int discardBefore = _cards.discardPile.Count;
+        int deckBefore = _cards.deck.Count;
         OpenEvent(_ambush);
         Assert.That(_ambush.id, Is.EqualTo("evt_007"));
         Assert.That(_run.contentCatalog.risks, Does.Contain(_ambush));
@@ -172,7 +172,7 @@ public sealed class LowerEffortEventTests
         Assert.That(_run.ChooseEventDiscardForTotalValue(0, ids), Is.True);
 
         Assert.That(_cards.HandCount, Is.EqualTo(handBefore - ids.Length));
-        Assert.That(_cards.discardPile.Count, Is.EqualTo(discardBefore + ids.Length));
+        Assert.That(_cards.deck.Count, Is.EqualTo(deckBefore + ids.Length));
         Assert.That(_run.ActiveEvent, Is.Null);
     }
 
@@ -234,7 +234,7 @@ public sealed class LowerEffortEventTests
         for (int attempt = 0; attempt < CardManager.HAND_SIZE && FindCurrentHandCombination(target).Length == 0; attempt++)
         {
             if (_cards.hand.Count == 0) break;
-            Assert.That(_cards.TryDiscardCardsByIds(new[] { _cards.hand[0].Id }), Is.True);
+            Assert.That(_cards.TryReturnToDrawPileByIds(new[] { _cards.hand[0].Id }), Is.True);
             _cards.DrawToHand(1);
         }
         return FindCurrentHandCombination(target);

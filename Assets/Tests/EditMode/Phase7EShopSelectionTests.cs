@@ -439,7 +439,7 @@ public sealed class Phase7EShopSelectionTests
     {
         _ui.storeComposition=true;_cards.AddCredits(30);_ui.RefreshPresentation();
         var offer=ReplaceCurrentServiceWith(ShopOfferKind.Supply);
-        _cards.TryDiscardCardsByIds(_cards.hand.Take(4).Select(card=>card.Id).ToArray());
+        _cards.TryReturnToDrawPileByIds(_cards.hand.Take(4).Select(card=>card.Id).ToArray());
         Click(offer);
         int maximum=_run.GetSupplyMaximumQuantity();
         Assert.That(maximum,Is.GreaterThan(1));

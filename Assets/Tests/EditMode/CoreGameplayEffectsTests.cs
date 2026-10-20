@@ -106,8 +106,8 @@ public sealed class CoreGameplayEffectsTests
         int expected = _combat.CalculateCardAttackDamage(ace.data) + _combat.CalculateCardAttackDamage(club.data);
         Assert.That(_combat.TryPlayCards(new[] { ace, club }, target), Is.True);
         Assert.That(target.currentHp, Is.EqualTo(100 - expected));
-        Assert.That(_cards.discardPile.Count(c => c.Id == ace.data.Id), Is.EqualTo(1));
-        Assert.That(_cards.discardPile.Count(c => c.Id == club.data.Id), Is.EqualTo(1));
+        Assert.That(_cards.deck.Count(c => c.Id == ace.data.Id), Is.EqualTo(1));
+        Assert.That(_cards.deck.Count(c => c.Id == club.data.Id), Is.EqualTo(1));
     }
 
     [Test]
@@ -120,11 +120,11 @@ public sealed class CoreGameplayEffectsTests
         _combat.TakeRunDamage(5);
         _combat.StartEnemy(target);
         int before = _combat.player.currentHealth;
-        int discardBefore = _cards.discardPile.Count;
+        int deckBefore = _cards.deck.Count;
         _combat.CriticalChancePercent = 0;
         Assert.That(_combat.TryPlayCards(new[] { ace, other }, target), Is.True);
         Assert.That(_combat.player.currentHealth, Is.EqualTo(before + 2));
-        Assert.That(_cards.discardPile.Count, Is.EqualTo(discardBefore + 2), "Hearts must not recycle discards.");
+        Assert.That(_cards.deck.Count, Is.EqualTo(deckBefore + 2), "Both played Hearts return to the draw pile.");
         var nonHeart = FindCard(c => c.Suit != CardData.Suit.Hearts);
         int health = _combat.player.currentHealth;
         Assert.That(_combat.TryPlayCards(new[] { nonHeart }, target), Is.True);
@@ -192,7 +192,7 @@ public sealed class CoreGameplayEffectsTests
         Assert.That(_combat.player.currentHealth, Is.EqualTo(24), "Playing Mending is not a heal trigger.");
         _combat.TakeRemainingDamage();
         Assert.That(_combat.player.currentHealth, Is.EqualTo(24), "One remaining hand instance heals 2 after taking 2 damage.");
-        Assert.That(_cards.discardPile.Contains(first.data), Is.True);
+        Assert.That(_cards.deck.Contains(first.data), Is.True);
         _combat.HealPlayer(100);
         Assert.That(_combat.TryPlayCards(new[] { Views().First(v => v != second) }, target), Is.True);
         _combat.TakeRemainingDamage();
@@ -210,8 +210,8 @@ public sealed class CoreGameplayEffectsTests
         int initialDeck = _cards.deck.Count;
         Assert.That(_combat.TryPlayCards(new[] { quick }, target, 3), Is.True);
         Assert.That(_cards.HandCount, Is.EqualTo(initialHand));
-        Assert.That(_cards.deck.Count, Is.EqualTo(initialDeck - 1));
-        Assert.That(_cards.discardPile.Count(c => c.Id == quick.data.Id), Is.EqualTo(1));
+        Assert.That(_cards.deck.Count, Is.EqualTo(initialDeck), "The played card returns as one card is drawn.");
+        Assert.That(_cards.hand.Count(c => c.Id == quick.data.Id) + _cards.deck.Count(c => c.Id == quick.data.Id), Is.EqualTo(1));
     }
 
     [Test]

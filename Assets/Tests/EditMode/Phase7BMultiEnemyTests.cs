@@ -80,7 +80,7 @@ public sealed class Phase7BMultiEnemyTests
         var type = CreateEnemyType("Thief", 12, 1, 15, fleeAfterPlayerTurns: 2);
         var thief = new EnemyRuntime(type);
         _combat.StartEnemy(thief);
-        int initialTotalCardsOutsideDeck = _cards.hand.Count + _cards.discardPile.Count;
+        int initialHand = _cards.hand.Count;
 
         PlayLowestAttackCard(thief);
         Assert.That(_combat.Enemies.Contains(thief), Is.True);
@@ -93,7 +93,7 @@ public sealed class Phase7BMultiEnemyTests
         Assert.That(_combat.Enemies, Is.Empty);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.GameWon));
         Assert.That(_cards.credits, Is.Zero);
-        Assert.That(_cards.hand.Count + _cards.discardPile.Count, Is.EqualTo(initialTotalCardsOutsideDeck),
+        Assert.That(_cards.hand.Count, Is.EqualTo(initialHand - 2),
             "Fleeing must not trigger the kill draw.");
     }
 

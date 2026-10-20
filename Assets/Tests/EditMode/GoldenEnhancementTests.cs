@@ -72,7 +72,7 @@ public sealed class GoldenEnhancementTests
         Assert.That(_combat.TryPlayCards(new[] { HandViews().First(view => view.data == card) }, target), Is.True);
 
         Assert.That(target.currentHp, Is.EqualTo(1000 - damage * 2));
-        Assert.That(_cards.discardPile.Count(instance => instance.Id == card.Id), Is.EqualTo(1));
+        Assert.That(_cards.deck.Count(instance => instance.Id == card.Id), Is.EqualTo(1));
     }
 
     [Test]
@@ -109,7 +109,7 @@ public sealed class GoldenEnhancementTests
 
         Assert.That(_cards.credits, Is.EqualTo(initialCredits + 4), "Each in-hand Golden pays once for the action, not once per hit.");
         Assert.That(random.Calls, Is.Zero, "The gold reaction consumes no RNG.");
-        Assert.That(_cards.discardPile.Count(card => card.Id == attack.data.Id), Is.EqualTo(1));
+        Assert.That(_cards.deck.Count(card => card.Id == attack.data.Id), Is.EqualTo(1));
         Assert.That(JsonUtility.ToJson(_golden), Is.EqualTo(definitionBefore), "The shared definition stays immutable during the run.");
     }
 

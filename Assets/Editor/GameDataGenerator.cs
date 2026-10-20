@@ -126,7 +126,7 @@ public static class GameDataGenerator
             "Trigger: On Ace Pair\nCondition: Ace paired with a Face card\nEffect: Keep Rare; pairing Ace with Face guarantees crit.\nValue: Guaranteed critical hit\nLimit: Ace paired with J (Jack)", 30),
             "rel_115", "Epic", 3, "rel_114", GearSpecialRule.AceEpic);
         ConfigureSpecialGear(CreateGear("DiamondEpic", "rel_108", "Diamond Driver", "♦+",
-            "Trigger: On Card Played\nCondition: Suit = Diamonds; every third manually played Diamond\nEffect: Keep Rare draw 2; every third manually played Diamond choose a card from discard to draw.\nValue: Choose 1 physical discard card to return to hand\nLimit: Every third manually played Diamond; strict hand capacity; empty discard/full hand skips with log; cancel skips draw", 30),
+            "Trigger: On Card Played\nCondition: Suit = Diamonds; every third manually played Diamond\nEffect: Keep Rare draw 2; every third manually played Diamond choose a card from the draw pile to draw.\nValue: Choose 1 physical draw pile card to put into hand\nLimit: Every third manually played Diamond; strict hand capacity; empty draw pile/full hand skips with log; cancel skips draw", 30),
             "rel_108", "Epic", 3, "rel_027", GearSpecialRule.DiamondEpic);
         ConfigureSpecialGear(CreateGear("TrophyRack", "rel_137", "Victory Wall", "TROPHY",
             "Trigger: On Enforcer Kill\nCondition: Enforcer defeated\nEffect: Enforcer kill permanently strengthens opening attack vs Headliner.\nValue: +1 opening-attack damage versus Headliner\nLimit: Each actual Enforcer kill; run-local; applies to first attack action of each Headliner encounter", 20),

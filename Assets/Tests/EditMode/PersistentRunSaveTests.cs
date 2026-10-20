@@ -473,6 +473,25 @@ public sealed class PersistentRunSaveTests
     }
 
     [Test]
+    public void MigrationFromVersion3_MovesTheDiscardPileUnderTheDrawPile()
+    {
+        var v3 = JsonClone(run.CaptureSave()); v3.version = 3;
+        var owned = v3.cards.deck.Concat(v3.cards.hand).Concat(v3.cards.discard).ToList();
+        var discarded = v3.cards.deck.Take(3).ToList();
+        v3.cards.deck.RemoveRange(0, 3);
+        v3.cards.discard = new List<int>(discarded);
+        var drawOrder = new List<int>(v3.cards.deck);
+
+        Assert.That(RunSaveMigrations.TryUpgrade(v3, out var error), Is.True, error);
+
+        Assert.That(v3.cards.discard, Is.Empty);
+        Assert.That(v3.cards.deck, Is.EqualTo(discarded.Concat(drawOrder)),
+            "Discarded cards go under the draw pile; the cards already there keep their draw order.");
+        CollectionAssert.AreEquivalent(owned, v3.cards.deck.Concat(v3.cards.hand));
+        Assert.That(RunSaveValidation.Validate(v3, catalog, out error), Is.True, error);
+    }
+
+    [Test]
     public void MigrationFromVersion2_TurnsTrainingIntoTheStreetMechanicIncident()
     {
         var v2 = JsonClone(run.CaptureSave()); v2.version = 2;

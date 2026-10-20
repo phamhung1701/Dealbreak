@@ -141,7 +141,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         {
             var cards = CardManager.Instance;
             if (cards == null) return false;
-            Show("DRAW PILE", $"Draw {cards.deck.Count}\nDiscard {cards.discardPile.Count}\nHand {cards.HandCount}/{cards.HandCapacity}\n\n{runStatus?.pileSummaryLabel?.text}\n{runStatus?.timingLabel?.text}");
+            Show("DRAW PILE", $"Draw {cards.deck.Count}\nHand {cards.HandCount}/{cards.HandCapacity}\n\n{runStatus?.pileSummaryLabel?.text}\n{runStatus?.timingLabel?.text}");
         }
         else return false;
         return true;

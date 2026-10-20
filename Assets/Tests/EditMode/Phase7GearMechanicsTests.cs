@@ -248,7 +248,7 @@ public sealed class Phase7GearMechanicsTests
         var collection = CardCollectionOf(_cards);
         collection.DrawToHand(2, 2);
         Assert.That(collection.TryDiscard(ace), Is.True);
-        Assert.That(_cards.TryReturnDiscardCardToHand(ace), Is.True);
+        Assert.That(_cards.TryTakeCardToHand(ace), Is.True);
         Assert.That(_cards.hand.Count(card => ReferenceEquals(card, ace)), Is.EqualTo(1));
         Assert.That(collection.OwnedCards.Count, Is.EqualTo(2));
 
@@ -257,7 +257,7 @@ public sealed class Phase7GearMechanicsTests
         full.Initialize(fullCards);
         full.DrawToHand(8, 8);
         Assert.That(full.TryDiscard(fullCards[0]), Is.True);
-        Assert.That(full.TryReturnDiscardToHand(fullCards[0], 7), Is.False,
+        Assert.That(full.TryTakeToHand(fullCards[0], 7), Is.False,
             "A physical Ace is not returned into an over-capacity hand.");
         Assert.That(full.DiscardPile.Count(card => ReferenceEquals(card, fullCards[0])), Is.EqualTo(1));
     }
@@ -377,7 +377,7 @@ public sealed class Phase7GearMechanicsTests
         var collection = CardCollectionOf(_cards);
         collection.DrawToHand(4, 4);
         Assert.That(collection.TryDiscard(chosen), Is.True);
-        Assert.That(_cards.TryReturnDiscardCardToHand(chosen), Is.True);
+        Assert.That(_cards.TryTakeCardToHand(chosen), Is.True);
         Assert.That(_cards.hand.Count(card => ReferenceEquals(card, chosen)), Is.EqualTo(1));
     }
 

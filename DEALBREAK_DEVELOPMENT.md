@@ -668,6 +668,12 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - Removed: legacy enemy damage paths, unused per-suit Headliner abilities and their assets, unused stubs, `Bootstrap.unity`, `SampleScene` and `_Recovery` scenes.
 - Deliberately not changed: per-card runtime `CardData` instances (no defect; large blast radius); `CardManager` lookups into `RunManager` (edit-mode tests rely on them without `RunManager.Awake`).
 
+## Draw Pile, Gear Merge and Hover Cleanup — October 21, 2026
+
+- Played cards return to the draw pile at once: attacks now share Block's path (`CardManager.TryReturnToDrawPile`, one seeded shuffle per commit), and so do Incident discard costs. The discard pile stays as a save zone but no longer fills in play. Ace Protocol and Diamond Driver take their card from the draw pile (`TryTakeCardToHand`). Save version 4: the v3 step moves a saved discard pile under the draw pile without RNG.
+- Gear merges by dragging one copy onto a matching copy (`ItemDropKind.GearSlot`); the Merge/Confirm/Cancel mode is gone. The merged Gear takes the target's slot.
+- No hover detail on the ATTACK/BLOCK buttons or on unscouted route nodes.
+
 ## 10. Instructions for Future Locus Sessions
 
 1. Read `DEALBREAK_DEVELOPMENT.md` before beginning substantial project work.

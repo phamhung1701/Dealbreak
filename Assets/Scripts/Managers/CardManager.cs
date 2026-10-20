@@ -872,9 +872,9 @@ public partial class CardManager : Singleton<CardManager>
         return drawn;
     }
 
-    public bool TryReturnDiscardCardToHand(CardInstance card)
+    public bool TryTakeCardToHand(CardInstance card)
     {
-        if (!_cards.TryReturnDiscardToHand(card, HandCapacity)) return false;
+        if (!_cards.TryTakeToHand(card, HandCapacity)) return false;
         if (CanCreateViews()) CreateView(card);
         OnDeckChanged?.Invoke();
         return true;
@@ -897,7 +897,7 @@ public partial class CardManager : Singleton<CardManager>
         return TryDiscardCards(new[] { card });
     }
 
-    public bool TryDiscardCardsByIds(IReadOnlyList<int> cardIds)
+    public bool TryReturnToDrawPileByIds(IReadOnlyList<int> cardIds)
     {
         if (cardIds == null || cardIds.Count == 0) return false;
         var cards = new List<CardInstance>(cardIds.Count);
@@ -909,16 +909,17 @@ public partial class CardManager : Singleton<CardManager>
             if (id <= 0 || !uniqueIds.Add(id) || card == null || !_cards.ContainsInHand(card)) return false;
             cards.Add(card);
         }
-        return TryDiscardCards(cards);
+        return TryReturnToDrawPile(cards);
     }
 
     public bool TryDiscardCards(IReadOnlyList<CardView> cards) => TryCommitHandViews(cards, false);
 
-    public bool TryRecycleDefenseCards(IReadOnlyList<CardView> cards) => TryCommitHandViews(cards, true);
+    // Played cards (attack or Block) and Incident costs go straight back into the draw pile.
+    public bool TryReturnToDrawPile(IReadOnlyList<CardView> cards) => TryCommitHandViews(cards, true);
 
     public bool TryDiscardCards(IReadOnlyList<CardInstance> cards) => TryCommitHandCards(cards, false);
 
-    public bool TryRecycleDefenseCards(IReadOnlyList<CardInstance> cards) => TryCommitHandCards(cards, true);
+    public bool TryReturnToDrawPile(IReadOnlyList<CardInstance> cards) => TryCommitHandCards(cards, true);
 
     // A UI selection must be tracked views of hand cards; the commit itself works on card data.
     bool TryCommitHandViews(IReadOnlyList<CardView> cards, bool recycleToDeck)

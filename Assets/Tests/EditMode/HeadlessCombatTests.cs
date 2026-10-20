@@ -39,7 +39,7 @@ public sealed class HeadlessCombatTests
         var enemy = StartEnemy(500, 3);
         var attack = _cards.hand.First(card => card.Rank != CardData.Rank.Ace);
         Assert.That(_combat.TryPlayCards(new[] { attack }, enemy), Is.True);
-        Assert.That(_cards.discardPile, Does.Contain(attack));
+        Assert.That(_cards.deck, Does.Contain(attack));
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
 
         var block = _cards.hand.OrderByDescending(card => _combat.CalculateCardDefense(card)).First();
@@ -68,7 +68,7 @@ public sealed class HeadlessCombatTests
         Assert.That(_combat.TryPlayCards(new[] { _cards.hand[0] }, enemy), Is.True);
 
         Assert.That(_cards.HandCount, Is.EqualTo(capacity), "The card drawn past the limit auto-plays.");
-        Assert.That(_cards.discardPile.Count, Is.GreaterThanOrEqualTo(2));
+        Assert.That(_cards.discardPile, Is.Empty, "The played card returns to the draw pile.");
     }
 
     EnemyRuntime StartEnemy(int hp, int attack)
