@@ -25,7 +25,47 @@ public static class DealbreakNeoPunkAuthoring
         Palette();
         Edit("Assets/Scenes/Game.unity", Stage);
         Edit("Assets/Scenes/MainMenu.unity", Stage);
+        EnemyView();
+        DealbreakPrintTextureAuthoring.RegenerateUnknownPortrait();
         AssetDatabase.SaveAssets();
+    }
+
+    // Enemies stand on the stage: a charcoal portrait window instead of cream, and the placeholder
+    // glyph set as big off-white Anton type (EnemyDisplayUI writes the enemy's name into it).
+    static void EnemyView()
+    {
+        const string path = "Assets/Prefabs/EnemyView.prefab";
+        var enemy = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var frame = enemy.transform.Find("Editorial Frame");
+            if (frame && frame.TryGetComponent<EditorialFrame>(out var card))
+            {
+                card.fill = Color.clear; card.border = 0; card.showShadow = false; card.showAccent = false;
+                foreach (Transform overlay in frame) overlay.gameObject.SetActive(false);
+            }
+            var window = enemy.transform.Find("PortraitWindow");
+            if (window && window.TryGetComponent<Image>(out var windowImage)) windowImage.color = Charcoal;
+            var glyph = enemy.GetComponent<EnemyDisplayUI>().portrait.GetComponentInChildren<TMPro.TMP_Text>(true);
+            if (glyph)
+            {
+                var theme = Resources.Load<DealbreakUITheme>("DealbreakUITheme");
+                glyph.font = theme.headingFont;
+                glyph.color = new Color(Paper.r, Paper.g, Paper.b, .9f);
+                glyph.enableAutoSizing = true;
+                glyph.fontSizeMin = 34;
+                glyph.fontSizeMax = 96;
+                glyph.lineSpacing = -18;
+                glyph.alignment = TMPro.TextAlignmentOptions.BottomLeft;
+                glyph.textWrappingMode = TMPro.TextWrappingModes.Normal;
+                glyph.raycastTarget = false;
+                var rect = glyph.rectTransform;
+                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+                rect.offsetMin = new Vector2(16, 14); rect.offsetMax = new Vector2(-16, -14);
+            }
+            PrefabUtility.SaveAsPrefabAsset(enemy, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(enemy); }
     }
 
     static void Palette()
@@ -65,6 +105,21 @@ public static class DealbreakNeoPunkAuthoring
             }
             foreach (var environment in root.GetComponentsInChildren<Transform>(true).Where(t => t.name == "Environmental Slate"))
                 environment.gameObject.SetActive(false);
+            // The hover detail is a charcoal block with off-white copy, not a cream card.
+            foreach (var tooltip in root.GetComponentsInChildren<ContextualTooltipUI>(true))
+            {
+                var frame = tooltip.panel ? tooltip.panel.transform.Find("Editorial Frame") : null;
+                if (frame && frame.TryGetComponent<EditorialFrame>(out var card))
+                { card.fill = Charcoal; card.rim = Slate; card.border = 1; card.showShadow = false; card.showAccent = false; }
+                if (tooltip.body) tooltip.body.color = Paper;
+            }
+            // Player HP reads as big mono numbers over a thin red bar, straight on the stage: no cream box.
+            foreach (var health in root.GetComponentsInChildren<Transform>(true).Where(t => t.name == "HealthPanel"))
+            {
+                var frame = health.Find("Editorial Frame");
+                if (frame && frame.TryGetComponent<EditorialFrame>(out var box))
+                { box.fill = Color.clear; box.border = 0; box.showShadow = false; box.showAccent = false; }
+            }
         }
         Wordmarks(scene);
     }

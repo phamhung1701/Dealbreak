@@ -238,14 +238,14 @@ public class ActionButtonsUI : MonoBehaviour
             ? $"HP  ∞{block}{shield}"
             : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}{block}{shield}";
         playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
-        if (_healthBar == null) _healthBar = HealthBarBacking.Attach(playerHealthLabel, true);
+        if (_healthBar == null) _healthBar = HealthBarBacking.Attach(playerHealthLabel, true, HealthBarBacking.Look.Underline);
         if (_healthBar != null)
             _healthBar.SetFraction(combat.HasInfiniteHealthForDev || combat.player.maxHealth <= 0 ? 1f
                 : _shownHealth.Value / combat.player.maxHealth);
     }
 
-    /// <summary>The player's HP bar, a drop target for healing Tricks.</summary>
-    public RectTransform PlayerHealthBar => _healthBar != null ? _healthBar.Bar : null;
+    /// <summary>The player's HP panel, the drop target for healing Tricks (the bar itself is a thin underline).</summary>
+    public RectTransform PlayerHealthArea => playerHealthLabel ? (RectTransform)playerHealthLabel.transform.parent : null;
 
     void RefreshAll()
     {

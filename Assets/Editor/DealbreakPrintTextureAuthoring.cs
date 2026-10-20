@@ -179,29 +179,22 @@ public static class DealbreakPrintTextureAuthoring
 
     static readonly Color Ink = new(.055f, .065f, .075f), Brick = new(.66f, .27f, .22f), Paper = new(.94f, .90f, .81f);
 
-    static Color UnknownPortraitPixel(int x, int y, int w, int h)
+    /// <summary>Rewrites only the placeholder portrait (neo-punk correction), leaving the other textures alone.</summary>
+    public static void RegenerateUnknownPortrait()
     {
-        var c = Slate;
-        if (Halftone(x, y, 10, 45, (float)y / h * .55f)) c = Charcoal;
-        if (Fbm(x / 2.5f, y / 2.5f, 2, 81) > .86f) c = Color.Lerp(c, Paper, .25f);
-        // Hazard stripes across the top-right corner.
-        if (x - (h - y) > w * .62f && Mathf.Repeat(x + y, 44) < 18) c = Ink;
-        float jx = (Fbm(x / 7f, y / 7f, 2, 82) - .5f) * 6, jy = (Fbm(x / 7f, y / 7f, 2, 83) - .5f) * 6;
-        if (Bust(x - 14 + jx, y - 10 + jy, w, h)) c = Brick;                 // misregistered red pass
-        if (Bust(x + jx, y + jy, w, h)) c = Fbm(x / 2.2f, y / 2.2f, 2, 84) > .84f ? Color.Lerp(Ink, Slate, .5f) : Ink;
-        c.a = 1; return c;
+        Write(PortraitUnknown, 512, 512, UnknownPortraitPixel);
+        AsSprite(PortraitUnknown);
     }
 
-    static bool Bust(float x, float y, int w, int h)
+    // A dark halftone field with photocopy grain and no figure: until an enemy has commissioned art,
+    // EnemyDisplayUI sets its name huge over this field.
+    static Color UnknownPortraitPixel(int x, int y, int w, int h)
     {
-        float cx = w * .5f;
-        float hx = (x - cx) / (w * .145f), hy = (y - h * .40f) / (h * .175f);
-        if (hx * hx + hy * hy < 1) return true;                                // head
-        if (Mathf.Abs(x - cx) < w * .075f && y > h * .5f && y < h * .66f) return true;   // neck
-        float top = h * .63f, spread = (y - top) / (h - top);
-        if (y < top || y > h) return false;
-        float half = w * (.17f + .26f * Mathf.Sqrt(Mathf.Clamp01(spread * 1.6f)));  // rounded shoulders
-        return Mathf.Abs(x - cx) < half;
+        Color field = new(.086f, .086f, .102f), dots = new(.16f, .16f, .18f), speck = new(.24f, .24f, .26f);
+        var c = field;
+        if (Halftone(x, y, 9, 45, Mathf.Clamp01(.08f + (1f - (float)y / h) * .45f))) c = dots;
+        if (Fbm(x / 2.5f, y / 2.5f, 2, 81) > .88f) c = Color.Lerp(c, speck, .6f);
+        c.a = 1; return c;
     }
 
     // ---- Ink accents (black on white; the Ink Accent shader turns white into transparency) ----

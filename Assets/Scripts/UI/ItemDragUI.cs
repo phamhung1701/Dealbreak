@@ -360,7 +360,7 @@ public sealed class ItemDragUI : MonoBehaviour
                     if (enemy.isActiveAndEnabled && enemy.DisplayedEnemy == target.Enemy) return (RectTransform)enemy.transform;
                 return null;
             case ItemDropKind.PlayerHealth:
-                return actions && actions.PlayerHealthBar ? actions.PlayerHealthBar : null;
+                return actions ? actions.PlayerHealthArea : null;
             case ItemDropKind.TrickSlot:
                 return actions && target.Slot < actions.backpackSlotButtons.Length && actions.backpackSlotButtons[target.Slot]
                     ? (RectTransform)actions.backpackSlotButtons[target.Slot].transform : null;

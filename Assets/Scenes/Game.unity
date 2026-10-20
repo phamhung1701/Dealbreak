@@ -18951,9 +18951,9 @@ MonoBehaviour:
       m_Calls: []
   ink: {r: 0.055, g: 0.065, b: 0.075, a: 1}
   rim: {r: 0.29, g: 0.36, b: 0.41, a: 1}
-  fill: {r: 0.94, g: 0.9, b: 0.81, a: 1}
+  fill: {r: 0, g: 0, b: 0, a: 0}
   accent: {r: 0.66, g: 0.27, b: 0.22, a: 1}
-  border: 2
+  border: 0
   corner: 0
   showShadow: 0
   showAccent: 0
@@ -20286,13 +20286,13 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   ink: {r: 0.055, g: 0.065, b: 0.075, a: 1}
-  rim: {r: 0.29, g: 0.36, b: 0.41, a: 1}
-  fill: {r: 0.94, g: 0.9, b: 0.81, a: 1}
+  rim: {r: 0.22745098, g: 0.22745098, b: 0.2509804, a: 1}
+  fill: {r: 0.08627451, g: 0.08627451, b: 0.101960786, a: 1}
   accent: {r: 0.66, g: 0.27, b: 0.22, a: 1}
-  border: 9
+  border: 1
   corner: 25
-  showShadow: 1
-  showAccent: 1
+  showShadow: 0
+  showAccent: 0
   compact: 0
   shadowOffset: {x: 8, y: -9}
   shadowColor: {r: 0.055, g: 0.065, b: 0.075, a: 1}

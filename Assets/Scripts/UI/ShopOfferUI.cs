@@ -52,7 +52,7 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         var theme=DealbreakUIStyle.Theme;
         if(theme)
         {
-            DealbreakUIStyle.Text(titleLabel,theme.headingFont,29,theme.ink);
+            DealbreakUIStyle.Text(titleLabel,theme.headingFont,29,theme.paper);
             DealbreakUIStyle.Text(statusLabel,theme.bodyFont,18,theme.brick);
         }
         foreach(var label in new[]{titleLabel,statusLabel})
@@ -85,7 +85,7 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         var buy=(RectTransform)purchaseButton.transform;buy.anchorMin=new Vector2(.58f,0);buy.anchorMax=new Vector2(.95f,0);buy.offsetMin=new Vector2(0,12);buy.offsetMax=new Vector2(0,12+ButtonRowHeight-14);
         RefreshBorder();
     }
-    void RefreshBorder(){var frame=transform.Find("Editorial Frame")?.GetComponent<EditorialFrame>();var theme=DealbreakUIStyle.Theme;if(frame&&theme){frame.rim=_selected?theme.brick:_hover||_focus?theme.ochre:theme.ink;frame.border=_selected||_hover||_focus?2:1;frame.Refresh();}}
+    void RefreshBorder(){var frame=transform.Find("Editorial Frame")?.GetComponent<EditorialFrame>();var theme=DealbreakUIStyle.Theme;if(frame&&theme){frame.rim=_selected?theme.ochre:_hover||_focus?theme.paper:theme.slate;frame.border=_selected||_hover||_focus?2:1;frame.Refresh();}}
     public void OnPointerEnter(PointerEventData _){_hover=true;RefreshBorder();}
     public void OnPointerExit(PointerEventData _){_hover=false;RefreshBorder();}
     public void OnSelect(BaseEventData _){_focus=true;RefreshBorder();}

@@ -38,7 +38,7 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
         var outline = GetComponent<Outline>();
         if (outline)
         {
-            outline.effectColor = new Color(0.35f, 0.85f, 1f);
+            outline.effectColor = DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.ochre : new Color(.78f, .94f, .19f);
             outline.enabled = _detailSelected;
         }
         RefreshSlotBackground();
@@ -74,7 +74,7 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
         _detailSelected = detailSelected;
         var outline = GetComponent<Outline>();
         if (!outline) outline = gameObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.35f, 0.85f, 1f);
+        outline.effectColor = DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.ochre : new Color(.78f, .94f, .19f);
         outline.effectDistance = new Vector2(2f, -2f);
         outline.enabled = _detailSelected;
         var image = GetComponent<Image>();
@@ -101,8 +101,10 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
         if(DealbreakUIStyle.Theme)
         {
             var frame=DealbreakUIStyle.Frame(transform,false,true);
-            frame.fill=_detailSelected?DealbreakUIStyle.Theme.ochre:_gear?DealbreakUIStyle.Theme.slate:DealbreakUIStyle.Theme.charcoal;
-            frame.rim=_detailSelected?DealbreakUIStyle.Theme.paper:DealbreakUIStyle.Theme.slate;
+            // A dark square with a hairline; the item art carries the colour. Selected: a lime rule.
+            frame.fill=DealbreakUIStyle.Theme.charcoal;
+            frame.rim=_detailSelected?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;
+            frame.border=_detailSelected?2:1;
             frame.Refresh();return;
         }
         if (CombatDetailPanelUI.IsCombatActive)

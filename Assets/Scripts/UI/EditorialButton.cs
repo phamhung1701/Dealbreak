@@ -39,7 +39,7 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
             _lastAvailable=available;
         }
         bool open=GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
-        bool paper=GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper||role==Role.Paper;
+        bool paper=role==Role.Paper;
         bool active=available&&(_hover||_focus||selected);
         var clear=new Color(0,0,0,0);
         Color fill=role switch
@@ -49,7 +49,6 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
             Role.Quiet or Role.Outline or Role.Destructive=>clear,
             _=>theme.charcoal
         };
-        if(GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper)fill=theme.paper;
         Color rim=role switch
         {
             Role.Outline=>theme.paper,
@@ -58,6 +57,9 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
             _=>fill
         };
         float border=role is Role.Primary or Role.Paper or Role.Quiet?0:1;
+        // Paper-treatment buttons (Incident and reward choices) are raised content blocks.
+        if(!paper&&GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper)
+        {fill=theme.charcoal;rim=theme.slate;border=1;}
         Color labelColor=paper?theme.ink:role==Role.Destructive?theme.brick:theme.paper;
         if(open||role==Role.Quiet)labelColor=active?theme.ochre:theme.paper;
         if(!available)
@@ -68,7 +70,8 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
         }
         else if(active&&!open&&role!=Role.Quiet){rim=theme.ochre;border=2;}
         if(_pressed&&available&&fill.a>0)fill=Color.Lerp(fill,theme.ink,.18f);
-        if(emphasized&&available&&!active){rim=theme.ochre;border=Mathf.Max(border,2);}
+        // Emphasis is weight, not colour: lime stays reserved for selection.
+        if(emphasized&&available&&!active&&border>0)border=2;
         foreach(var label in _labels)if(label)label.color=labelColor;
         if(button.targetGraphic)button.targetGraphic.color=Color.clear;
         if(fill!=frame.fill||rim!=frame.rim||border!=frame.border){frame.border=border;frame.fill=fill;frame.rim=rim;frame.Refresh();}

@@ -121,7 +121,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         var frame=transform.Find("Editorial Frame")?.GetComponent<EditorialFrame>();
         if(frame&&DealbreakUIStyle.Theme)
-        {frame.rim=_enemyTargeting&&_enemyTargetEligible?DealbreakUIStyle.Theme.ochre:DealbreakUIStyle.Theme.slate;frame.border=_enemyTargeting&&_enemyTargetEligible?2:1;frame.Refresh();}
+        {frame.rim=DealbreakUIStyle.Theme.ochre;frame.border=_enemyTargeting&&_enemyTargetEligible?2:0;frame.Refresh();}
         if (!_enemyTargeting)
         {
             _targetAlpha = 1f;
@@ -136,9 +136,8 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (_targetOutline != null)
         {
             _targetOutline.enabled = _enemyTargetEligible;
-            _targetOutline.effectColor = _enemyPointerHovered
-                ? new Color(0.87f, 0.67f, 0.28f, 1f)
-                : new Color(0.94f, 0.89f, 0.77f, 1f);
+            var theme = DealbreakUIStyle.Theme;
+            _targetOutline.effectColor = theme ? _enemyPointerHovered ? theme.ochre : theme.paper : Color.white;
         }
         SetEmphasis(_enemyTargetEligible ? (_enemyPointerHovered ? 1.07f : 1.035f) : 0.96f);
     }
@@ -233,14 +232,15 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         ApplyHpBar(enemy.maxHp > 0 ? _shownHp / enemy.maxHp : 0f);
     }
 
-    // The HP bar is drawn behind the HP text (see HealthBarBacking); the authored thin slider
-    // stays serialized but hidden.
+    // A thin red HP bar runs under the mono HP numbers (see HealthBarBacking); the authored slider
+    // stays serialized but hidden. The name sits on an off-white label block.
     HealthBarBacking _hpBacking;
+    HealthBarBacking _nameBlock;
     void ApplyHpBar(float fraction)
     {
         if (healthBar && healthBar.gameObject.activeSelf) healthBar.gameObject.SetActive(false);
         if (!hpText) return;
-        if (_hpBacking == null) _hpBacking = HealthBarBacking.Attach(hpText, true);
+        if (_hpBacking == null) _hpBacking = HealthBarBacking.Attach(hpText, true, HealthBarBacking.Look.Underline);
         var theme = DealbreakUIStyle.Theme;
         if (theme && hpText.color != theme.paper) hpText.color = theme.paper;
         if (_hpBacking != null) _hpBacking.SetFraction(fraction);
@@ -385,6 +385,8 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         bool hasEnemy = enemy != null;
 
         if (nameText) nameText.text = hasEnemy ? (combatPortraits?combatPortraits.DisplayName(enemy):enemy.DisplayName).ToUpperInvariant() : "AWAITING ENCOUNTER";
+        if (nameText && _nameBlock == null && DealbreakUIStyle.Theme)
+            _nameBlock = HealthBarBacking.AttachBlock(nameText, DealbreakUIStyle.Theme.paper);
         if (atkText) atkText.text = hasEnemy ? $"ATTACK  {enemy.EffectiveAttack}" : "ATTACK  —";
         if (hasEnemy)
         {
@@ -445,8 +447,16 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             _portraitRestPosition = _portraitAnchoredPosition;
         }
 
+        // Until an enemy has commissioned art, its placeholder is typographic: the name set huge
+        // over a dark halftone field.
         if (_portraitGlyph)
-            _portraitGlyph.gameObject.SetActive(!_isDisplayingHeadlinerCard && !_isDisplayingAuthoredPortrait);
+        {
+            bool placeholder = !_isDisplayingHeadlinerCard && !_isDisplayingAuthoredPortrait;
+            _portraitGlyph.gameObject.SetActive(placeholder);
+            if (placeholder && nameText) _portraitGlyph.text = nameText.text.Replace(' ', '\n');
+            // Each fact shows once: the big type is the name, so the name tag waits for real art.
+            if (nameText) nameText.enabled = !placeholder;
+        }
     }
 
     void RefreshHp() => RefreshDisplay();
@@ -466,7 +476,8 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (_targetOutline)
         {
             _targetOutline.enabled = selected || inspecting;
-            _targetOutline.effectColor = !selected || valid ? new Color(0.94f, 0.89f, 0.77f) : new Color(0.62f, 0.24f, 0.20f);
+            var theme = DealbreakUIStyle.Theme;
+            if (theme) _targetOutline.effectColor = !selected || valid ? theme.paper : theme.brick;
         }
         if (statusText) statusText.text = CompactIntent(DisplayedEnemy, combat.currentState) +
             (selected ? valid ? "\nVALID TARGET" : "\nINVALID TARGET" : string.Empty);

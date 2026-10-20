@@ -63,7 +63,7 @@ public sealed class BuildInventoryUI : MonoBehaviour
         var r=DealbreakUIStyle.Child(rows,"Item "+rows.childCount,typeof(Image),typeof(Button),typeof(LayoutElement));
         r.gameObject.AddComponent<EditorialSurface>().treatment=EditorialSurface.Treatment.Paper;
         var text=DealbreakUIStyle.Child(r,"Item name",typeof(TextMeshProUGUI));DealbreakUIStyle.Place(text,.06f,.15f,.94f,.90f);
-        var label=text.GetComponent<TMP_Text>();label.text=$"<size=125%><b>{name}</b></size>\n{subtitle}";DealbreakUIStyle.Text(label,DealbreakUIStyle.Theme.bodyFont,21,DealbreakUIStyle.Theme.ink);label.alignment=TextAlignmentOptions.TopLeft;
+        var label=text.GetComponent<TMP_Text>();label.text=$"<size=125%><b>{name}</b></size>\n{subtitle}";DealbreakUIStyle.Text(label,DealbreakUIStyle.Theme.bodyFont,21,DealbreakUIStyle.Theme.paper);label.alignment=TextAlignmentOptions.TopLeft;
         r.GetComponent<LayoutElement>().preferredHeight=Mathf.Max(100,label.GetPreferredValues(label.text,Mathf.Max(240,((RectTransform)rows).rect.width*.88f),0).y+36);
         var trigger=r.gameObject.AddComponent<ContextualInfoTrigger>();trigger.describe=()=>info;trigger.allowWhileBlocked=true;trigger.enabled=false;
         return r.GetComponent<Button>();

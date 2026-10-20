@@ -17,8 +17,9 @@ public static class DealbreakUIStyle
     public static void Place(Transform t,float x1,float y1,float x2,float y2)
     { var r=(RectTransform)t;r.anchorMin=new(x1,y1);r.anchorMax=new(x2,y2);r.pivot=new(.5f,.5f);r.offsetMin=r.offsetMax=Vector2.zero; }
 
-    // A flat editorial block: a charcoal (or paper) fill with a 1px slate hairline. Open surfaces draw
-    // nothing. The old print overlays (paper grain, ink corners) stay switched off.
+    // A flat editorial block: a charcoal fill with a 1px slate hairline. Open surfaces draw nothing.
+    // Cream paper stock is retired: `paper` and the Paper treatment now mean a raised content block,
+    // drawn the same dark way. The old print overlays (paper grain, ink corners) stay switched off.
     public static EditorialFrame Frame(Transform target,bool paper=false,bool compact=false)
     {
         if(!Theme||!target)return null;
@@ -28,12 +29,15 @@ public static class DealbreakUIStyle
         var rect=Child(target,"Editorial Frame",typeof(EditorialFrame));Place(rect,0,0,1,1);rect.SetAsFirstSibling();
         if(!rect.GetComponent<CanvasRenderer>())rect.gameObject.AddComponent<CanvasRenderer>();
         var frame=rect.GetComponent<EditorialFrame>();frame.raycastTarget=false;
-        frame.ink=Theme.ink;frame.rim=Theme.slate;frame.fill=paper?Theme.paper:Theme.charcoal;
+        // Older authoring passes left duplicate frames on some controls; only this one draws.
+        foreach(Transform sibling in target)if(sibling!=rect&&sibling.name=="Editorial Frame")sibling.gameObject.SetActive(false);
+        frame.ink=Theme.ink;frame.rim=Theme.slate;frame.fill=Theme.charcoal;
         frame.accent=Theme.brick;frame.compact=compact;frame.border=1;frame.corner=0;
         frame.showAccent=false;frame.showShadow=false;
         var surface=target.GetComponent<EditorialSurface>();
         frame.enabled=!surface||surface.treatment!=EditorialSurface.Treatment.Open;
-        if(surface&&surface.treatment is EditorialSurface.Treatment.Paper or EditorialSurface.Treatment.Portrait)frame.fill=Theme.paper;
+        // Enemies stand on the stage itself: no box until they become a valid target.
+        if(surface&&surface.treatment==EditorialSurface.Treatment.Portrait){frame.fill=Color.clear;frame.border=0;}
         frame.Refresh();
         foreach(Transform child in rect)child.gameObject.SetActive(false);
         return frame;
@@ -41,7 +45,10 @@ public static class DealbreakUIStyle
     public static void Button(Button button,EditorialButton.Role role=EditorialButton.Role.Secondary)
     {
         if(!button||!Theme)return;
-        var style=button.GetComponent<EditorialButton>()??button.gameObject.AddComponent<EditorialButton>();
+        // TryGetComponent, not ?? (Unity fake null). Older passes left a second styler on some
+        // controls; it would keep writing its stale role into the shared frame, so only one runs.
+        if(!button.TryGetComponent<EditorialButton>(out var style))style=button.gameObject.AddComponent<EditorialButton>();
+        foreach(var extra in button.GetComponents<EditorialButton>())if(extra!=style)extra.enabled=false;
         bool frameless=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
         if(!frameless)role=RoleFor(button.name,role);
         style.button=button;style.role=role;style.frame=Frame(button.transform,false,true);
@@ -52,7 +59,7 @@ public static class DealbreakUIStyle
             bool paper=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper;
             bool open=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
             bool action=button.name is "PlayButton" or "BlockButton" or "PassButton";
-            var color=paper||role==EditorialButton.Role.Paper?Theme.ink:Theme.paper;
+            var color=role==EditorialButton.Role.Paper?Theme.ink:Theme.paper;
             label.fontStyle=FontStyles.Normal;label.characterSpacing=0;
             // The three combat actions and the frameless menu words are Anton display type; other
             // buttons use condensed tracked caps.
@@ -70,7 +77,7 @@ public static class DealbreakUIStyle
     static EditorialButton.Role RoleFor(string name,EditorialButton.Role role)
     {
         name=name.ToLowerInvariant();
-        if(name.Contains("backpackslot"))return role;
+        if(name.Contains("backpackslot"))return EditorialButton.Role.Secondary;
         if(name is "playbutton" or "resumebutton" or "offerbuy")return EditorialButton.Role.Primary;
         if(name=="blockbutton"||name.Contains("continue"))return EditorialButton.Role.Paper;
         if(name.Contains("sort")||name.Contains("refresh")||name.Contains("random")||name.Contains("min")||name.Contains("max"))
@@ -121,9 +128,11 @@ public static class DealbreakUIStyle
         foreach(var text in root.GetComponentsInChildren<TMP_Text>(true))
         {
             if(!Fresh(text))continue;
+            // The placeholder portrait name is authored display type (auto-sized Anton); leave it as set.
+            if(text.name=="PortraitGlyph"&&text.GetComponentInParent<EnemyDisplayUI>())continue;
             if(text.GetComponentInParent<CardView>()!=null||text.GetComponentInParent<ShopOfferUI>()!=null)continue;
             string name=text.name.ToLowerInvariant();
-            bool numeric=name.Contains("health")||name.Contains("hp")||name.Contains("credits")||name.Contains("count")||name.Contains("capacity")||name.Contains("damage");
+            bool numeric=name.Contains("health")||name.Contains("hp")||name.Contains("credits")||name.Contains("count")||name.Contains("capacity")||name.Contains("damage")||name.Contains("progress");
             bool heading=name.Contains("title")||name.Contains("heading")||name.Contains("header");
             numeric=numeric&&!heading&&!name.Contains("body")&&!name.Contains("copy")&&!name.Contains("description")&&!name.Contains("content");
             float size=heading?Mathf.Clamp(text.fontSize,24,110):Mathf.Clamp(text.fontSize,17,25);
@@ -138,6 +147,8 @@ public static class DealbreakUIStyle
             // Big titles stay Anton; small section heads become condensed tracked caps.
             if(heading&&size<40)Label(text,size,tint);
             else Text(text,numeric?Theme.numericFont:heading?Theme.headingFont:Theme.bodyFont,size,tint);
+            // Run progress in the header reads as mono caps, like the coordinates on a flyer.
+            if(name.Contains("progress"))text.fontStyle=FontStyles.UpperCase;
             var enemy=text.GetComponentInParent<EnemyDisplayUI>();
             if(enemy)
             {
@@ -148,7 +159,7 @@ public static class DealbreakUIStyle
                     Text(text,Theme.numericFont,18,text==enemy.atkText?Theme.brick:Theme.paper);
                     text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Overflow;
                 }
-                else if(text==enemy.statusText)Text(text,Theme.bodyFont,15,Theme.ink);
+                else if(text==enemy.statusText)Text(text,Theme.bodyFont,15,Color.Lerp(Theme.paper,Theme.slate,.35f));
             }
         }
         foreach(var button in root.GetComponentsInChildren<Button>(true))
@@ -167,7 +178,7 @@ public static class DealbreakUIStyle
             if(!Fresh(tooltip))continue;
             Text(tooltip.title,Theme.headingFont,27,Theme.paper);
             tooltip.title.overflowMode=TextOverflowModes.Overflow;tooltip.title.alignment=TextAlignmentOptions.TopLeft;
-            Text(tooltip.body,Theme.bodyFont,19,Theme.ink);
+            Text(tooltip.body,Theme.bodyFont,19,Theme.paper);
         }
         foreach(var dropdown in root.GetComponentsInChildren<TMP_Dropdown>(true))
         {
