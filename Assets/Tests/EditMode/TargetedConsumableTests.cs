@@ -50,8 +50,11 @@ public sealed class TargetedConsumableTests
     {
         Assert.That(_cards.AddConsumable(_knife), Is.True);
         var owner = Make<ActionButtonsUI>("Consumable Drag Owner");
-        var slotObject = new GameObject("Consumable Drag Slot");
+        var canvasObject = new GameObject("Consumable Drag Canvas", typeof(RectTransform), typeof(Canvas));
+        _created.Add(canvasObject);
+        var slotObject = new GameObject("Consumable Drag Slot", typeof(RectTransform));
         _created.Add(slotObject);
+        slotObject.transform.SetParent(canvasObject.transform, false);
         var drag = slotObject.AddComponent<ConsumableSlotDragUI>();
         drag.Configure(owner, 0);
         var eventData = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current)
@@ -59,10 +62,14 @@ public sealed class TargetedConsumableTests
             button = UnityEngine.EventSystems.PointerEventData.InputButton.Left
         };
 
+        Assert.That(drag.ConsumeClickSuppression(), Is.False, "A plain click is not suppressed.");
         drag.OnBeginDrag(eventData);
 
+        Assert.That(ItemDragUI.IsDragging, Is.True);
         Assert.That(drag.ConsumeClickSuppression(), Is.True);
         Assert.That(drag.ConsumeClickSuppression(), Is.False);
+        ItemDragUI.Get().Cancel();
+        Assert.That(ItemDragUI.IsDragging, Is.False);
     }
 
     [Test]

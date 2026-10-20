@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>Focused regression coverage for hand-first consumable target selection.</summary>
+/// <summary>Card Tricks are dropped on hand cards; the drop rules validate, preview and commit.</summary>
 public sealed class DirectHandTargetingUITests
 {
     readonly List<Object> _created = new();
@@ -15,7 +15,6 @@ public sealed class DirectHandTargetingUITests
     CombatManager _combat;
     ConsumableData _mirror, _torch, _spade;
     EventSystem _eventSystem;
-    EnhancementTargetUI _picker;
 
     [SetUp]
     public void SetUp()
@@ -51,118 +50,91 @@ public sealed class DirectHandTargetingUITests
     }
 
     [Test]
-    public void MirrorHandTarget_ConfirmConsumesOnceAndCreatesCopyThenClosesPicker()
+    public void MirrorDroppedOnHandCard_PreviewsCopyAndCreatesItInHand()
     {
         Assert.That(_cards.AddConsumable(_mirror), Is.True);
         StartCombat();
         _cards.DealHand();
+        var source = _cards.hand[0];
         int oldOwnedCount = _cards.ownedCards.Count;
-        int oldHandCount = _cards.hand.Count;
-        var view = HandView(_cards.hand[0]);
-        CreatePicker();
-        _picker.OpenConsumableTarget(0);
-        view.OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
 
-        Assert.That(_picker.panel.activeSelf, Is.True);
-        Assert.That(_picker.feedbackLabel.text, Does.Contain("1/1"));
-        Assert.That(_picker.confirmButton.interactable, Is.True);
-        Assert.That(_cards.hand.Count, Is.EqualTo(oldHandCount), "Targeting must not add a second hand entry.");
-        _picker.confirmButton.onClick.Invoke();
-        _picker.confirmButton.onClick.Invoke();
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(source), out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo("COPY"));
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.HandCard(source)), Is.True);
 
-        Assert.That(_picker.panel.activeSelf, Is.False);
-        Assert.That(_cards.IsHandEnhancementTargeting, Is.False);
         Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount + 1));
-        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
-        Assert.That(_cards.hand.Count, Is.EqualTo(oldHandCount + 1));
         Assert.That(_cards.hand.Contains(_cards.ownedCards.Last()), Is.True);
+        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
     }
 
     [Test]
-    public void MirrorHandTarget_BackCancelsWithoutCopyOrChargeAndRestoresCombatSelection()
+    public void CardTricks_RejectDrawPileCardsEnemiesAndTheHpBar()
     {
-        Assert.That(_cards.AddConsumable(_mirror), Is.True);
+        Assert.That(_cards.AddConsumable(_torch), Is.True);
         StartCombat();
-        _cards.DealHand();
-        var view = HandView(_cards.hand[0]);
-        int oldOwnedCount = _cards.ownedCards.Count;
-        CreatePicker();
-        _picker.OpenConsumableTarget(0);
-        view.OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(_picker.confirmButton.interactable, Is.True);
+        _cards.DrawToHand(1);
+        var deckCard = _cards.deck[0];
 
-        _picker.backButton.onClick.Invoke();
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(deckCard), out _), Is.False);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.OnEnemy(_combat.Enemies[0]), out _), Is.False);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.PlayerHealth, out _), Is.False);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.BlackMarket, out _), Is.False, "Selling needs a Black Market.");
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.HandCard(deckCard)), Is.False);
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
 
-        Assert.That(_picker.panel.activeSelf, Is.False);
-        Assert.That(_cards.IsHandEnhancementTargeting, Is.False);
-        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount));
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
-        Assert.That(_cards.SelectedCards, Is.Empty);
-        _cards.HandleCardClick(view);
-        Assert.That(_cards.SelectedCards, Does.Contain(view), "Normal combat card input resumes after cancellation.");
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(_cards.hand[0]), out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo("DESTROY"));
     }
 
     [Test]
-    public void SuitRunePicker_CapsAtOneHandCardAndSpendsOneCharge()
+    public void SuitRuneDrop_ChangesOneHandCardAndSpendsOneCharge()
     {
         Assert.That(_cards.AddConsumable(_spade), Is.True);
         StartCombat();
         _cards.DealHand();
-        foreach (var card in _cards.hand)
-            if (card.Suit == CardData.Suit.Spades) card.TryChangeSuit(CardData.Suit.Clubs);
-        var targets = _cards.hand.Take(4).ToArray();
-        CreatePicker();
-        _picker.OpenConsumableTarget(0);
-        Assert.That(_picker.confirmButton.interactable, Is.False);
+        var target = _cards.hand.First(card => card.Suit != CardData.Suit.Spades);
+        var spade = _cards.hand.FirstOrDefault(card => card.Suit == CardData.Suit.Spades);
+        if (spade != null)
+            Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(spade), out _), Is.False,
+                "A card already of the suit is not a target.");
 
-        HandView(targets[0]).OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(_picker.feedbackLabel.text, Does.Contain("1/1"));
-        Assert.That(_picker.confirmButton.interactable, Is.True);
-        HandView(targets[1]).OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(_picker.feedbackLabel.text, Does.Contain("1/1"), "Each use changes one card.");
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(target), out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo("→ ♠"));
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.HandCard(target)), Is.True);
 
-        _picker.confirmButton.onClick.Invoke();
-
-        Assert.That(targets.Count(card => card.Suit == CardData.Suit.Spades), Is.EqualTo(1));
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
+        Assert.That(target.Suit, Is.EqualTo(CardData.Suit.Spades));
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
-        Assert.That(_picker.panel.activeSelf, Is.False);
     }
 
     [Test]
-    public void ConsumablePicker_AutoClosesWhenItsSourceIsRemoved()
+    public void ModTrickDroppedOnHandCard_AppliesItsModToThatCardOnly()
     {
-        Assert.That(_cards.AddConsumable(_mirror), Is.True);
+        var whetstone = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Whetstone.asset");
+        Assert.That(whetstone, Is.Not.Null);
+        _cards.consumableCatalog.Add(whetstone);
+        Assert.That(_cards.AddConsumable(whetstone), Is.True);
         StartCombat();
         _cards.DealHand();
-        CreatePicker();
-        _picker.OpenConsumableTarget(0);
-        Assert.That(_picker.IsTargeting, Is.True);
-        var source = _cards.GetConsumableInstanceAtSlot(0);
+        var target = _cards.hand[1];
 
-        Assert.That(_cards.RemoveConsumableInstanceAtSlot(0, source), Is.True);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(target), out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo("+ " + whetstone.enhancementToApply.displayName.ToUpperInvariant()));
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.HandCard(target)), Is.True);
 
-        Assert.That(_picker.panel.activeSelf, Is.False);
-        Assert.That(_cards.IsHandEnhancementTargeting, Is.False);
+        Assert.That(target.Enhancement, Is.SameAs(whetstone.enhancementToApply));
+        Assert.That(_cards.hand.Count(card => card.Enhancement != null), Is.EqualTo(1));
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(target), out _), Is.False, "The Trick is spent.");
     }
 
     [Test]
-    public void ConsumablePicker_AutoClosesWhenSelectedTargetIsRemoved()
+    public void TrickDroppedOnAnotherSlot_Reorders()
     {
         Assert.That(_cards.AddConsumable(_mirror), Is.True);
-        StartCombat();
-        _cards.DealHand();
-        var target = _cards.hand[0];
-        CreatePicker();
-        _picker.OpenConsumableTarget(0);
-        HandView(target).OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(_picker.confirmButton.interactable, Is.True);
-
-        Assert.That(_cards.DestroyOwnedCard(target), Is.True);
-
-        Assert.That(_picker.panel.activeSelf, Is.False);
-        Assert.That(_cards.IsHandEnhancementTargeting, Is.False);
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
+        Assert.That(_cards.AddConsumable(_torch), Is.True);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.TrickSlot(0), out _), Is.False);
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.TrickSlot(1)), Is.True);
+        Assert.That(_cards.GetConsumableAtSlot(0), Is.SameAs(_torch));
+        Assert.That(_cards.GetConsumableAtSlot(1), Is.SameAs(_mirror));
     }
 
     [Test]
@@ -268,46 +240,11 @@ public sealed class DirectHandTargetingUITests
         Assert.That(_cards.SelectedCards, Does.Contain(view));
     }
 
-    CardView HandView(CardInstance card) => _cards.handField.cardsHolder.GetComponentsInChildren<CardView>(true)
-        .Single(view => view.data == card);
-
     void StartCombat()
     {
         var enemy = EnemyTypeData.Create("Direct targeting enemy", 100, 1, 0);
         _created.Add(enemy);
         _combat.StartEnemy(new EnemyRuntime(enemy));
-    }
-
-    void CreatePicker()
-    {
-        var root = Make("Direct target picker root", typeof(RectTransform));
-        root.SetActive(false);
-        _picker = root.AddComponent<EnhancementTargetUI>();
-        var panel = Make("Direct target picker panel", typeof(RectTransform), typeof(Image));
-        panel.transform.SetParent(root.transform, false);
-        _picker.panel = panel;
-
-        var dialog = Make("Direct target dialog", typeof(RectTransform), typeof(Image));
-        dialog.transform.SetParent(panel.transform, false);
-        _picker.titleLabel = MakeChild<TextMeshProUGUI>(dialog.transform, "Title");
-        _picker.feedbackLabel = MakeChild<TextMeshProUGUI>(dialog.transform, "Feedback");
-        _picker.confirmButton = MakeChild<Button>(dialog.transform, "Confirm");
-        _picker.backButton = MakeChild<Button>(dialog.transform, "Back");
-        var list = Make("Direct target off-hand list", typeof(RectTransform));
-        list.transform.SetParent(dialog.transform, false);
-        _picker.cardsContainer = list.transform;
-        _picker.cardButtonPrefab = Make("Direct target off-hand card", typeof(RectTransform), typeof(Image), typeof(Button));
-        root.SetActive(true);
-        const System.Reflection.BindingFlags lifecycle = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
-        typeof(EnhancementTargetUI).GetMethod("OnDisable", lifecycle).Invoke(_picker, null);
-        typeof(EnhancementTargetUI).GetMethod("OnEnable", lifecycle).Invoke(_picker, null);
-    }
-
-    T MakeChild<T>(Transform parent, string name) where T : Component
-    {
-        var go = Make(name, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
-        return go.AddComponent<T>();
     }
 
     GameObject Make(string name, params System.Type[] components)

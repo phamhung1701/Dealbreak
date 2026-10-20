@@ -289,9 +289,9 @@ public sealed class Phase7EShopSelectionTests
         Assert.That(offer.price, Is.EqualTo(cachedPrice));
     }
 
-    // Gear sells like a Trick: select it on the Gear rail inside a Black Market, then Sell.
+    // Gear sells like a Trick: dragged onto the Black Market, with no confirmation step.
     [Test]
-    public void GearSellsFromTheGearRail_ForHalfItsAuthoredPrice_AndTheShopHasNoSellMode()
+    public void GearDraggedOntoTheBlackMarket_SellsForHalfItsAuthoredPrice_AndTheShopHasNoSellMode()
     {
         Assert.That(_ui.panel.GetComponentsInChildren<Button>(true).Any(button => button.name == "ShopSellMode"), Is.False);
         var gear = GearOffer().gear;
@@ -300,33 +300,14 @@ public sealed class Phase7EShopSelectionTests
         long instanceId = _cards.OwnedGearInstances[0].Id;
         int creditsBefore = _cards.credits;
 
-        var canvas = new GameObject("Gear Rail Canvas", typeof(RectTransform), typeof(Canvas));
-        _objects.Add(canvas);
-        var slots = new GameObject("Gear Slots", typeof(RectTransform));
-        slots.transform.SetParent(canvas.transform, false);
-        var railObject = new GameObject("Gear Rail");
-        _objects.Add(railObject);
-        railObject.SetActive(false);
-        var rail = railObject.AddComponent<GearRailUI>();
-        rail.source = _cards;
-        rail.slotsRoot = (RectTransform)slots.transform;
-        railObject.SetActive(true);
-        typeof(GearRailUI).GetMethod("OnEnable", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            .Invoke(rail, null);
-        rail.Refresh();
+        Assert.That(ItemDropRules.CanDropGear(instanceId, ItemDropTarget.PlayerHealth, out _), Is.False, "Gear has no play target.");
+        Assert.That(ItemDropRules.CanDropGear(instanceId, ItemDropTarget.BlackMarket, out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo($"SELL FOR {gear.price / 2} CREDITS"));
+        Assert.That(ItemDropRules.DropGear(instanceId, ItemDropTarget.BlackMarket), Is.True);
 
-        var slot = slots.GetComponentsInChildren<GearIconSlotUI>().Single(value => value.InstanceId == instanceId);
-        slot.OnPointerClick(new UnityEngine.EventSystems.PointerEventData(null)
-            { button = UnityEngine.EventSystems.PointerEventData.InputButton.Left });
-        Assert.That(rail.SellButton, Is.Not.Null);
-        Assert.That(rail.SellButton.gameObject.activeInHierarchy, Is.True);
-        Assert.That(rail.SellButton.interactable, Is.True);
-        Assert.That(_cards.credits, Is.EqualTo(creditsBefore), "Selecting Gear must not sell it.");
-
-        rail.SellButton.onClick.Invoke();
         Assert.That(_cards.credits, Is.EqualTo(creditsBefore + gear.price / 2));
         Assert.That(_cards.GetGearInstanceById(instanceId), Is.Null);
-        Assert.That(rail.SellButton.gameObject.activeInHierarchy, Is.False);
+        Assert.That(ItemDropRules.DropGear(instanceId, ItemDropTarget.BlackMarket), Is.False, "Sold once.");
     }
 
     [Test]

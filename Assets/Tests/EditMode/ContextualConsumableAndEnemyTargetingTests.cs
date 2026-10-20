@@ -105,80 +105,66 @@ public sealed class ContextualConsumableAndEnemyTargetingTests
     }
 
     [Test]
-    public void ConsumableClickSelectsWithoutUsing_SellIsShopGatedAndDelegatesToRunManager()
+    public void TrickSlotClickNeverUsesTheTrick()
     {
         _combat.player.TakeDamage(10);
         Assert.That(_cards.AddConsumable(_heal), Is.True);
         _backpackButton.onClick.Invoke();
 
-        Assert.That(_combat.player.currentHealth, Is.EqualTo(20), "Selecting an item must not execute it.");
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
-        var use = GetPrivate<Button>(_actions, "_consumableUseButton");
-        var sell = GetPrivate<Button>(_actions, "_consumableSellButton");
-        Assert.That(use.interactable, Is.True);
-        Assert.That(sell.interactable, Is.False);
-        var outsideShopItem = _cards.GetConsumableInstanceAtSlot(0);
-        Assert.That(_run.SellConsumable(0, outsideShopItem, _heal.price), Is.False,
-            "The authoritative sale command must reject every outside-Shop call path.");
-        Assert.That(_cards.GetConsumableAtSlot(0), Is.SameAs(_heal));
-
-        var shop = new PathNode { kind = MapNodeType.Shop, completed = false };
-        typeof(RunManager).GetField("_activeNode", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(_run, shop);
-        InvokePrivate(_actions, "RefreshAll");
-        Assert.That(_run.CanSellItems, Is.True);
-        Assert.That(sell.interactable, Is.True);
-        sell.onClick.Invoke();
-        sell.onClick.Invoke();
-
-        Assert.That(_cards.GetConsumableAtSlot(0), Is.Null);
-        Assert.That(_cards.credits, Is.EqualTo(5), "The selected instance is sold and paid exactly once.");
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.False);
-
-        Assert.That(_cards.AddConsumable(_heal), Is.True);
-        _backpackButton.onClick.Invoke();
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.True);
-        _run.OnShopDone();
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.False,
-            "Leaving the Shop clears the selected Consumable context.");
-        Assert.That(_run.CanSellItems, Is.False);
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(20), "Clicking a Trick shows it; dragging uses it.");
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(_heal.uses));
     }
 
     [Test]
-    public void VictoryDefeatAndRestartClearPendingTargetAndConsumableContexts()
+    public void HealDroppedOnTheHpBar_HealsOnceAndPreviewsTheHpRestored()
+    {
+        _combat.player.TakeDamage(3);
+        Assert.That(_cards.AddConsumable(_heal), Is.True);
+
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.PlayerHealth, out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo("+3 HP"), "The preview is the HP actually restored, not the authored amount.");
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.PlayerHealth), Is.True);
+
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(30));
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(_heal.uses - 1));
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.PlayerHealth, out _), Is.False, "Nothing to heal at full HP.");
+    }
+
+    [Test]
+    public void DamageTrickDroppedOnAnEnemy_HitsExactlyThatEnemy()
     {
         var enemies = StartEncounter(2);
         Assert.That(_cards.AddConsumable(_knife), Is.True);
-        _backpackButton.onClick.Invoke();
-        GetPrivate<Button>(_actions, "_consumableUseButton").onClick.Invoke();
-        Assert.That(_cards.IsEnemyTargeting, Is.True);
-        foreach (var enemy in enemies)
-            if (!_combat.player.IsDefeated) _combat.TryUseConsumableDamage(100, enemy);
-        Assert.That(_combat.currentState, Is.EqualTo(GameState.GameWon));
-        Assert.That(_cards.IsEnemyTargeting, Is.False);
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.False);
+        var stranger = EnemyTypeData.Create("Not in this encounter", 50, 0, 0);
+        _created.Add(stranger);
 
-        var dangerous = EnemyTypeData.Create("Defeat cleanup target", 100, 100, 0);
-        _created.Add(dangerous);
-        _combat.StartEnemy(new EnemyRuntime(dangerous));
-        SelectHandCard();
-        _attackButton.onClick.Invoke();
-        Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
-        _backpackButton.onClick.Invoke();
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.True);
-        _combat.TakeRemainingDamage();
-        Assert.That(_combat.currentState, Is.EqualTo(GameState.GameOver));
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.False);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.OnEnemy(new EnemyRuntime(stranger)), out _), Is.False);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.PlayerHealth, out _), Is.False);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.OnEnemy(enemies[1]), out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo($"−{_knife.damageAmount}"));
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.OnEnemy(enemies[1])), Is.True);
 
-        _run.thiefType = dangerous;
-        _run.goblinType = dangerous;
-        _run.knightType = dangerous;
-        _backpackButton.onClick.Invoke();
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.True);
-        _run.StartRunWithSeed("target-ux-cleanup");
-        Assert.That(_cards.IsEnemyTargeting, Is.False);
-        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.False);
-        Assert.That(_cards.SelectedCards, Is.Empty);
+        Assert.That(enemies[0].currentHp, Is.EqualTo(enemies[0].maxHp));
+        Assert.That(enemies[1].currentHp, Is.EqualTo(enemies[1].maxHp - _knife.damageAmount));
+        Assert.That(_cards.GetConsumableAtSlot(0), Is.Null);
+    }
+
+    [Test]
+    public void SellDrop_WorksOnlyInABlackMarketAndPaysHalfOnce()
+    {
+        Assert.That(_cards.AddConsumable(_heal), Is.True);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.BlackMarket, out _), Is.False);
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.BlackMarket), Is.False);
+
+        var shop = new PathNode { kind = MapNodeType.Shop, completed = false };
+        typeof(RunManager).GetField("_activeNode", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(_run, shop);
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.BlackMarket, out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo("SELL FOR 5 CREDITS"));
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.BlackMarket), Is.True);
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.BlackMarket), Is.False);
+
+        Assert.That(_cards.GetConsumableAtSlot(0), Is.Null);
+        Assert.That(_cards.credits, Is.EqualTo(5));
     }
 
     [Test]
@@ -222,94 +208,6 @@ public sealed class ContextualConsumableAndEnemyTargetingTests
     }
 
     [Test]
-    public void OffensiveConsumableUseTargetsTheClickedEnemyAndSingleEnemyNeedsNoPicker()
-    {
-        var enemies = StartEncounter(2);
-        Assert.That(_cards.AddConsumable(_knife), Is.True);
-        Assert.That(_cards.GetConsumableTargetTypeAtSlot(0), Is.EqualTo(ConsumableTargetType.Enemy));
-        Assert.That(_cards.GetConsumableEffectTargetMinimumAtSlot(0), Is.EqualTo(1));
-        Assert.That(_cards.GetConsumableEffectTargetMaximumAtSlot(0), Is.EqualTo(1));
-        Assert.That(_cards.GetValidEnemyTargetsForConsumableAtSlot(0), Has.Count.EqualTo(2));
-        _backpackButton.onClick.Invoke();
-        var use = GetPrivate<Button>(_actions, "_consumableUseButton");
-        Assert.That(use.interactable, Is.True);
-        use.onClick.Invoke();
-
-        Assert.That(_cards.IsEnemyTargeting, Is.True);
-        var invalidType = EnemyTypeData.Create("Not in this encounter", 50, 0, 0);
-        _created.Add(invalidType);
-        var invalidEnemy = new EnemyRuntime(invalidType);
-        var invalidView = CreateEnemyView(invalidEnemy);
-        invalidView.GetComponent<EnemyDisplayUI>().SetEnemyTargeting(true, false);
-        Assert.That(invalidView.GetComponent<CanvasGroup>().alpha, Is.EqualTo(0.38f));
-        invalidView.OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
-        Assert.That(_cards.IsEnemyTargeting, Is.True, "An enemy outside the authoritative valid-target set cannot resolve the action.");
-        Assert.That(invalidEnemy.currentHp, Is.EqualTo(invalidEnemy.maxHp));
-        _cards.EndEnemyTargeting();
-        Assert.That(_cards.IsEnemyTargeting, Is.False);
-        Assert.That(_cards.GetConsumableAtSlot(0), Is.SameAs(_knife), "Cancel preserves the item and spends no charge.");
-        var normalCard = _cards.handField.cardsHolder.GetComponentsInChildren<CardView>(true)
-            .Single(view => view.data == _cards.hand[0]);
-        _cards.HandleCardClick(normalCard);
-        Assert.That(_cards.SelectedCards, Does.Contain(normalCard), "Normal hand interaction resumes after target cancel.");
-        _cards.ClearSelection();
-        _backpackButton.onClick.Invoke();
-        use.onClick.Invoke();
-        Assert.That(_cards.IsEnemyTargeting, Is.True, "Use begins enemy targeting again after cancel.");
-        var clickTarget = CreateEnemyView(enemies[0]);
-        clickTarget.OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
-        Assert.That(enemies[0].currentHp, Is.EqualTo(enemies[0].maxHp - _knife.damageAmount));
-        Assert.That(enemies[1].currentHp, Is.EqualTo(enemies[1].maxHp));
-        Assert.That(_cards.IsEnemyTargeting, Is.False);
-        Assert.That(_cards.GetConsumableAtSlot(0), Is.Null);
-    }
-
-    [Test]
-    public void OffensiveConsumableUsesSingleEnemyDirectlyAfterUseConfirmation()
-    {
-        var singleEnemy = StartEncounter(1)[0];
-        Assert.That(_cards.AddConsumable(_knife), Is.True);
-        _backpackButton.onClick.Invoke();
-        var use = GetPrivate<Button>(_actions, "_consumableUseButton");
-        Assert.That(use.interactable, Is.True);
-        use.onClick.Invoke();
-        Assert.That(_cards.IsEnemyTargeting, Is.False);
-        Assert.That(singleEnemy.currentHp, Is.EqualTo(singleEnemy.maxHp - _knife.damageAmount));
-        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
-    }
-
-    [Test]
-    public void EnemyListRefreshPreservesConsumableTargetingWhileValidEnemiesRemain()
-    {
-        var enemies = StartEncounter(2);
-        Assert.That(_cards.AddConsumable(_knife), Is.True);
-        _backpackButton.onClick.Invoke();
-        GetPrivate<Button>(_actions, "_consumableUseButton").onClick.Invoke();
-        InvokePrivate(_actions, "HandleEnemiesChanged");
-        Assert.That(_cards.IsEnemyTargeting, Is.True);
-        Assert.That(_cards.HandleEnemyTargetClick(enemies[1]), Is.True);
-        Assert.That(enemies[1].currentHp, Is.EqualTo(enemies[1].maxHp - _knife.damageAmount));
-        Assert.That(enemies[0].currentHp, Is.EqualTo(enemies[0].maxHp));
-    }
-
-    [TestCase(false)]
-    [TestCase(true)]
-    public void RemovingOrMovingConsumableSourceClearsEnemyTargeting(bool move)
-    {
-        var enemies = StartEncounter(2);
-        Assert.That(_cards.AddConsumable(_knife), Is.True);
-        Assert.That(_cards.AddConsumable(_heal), Is.True);
-        var source = _cards.GetConsumableInstanceAtSlot(0);
-        _backpackButton.onClick.Invoke();
-        GetPrivate<Button>(_actions, "_consumableUseButton").onClick.Invoke();
-        Assert.That(_cards.IsEnemyTargeting, Is.True);
-        Assert.That(move ? _cards.MoveConsumableSlot(0, 1) : _cards.RemoveConsumableInstanceAtSlot(0, source), Is.True);
-        Assert.That(_cards.IsEnemyTargeting, Is.False);
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.False);
-        Assert.That(enemies.All(enemy => enemy.currentHp == enemy.maxHp), Is.True);
-    }
-
-    [Test]
     public void RemovingAttackSourceClearsEnemyTargetingWithoutResolving()
     {
         var enemies = StartEncounter(2);
@@ -335,76 +233,6 @@ public sealed class ContextualConsumableAndEnemyTargetingTests
         Assert.That(_cards.SelectedCards, Does.Contain(card));
         Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
         Assert.That(_attackButton.GetComponentInChildren<TMP_Text>().text, Is.EqualTo("ATTACK"));
-    }
-
-    [Test]
-    public void DiscardConfirmationRemovesOneChargedCopyFromFullStackWithoutReward()
-    {
-        Assert.That(_cards.AddConsumable(_heal, 2), Is.True);
-        Assert.That(_cards.AddConsumable(_knife), Is.True);
-        Assert.That(_cards.AddConsumable(_other), Is.True);
-        Assert.That(_cards.AddConsumable(_extras[0]), Is.True);
-        Assert.That(_cards.AddConsumable(_extras[1]), Is.True);
-        Assert.That(_cards.IsBackpackFull, Is.True);
-        var stacks = (List<ConsumableStack>)typeof(CardManager)
-            .GetField("_backpack", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(_cards);
-        var stack = stacks[0];
-        var discarded = stack.Items[0];
-        var retained = stack.Items[1];
-        Assert.That(discarded.SpendCharge(), Is.True);
-        _backpackButton.onClick.Invoke();
-
-        var discard = GetPrivate<Button>(_actions, "_consumableDiscardButton");
-        var sellOrCancel = GetPrivate<Button>(_actions, "_consumableSellButton");
-        var details = GetPrivate<TMP_Text>(_actions, "_consumableContextText");
-        discard.onClick.Invoke();
-        Assert.That(details.text, Does.Contain("Discard 1 of 2 copies"));
-        Assert.That(details.text, Does.Contain("2 remaining charge(s)"));
-        Assert.That(_cards.GetConsumableStackCountAtSlot(0), Is.EqualTo(2));
-
-        sellOrCancel.onClick.Invoke();
-        Assert.That(_cards.GetConsumableStackCountAtSlot(0), Is.EqualTo(2), "Cancel leaves the stack unchanged.");
-        _actions.backpackSlotButtons[1].onClick.Invoke();
-        Assert.That(GetPrivate<TMP_Text>(_actions, "_consumableContextText").text, Does.Contain(_knife.displayName));
-        _backpackButton.onClick.Invoke();
-        discard.onClick.Invoke();
-        discard.onClick.Invoke();
-
-        Assert.That(_cards.GetConsumableStackCountAtSlot(0), Is.EqualTo(1));
-        Assert.That(_cards.GetConsumableInstanceAtSlot(0), Is.SameAs(retained));
-        Assert.That(retained.RemainingCharges, Is.EqualTo(_heal.uses));
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(_cards.BackpackCapacity), "Discarding from a stack does not free its slot.");
-        Assert.That(_cards.credits, Is.Zero);
-    }
-
-    [Test]
-    public void DiscardingLastItemRemovesBackpackSlotAndClosesContext()
-    {
-        Assert.That(_cards.AddConsumable(_heal), Is.True);
-        _backpackButton.onClick.Invoke();
-        var discard = GetPrivate<Button>(_actions, "_consumableDiscardButton");
-        discard.onClick.Invoke();
-        discard.onClick.Invoke();
-        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
-        Assert.That(_cards.GetConsumableAtSlot(0), Is.Null);
-        Assert.That(_actions.transform.Find("Selected Consumable Actions").gameObject.activeSelf, Is.False);
-    }
-
-    [Test]
-    public void ConsumableDetailsReserveSpaceAboveReadableActionButtons()
-    {
-        _combat.player.TakeDamage(10);
-        Assert.That(_cards.AddConsumable(_heal), Is.True);
-        _backpackButton.onClick.Invoke();
-        var text = GetPrivate<TMP_Text>(_actions, "_consumableContextText");
-        var use = GetPrivate<Button>(_actions, "_consumableUseButton");
-        var buttonRect = (RectTransform)use.transform;
-        Assert.That(text.fontSize, Is.GreaterThanOrEqualTo(18f));
-        Assert.That(buttonRect.rect.height, Is.GreaterThanOrEqualTo(44f));
-        Assert.That(text.rectTransform.offsetMin.y,
-            Is.GreaterThan(buttonRect.anchoredPosition.y + buttonRect.rect.height));
-        Assert.That(text.GetPreferredValues(text.text, text.rectTransform.rect.width, 0f).y,
-            Is.LessThanOrEqualTo(text.rectTransform.rect.height + 1f));
     }
 
     EnemyRuntime[] StartEncounter(int count)

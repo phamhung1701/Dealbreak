@@ -14,7 +14,6 @@ public class RunEventUI : MonoBehaviour
     public TMP_Text descriptionLabel;
     public Transform choicesContainer;
     public GameObject choiceButtonPrefab;
-    public EnhancementTargetUI enhancementTargetUI;
 
     readonly HashSet<int> _selectedDiscardCardIds = new();
     int _discardChoiceIndex = -1;

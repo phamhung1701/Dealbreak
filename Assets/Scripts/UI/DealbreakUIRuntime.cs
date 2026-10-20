@@ -21,6 +21,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     int _lastSignature;
     int _lastShopCredits=int.MinValue;
     bool? _lastDefenseLayout;
+    bool _compactHealthLayout;
     Vector2 _handAnchorMin,_handAnchorMax,_countAnchorMin,_countAnchorMax;
     // The compact hand fills the strip under route, Black Market and Incident panels, so its
     // size counter moves beside it instead of under it.
@@ -118,8 +119,19 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             // Keep the original hand renderer visible in a compact bottom strip on route/shop screens.
             bool handVisual=compactHand&&i==0;
             bool handCounter=compactHand&&i==1;
-            bool hidden=overlay&&!handVisual&&!handCounter||RunResultUI.IsShowingResult||!CombatActive&&!choosingCard&&!handVisual&&!handCounter||choosingCard&&i>1;
+            // The HP panel stays beside the compact hand: healing Tricks are dropped on it.
+            bool health=compactHand&&playerState&&group.transform==playerState;
+            bool kept=handVisual||handCounter||health;
+            bool hidden=overlay&&!kept||RunResultUI.IsShowingResult||!CombatActive&&!choosingCard&&!kept||choosingCard&&i>1;
             group.alpha=hidden?0:1;group.blocksRaycasts=!hidden;group.interactable=!hidden;
+        }
+        // Beside the compact hand the HP panel is a single short bar in the bottom-left corner.
+        if(compactHand&&playerState&&actions&&!_compactHealthLayout)
+        {
+            DealbreakUIStyle.Place(playerState,.025f,.035f,.2f,.16f);
+            DealbreakUIStyle.Place(actions.playerHealthLabel.transform,.055f,.1f,.945f,.9f);
+            _compactHealthLayout=true;
+            _lastDefenseLayout=null;
         }
         bool hideInventory=RunResultUI.IsShowingResult;
         if(inventoryGroups!=null)foreach(var group in inventoryGroups)if(group){group.alpha=hideInventory?0:1;group.blocksRaycasts=!hideInventory;group.interactable=!hideInventory;}
@@ -131,6 +143,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
                 DealbreakUIStyle.Place(playerState,.025f,.035f,.235f,.25f);
                 DealbreakUIStyle.Place(actions.playerHealthLabel.transform,.055f,defending?.42f:.1f,.945f,.94f);
                 _lastDefenseLayout=defending;
+                _compactHealthLayout=false;
             }
             var cards=CardManager.Instance;
             if(actions.selectionLabel&&cards!=null&&cards.SelectedCards.Count==0&&!cards.IsEnemyTargeting&&!cards.IsHandEnhancementTargeting)

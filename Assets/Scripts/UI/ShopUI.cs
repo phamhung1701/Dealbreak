@@ -15,7 +15,6 @@ public class ShopUI : MonoBehaviour
     public TMP_Text creditsText;
     public TMP_Text selectedOfferText;
     public Button buyButton;
-    public EnhancementTargetUI enhancementTargetUI;
     public bool storeComposition;
     Transform _controlHome;
     TMP_InputField _investmentStakeInput;

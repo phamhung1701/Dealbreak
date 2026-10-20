@@ -77,6 +77,7 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
         bool mergeMode = false, bool mergeEligible = true, bool detailSelected = false)
     {
         if (TryGetComponent<Selectable>(out var selectable)) selectable.interactable = true;
+        if (!TryGetComponent<GearSlotDragUI>(out _)) gameObject.AddComponent<GearSlotDragUI>();
         _gear = gear;
         _hover = hover;
         _leave = leave;

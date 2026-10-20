@@ -1,26 +1,18 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-/// <summary>Pointer drag routing for a backpack slot: reorder another slot or drop on an enemy.</summary>
+/// <summary>
+/// Pointer drag for a Trick slot: the Trick is dragged like a card onto a hand card, an enemy,
+/// the HP bar, the Black Market (to sell) or another Trick slot (see <see cref="ItemDragUI"/>).
+/// </summary>
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ConsumableSlotDragUI")]
 public sealed class ConsumableSlotDragUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    ActionButtonsUI _owner;
     int _slotIndex;
-    CanvasGroup _canvasGroup;
     bool _dragging;
     bool _suppressNextClick;
 
-    public void Configure(ActionButtonsUI owner, int slotIndex)
-    {
-        _owner = owner;
-        _slotIndex = slotIndex;
-        if (!_canvasGroup)
-        {
-            _canvasGroup = GetComponent<CanvasGroup>();
-            if (!_canvasGroup) _canvasGroup = gameObject.AddComponent<CanvasGroup>();
-        }
-    }
+    public void Configure(ActionButtonsUI owner, int slotIndex) => _slotIndex = slotIndex;
 
     public bool ConsumeClickSuppression()
     {
@@ -31,29 +23,29 @@ public sealed class ConsumableSlotDragUI : MonoBehaviour, IBeginDragHandler, IDr
 
     void OnDisable()
     {
-        if (_canvasGroup) _canvasGroup.blocksRaycasts = true;
+        if (_dragging) ItemDragUI.Get()?.Cancel();
         _dragging = false;
         _suppressNextClick = false;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (eventData.button != PointerEventData.InputButton.Left || _owner == null ||
-            CardManager.Instance?.GetConsumableAtSlot(_slotIndex) == null || GameplayInputGate.IsBlocked)
-            return;
-        _dragging = true;
-        _suppressNextClick = true;
-        if (_canvasGroup) _canvasGroup.blocksRaycasts = false;
+        if (eventData.button != PointerEventData.InputButton.Left) return;
+        var drag = ItemDragUI.Get();
+        _dragging = drag != null && drag.BeginTrick(_slotIndex, (RectTransform)transform, eventData);
+        if (_dragging) _suppressNextClick = true;
     }
 
-    public void OnDrag(PointerEventData eventData) { }
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (_dragging) ItemDragUI.Get()?.Drag(eventData);
+    }
 
     public void OnEndDrag(PointerEventData eventData)
     {
         if (!_dragging) return;
         _dragging = false;
-        if (_canvasGroup) _canvasGroup.blocksRaycasts = true;
-        _owner?.HandleConsumableSlotDrop(_slotIndex, eventData);
+        ItemDragUI.Get()?.End(eventData);
         StartCoroutine(ClearClickSuppressionNextFrame());
     }
 

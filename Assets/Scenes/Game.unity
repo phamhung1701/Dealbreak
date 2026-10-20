@@ -30697,7 +30697,6 @@ GameObject:
   - component: {fileID: 2107400373}
   - component: {fileID: 2107400375}
   - component: {fileID: 2107400376}
-  - component: {fileID: 2107400377}
   - component: {fileID: 2107400378}
   - component: {fileID: 2107400379}
   - component: {fileID: 2107400381}
@@ -30750,7 +30749,6 @@ MonoBehaviour:
   creditsText: {fileID: 390743344}
   selectedOfferText: {fileID: 257891383}
   buyButton: {fileID: 873894805}
-  enhancementTargetUI: {fileID: 2107400377}
   storeComposition: 1
 --- !u!114 &2107400365
 MonoBehaviour:
@@ -30835,7 +30833,6 @@ MonoBehaviour:
   rankSortButton: {fileID: 1640977750}
   suitSortButton: {fileID: 124896548}
   handField: {fileID: 1564072111}
-  takeDamageButton: {fileID: 0}
   recoverButton: {fileID: 95838459}
   backpackSlotButtons:
   - {fileID: 2028586743}
@@ -30980,7 +30977,6 @@ MonoBehaviour:
   descriptionLabel: {fileID: 1765654722}
   choicesContainer: {fileID: 142715888}
   choiceButtonPrefab: {fileID: 5736650782702794959, guid: 2f1c4d2241871e04da229455d13f9edf, type: 3}
-  enhancementTargetUI: {fileID: 2107400377}
 --- !u!225 &2107400375
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -31007,25 +31003,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Dealbreak.Runtime::EnemyGroupUI
   enemyContainer: {fileID: 98306649}
   enemyViewPrefab: {fileID: 4997970000244621656, guid: f7f699e7ae2547945bb4dc8771ae4a07, type: 3}
---- !u!114 &2107400377
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107400362}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c2822c1d01cbd1f4196bc2fb2fe60cd7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Dealbreak.Runtime::EnhancementTargetUI
-  panel: {fileID: 907522888}
-  titleLabel: {fileID: 354879377}
-  feedbackLabel: {fileID: 1106211833}
-  cardsContainer: {fileID: 2118694624}
-  cardButtonPrefab: {fileID: 5736650782702794959, guid: 2f1c4d2241871e04da229455d13f9edf, type: 3}
-  confirmButton: {fileID: 1046300711}
-  backButton: {fileID: 918676845}
 --- !u!114 &2107400378
 MonoBehaviour:
   m_ObjectHideFlags: 0
