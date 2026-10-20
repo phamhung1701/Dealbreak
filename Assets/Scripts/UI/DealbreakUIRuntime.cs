@@ -34,7 +34,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(handCount){_countAnchorMin=handCount.rectTransform.anchorMin;_countAnchorMax=handCount.rectTransform.anchorMax;}
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
         var canvas=actions?actions.GetComponentInParent<Canvas>():GetComponentInParent<Canvas>();
-        if(canvas)ScreenShakeUI.Install(canvas.rootCanvas);
+        if(canvas){ScreenShakeUI.Install(canvas.rootCanvas);EnemyDropUI.Install(canvas.rootCanvas);}
     }
     void PositionSortControls()
     {
@@ -96,8 +96,9 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     {
         if(handCount&&CardManager.Instance!=null)handCount.text=$"{CardManager.Instance.HandCount}/{CardManager.Instance.HandCapacity}";
         if(trickCapacity&&CardManager.Instance!=null)trickCapacity.text=$"{CardManager.Instance.BackpackSlotsUsed}/{CardManager.Instance.BackpackCapacity}";
+        // A drop waiting on the board after a fight also brings the hand up, so Tricks can make room.
         bool overlay=map&&map.panel&&map.panel.activeInHierarchy||market&&market.panel&&market.panel.activeInHierarchy||
-            incident&&incident.panel&&incident.panel.activeInHierarchy;
+            incident&&incident.panel&&incident.panel.activeInHierarchy||RunManager.Instance!=null&&RunManager.Instance.PendingEnemyDrop!=null;
         bool compactHand=overlay&&!RunResultUI.IsShowingResult;
         float ease=1f-Mathf.Exp(-Time.unscaledDeltaTime*9f);
         if(handFrame)

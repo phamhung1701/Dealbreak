@@ -624,10 +624,10 @@ public partial class RunManager : Singleton<RunManager>
         if ((CombatManager.Instance?.EncounterDefeatedEnemyCount ?? 0) > 0)
             TryGrantConsumableDropForNode(_activeNode);
         CompleteActiveNode();
-        if (wasHeadliner)
-            HandleHeadlinerVictory();
-        else
-            ShowPathAfterNode();
+        Action next = wasHeadliner ? HandleHeadlinerVictory : ShowPathAfterNode;
+        // A drop that did not fit waits on the board; the run continues once it is claimed or left.
+        if (_pendingEnemyDrop != null) _afterEnemyDrop = next;
+        else next();
     }
 
     void ApplyNodeCompletionTracking(PathNode node)
@@ -785,6 +785,7 @@ public partial class RunManager : Singleton<RunManager>
         GameplayInputGate.Set(GameplayInputBlockReason.ConsumableReward, false);
         GameplayInputGate.Set(GameplayInputBlockReason.GearChoice, false);
         _pendingConsumableRewards.Clear();
+        ClearPendingEnemyDrop();
         _pendingHammerReward = false;
         _hammerRetryPending = false;
         _pendingHammerEnhancements.Clear();

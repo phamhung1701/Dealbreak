@@ -17,6 +17,53 @@ public partial class RunManager
     public ConsumableRewardOffer PendingConsumableReward =>
         _pendingConsumableRewards.Count > 0 ? _pendingConsumableRewards.Peek() : null;
 
+    // An enemy drop that did not fit waits on the board; the run goes on once it is claimed or left.
+    ConsumableData _pendingEnemyDrop;
+    Action _afterEnemyDrop;
+    public ConsumableData PendingEnemyDrop => _pendingEnemyDrop;
+    /// <summary>Raised when a drop starts or stops waiting on the board.</summary>
+    public event Action OnEnemyDropChanged;
+    /// <summary>Raised when an enemy drop enters the backpack (at once, or when claimed from the board).</summary>
+    public event Action<ConsumableData> OnEnemyDropClaimed;
+
+    public bool CanClaimPendingEnemyDrop => _pendingEnemyDrop != null && CardManager.Instance != null &&
+        CardManager.Instance.CanAddConsumable(_pendingEnemyDrop);
+
+    public bool ClaimPendingEnemyDrop()
+    {
+        var drop = _pendingEnemyDrop;
+        if (drop == null || GameplayInputGate.IsBlocked || !CanClaimPendingEnemyDrop ||
+            !CardManager.Instance.AddConsumable(drop)) return false;
+        _pendingEnemyDrop = null;
+        OnEnemyDropClaimed?.Invoke(drop);
+        ContinueAfterEnemyDrop();
+        return true;
+    }
+
+    public bool LeavePendingEnemyDrop()
+    {
+        if (_pendingEnemyDrop == null || GameplayInputGate.IsBlocked) return false;
+        _pendingEnemyDrop = null;
+        ContinueAfterEnemyDrop();
+        return true;
+    }
+
+    void ContinueAfterEnemyDrop()
+    {
+        OnEnemyDropChanged?.Invoke();
+        var next = _afterEnemyDrop;
+        _afterEnemyDrop = null;
+        next?.Invoke();
+    }
+
+    void ClearPendingEnemyDrop()
+    {
+        bool had = _pendingEnemyDrop != null;
+        _pendingEnemyDrop = null;
+        _afterEnemyDrop = null;
+        if (had) OnEnemyDropChanged?.Invoke();
+    }
+
     // These are run-authoritative node/content operations, invoked by typed effects only.
     internal bool TryGrantRandomCommonEnhancement(int completedNodeCount)
     {
@@ -156,8 +203,14 @@ public partial class RunManager
         {
             if (random.NextFloat() >= Mathf.Clamp01(candidates[i].dropChance)) continue;
             var selected = candidates[i];
-            if (cards.CanAddConsumable(selected) && cards.AddConsumable(selected)) return true;
-            return QueueConsumableReward($"enemy-drop:{context}", "Enemy Drop", new[] { selected });
+            if (cards.CanAddConsumable(selected) && cards.AddConsumable(selected))
+            {
+                OnEnemyDropClaimed?.Invoke(selected);
+                return true;
+            }
+            _pendingEnemyDrop = selected;
+            OnEnemyDropChanged?.Invoke();
+            return true;
         }
         return false;
     }

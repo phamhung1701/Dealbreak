@@ -105,11 +105,44 @@ public sealed class BreadConsumableTests
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
         Assert.That((bool)method.Invoke(_run, new object[] { node }), Is.True);
-        Assert.That(_run.PendingConsumableReward, Is.Not.Null);
+        Assert.That(_run.PendingEnemyDrop, Is.SameAs(_bread), "A drop that does not fit waits on the board.");
+        Assert.That(_run.PendingConsumableReward, Is.Null, "No reward panel opens for it.");
+        Assert.That(GameplayInputGate.IsBlocked, Is.False, "Tricks stay usable so room can be made.");
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(CardManager.BACKPACK_CAPACITY));
         Assert.That((bool)method.Invoke(_run, new object[] { node }), Is.False, "A resolved drop is not rolled twice for the same node.");
         Assert.That(_cards.GetConsumableCount(_bread), Is.EqualTo(CardManager.BACKPACK_CAPACITY));
-        Assert.That(_run.DeclinePendingConsumableReward(), Is.True);
+        Assert.That(_run.LeavePendingEnemyDrop(), Is.True);
+        Assert.That(_run.PendingEnemyDrop, Is.Null);
+    }
+
+    [Test]
+    public void WaitingDrop_HoldsTheRunUntilClaimedAfterMakingRoom()
+    {
+        const int nodeId = 26;
+        const int mapIndex = 2;
+        _run.StartRunWithSeed(SeedForBreadDrop(nodeId, mapIndex, "BREAD-WAIT-DROP"));
+        Assert.That(_cards.AddConsumable(_bread, CardManager.BACKPACK_CAPACITY), Is.True);
+        var node = new PathNode { id = nodeId, mapIndex = mapIndex, kind = MapNodeType.Combat };
+        var method = typeof(RunManager).GetMethod("TryGrantConsumableDropForNode",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.That((bool)method.Invoke(_run, new object[] { node }), Is.True);
+        int continued = 0;
+        typeof(RunManager).GetField("_afterEnemyDrop", System.Reflection.BindingFlags.Instance |
+            System.Reflection.BindingFlags.NonPublic).SetValue(_run, (System.Action)(() => continued++));
+        Assert.That(_run.CanCaptureSave, Is.False, "No checkpoint while a drop waits.");
+
+        Assert.That(_run.CanClaimPendingEnemyDrop, Is.False);
+        Assert.That(_run.ClaimPendingEnemyDrop(), Is.False);
+        Assert.That(continued, Is.Zero, "The run waits while the drop cannot go in.");
+        Assert.That(_cards.RemoveConsumableInstanceAtSlot(0, _cards.GetConsumableInstanceAtSlot(0)), Is.True);
+        ConsumableData claimed = null;
+        _run.OnEnemyDropClaimed += drop => claimed = drop;
+        Assert.That(_run.ClaimPendingEnemyDrop(), Is.True);
+
+        Assert.That(claimed, Is.SameAs(_bread));
+        Assert.That(continued, Is.EqualTo(1), "The run moves on once the drop is resolved.");
+        Assert.That(_run.PendingEnemyDrop, Is.Null);
+        Assert.That(_cards.GetConsumableCount(_bread), Is.EqualTo(CardManager.BACKPACK_CAPACITY));
     }
 
     [Test]

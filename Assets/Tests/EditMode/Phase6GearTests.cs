@@ -214,7 +214,7 @@ public sealed class Phase6GearTests
     }
 
     [Test]
-    public void RewardTray_RequiresExplicitClaimReplaceOrDecline_AndGrantIsIdempotent()
+    public void FullBackpackDrop_WaitsUntilClaimedOrLeft_AndGrantIsIdempotent()
     {
         Assert.That(_cards.AddConsumable(_bread, CardManager.BACKPACK_CAPACITY), Is.True);
         SetRandomContext("PHASE6-REWARD-TRAY");
@@ -227,17 +227,18 @@ public sealed class Phase6GearTests
         _cards.consumableCatalog.Clear();
         _cards.consumableCatalog.Add(guaranteedKnife);
         Assert.That(Invoke<bool>("TryGrantConsumableDropForNode", node), Is.True);
-        Assert.That(_run.PendingConsumableReward, Is.Not.Null);
-        Assert.That(_run.ClaimPendingConsumableReward(0), Is.False);
-        Assert.That(_run.ReplacePendingConsumableReward(0, 1), Is.True);
+        Assert.That(_run.PendingEnemyDrop, Is.SameAs(guaranteedKnife));
+        Assert.That(_run.ClaimPendingEnemyDrop(), Is.False);
+        Assert.That(_cards.RemoveConsumableInstanceAtSlot(1, _cards.GetConsumableInstanceAtSlot(1)), Is.True);
+        Assert.That(_run.ClaimPendingEnemyDrop(), Is.True);
         Assert.That(_cards.GetConsumableCount(guaranteedKnife), Is.EqualTo(1));
         Assert.That(Invoke<bool>("TryGrantConsumableDropForNode", node), Is.False);
-        Assert.That(_run.PendingConsumableReward, Is.Null);
+        Assert.That(_run.PendingEnemyDrop, Is.Null);
 
         var second = new PathNode { id = 46, mapIndex = 2, kind = MapNodeType.Combat };
         Assert.That(Invoke<bool>("TryGrantConsumableDropForNode", second), Is.True);
-        Assert.That(_run.DeclinePendingConsumableReward(), Is.True);
-        Assert.That(_run.PendingConsumableReward, Is.Null);
+        Assert.That(_run.LeavePendingEnemyDrop(), Is.True);
+        Assert.That(_run.PendingEnemyDrop, Is.Null);
     }
 
     [Test]

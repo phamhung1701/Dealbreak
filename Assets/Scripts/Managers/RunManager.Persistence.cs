@@ -9,7 +9,7 @@ public partial class RunManager
         CardManager.Instance != null && !_shopTransaction &&
         (_activeNode == null || _activeNode.kind is MapNodeType.Shop or MapNodeType.Event or MapNodeType.Risk) &&
         !_pendingHammerReward && !_hammerRetryPending && !_pendingBloodRitualReward &&
-        _pendingContractSelectionEvent == null && _pendingConsumableRewards.Count == 0 &&
+        _pendingContractSelectionEvent == null && _pendingConsumableRewards.Count == 0 && _pendingEnemyDrop == null &&
         (GameplayInputGate.Reasons & (GameplayInputBlockReason.GearChoice | GameplayInputBlockReason.ConsumableReward)) == 0;
 
     public RunSaveData CaptureSave()
