@@ -19,10 +19,6 @@ public sealed class GearRailUITests
     GameObject _tooltipPanel;
     GameObject _detailPanel;
     Button _close;
-    Button _mergeMode;
-    Button _mergeConfirm;
-    Button _mergeCancel;
-    TMP_Text _mergeStatus;
 
     [SetUp]
     public void SetUp()
@@ -40,10 +36,6 @@ public sealed class GearRailUITests
         _detail = _detailPanel.AddComponent<TextMeshProUGUI>();
         _detailPanel.SetActive(false);
         _close = CreateUI("Close").AddComponent<Button>();
-        _mergeMode = CreateUI("Merge Mode").AddComponent<Button>();
-        _mergeConfirm = CreateUI("Merge Confirm").AddComponent<Button>();
-        _mergeCancel = CreateUI("Merge Cancel").AddComponent<Button>();
-        _mergeStatus = CreateUI("Merge Status").AddComponent<TextMeshProUGUI>();
         _rail.source = _cards;
         _rail.slotsRoot = _slots;
         _rail.capacityLabel = _capacity;
@@ -52,10 +44,6 @@ public sealed class GearRailUITests
         _rail.detailPanel = _detailPanel;
         _rail.detailText = _detail;
         _rail.detailCloseButton = _close;
-        _rail.mergeModeButton = _mergeMode;
-        _rail.mergeConfirmButton = _mergeConfirm;
-        _rail.mergeCancelButton = _mergeCancel;
-        _rail.mergeStatusText = _mergeStatus;
         host.SetActive(true);
         InvokeRail("OnEnable"); // EditMode does not consistently run MonoBehaviour lifecycle callbacks.
         _rail.Refresh();
@@ -71,7 +59,7 @@ public sealed class GearRailUITests
     }
 
     [Test]
-    public void EmptyInventory_ShowsFiveBlankSlotsAndHidesMergeControls()
+    public void EmptyInventory_ShowsFiveBlankSlots()
     {
         Assert.That(_slots.childCount, Is.EqualTo(CardManager.BASE_GEAR_CAPACITY));
         for (int i = 0; i < _slots.childCount; i++)
@@ -81,57 +69,13 @@ public sealed class GearRailUITests
             Assert.That(slot.Gear, Is.Null);
             Assert.That(string.IsNullOrEmpty(slot.GetComponentInChildren<TMP_Text>(true).text), Is.True);
         }
-        Assert.That(_mergeMode.gameObject.activeSelf, Is.False);
-        Assert.That(_mergeConfirm.gameObject.activeSelf, Is.False);
-        Assert.That(_mergeCancel.gameObject.activeSelf, Is.False);
-        Assert.That(_mergeStatus.gameObject.activeSelf, Is.False);
+        Assert.That(_rail.transform.GetComponentsInChildren<Button>(true), Is.Empty, "The rail has no merge buttons.");
     }
 
     [Test]
-    public void RuntimeControlsAreCreatedInTheRailAndWireSelectionLifecycle()
+    public void DroppingGearOnAMatchingCopyMergesIntoThatSlot()
     {
-        InvokeRail("OnDisable");
-        _rail.mergeModeButton = null;
-        _rail.mergeConfirmButton = null;
-        _rail.mergeCancelButton = null;
-        _rail.mergeStatusText = null;
-
-        var bar = CreateUI("Runtime Rail Root");
-        bar.transform.SetParent(_rail.transform, false);
-        var viewport = CreateUI("Runtime Viewport");
-        viewport.transform.SetParent(bar.transform, false);
-        var slots = CreateUI("Runtime Slots");
-        slots.transform.SetParent(viewport.transform, false);
-        _rail.slotsRoot = slots.GetComponent<RectTransform>();
-        _cards.ownedGear.AddRange(new[]
-        {
-            Gear("merge-a", "Merge A", "A", ""),
-            Gear("merge-b", "Merge B", "B", "")
-        });
-        InvokeRail("OnEnable");
-
-        Assert.That(_rail.mergeModeButton, Is.Not.Null);
-        Assert.That(_rail.mergeConfirmButton, Is.Not.Null);
-        Assert.That(_rail.mergeCancelButton, Is.Not.Null);
-        Assert.That(_rail.mergeStatusText, Is.Not.Null);
-        Assert.That(_rail.mergeModeButton.transform.parent, Is.SameAs(bar.transform));
-        foreach (var button in new[] { _rail.mergeModeButton, _rail.mergeConfirmButton, _rail.mergeCancelButton })
-        {
-            Assert.That(((RectTransform)button.transform).rect.height, Is.GreaterThanOrEqualTo(40f));
-            Assert.That(button.GetComponentInChildren<TMP_Text>().fontSizeMin, Is.GreaterThanOrEqualTo(16f));
-        }
-        Assert.That(_rail.mergeStatusText.fontSizeMin, Is.GreaterThanOrEqualTo(16f));
-        Assert.That(viewport.GetComponent<RectTransform>().anchoredPosition.y, Is.LessThan(0f));
-        _rail.mergeModeButton.onClick.Invoke();
-        Assert.That(_rail.mergeCancelButton.interactable, Is.True);
-        Assert.That(_rail.mergeConfirmButton.interactable, Is.False);
-        _rail.mergeCancelButton.onClick.Invoke();
-        Assert.That(_rail.mergeCancelButton.interactable, Is.False);
-    }
-
-    [Test]
-    public void ManualMergeRequiresTwoDistinctMatchingInstancesAndExplicitConfirmation()
-    {
+        GameplayInputGate.Clear();
         var common = Gear("common", "Common", "C", "Common detail");
         common.canonicalId = "family-common";
         common.tier = 1;
@@ -139,38 +83,41 @@ public sealed class GearRailUITests
         next.canonicalId = "family-rare";
         next.tier = 2;
         next.upgradeFromId = "family-common";
-        _cards.gearCatalog.AddRange(new[] { common, next });
-        _cards.BuyGear(common, 0);
-        _cards.BuyGear(common, 0);
-        InvokeRail("Refresh");
-        _mergeMode.onClick.Invoke();
-        var first = _slots.GetChild(0).GetComponent<GearIconSlotUI>();
-        var second = _slots.GetChild(1).GetComponent<GearIconSlotUI>();
-        first.OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
-        Assert.That(_mergeConfirm.interactable, Is.False);
-        second.OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
-        Assert.That(_mergeConfirm.interactable, Is.True);
-        Assert.That(_mergeStatus.text, Does.Contain("Rare"));
-        Assert.That(_cards.ownedGear.Count, Is.EqualTo(2));
-        _mergeConfirm.onClick.Invoke();
-        Assert.That(_cards.ownedGear, Is.EqualTo(new[] { next }));
+        var other = Gear("other", "Other", "O", "Other detail");
+        _cards.gearCatalog.AddRange(new[] { common, next, other });
+        Assert.That(_cards.BuyGear(common, 0), Is.True);
+        Assert.That(_cards.BuyGear(other, 0), Is.True);
+        Assert.That(_cards.BuyGear(common, 0), Is.True);
+        long dragged = _cards.GetGearInstanceAt(0).Id;
+        long target = _cards.GetGearInstanceAt(2).Id;
+
+        Assert.That(ItemDropRules.CanDropGear(dragged, ItemDropTarget.OnGear(dragged), out _), Is.False,
+            "A Gear cannot merge with itself.");
+        Assert.That(ItemDropRules.CanDropGear(dragged, ItemDropTarget.OnGear(target), out string preview), Is.True);
+        Assert.That(preview, Does.Contain("RARE"));
+        Assert.That(_cards.ownedGear.Count, Is.EqualTo(3), "The preview changes nothing.");
+        Assert.That(ItemDropRules.DropGear(dragged, ItemDropTarget.OnGear(target)), Is.True);
+        Assert.That(_cards.ownedGear, Is.EqualTo(new[] { other, next }), "The merged Gear lands in the slot it was dropped on.");
+        Assert.That(_slots.GetChild(1).GetComponent<GearIconSlotUI>().Gear, Is.SameAs(next));
     }
 
     [Test]
-    public void ManualMergeDoesNotEnableForDifferentGearFamilies()
+    public void DroppingGearOnADifferentFamilyDoesNotMerge()
     {
+        GameplayInputGate.Clear();
         var firstGear = Gear("one", "One", "1", "One detail");
         firstGear.canonicalId = "family-one";
+        firstGear.tier = 1;
         var secondGear = Gear("two", "Two", "2", "Two detail");
         secondGear.canonicalId = "family-two";
+        secondGear.tier = 1;
         _cards.gearCatalog.AddRange(new[] { firstGear, secondGear });
         Assert.That(_cards.BuyGear(firstGear, 0), Is.True);
         Assert.That(_cards.BuyGear(secondGear, 0), Is.True);
-        InvokeRail("Refresh");
-        _mergeMode.onClick.Invoke();
-        _slots.GetChild(0).GetComponent<GearIconSlotUI>().OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
-        _slots.GetChild(1).GetComponent<GearIconSlotUI>().OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
-        Assert.That(_mergeConfirm.interactable, Is.False);
+        long first = _cards.GetGearInstanceAt(0).Id;
+        long second = _cards.GetGearInstanceAt(1).Id;
+        Assert.That(ItemDropRules.CanDropGear(first, ItemDropTarget.OnGear(second), out _), Is.False);
+        Assert.That(ItemDropRules.DropGear(first, ItemDropTarget.OnGear(second)), Is.False);
         Assert.That(_cards.ownedGear.Count, Is.EqualTo(2));
     }
 
@@ -240,7 +187,7 @@ public sealed class GearRailUITests
     }
 
     [Test]
-    public void EnemyTargetingClosesGearDetailsAndPreventsCompetingMergeSelection()
+    public void EnemyTargetingClosesGearDetails()
     {
         Assert.That(_cards.BuyGear(Gear("target-a", "Target A", "A", "Readable description"), 0), Is.True);
         Assert.That(_cards.BuyGear(Gear("target-b", "Target B", "B", "Other description"), 0), Is.True);
@@ -253,13 +200,6 @@ public sealed class GearRailUITests
         _cards.BeginEnemyTargeting(_ => { }, _ => true);
         Assert.That(_detailPanel.activeSelf, Is.False);
         Assert.That(slot.IsDetailSelected, Is.False);
-        _mergeMode.onClick.Invoke();
-        Assert.That(_mergeCancel.gameObject.activeSelf, Is.False);
-        _cards.EndEnemyTargeting();
-        _mergeMode.onClick.Invoke();
-        Assert.That(_mergeCancel.gameObject.activeSelf, Is.True);
-        _cards.BeginEnemyTargeting(_ => { }, _ => true);
-        Assert.That(_mergeCancel.gameObject.activeSelf, Is.False);
         _cards.EndEnemyTargeting();
     }
 

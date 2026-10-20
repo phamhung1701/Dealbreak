@@ -677,6 +677,7 @@ public partial class CardManager : Singleton<CardManager>
         return nextCandidates.Length == 1 ? nextCandidates[0] : null;
     }
 
+    /// <summary>Merges two matching copies; the next-tier Gear takes the second copy's slot.</summary>
     public bool MergeGear(long firstInstanceId, long secondInstanceId)
     {
         EnsureGearInstances();
@@ -684,15 +685,15 @@ public partial class CardManager : Singleton<CardManager>
         if (next == null) return false;
         int firstIndex = _orderedGearInstances.FindIndex(value => value != null && value.Id == firstInstanceId);
         int secondIndex = _orderedGearInstances.FindIndex(value => value != null && value.Id == secondInstanceId);
-        int firstPosition = Math.Min(firstIndex, secondIndex);
         int lastPosition = Math.Max(firstIndex, secondIndex);
         ownedGear.RemoveAt(lastPosition);
         _orderedGearInstances.RemoveAt(lastPosition);
-        ownedGear.RemoveAt(firstPosition);
-        _orderedGearInstances.RemoveAt(firstPosition);
+        ownedGear.RemoveAt(Math.Min(firstIndex, secondIndex));
+        _orderedGearInstances.RemoveAt(Math.Min(firstIndex, secondIndex));
+        int mergedPosition = secondIndex > firstIndex ? secondIndex - 1 : secondIndex;
         var merged = new GearRuntimeInstance(next);
-        ownedGear.Insert(firstPosition, next);
-        _orderedGearInstances.Insert(firstPosition, merged);
+        ownedGear.Insert(mergedPosition, next);
+        _orderedGearInstances.Insert(mergedPosition, merged);
         RebuildGearIds();
         CompleteGearAcquisition(merged);
         return true;

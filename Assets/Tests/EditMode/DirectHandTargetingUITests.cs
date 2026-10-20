@@ -156,30 +156,6 @@ public sealed class DirectHandTargetingUITests
     }
 
     [Test]
-    public void GearMergeMode_RoutesEligibleClicksOnlyToMergeCallback()
-    {
-        var gear = ScriptableObject.CreateInstance<GearData>();
-        gear.name = "Merge test artifact";
-        _created.Add(gear);
-        var slotObject = Make("Merge test artifact slot", typeof(RectTransform), typeof(Image), typeof(GearIconSlotUI));
-        var slot = slotObject.GetComponent<GearIconSlotUI>();
-        int detailClicks = 0;
-        int mergeClicks = 0;
-        slot.Bind(gear, null, null, _ => detailClicks++, 42, (_, _) => mergeClicks++,
-            mergeSelected: false, mergeMode: true, mergeEligible: true);
-
-        slot.OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(detailClicks, Is.Zero);
-        Assert.That(mergeClicks, Is.EqualTo(1));
-
-        slot.Bind(gear, null, null, _ => detailClicks++, 42, (_, _) => mergeClicks++,
-            mergeSelected: false, mergeMode: true, mergeEligible: false);
-        slot.OnPointerClick(new PointerEventData(_eventSystem) { button = PointerEventData.InputButton.Left });
-        Assert.That(detailClicks, Is.Zero);
-        Assert.That(mergeClicks, Is.EqualTo(1));
-    }
-
-    [Test]
     public void RealHandCardClick_RoutesToTargetHandlerWithoutAddingHandEntries()
     {
         _cards.DealHand();

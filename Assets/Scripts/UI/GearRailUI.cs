@@ -22,12 +22,6 @@ public sealed class GearRailUI : MonoBehaviour
     public Sprite emptySlotSprite;
     public Sprite selectedSlotSprite;
 
-    [Header("Manual merge")]
-    public Button mergeModeButton;
-    public Button mergeConfirmButton;
-    public Button mergeCancelButton;
-    public TMP_Text mergeStatusText;
-
     public GameObject detailPanel;
     public TMP_Text detailText;
     public Button detailCloseButton;
@@ -36,26 +30,13 @@ public sealed class GearRailUI : MonoBehaviour
     CardManager _subscribedSource;
     GearData _hovered;
     long _selectedInstanceId;
-    bool _mergeSelecting;
-    bool _mergeAwaitingConfirmation;
-    long _firstMergeId;
-    long _secondMergeId;
-    int _ownedGearCount;
-    GearData _mergePreview;
-    PathNode _mergeNode;
-    GameState _mergeCombatState;
     Vector2 _lastDetailParentSize;
-    RectTransform _generatedControlsViewport;
     bool _hasLastDetailParentSize;
 
 
     void OnEnable()
     {
-        EnsureMergeControls();
         if (detailCloseButton) detailCloseButton.onClick.AddListener(CloseDetail);
-        if (mergeModeButton) mergeModeButton.onClick.AddListener(BeginMergeSelection);
-        if (mergeConfirmButton) mergeConfirmButton.onClick.AddListener(ConfirmMerge);
-        if (mergeCancelButton) mergeCancelButton.onClick.AddListener(CancelMerge);
         if (RunManager.Instance != null)
         {
             RunManager.Instance.OnRunStarted += HandleRunStarted;
@@ -87,26 +68,14 @@ public sealed class GearRailUI : MonoBehaviour
         }
         _subscribedSource = null;
         if (detailCloseButton) detailCloseButton.onClick.RemoveListener(CloseDetail);
-        if (mergeModeButton) mergeModeButton.onClick.RemoveListener(BeginMergeSelection);
-        if (mergeConfirmButton) mergeConfirmButton.onClick.RemoveListener(ConfirmMerge);
-        if (mergeCancelButton) mergeCancelButton.onClick.RemoveListener(CancelMerge);
         HideTooltip();
         CloseDetail();
-        _mergeSelecting = false;
-        _mergeAwaitingConfirmation = false;
-        _firstMergeId = _secondMergeId = 0;
-        _mergePreview = null;
-        UpdateMergeControls();
     }
 
     // A rail enabled before CardManager is created can still attach as soon as it appears.
     void Update()
     {
         if (!_subscribedSource && (source || CardManager.Instance)) Refresh();
-        if (_mergeSelecting && (GameplayInputGate.IsBlocked ||
-            _subscribedSource != null && (_subscribedSource.IsHandEnhancementTargeting || _subscribedSource.IsEnemyTargeting) ||
-            RunManager.Instance?.ActiveNode != _mergeNode ||
-            CombatManager.Instance != null && CombatManager.Instance.currentState != _mergeCombatState)) CancelMerge();
         if (_selectedInstanceId != 0 && detailPanel && detailPanel.activeSelf &&
             detailPanel.transform.parent is RectTransform detailParent &&
             (!_hasLastDetailParentSize || (detailParent.rect.size - _lastDetailParentSize).sqrMagnitude > 0.25f))
@@ -134,17 +103,6 @@ public sealed class GearRailUI : MonoBehaviour
             }
         }
 
-        if (_mergeSelecting && cards != null && (cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting)) CancelMerge();
-        if (_mergeSelecting && (!cards || cards.ownedGear.Count < 2 ||
-            (_firstMergeId != 0 && cards.GetGearInstanceById(_firstMergeId) == null) ||
-            (_secondMergeId != 0 && cards.GetGearInstanceById(_secondMergeId) == null)))
-        {
-            _mergeSelecting = false;
-            _firstMergeId = _secondMergeId = 0;
-            _mergeAwaitingConfirmation = false;
-            _mergePreview = null;
-        }
-
         if (capacityLabel)
             capacityLabel.text = $"{(cards ? cards.GearSlotsUsed : 0)}/{(cards ? cards.GearCapacity : CardManager.BASE_GEAR_CAPACITY)}";
 
@@ -164,8 +122,7 @@ public sealed class GearRailUI : MonoBehaviour
                     var instanceId = cards.GetGearInstanceAt(currentGearIndex)?.Id ?? 0;
                     slot.Bind(gear, ShowTooltip, HideTooltipFor,
                         selectedGear => SelectGear(instanceId, selectedGear),
-                        instanceId, SelectForMerge, _firstMergeId == instanceId || _secondMergeId == instanceId,
-                        _mergeSelecting, IsMergeEligible(cards, instanceId), _selectedInstanceId == instanceId);
+                        instanceId, _selectedInstanceId == instanceId);
                     slot.gameObject.SetActive(true);
                 }
                 count++;
@@ -174,7 +131,6 @@ public sealed class GearRailUI : MonoBehaviour
 
         int emptySlotCount = cards ? cards.GearCapacity : CardManager.BASE_GEAR_CAPACITY;
         int visibleSlotCount = Mathf.Max(count, emptySlotCount);
-        _ownedGearCount = count;
         for (int i = count; i < visibleSlotCount; i++)
         {
             if (i == _slots.Count) _slots.Add(CreateSlot());
@@ -188,89 +144,6 @@ public sealed class GearRailUI : MonoBehaviour
 
         if (_hovered && (!cards || !cards.ownedGear.Contains(_hovered))) HideTooltip();
         if (_selectedInstanceId != 0 && (!cards || cards.GetGearInstanceById(_selectedInstanceId) == null)) CloseDetail();
-        UpdateMergeControls();
-    }
-
-    void EnsureMergeControls()
-    {
-        if (mergeModeButton && mergeConfirmButton && mergeCancelButton && mergeStatusText) return;
-        var controlsRoot = slotsRoot && slotsRoot.parent ? slotsRoot.parent.parent as RectTransform : null;
-        if (!controlsRoot) controlsRoot = transform as RectTransform;
-        if (!controlsRoot) return;
-
-        if (!mergeModeButton)
-            mergeModeButton = CreateMergeButton(controlsRoot, "Merge Gear", "Merge", new Vector2(0f, -72f), new Vector2(176f, 40f), 20f, 16f);
-        if (!mergeConfirmButton)
-            mergeConfirmButton = CreateMergeButton(controlsRoot, "Confirm Gear Merge", "Confirm", new Vector2(-48f, -120f), new Vector2(108f, 40f), 20f, 16f);
-        if (!mergeCancelButton)
-            mergeCancelButton = CreateMergeButton(controlsRoot, "Cancel Gear Merge", "Cancel", new Vector2(66f, -120f), new Vector2(84f, 40f), 20f, 16f);
-        if (!mergeStatusText)
-        {
-            var statusObject = new GameObject("Gear Merge Status", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            var rect = (RectTransform)statusObject.transform;
-            rect.SetParent(controlsRoot, false);
-            SetTopAnchoredRect(rect, new Vector2(0f, -180f), new Vector2(200f, 66f));
-            mergeStatusText = statusObject.GetComponent<TMP_Text>();
-            CopyTextStyle(mergeStatusText);
-            mergeStatusText.fontSize = 16f;
-            mergeStatusText.enableAutoSizing = true;
-            mergeStatusText.fontSizeMin = 16f;
-            mergeStatusText.fontSizeMax = 16f;
-            mergeStatusText.alignment = TextAlignmentOptions.Center;
-            mergeStatusText.raycastTarget = false;
-        }
-
-        // Reserve a strip above the scrollable Gear icons for the generated controls.
-        if (slotsRoot && slotsRoot.parent is RectTransform viewport && viewport.parent == controlsRoot)
-        {
-            _generatedControlsViewport = viewport;
-            viewport.offsetMin = new Vector2(viewport.offsetMin.x, slotSize >= 60 ? 0f : 10f);
-            viewport.offsetMax = new Vector2(viewport.offsetMax.x, -222f);
-        }
-    }
-
-    Button CreateMergeButton(RectTransform parent, string objectName, string label, Vector2 position, Vector2 size, float fontSize, float minFontSize)
-    {
-        var go = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
-        var rect = (RectTransform)go.transform;
-        rect.SetParent(parent, false);
-        SetTopAnchoredRect(rect, position, size);
-        var image = go.GetComponent<Image>();
-        image.color = new Color(0.16f, 0.24f, 0.25f, 0.45f);
-        var button = go.GetComponent<Button>();
-        button.targetGraphic = image;
-
-        var labelObject = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-        var labelRect = (RectTransform)labelObject.transform;
-        labelRect.SetParent(rect, false);
-        labelRect.anchorMin = Vector2.zero;
-        labelRect.anchorMax = Vector2.one;
-        labelRect.offsetMin = new Vector2(3f, 1f);
-        labelRect.offsetMax = new Vector2(-3f, -1f);
-        var text = labelObject.GetComponent<TMP_Text>();
-        CopyTextStyle(text);
-        text.text = label;
-        text.fontSize = fontSize;
-        text.enableAutoSizing = true;
-        text.fontSizeMin = minFontSize;
-        text.fontSizeMax = fontSize;
-        text.alignment = TextAlignmentOptions.Center;
-        text.raycastTarget = false;
-        return button;
-    }
-
-    void CopyTextStyle(TMP_Text text)
-    {
-        if (capacityLabel && capacityLabel.font) text.font = capacityLabel.font;
-        text.color = Color.white;
-    }
-
-    static void SetTopAnchoredRect(RectTransform rect, Vector2 position, Vector2 size)
-    {
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
     }
 
     GearIconSlotUI CreateSlot()
@@ -302,24 +175,15 @@ public sealed class GearRailUI : MonoBehaviour
         return go.GetComponent<GearIconSlotUI>();
     }
 
-    void HandleRunStarted(string _)
-    {
-        CancelMerge();
-        CloseDetail();
-    }
+    void HandleRunStarted(string _) => CloseDetail();
 
-    void HandleContextEnded()
-    {
-        CloseDetail();
-        CancelMerge();
-    }
+    void HandleContextEnded() => CloseDetail();
 
     void HandleCardSelected(CardView card)
     {
         if (card == null) return;
         CloseDetail();
         HideTooltip();
-        if (_mergeSelecting) CancelMerge();
     }
 
     void HandleEnemyTargetingChanged(bool active)
@@ -327,112 +191,9 @@ public sealed class GearRailUI : MonoBehaviour
         if (!active) return;
         CloseDetail();
         HideTooltip();
-        if (_mergeSelecting) CancelMerge();
     }
 
     void HandleEncounterResult(EncounterResult _) => CloseDetail();
-
-    bool IsMergeEligible(CardManager cards, long id)
-    {
-        if (!_mergeSelecting) return true;
-        if (id == _firstMergeId || id == _secondMergeId) return true;
-        long anchor = _firstMergeId != 0 ? _firstMergeId : _secondMergeId;
-        if (anchor != 0) return cards.GetGearMergeResult(anchor, id) != null;
-        foreach (var candidate in cards.OwnedGearInstances)
-            if (candidate != null && cards.GetGearMergeResult(id, candidate.Id) != null) return true;
-        return false;
-    }
-
-    void BeginMergeSelection()
-    {
-        var cards = source ? source : CardManager.Instance;
-        if (_ownedGearCount < 2 || GameplayInputGate.IsBlocked ||
-            cards != null && (cards.IsHandEnhancementTargeting || cards.IsEnemyTargeting)) return;
-        CloseDetail();
-        HideTooltip();
-        cards?.ClearSelection();
-        _mergeNode = RunManager.Instance?.ActiveNode;
-        _mergeCombatState = CombatManager.Instance != null ? CombatManager.Instance.currentState : GameState.Idle;
-        _mergeSelecting = true;
-        _mergeAwaitingConfirmation = false;
-        _firstMergeId = _secondMergeId = 0;
-        _mergePreview = null;
-        Refresh();
-    }
-
-    void SelectForMerge(long instanceId, GearData gear)
-    {
-        if (!_mergeSelecting || instanceId == 0 || GameplayInputGate.IsBlocked ||
-            (_subscribedSource != null && _subscribedSource.IsEnemyTargeting)) return;
-        if (_firstMergeId == instanceId) _firstMergeId = 0;
-        else if (_secondMergeId == instanceId) _secondMergeId = 0;
-        else if (_firstMergeId == 0) _firstMergeId = instanceId;
-        else if (_secondMergeId == 0) _secondMergeId = instanceId;
-        _mergeAwaitingConfirmation = false;
-        _mergePreview = null;
-        var cards = source ? source : CardManager.Instance;
-        _mergePreview = cards ? cards.GetGearMergeResult(_firstMergeId, _secondMergeId) : null;
-        _mergeAwaitingConfirmation = _mergePreview != null;
-        Refresh();
-    }
-
-    void ConfirmMerge()
-    {
-        if (!_mergeAwaitingConfirmation || !_mergePreview || GameplayInputGate.IsBlocked ||
-            (_subscribedSource != null && _subscribedSource.IsEnemyTargeting)) return;
-        var cards = source ? source : CardManager.Instance;
-        if (!cards || cards.GetGearInstanceById(_firstMergeId) == null ||
-            cards.GetGearInstanceById(_secondMergeId) == null || _firstMergeId == _secondMergeId ||
-            !cards.MergeGear(_firstMergeId, _secondMergeId))
-        {
-            CancelMerge();
-            return;
-        }
-        CancelMerge();
-    }
-
-    void CancelMerge()
-    {
-        _mergeSelecting = false;
-        _mergeAwaitingConfirmation = false;
-        _firstMergeId = _secondMergeId = 0;
-        _mergePreview = null;
-        UpdateMergeControls();
-        Refresh();
-    }
-
-    void UpdateMergeControls()
-    {
-        bool canMergeMode = _ownedGearCount >= 2;
-        if (_generatedControlsViewport)
-            _generatedControlsViewport.offsetMax = new Vector2(_generatedControlsViewport.offsetMax.x,
-                slotSize >= 60 ? _mergeSelecting ? -160f : canMergeMode ? -45f : 0f
-                    : _mergeSelecting ? -222f : canMergeMode ? -104f : -62f);
-        if (mergeModeButton)
-        {
-            mergeModeButton.gameObject.SetActive(_mergeSelecting || canMergeMode);
-            mergeModeButton.interactable = !_mergeSelecting && canMergeMode;
-        }
-        if (mergeConfirmButton)
-        {
-            mergeConfirmButton.gameObject.SetActive(_mergeSelecting);
-            mergeConfirmButton.interactable = _mergeAwaitingConfirmation;
-        }
-        if (mergeCancelButton)
-        {
-            mergeCancelButton.gameObject.SetActive(_mergeSelecting);
-            mergeCancelButton.interactable = _mergeSelecting;
-        }
-        if (mergeStatusText)
-        {
-            mergeStatusText.gameObject.SetActive(_mergeSelecting);
-            if (!_mergeSelecting) mergeStatusText.text = string.Empty;
-            else if (_mergePreview) mergeStatusText.text = $"Merge into {_mergePreview.displayName}? Confirm or Cancel.";
-            else if (_firstMergeId != 0 && _secondMergeId != 0)
-                mergeStatusText.text = "These copies cannot be merged. Select a matching pair.";
-            else mergeStatusText.text = $"Select two matching Gear copies ({(_firstMergeId != 0 ? 1 : 0) + (_secondMergeId != 0 ? 1 : 0)}/2).";
-        }
-    }
 
     void ShowTooltip(GearData gear)
     {
@@ -566,7 +327,6 @@ public sealed class GearRailUI : MonoBehaviour
     {
         CloseDetail();
         HideTooltip();
-        if (_mergeSelecting) CancelMerge();
     }
 
     public void CloseDetail()

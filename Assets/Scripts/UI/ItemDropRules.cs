@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>What a dragged Trick or Gear item is released over.</summary>
-public enum ItemDropKind { None, HandCard, Enemy, PlayerHealth, BlackMarket, TrickSlot, Discard }
+public enum ItemDropKind { None, HandCard, Enemy, PlayerHealth, BlackMarket, TrickSlot, Discard, GearSlot }
 
 public readonly struct ItemDropTarget
 {
@@ -10,13 +10,15 @@ public readonly struct ItemDropTarget
     public readonly CardInstance Card;
     public readonly EnemyRuntime Enemy;
     public readonly int Slot;
+    public readonly long GearId;
 
-    ItemDropTarget(ItemDropKind kind, CardInstance card = null, EnemyRuntime enemy = null, int slot = -1)
+    ItemDropTarget(ItemDropKind kind, CardInstance card = null, EnemyRuntime enemy = null, int slot = -1, long gearId = 0)
     {
         Kind = kind;
         Card = card;
         Enemy = enemy;
         Slot = slot;
+        GearId = gearId;
     }
 
     public static ItemDropTarget None => default;
@@ -26,13 +28,15 @@ public readonly struct ItemDropTarget
     public static ItemDropTarget BlackMarket => new(ItemDropKind.BlackMarket);
     public static ItemDropTarget TrickSlot(int slot) => new(ItemDropKind.TrickSlot, slot: slot);
     public static ItemDropTarget Discard => new(ItemDropKind.Discard);
+    public static ItemDropTarget OnGear(long gearId) => new(ItemDropKind.GearSlot, gearId: gearId);
 }
 
 /// <summary>
 /// The rules behind dragging a Trick or Gear item onto something: a card-targeting Trick onto a
 /// hand card, a damage Trick onto an enemy, a heal onto the HP bar, either item onto the Black
-/// Market to sell it, a Trick onto another Trick slot to reorder, or either onto the discard strip
-/// to throw it away for nothing. Every drop goes through the
+/// Market to sell it, a Trick onto another Trick slot to reorder, a Gear onto a matching copy to
+/// merge the two into the next tier, or either onto the discard strip to throw it away for
+/// nothing. Every drop goes through the
 /// existing CardManager/RunManager command for that effect, so validation and payment stay there.
 /// The preview is the number or change the drop would make, shown beside the target.
 /// </summary>
@@ -124,6 +128,13 @@ public static class ItemDropRules
             preview = "DISCARD";
             return true;
         }
+        if (target.Kind == ItemDropKind.GearSlot)
+        {
+            var merged = CardManager.Instance.GetGearMergeResult(gearId, target.GearId);
+            if (merged == null) return false;
+            preview = $"→ {merged.displayName.ToUpperInvariant()}";
+            return true;
+        }
         if (target.Kind != ItemDropKind.BlackMarket || !CanSell(gear.Definition.price)) return false;
         preview = SellPreview(gear.Definition.price);
         return true;
@@ -133,6 +144,7 @@ public static class ItemDropRules
     {
         if (!CanDropGear(gearId, target, out _)) return false;
         if (target.Kind == ItemDropKind.Discard) return Saved(CardManager.Instance.RemoveGearInstance(gearId));
+        if (target.Kind == ItemDropKind.GearSlot) return Saved(CardManager.Instance.MergeGear(gearId, target.GearId));
         var gear = CardManager.Instance.GetGearInstanceById(gearId);
         return RunManager.Instance.SellGear(gearId, gear.Definition.price);
     }

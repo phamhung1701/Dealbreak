@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// Pointer drag for an owned Gear slot. Gear has no play target; dropped on the Black Market it
+/// Pointer drag for an owned Gear slot. Dropped on a matching copy it merges, on the Black Market it
 /// sells, anywhere else it returns to its slot (see <see cref="ItemDragUI"/>).
 /// </summary>
 [RequireComponent(typeof(GearIconSlotUI))]

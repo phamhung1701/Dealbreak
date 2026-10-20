@@ -11,8 +11,8 @@ using UnityEngine.UI;
 /// resolved to an <see cref="ItemDropTarget"/> and, when <see cref="ItemDropRules"/> accepts it,
 /// ringed with the change the drop would make. Over the Black Market the whole market darkens
 /// and shows the sale price. While an item is held, a red discard strip covers the run header
-/// (District, Depth); dropping there throws the item away. Releasing anywhere else returns the
-/// ghost to its slot.
+/// (District, Depth); dropping there throws the item away. A Gear dropped on a matching copy
+/// merges them. Releasing anywhere else returns the ghost to its slot.
 /// Presentation only: every effect runs through ItemDropRules.
 /// </summary>
 public sealed class ItemDragUI : MonoBehaviour
@@ -241,6 +241,9 @@ public sealed class ItemDragUI : MonoBehaviour
         foreach (var hit in _hits)
         {
             if (!hit.gameObject || hit.gameObject.transform.IsChildOf(_root)) continue;
+            var gearSlot = hit.gameObject.GetComponentInParent<GearIconSlotUI>();
+            if (_isGear && gearSlot && gearSlot.Gear && gearSlot.InstanceId != 0 && gearSlot.InstanceId != _gearId)
+                return ItemDropTarget.OnGear(gearSlot.InstanceId);
             var view = hit.gameObject.GetComponentInParent<CardView>();
             if (!_isGear && view && view.data != null && view.homeField != null && cards.hand.Contains(view.data))
                 return ItemDropTarget.HandCard(view.data);
@@ -358,6 +361,10 @@ public sealed class ItemDragUI : MonoBehaviour
             case ItemDropKind.TrickSlot:
                 return actions && target.Slot < actions.backpackSlotButtons.Length && actions.backpackSlotButtons[target.Slot]
                     ? (RectTransform)actions.backpackSlotButtons[target.Slot].transform : null;
+            case ItemDropKind.GearSlot:
+                foreach (var slot in Object.FindObjectsByType<GearIconSlotUI>(FindObjectsSortMode.None))
+                    if (slot.isActiveAndEnabled && slot.InstanceId == target.GearId) return (RectTransform)slot.transform;
+                return null;
             default:
                 return null;
         }
