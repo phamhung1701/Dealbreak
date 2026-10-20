@@ -278,7 +278,8 @@ public sealed class Phase7EShopSelectionTests
         Click(offer);
         Assert.That(_ui.SelectedOfferId, Is.EqualTo(stableId));
         Assert.That(_ui.selectedOfferText.text, Does.Contain("Gear Capacity Full"));
-        Assert.That(ButtonFor(offer).GetComponent<ContextualInfoTrigger>().Info.Value.Body, Does.Contain("Gear Capacity Full"));
+        Assert.That(ButtonFor(offer).GetComponent<ShopOfferUI>().statusLabel.text, Does.Contain("Gear Capacity Full"),
+            "The tile shows why it cannot be bought.");
         _ui.buyButton.onClick.Invoke();
         Assert.That(_ui.selectedOfferText.text, Does.Contain("Gear Capacity Full"));
         Assert.That(_cards.credits, Is.EqualTo(credits));
@@ -384,14 +385,18 @@ public sealed class Phase7EShopSelectionTests
     ShopOffer GearOffer() => _run.GetCurrentShopOffers().First(offer => offer.kind == ShopOfferKind.Gear);
 
     [Test]
-    public void InlineBuy_SelectsWithoutPayment_ThenPurchasesOnceAndRemovesStock()
+    public void PriceButton_AlwaysShowsThePrice_AndBuysOnceWhileTheTileOpensItsDetail()
     {
         _ui.storeComposition=true;_cards.AddCredits(50);_ui.RefreshPresentation();
         var offer=GearOffer();string id=offer.StableId;int before=_cards.credits;
-        Click(offer);var view=ButtonFor(offer).GetComponent<ShopOfferUI>();
-        Assert.That(_cards.credits,Is.EqualTo(before));
-        Assert.That(view.descriptionLabel.text,Does.Contain(offer.gear.description));
-        Assert.That(view.purchaseButton.gameObject.activeSelf,Is.True);
+        var view=ButtonFor(offer).GetComponent<ShopOfferUI>();
+        Assert.That(view.purchaseButton.gameObject.activeSelf,Is.True,"The price button shows before any click.");
+        Assert.That(view.purchaseButton.GetComponentInChildren<TMP_Text>(true).text,Is.EqualTo($"{offer.price} Credits"));
+        var detail=ButtonFor(offer).GetComponent<ContextualInfoTrigger>();
+        Assert.That(detail.clickOnly,Is.True,"Offer details open on click, not on hover.");
+        Assert.That(detail.Info.Value.Body,Does.Contain(offer.gear.description));
+        Click(offer);
+        Assert.That(_cards.credits,Is.EqualTo(before),"Clicking the tile only opens its detail.");
         view.purchaseButton.onClick.Invoke();
         Assert.That(_cards.credits,Is.EqualTo(before-offer.price));
         Assert.That(_cards.ownedGear,Has.Count.EqualTo(1));
@@ -402,15 +407,31 @@ public sealed class Phase7EShopSelectionTests
     }
 
     [Test]
-    public void InlineSelection_SwitchesAndCancelsWithoutPurchasing()
+    public void InlineSelection_SwitchesWithoutPurchasing()
     {
         _ui.storeComposition=true;_cards.AddCredits(50);_ui.RefreshPresentation();
         var offers=_run.GetCurrentShopOffers().Where(o=>!o.IsService).Take(2).ToArray();
         Click(offers[0]);Click(offers[1]);
-        Assert.That(ButtonFor(offers[0]).GetComponent<ShopOfferUI>().purchaseButton.gameObject.activeSelf,Is.False);
-        Assert.That(ButtonFor(offers[1]).GetComponent<ShopOfferUI>().purchaseButton.gameObject.activeSelf,Is.True);
-        _ui.ClearOfferSelection();_ui.PurchaseInline(offers[1].StableId);
+        Assert.That(_ui.SelectedOfferId,Is.EqualTo(offers[1].StableId));
+        Assert.That(offers.All(o=>ButtonFor(o).GetComponent<ShopOfferUI>().purchaseButton.gameObject.activeSelf),Is.True);
+        _ui.ClearOfferSelection();
         Assert.That(_ui.SelectedOfferId,Is.Null);Assert.That(_cards.credits,Is.EqualTo(50));Assert.That(_cards.ownedGear,Is.Empty);
+    }
+
+    [Test]
+    public void SupplyMinAndMaxJumpToTheAllowedQuantityRange()
+    {
+        _ui.storeComposition=true;_cards.AddCredits(30);_ui.RefreshPresentation();
+        var offer=ReplaceCurrentServiceWith(ShopOfferKind.Supply);
+        _cards.TryDiscardCardsByIds(_cards.hand.Take(4).Select(card=>card.Id).ToArray());
+        Click(offer);
+        int maximum=_run.GetSupplyMaximumQuantity();
+        Assert.That(maximum,Is.GreaterThan(1));
+        InvokeUi("SetSelectedQuantityToMaximum");
+        Assert.That(offer.supplyQuantity,Is.EqualTo(maximum));
+        InvokeUi("SetSelectedQuantityToMinimum");
+        Assert.That(offer.supplyQuantity,Is.EqualTo(1));
+        Assert.That(_cards.credits,Is.EqualTo(30),"Changing the quantity never buys.");
     }
 
     [Test]
