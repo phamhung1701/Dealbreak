@@ -1,10 +1,11 @@
-"""Dealbreak Gear and Trick icons: painted item art -> punk-poster screen print.
+"""Dealbreak Gear and Trick icons: painted item art -> neo-punk halftone cut-outs.
 
-Each source is cut to its silhouette and reprinted as a screen print in its own colours: the
-painting is separated into a few flat spot inks (muted toward the paper; greys print as paper,
-slate or charcoal), with ink shading as solid fills and halftone dots, ink linework, a paper
-sticker edge and a misregistered brick shadow. The background stays transparent so the icon
-sits on the slot's own frame. Seeded noise only: a rerun reproduces the files exactly.
+Each source is cut to its silhouette and reprinted in its own colours: the painting is separated
+into a few flat spot inks (muted toward the off-white; greys print as off-white, grey or charcoal),
+with ink shading as solid fills and halftone dots and ink linework, then outlined by a thin
+off-white cut line like a collage cut-out so dark items still read on the dark slots. No paper
+sticker edge, no shadow. The background stays transparent so the icon sits on the slot's own
+frame. Seeded noise only: a rerun reproduces the files exactly.
 
     pip install -r Tools/PrintArt/requirements.txt
     python Tools/PrintArt/make_item_icons.py                    # writes Assets/Art/Items/**
@@ -24,11 +25,12 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCES = ROOT / "Tools/PrintArt/item_sources"
 ITEMS = ROOT / "Assets/Art/Items"
 
-INK = np.array([14, 17, 19], np.float32)
-PAPER = np.array([240, 230, 207], np.float32)
-BRICK = np.array([168, 69, 56], np.float32)
-SLATE = np.array([74, 92, 105], np.float32)
-CHARCOAL = (27, 33, 40)
+# The game palette (DealbreakUITheme): near-black, off-white, signal red, neutral grey, charcoal.
+INK = np.array([11, 11, 12], np.float32)
+PAPER = np.array([236, 234, 228], np.float32)
+BRICK = np.array([232, 50, 43], np.float32)
+SLATE = np.array([58, 58, 64], np.float32)
+CHARCOAL = (22, 22, 26)
 CHARCOAL_INK = np.array(CHARCOAL, np.float32)
 
 WORK = 512               # processing canvas; the object fits inside FIT
@@ -199,7 +201,7 @@ def fit(path):
 # ---------- treatment ----------
 
 def badge(out, a, suit):
-    """A paper disc with an ink rim and the suit printed in its colour, bottom right."""
+    """An off-white disc with an ink rim and the suit printed in its colour, bottom right."""
     h, w = a.shape
     cx, cy, r = w - 78, h - 78, 66
     disc, pip = Image.new("L", (w, h), 0), Image.new("L", (w, h), 0)
@@ -207,11 +209,10 @@ def badge(out, a, suit):
     draw_suit(ImageDraw.Draw(pip), suit, cx, cy + 4, r * 1.15)
     disc, pip = np.asarray(disc) > 127, np.asarray(pip) > 127
     rim = grow(disc, 5) & ~disc
-    out[shift(grow(disc, 5), 8, 7)] = INK
     out[rim] = INK
     out[disc] = PAPER
     out[pip] = BRICK if suit in "hd" else INK
-    a[grow(disc, 5) | shift(grow(disc, 5), 8, 7)] = 1
+    a[grow(disc, 5)] = 1
 
 
 def spot_fill(rgb, body, rng):
@@ -282,16 +283,15 @@ def treat(path, seed, suit=None):
     lines = dog < -0.045
     ink = (solid | lines | dots) & body
 
-    # Sticker edge: a hairline of ink, a paper border, then a misregistered brick shadow.
-    contour = grow(body, 3) & ~body
-    keyline = grow(body, 11)
-    shadow = shift(keyline, 14, 12) & ~keyline
+    # A thin off-white cut line, like a collage cut-out: a hairline of ink, then the cut edge.
+    contour = grow(body, 2) & ~body
+    cut = grow(body, 6) & ~grow(body, 2)
 
     out = fill
     out[wear(ink, rng, 0.08)] = INK
     out[contour] = INK
-    out[shadow] = BRICK
-    a = (keyline | wear(shadow, rng, 0.10)).astype(np.float32)
+    out[cut] = PAPER
+    a = grow(body, 6).astype(np.float32)
 
     # Paper flecks keep the flat fills from reading as vector art.
     flecks = (fbm(h, w, rng, 3, 2) > 0.82) & body & ~ink

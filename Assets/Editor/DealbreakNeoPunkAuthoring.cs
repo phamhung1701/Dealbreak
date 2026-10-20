@@ -110,8 +110,15 @@ public static class DealbreakNeoPunkAuthoring
             {
                 var frame = tooltip.panel ? tooltip.panel.transform.Find("Editorial Frame") : null;
                 if (frame && frame.TryGetComponent<EditorialFrame>(out var card))
-                { card.fill = Charcoal; card.rim = Slate; card.border = 1; card.showShadow = false; card.showAccent = false; }
+                { card.fill = Charcoal; card.rim = Slate; card.border = 1; card.corner = 0; card.showShadow = false; card.showAccent = false; }
                 if (tooltip.body) tooltip.body.color = Paper;
+                if (tooltip.panel && tooltip.panel.TryGetComponent<Image>(out var backing)) backing.color = Color.clear;
+                var band = tooltip.panel ? tooltip.panel.transform.Find("DetailTitleBand") : null;
+                if (band && band.TryGetComponent<Image>(out var bandImage)) bandImage.color = Ink;
+                var bar = tooltip.panel ? tooltip.panel.transform.Find("Detail Scrollbar") : null;
+                if (bar && bar.TryGetComponent<Image>(out var track)) track.color = new Color(Slate.r, Slate.g, Slate.b, .5f);
+                var handle = bar ? bar.Find("Handle") : null;
+                if (handle && handle.TryGetComponent<Image>(out var thumb)) thumb.color = Signal;
             }
             // Player HP reads as big mono numbers over a thin red bar, straight on the stage: no cream box.
             foreach (var health in root.GetComponentsInChildren<Transform>(true).Where(t => t.name == "HealthPanel"))
