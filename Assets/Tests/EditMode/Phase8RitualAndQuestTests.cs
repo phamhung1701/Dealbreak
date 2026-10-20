@@ -48,12 +48,16 @@ public sealed class Phase8RitualAndQuestTests
         ConfigureGear(legendary);
         _combat.player.TakeDamage(22);
         BeginRitual();
+        int pathShown = 0;
+        _run.OnShowPathScreen += () => pathShown++;
 
         Assert.That(_run.CanChooseEventOption(0), Is.True);
         Assert.That(_run.ChooseEventOption(0), Is.True);
         Assert.That(_combat.player.maxHealth, Is.EqualTo(5));
         Assert.That(_combat.player.currentHealth, Is.EqualTo(5));
         Assert.That(_cards.ownedGear, Does.Contain(legendary));
+        Assert.That(_run.ActiveEvent, Is.Null, "A granted reward closes the Incident.");
+        Assert.That(pathShown, Is.EqualTo(1), "The run continues to the route map.");
         Assert.That(_run.ChooseEventOption(0), Is.False, "A repeated callback cannot grant the ritual reward again.");
         Assert.That(_cards.ownedGear.Count, Is.EqualTo(1));
     }
@@ -67,6 +71,7 @@ public sealed class Phase8RitualAndQuestTests
         Assert.That(_run.ChooseEventOption(1), Is.True);
         Assert.That(_combat.player.currentHealth, Is.EqualTo(15));
         Assert.That(_cards.ownedGear, Does.Contain(epic));
+        Assert.That(_run.ActiveEvent, Is.Null);
 
         BeginRitual();
         Assert.That(_run.CanChooseEventOption(1), Is.False);
@@ -87,6 +92,7 @@ public sealed class Phase8RitualAndQuestTests
         Assert.That(_combat.player.currentHealth, Is.EqualTo(1), "Five HP is the largest nonlethal ritual payment.");
         Assert.That(_cards.ownedGear, Does.Contain(rare));
         Assert.That(System.Linq.Enumerable.Contains(_cards.ownedGear, common), Is.False);
+        Assert.That(_run.ActiveEvent, Is.Null);
     }
 
     [Test]

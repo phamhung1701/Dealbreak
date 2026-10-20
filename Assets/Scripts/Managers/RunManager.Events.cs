@@ -105,6 +105,7 @@ public partial class RunManager
             return ShowBloodRitualReplacementPrompt();
         bool committed = CommitBloodRitualReward(null);
         ClearPendingBloodRitual();
+        if (committed) CompleteEventChoice();
         return committed;
     }
 
