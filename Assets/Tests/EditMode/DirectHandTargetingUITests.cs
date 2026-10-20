@@ -59,11 +59,14 @@ public sealed class DirectHandTargetingUITests
         int oldOwnedCount = _cards.ownedCards.Count;
 
         Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.HandCard(source), out var preview), Is.True);
-        Assert.That(preview, Is.EqualTo("COPY"));
+        Assert.That(preview, Is.EqualTo("COPY ×2"));
         Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.HandCard(source)), Is.True);
 
-        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount + 1));
-        Assert.That(_cards.hand.Contains(_cards.ownedCards.Last()), Is.True);
+        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount + 2));
+        Assert.That(_cards.ownedCards.Skip(oldOwnedCount).All(card => _cards.hand.Contains(card)), Is.True);
+        var views = _cards.handField.cardsHolder.GetComponentsInChildren<CardView>(true);
+        Assert.That(_cards.ownedCards.Skip(oldOwnedCount).All(card => views.Any(view => view.data == card)), Is.True,
+            "Each copy is shown in the hand.");
         Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
     }
 

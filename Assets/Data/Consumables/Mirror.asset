@@ -20,9 +20,9 @@ MonoBehaviour:
 
     Timing: Anytime
 
-    Effect: Copy one hand card''s
-    effective suit, rank, Mod and permanent attack bonus into a new card. In combat
-    the copy joins your hand; outside combat it enters your deck.
+    Effect: Create 2 copies of
+    one hand card, with its effective suit, rank, Mod and permanent attack bonus.
+    The copies go into your hand.
 
     Uses: 1'
   price: 5
@@ -31,6 +31,7 @@ MonoBehaviour:
   healAmount: 0
   damageAmount: 0
   enhancementToApply: {fileID: 0}
+  copies: 2
   targetSuit: 0
   shopAvailable: 1
   dropAvailable: 1

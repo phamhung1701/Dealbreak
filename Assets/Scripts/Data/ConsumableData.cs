@@ -25,6 +25,8 @@ public sealed class ConsumableData : ScriptableObject
     [Min(0)] public int healAmount;
     [Min(0)] public int damageAmount;
     public CardEnhancementData enhancementToApply;
+    [Tooltip("DuplicateCard: how many copies of the target card go into the hand.")]
+    [Min(1)] public int copies = 1;
     public CardData.Suit targetSuit;
     public bool shopAvailable = true;
     public bool dropAvailable = true;

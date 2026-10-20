@@ -49,16 +49,23 @@ public sealed class DeckMutationTests
         source.GainPermanentAttackBonus(4);
         source.TryChangeSuit(CardData.Suit.Spades);
         source.EffectState.ClearEncounter();
+        int oldOwnedCount = _cards.ownedCards.Count;
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { source.Id }), Is.True);
-        var copy = _cards.ownedCards.Last();
-        Assert.That(copy.Id, Is.Not.EqualTo(source.Id));
-        Assert.That(copy.Definition, Is.SameAs(source.Definition));
-        Assert.That(copy.Suit, Is.EqualTo(source.Suit));
-        Assert.That(copy.Enhancement, Is.SameAs(enhancement));
-        Assert.That(copy.PermanentAttackBonus, Is.EqualTo(4));
-        Assert.That(copy.EffectState, Is.Not.SameAs(source.EffectState));
-        Assert.That(_cards.deck.Contains(copy), Is.True);
-        Assert.That(_cards.hand.Contains(copy), Is.False);
+        Assert.That(_mirror.copies, Is.EqualTo(2), "Copycat makes two copies, like Balatro's Cryptid.");
+        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount + 2));
+        var copies = _cards.ownedCards.Skip(oldOwnedCount).ToArray();
+        Assert.That(copies.Select(copy => copy.Id).Distinct().Count(), Is.EqualTo(2));
+        foreach (var copy in copies)
+        {
+            Assert.That(copy.Id, Is.Not.EqualTo(source.Id));
+            Assert.That(copy.Definition, Is.SameAs(source.Definition));
+            Assert.That(copy.Suit, Is.EqualTo(source.Suit));
+            Assert.That(copy.Enhancement, Is.SameAs(enhancement));
+            Assert.That(copy.PermanentAttackBonus, Is.EqualTo(4));
+            Assert.That(copy.EffectState, Is.Not.SameAs(source.EffectState));
+            Assert.That(_cards.hand.Contains(copy), Is.True, "Outside combat the copies also join the hand.");
+            Assert.That(_cards.deck.Contains(copy), Is.False);
+        }
     }
 
     [Test]
@@ -72,10 +79,12 @@ public sealed class DeckMutationTests
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { outside.Id }), Is.False);
         int oldCount = _cards.ownedCards.Count;
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { _cards.hand[0].Id }), Is.True);
-        var copy = _cards.ownedCards.Last();
-        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldCount + 1));
-        Assert.That(_cards.hand.Contains(copy), Is.True);
-        Assert.That(_cards.discardPile.Contains(copy), Is.False);
+        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldCount + 2));
+        foreach (var copy in _cards.ownedCards.Skip(oldCount))
+        {
+            Assert.That(_cards.hand.Contains(copy), Is.True);
+            Assert.That(_cards.discardPile.Contains(copy), Is.False);
+        }
     }
 
     [Test]
@@ -94,10 +103,10 @@ public sealed class DeckMutationTests
 
         var copy = _cards.ownedCards.Last();
         Assert.That(copy.Id, Is.Not.EqualTo(source.Id));
-        Assert.That(_cards.hand.Count, Is.EqualTo(capacity + 1));
+        Assert.That(_cards.hand.Count, Is.EqualTo(capacity + 2), "Copies join the hand even past its size.");
         Assert.That(_cards.hand.Contains(copy), Is.True);
         Assert.That(_cards.deck.Count + _cards.hand.Count + _cards.discardPile.Count, Is.EqualTo(_cards.ownedCards.Count));
-        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount + 1));
+        Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount + 2));
     }
 
     [Test]

@@ -30,6 +30,7 @@ MonoBehaviour:
   healAmount: 0
   damageAmount: 0
   enhancementToApply: {fileID: 11400000, guid: 99766a61b11f4534aa4c3253136f9b04, type: 2}
+  copies: 1
   targetSuit: 0
   shopAvailable: 1
   dropAvailable: 0

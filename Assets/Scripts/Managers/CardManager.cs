@@ -396,8 +396,15 @@ public partial class CardManager : Singleton<CardManager>
         {
             case ConsumableEffectType.DuplicateCard:
                 if (selected.Count != 1) return false;
-                success = DeckMutationService.Duplicate(_cards, selected[0], _nextCardId, inCombat) != null;
-                if (success) _nextCardId++;
+                success = true;
+                for (int copy = 0; copy < Math.Max(1, definition.copies) && success; copy++)
+                {
+                    var duplicate = DeckMutationService.Duplicate(_cards, selected[0], _nextCardId);
+                    success = duplicate != null;
+                    if (!success) break;
+                    _nextCardId++;
+                    if (CanCreateViews()) CreateView(duplicate);
+                }
                 break;
             case ConsumableEffectType.DestroyCards:
                 if (!DeckMutationService.CanDestroy(_cards, selected, inCombat)) return false;

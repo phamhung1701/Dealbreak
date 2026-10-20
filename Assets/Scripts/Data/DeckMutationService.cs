@@ -11,11 +11,12 @@ public static class DeckMutationService
         return !inCombat || collection.ContainsInHand(target);
     }
 
-    public static CardInstance Duplicate(CardCollection collection, CardInstance target, int newId, bool inCombat)
+    // Copies of a hand card join the hand (like Balatro's Cryptid), in and out of combat.
+    public static CardInstance Duplicate(CardCollection collection, CardInstance target, int newId)
     {
-        if (newId <= 0 || !CanTarget(collection, target, inCombat)) return null;
+        if (newId <= 0 || !CanTarget(collection, target, true)) return null;
         var copy = target.ClonePermanentState(newId);
-        return (inCombat ? collection.AddOwnedToHand(copy) : collection.AddOwnedToDeck(copy)) ? copy : null;
+        return collection.AddOwnedToHand(copy) ? copy : null;
     }
 
     public static bool CanDestroy(CardCollection collection, IReadOnlyList<CardInstance> targets, bool inCombat)

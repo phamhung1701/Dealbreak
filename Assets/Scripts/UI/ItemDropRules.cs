@@ -52,7 +52,7 @@ public static class ItemDropRules
                 preview = definition.effectType switch
                 {
                     ConsumableEffectType.ApplyEnhancement => $"+ {definition.enhancementToApply.displayName.ToUpperInvariant()}",
-                    ConsumableEffectType.DuplicateCard => "COPY",
+                    ConsumableEffectType.DuplicateCard => definition.copies > 1 ? $"COPY ×{definition.copies}" : "COPY",
                     ConsumableEffectType.DestroyCards => "DESTROY",
                     ConsumableEffectType.ChangeSuit => $"→ {SuitSymbol(definition.targetSuit)}",
                     _ => null
