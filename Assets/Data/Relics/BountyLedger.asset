@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: BountyLedger
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_126
-  displayName: Hit List
+  displayName: Bounty Hologram
   icon: "\xA4"
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: ed77a6bda2822494f8075b7d7ce1545f, type: 3}
   description: 'Trigger: On Victory
 
     Condition: Enforcer or Headliner defeated
@@ -46,4 +46,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

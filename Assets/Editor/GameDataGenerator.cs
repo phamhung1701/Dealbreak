@@ -33,7 +33,7 @@ public static class GameDataGenerator
         ConfigureCoreGear(spade, "rel_004", GameplayEffectKind.BlockMultiplier,
             GameplayEffectTrigger.DefenseCalculated, 2, CardData.Suit.Spades);
 
-        var heart = CreateGear("HeartPower", "heart_power", "Heartbeat Chip", "♥", "Trigger: On Card Played\nCondition: Suit = Hearts\nEffect: Heal HP.\nValue: +1 HP", 20);
+        var heart = CreateGear("HeartPower", "heart_power", "Heart Meds", "♥", "Trigger: On Card Played\nCondition: Suit = Hearts\nEffect: Heal HP.\nValue: +1 HP", 20);
         ConfigureCoreGear(heart, "rel_002", GameplayEffectKind.Heal,
             GameplayEffectTrigger.CardCommitted, 1, CardData.Suit.Hearts);
 
@@ -46,14 +46,14 @@ public static class GameDataGenerator
             "Trigger: On Taking Damage\nEffect: Reduce incoming damage.\nValue: -3 damage", 15), "rel_005", "Common",
             new GameplayEffectDefinition { kind = GameplayEffectKind.IncomingCombatDamageReduction,
                 trigger = GameplayEffectTrigger.IncomingDamageCalculated, amount = 3 });
-        ConfigureTypedGear(CreateGear("Dagger", "rel_006", "Box Cutter", "DAGGER",
+        ConfigureTypedGear(CreateGear("Dagger", "rel_006", "Scalpel", "DAGGER",
             "Trigger: On Card Played\nEffect: Add flat damage.\nValue: +3 damage\nLimit: Total damage cannot exceed 10.", 15),
             "rel_006", "Common",
             new GameplayEffectDefinition { kind = GameplayEffectKind.FlatActionDamage,
                 trigger = GameplayEffectTrigger.ActionDamageCalculated, amount = 3 },
             new GameplayEffectDefinition { kind = GameplayEffectKind.ActionDamageCap,
                 trigger = GameplayEffectTrigger.ActionDamageCalculated, amount = 10 });
-        ConfigureTypedGear(CreateGear("Tome", "rel_007", "Pocket Guide", "TOME",
+        ConfigureTypedGear(CreateGear("Tome", "rel_007", "Field Tablet", "TOME",
             "Trigger: On Combat Start\nCondition: Enough free hand space\nEffect: Draw cards.\nValue: 1", 18), "rel_007", "Common",
             new GameplayEffectDefinition { kind = GameplayEffectKind.Draw,
                 trigger = GameplayEffectTrigger.EncounterStart, amount = 1 });
@@ -73,50 +73,50 @@ public static class GameDataGenerator
         sleeves.requiresEnhancedCard = true;
         sleeves.defenseBonus = 3;
 
-        CreateGear("VictoryDraught", "victory_draught", "Recovery Can", "HEAL", "Heal 3 HP after each victory", 24).healAfterVictory = 3;
+        CreateGear("VictoryDraught", "victory_draught", "Recovery Pills", "HEAL", "Heal 3 HP after each victory", 24).healAfterVictory = 3;
         CreateGear("GoldenCompass", "golden_compass", "Payout Tracker", "GOLD", "Gain +4 gold after each victory", 20).bonusCredits = 4;
 
-        ConfigureSpecialGear(CreateGear("TravelerPackCommon", "rel_120", "Carry Rig", "PACK",
+        ConfigureSpecialGear(CreateGear("TravelerPackCommon", "rel_120", "Cargo Case", "PACK",
             "Trigger: Passive\nCondition: Backpack capacity\nEffect: Add 2 backpack slots (3 to 5).\nValue: +2 slots\nLimit: Tricks remain non-stacking at Common tier; Rare enables stacks of up to 3 identical items.", 20),
             "rel_120", "Common", 1, "", GearSpecialRule.TravelerPackCommon);
-        ConfigureSpecialGear(CreateGear("TravelerPackRare", "rel_121", "Carry Rig", "PACK+",
+        ConfigureSpecialGear(CreateGear("TravelerPackRare", "rel_121", "Cargo Case", "PACK+",
             "Trigger: Passive\nCondition: Tricks in backpack\nEffect: Retain 5 slots; up to 3 identical tricks per slot; track charges per item, use partially-used first, separate rune suits; capacity loss withdraw-only, never delete.\nValue: 3 per slot\nLimit: Withdraw-only on capacity loss", 30),
             "rel_121", "Rare", 2, "rel_120", GearSpecialRule.TravelerPackRare);
-        ConfigureSpecialGear(CreateGear("PreparationManual", "rel_123", "Preflight Checklist", "BLOCK",
+        ConfigureSpecialGear(CreateGear("PreparationManual", "rel_123", "Guard Drone", "BLOCK",
             "Trigger: Combat Start\nCondition: Distinct trick types in backpack\nEffect: Starting block per distinct trick type in backpack.\nValue: +2 Block/type\nLimit: Encounter-long numeric Block; consumed point-for-point before Shield; expires after encounter", 20),
             "rel_123", "Common", 1, "", GearSpecialRule.PreparationManual);
-        ConfigureSpecialGear(CreateGear("ScavengersPouch", "rel_117", "Salvage Pouch", "DRAW",
+        ConfigureSpecialGear(CreateGear("ScavengersPouch", "rel_117", "Grappling Hook", "DRAW",
             "Trigger: On Trick Use\nCondition: First trick used this encounter\nEffect: First trick used each encounter draws 1.\nValue: 1 card\nLimit: First per encounter", 20),
             "rel_117", "Common", 1, "", GearSpecialRule.ScavengersPouch);
-        ConfigureSpecialGear(CreateGear("ScavengersSatchel", "rel_129", "Salvage Bag", "LOOT",
+        ConfigureSpecialGear(CreateGear("ScavengersSatchel", "rel_129", "Supply Crate", "LOOT",
             "Trigger: Combat Wins\nCondition: Every 3 combat wins\nEffect: Every 3 combat wins: random non-mod trick.\nValue: 1\nLimit: Full claim tray: replace or decline", 30),
             "rel_129", "Rare", 1, "", GearSpecialRule.ScavengersSatchel);
         ConfigureSpecialGear(CreateGear("CashbackToken", "rel_125", "Cashback Card", "15%",
             "Trigger: On Purchase\nCondition: Actual Credits spent\nEffect: Refund 15% actual Credits spent; free purchases no cashback, refund never exceeds cost, no retroactive benefit.\nValue: 15%\nLimit: Actual spend only; provisional", 20),
             "rel_125", "Common", 1, "", GearSpecialRule.CashbackToken);
-        ConfigureSpecialGear(CreateGear("GoldenVault", "rel_127", "Savings Account", "VAULT",
+        ConfigureSpecialGear(CreateGear("GoldenVault", "rel_127", "Savings Safe", "VAULT",
             "Trigger: Headliner Defeated\nCondition: Unspent Credits\nEffect: Headliner defeat grants 10% of unspent Credits.\nValue: 10%\nLimit: Savings accumulate; provisional", 30),
             "rel_127", "Rare", 1, "", GearSpecialRule.GoldenVault);
         ConfigureSpecialGear(CreateGear("MerchantsBadge", "rel_124", "Loyalty Card", "SALE",
             "Trigger: On Purchase\nCondition: Eligible item purchase\nEffect: 20% purchase discount.\nValue: 20%\nLimit: Discount before cashback; provisional", 20),
             "rel_124", "Common", 1, "", GearSpecialRule.MerchantsBadge);
-        ConfigureSpecialGear(CreateGear("MerchantsGift", "rel_131", "Loyalty Perk", "GIFT",
+        ConfigureSpecialGear(CreateGear("MerchantsGift", "rel_131", "Loyalty Gift", "GIFT",
             "Trigger: Item Purchases\nCondition: Every 3 item purchases\nEffect: After 3 item purchases: random non-mod trick.\nValue: 1\nLimit: Free rewards do not count; full tray replace/decline", 30),
             "rel_131", "Rare", 1, "", GearSpecialRule.MerchantsGift);
-        ConfigureSpecialGear(CreateGear("AlchemistsKit", "rel_130", "Mod Supply Kit", "ALCH",
+        ConfigureSpecialGear(CreateGear("AlchemistsKit", "rel_130", "Mod Case", "ALCH",
             "Trigger: New District\nCondition: District start\nEffect: New district: choose 1 of 3 random mod tricks.\nValue: 1 of 3\nLimit: Full tray replace/decline; not enemy drops", 30),
             "rel_130", "Rare", 1, "", GearSpecialRule.AlchemistsKit);
         ConfigureSpecialGear(CreateGear("FieldMedicsKit", "rel_122", "First-Aid Kit", "MEDIC",
             "Trigger: On Trick Use\nCondition: First trick used this encounter\nEffect: First trick per encounter also heals.\nValue: 3 HP\nLimit: First successful trick use per encounter", 20),
             "rel_122", "Common", 1, "", GearSpecialRule.FieldMedicsKit);
 
-        ConfigureSpecialGear(CreateGear("RetaliationEpic", "rel_111", "Payback Chip", "RETAL+",
+        ConfigureSpecialGear(CreateGear("RetaliationEpic", "rel_111", "Counterpunch Gloves", "RETAL+",
             "Trigger: On Counterattack Kill\nCondition: Counterattack defeats enemy\nEffect: Keep Rare; counterattack kill permanently increases counterattack damage.\nValue: +1 counterattack damage\nLimit: Each lethal counterattack kill; run-local; new-run reset", 30),
             "rel_111", "Epic", 3, "rel_022", GearSpecialRule.RetaliationEpic);
         ConfigureSpecialGear(CreateGear("CrownOfEndurance", "rel_139", "Survivor's Badge", "CROWN",
             "Trigger: Headliner Defeated\nCondition: Headliner defeated\nEffect: Headliner kill permanently increases max HP; additional if encounter has zero-HP loss.\nValue: +3 Max HP; +3 additional on zero actual HP lost\nLimit: Once per Headliner kill; shield/block do not count as HP loss; max-HP gain does not heal", 20),
             "rel_139", "Common", 1, "", GearSpecialRule.CrownOfEndurance);
-        ConfigureSpecialGear(CreateGear("KingslayersMark", "rel_138", "Headliner Tag", "KING",
+        ConfigureSpecialGear(CreateGear("KingslayersMark", "rel_138", "Spotter Eye", "KING",
             "Trigger: On Attack\nCondition: Versus Headliner; 3 different ranks played\nEffect: Vs Headliner, play 3 different ranks to empower next attack; consume charge and repeat.\nValue: +1 damage to next attack\nLimit: Headliner only; 3 distinct manually played physical ranks; one charge per attack; encounter reset", 20),
             "rel_138", "Common", 1, "", GearSpecialRule.KingslayersMark);
         ConfigureSpecialGear(CreateGear("AceRare", "rel_114", "Ace Protocol", "ACE+",
@@ -128,40 +128,40 @@ public static class GameDataGenerator
         ConfigureSpecialGear(CreateGear("DiamondEpic", "rel_108", "Diamond Driver", "♦+",
             "Trigger: On Card Played\nCondition: Suit = Diamonds; every third manually played Diamond\nEffect: Keep Rare draw 2; every third manually played Diamond choose a card from the draw pile to draw.\nValue: Choose 1 physical draw pile card to put into hand\nLimit: Every third manually played Diamond; strict hand capacity; empty draw pile/full hand skips with log; cancel skips draw", 30),
             "rel_108", "Epic", 3, "rel_027", GearSpecialRule.DiamondEpic);
-        ConfigureSpecialGear(CreateGear("TrophyRack", "rel_137", "Victory Wall", "TROPHY",
+        ConfigureSpecialGear(CreateGear("TrophyRack", "rel_137", "Headhunter Rifle", "TROPHY",
             "Trigger: On Enforcer Kill\nCondition: Enforcer defeated\nEffect: Enforcer kill permanently strengthens opening attack vs Headliner.\nValue: +1 opening-attack damage versus Headliner\nLimit: Each actual Enforcer kill; run-local; applies to first attack action of each Headliner encounter", 20),
             "rel_137", "Common", 1, "", GearSpecialRule.TrophyRack);
-        ConfigureSpecialGear(CreateGear("HuntersLedger", "rel_119", "Takedown Log", "HUNT",
+        ConfigureSpecialGear(CreateGear("HuntersLedger", "rel_119", "Notched Pistol", "HUNT",
             "Trigger: On Enforcer Kill\nCondition: Enforcer defeated\nEffect: Enforcer kill permanently strengthens first attack each encounter.\nValue: +1 opening-attack damage\nLimit: Each actual Enforcer kill; applies to first attack action of each encounter; run-local", 20),
             "rel_119", "Common", 1, "", GearSpecialRule.HuntersLedger);
         ConfigureSpecialGear(CreateGear("HammerRare", "rel_140", "Mod Bench", "HAMMER",
             "Trigger: After Every 3 Nodes\nCondition: Choose 1 of 3 Common Mods; eligible target card available\nEffect: Every 3 nodes, choose 1 of 3 Common Mods and apply it to a chosen eligible card instead of enhancing a random card.\nValue: Choose 1 of 3 cached Common Mods and 1 eligible card\nLimit: Every 3 completed nodes after acquisition; Retry/Decline if no eligible card; one Mod per card", 30),
             "rel_140", "Rare", 2, "rel_009", GearSpecialRule.Hammer);
-        ConfigureSpecialGear(CreateGear("ArsenalEpic", "rel_030", "Extra Slots", "ARSENAL+",
+        ConfigureSpecialGear(CreateGear("ArsenalEpic", "rel_030", "Memory Card", "ARSENAL+",
             "Trigger: Passive\nCondition: Face Cards in hand\nEffect: Increase hand size based on the number of Face Cards in hand, with diminishing returns.\nValue: Hand capacity += floor(1 + 1/2 + ... + 1/n)\nLimit: n is Face cards in hand; no inherited lower-tier effects; no forced discard", 30),
             "rel_030", "Epic", 3, "rel_029", GearSpecialRule.ArsenalEpic);
-        ConfigureSpecialGear(CreateGear("HeartEpic", "rel_105", "Heartbeat Chip", "♥+",
+        ConfigureSpecialGear(CreateGear("HeartEpic", "rel_105", "Heart Meds", "♥+",
             "Trigger: On Card Played\nCondition: Suit = Hearts; overhealing\nEffect: Keep Rare healing/Credits; overhealing builds Vitality spent for bonus damage on next Heart attack.\nValue: Overheal becomes Vitality 1:1\nLimit: Retains Rare Heal 3 and conditional Credits 3; Heal Lock-prevented healing gives no Vitality", 30),
             "rel_105", "Epic", 3, "rel_026", GearSpecialRule.HeartEpic);
         ConfigureSpecialGear(CreateGear("MimicEpic", "rel_116", "Echo Driver", "MIMIC+",
             "Trigger: While in Hand\nCondition: Held cards share matching rank\nEffect: Keep base; held matching-rank cards trigger in-hand effects one additional time.\nValue: Matching-rank held effects trigger +1 additional time\nLimit: Retains base all-held retrigger once; extra applies only to matching rank and eligible in-hand effects", 30),
             "rel_116", "Epic", 2, "rel_017", GearSpecialRule.MimicEpic);
-        ConfigureSpecialGear(CreateGear("DwarfRare", "rel_112", "Lowball Protocol", "LOW+",
+        ConfigureSpecialGear(CreateGear("DwarfRare", "rel_112", "Lowball", "LOW+",
             "Trigger: After a Played Turn\nCondition: Played rank < 5\nEffect: Keep Common bonus action; rank <5 played strengthens next higher-rank attack.\nValue: +1 damage to next attack with rank higher than prepared source\nLimit: After manually played rank below Five; retains Common bonus action", 30),
             "rel_112", "Rare", 2, "rel_013", GearSpecialRule.DwarfRare);
-        ConfigureSpecialGear(CreateGear("DwarfEpic", "rel_113", "Lowball Protocol", "LOW++",
+        ConfigureSpecialGear(CreateGear("DwarfEpic", "rel_113", "Lowball", "LOW++",
             "Trigger: On Kill\nCondition: Prepared higher-rank attack kills enemy\nEffect: Keep Rare; prepared higher-rank attack kill permanently strengthens low-rank source.\nValue: +1 permanent attack to low-rank source card\nLimit: Prepared higher-rank attack must kill; source physical card must remain owned; run-local", 30),
             "rel_113", "Epic", 3, "rel_112", GearSpecialRule.DwarfEpic);
-        ConfigureSpecialGear(CreateGear("HiddenTrail", "rel_135", "Side Door", "TRAIL",
+        ConfigureSpecialGear(CreateGear("HiddenTrail", "rel_135", "Detour Pin", "TRAIL",
             "Trigger: Before Node Entry\nCondition: Once per district; reachable hidden node\nEffect: Once/district reroll reachable hidden node to different hidden type before entry.\nValue: 1 hidden-node reroll\nLimit: Once per district; first reachable hidden Incident/Risk changes to the opposite type; deterministic; no Headliner/connectivity change", 20),
             "rel_135", "Common", 1, "", GearSpecialRule.HiddenTrail);
-        ConfigureSpecialGear(CreateGear("WanderersBoots", "rel_133", "City Sneakers", "BOOTS",
+        ConfigureSpecialGear(CreateGear("WanderersBoots", "rel_133", "City Boots", "BOOTS",
             "Trigger: Node Visit\nCondition: 3 different node types visited this district\nEffect: Visit 3 different node types in district: heal and gain Credits once/district.\nValue: Heal 3 HP and gain 3 Credits\nLimit: Once per district after 3 distinct node types visited", 20),
             "rel_133", "Common", 1, "", GearSpecialRule.WanderersBoots);
-        ConfigureSpecialGear(CreateGear("WarpathBanner", "rel_134", "Win-Streak Patch", "WARPATH",
+        ConfigureSpecialGear(CreateGear("WarpathBanner", "rel_134", "Varsity Jacket", "WARPATH",
             "Trigger: Combat Start\nCondition: Consecutive combat wins\nEffect: Consecutive combat wins increase starting block next combat.\nValue: +2 encounter Block per consecutive Combat/Enforcer/Headliner victory\nLimit: Cap 6; reset by a completed noncombat node; consumed before Shield; expires at encounter end", 20),
             "rel_134", "Common", 1, "", GearSpecialRule.WarpathBanner);
-        ConfigureSpecialGear(CreateGear("HandsEpic", "rel_109", "Combo Driver", "HANDS+",
+        ConfigureSpecialGear(CreateGear("HandsEpic", "rel_109", "Matched Cells", "HANDS+",
             "Trigger: On Attack Selection\nCondition: Four cards of matching rank\nEffect: Keep Rare; allow four matching ranks; each card on-play effect triggers twice.\nValue: Allow 4 same-rank cards; each card’s Mod on-play effect triggers twice\nLimit: Retains Rare same-rank rule; no extra attack", 30),
             "rel_109", "Epic", 3, "rel_020", GearSpecialRule.HandsEpic);
         ConfigureSpecialGear(CreateGear("BalancersScale", "rel_118", "Flip Switch", "SCALE",

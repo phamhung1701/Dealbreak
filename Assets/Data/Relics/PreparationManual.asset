@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: PreparationManual
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_123
-  displayName: Preflight Checklist
+  displayName: Guard Drone
   icon: BLOCK
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 234f74298678a1744b586c75c5988aa7, type: 3}
   description: 'Trigger: Combat Start
 
     Condition: Distinct trick types in backpack
@@ -47,4 +47,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

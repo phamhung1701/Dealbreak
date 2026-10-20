@@ -15,7 +15,7 @@ MonoBehaviour:
   id: rel_122
   displayName: First-Aid Kit
   icon: MEDIC
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: becf1449c7f121a419a4a60affd4b4ce, type: 3}
   description: 'Trigger: On Trick Use
 
     Condition: First trick used this encounter
@@ -46,4 +46,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

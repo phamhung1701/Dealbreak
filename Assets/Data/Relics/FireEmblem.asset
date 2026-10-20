@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: FireEmblem
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: fire_emblem
-  displayName: Burn Notice
+  displayName: Lighter
   icon: FIRE
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 1ecb3c83cd81cc543a72905d55a58a60, type: 3}
   description: 'Trigger: On Block
 
     Effect: Destroy the first card used to block.
@@ -45,4 +45,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

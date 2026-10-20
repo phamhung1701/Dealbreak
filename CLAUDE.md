@@ -65,7 +65,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Black Market Goods: each slot is Gear 75% / Trick 25%; Gear rarity 6:3:1 Common/Rare/Epic, never Legendary. Shop Gear is standalone (`BuyStandaloneGear`): no tier-upgrade preference or replacement, and owned copies are sold.
 - Tricks and Gear are dragged like cards (`ItemDropRules`, `ItemDragUI`): a card Trick onto a hand card (one card per drop, one charge each), damage onto an enemy, heal onto the HP bar, either onto the Black Market to sell with no confirmation, a Gear onto a matching copy to merge them into the next tier (the result takes the slot it was dropped on), and either onto the red DISCARD strip that covers the run header while an item is held. There is no SELL panel, Sell Items mode, Merge button or Trick USE button. The HP panel stays visible beside the compact hand.
 - Enemy drops go straight into the backpack when there is room. With the backpack full the drop waits on the board (`RunManager.PendingEnemyDrop`) and the run waits with it until it is dragged in or left (LEAVE IT).
-- Copycat works like Balatro's Cryptid: copies of a hand card (`ConsumableData.copies`, 2) go into the hand.
+- Clone Vial (formerly Copycat) works like Balatro's Cryptid: copies of a hand card (`ConsumableData.copies`, 2) go into the hand.
 - Card Tricks only ever target cards in hand. Mods earned outside the Black Market (Incidents, Hammer) arrive as their Mod Trick; there is no select-a-card dialog and no Training (Upgrade) node.
 - Choosing a route has no map button. Inside a fight, Incident or Black Market a MAP button (top right) opens the route map view-only above the screen; CLOSE MAP returns to it.
 - CONTINUE TO MAP sits right of the Black Market menu. Each offer tile has a price button ("5 Credits") that buys at once; its rules text opens beside the tile on click. Supply and Stake have MIN/MAX.
@@ -73,6 +73,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## UI architecture (new look)
 
+- Gear and Trick icons are painted item art reprinted in the print palette by `Tools/PrintArt/make_item_icons.py` (sources in `Tools/PrintArt/item_sources`, output in `Assets/Art/Items`), assigned as `iconSprite` and drawn through `ItemIconUI`. One icon per Gear family; every tier shares it.
 - Styling: `DealbreakUIRuntime` and `DealbreakUIStyle`. Theme colors: ink, charcoal, slate, paper, brick, ochre. Components: `EditorialFrame`, `EditorialButton`, `EditorialSurface`.
 - Many layouts are written by editor authoring scripts in `Assets/Editor/` (for example `DealbreakUIArtCorrectionAuthoring`). When moving an element, change the scene and its authoring script together.
 - `ContextualTooltipUI` is the single hover detail. Sources are `CombatInspectUI` (cards, enemies, Gear) and `ContextualInfoTrigger` (everything else, including map nodes).

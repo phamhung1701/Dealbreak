@@ -15,7 +15,7 @@ MonoBehaviour:
   id: rel_023
   displayName: Power Baton
   icon: SWORD
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: d017c75b4501d4947ad7224368febd7a, type: 3}
   description: 'Trigger: On Card Played
 
     Condition: Attack > 8
@@ -52,4 +52,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

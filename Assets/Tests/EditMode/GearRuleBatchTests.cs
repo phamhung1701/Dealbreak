@@ -99,7 +99,7 @@ public sealed class GearRuleBatchTests
         var cheater = AssetDatabaseGear("rel_011");
         var hands = AssetDatabaseGear("rel_012");
         var dwarf = AssetDatabaseGear("rel_013");
-        Assert.That(cheater.displayName, Is.EqualTo("Extra Move"));
+        Assert.That(cheater.displayName, Is.EqualTo("Second Wind"));
         Assert.That(cheater.ruleModifiers, Has.Length.EqualTo(1));
         Assert.That(cheater.ruleModifiers[0].kind, Is.EqualTo(GameplayRuleModifierKind.ExtraTurn));
         Assert.That(cheater.ruleModifiers[0].extraTurn.trigger, Is.EqualTo(ExtraTurnRuleTrigger.FirstPlayerTurnCompleted));

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: TravelerPackRare
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_121
-  displayName: Carry Rig
+  displayName: Cargo Case
   icon: PACK+
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 869ae49b0e9293b459d93f1c28964d8b, type: 3}
   description: 'Trigger: Passive
 
     Condition: Tricks in backpack
@@ -47,4 +47,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

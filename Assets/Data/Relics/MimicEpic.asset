@@ -15,7 +15,7 @@ MonoBehaviour:
   id: rel_116
   displayName: Echo Driver
   icon: MIMIC+
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: a19b110b258f03f44b1ca99f52e83d2a, type: 3}
   description: 'Trigger: While in Hand
 
     Condition: Held cards share matching
@@ -52,4 +52,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

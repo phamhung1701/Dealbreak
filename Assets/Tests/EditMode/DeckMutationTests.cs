@@ -51,7 +51,7 @@ public sealed class DeckMutationTests
         source.EffectState.ClearEncounter();
         int oldOwnedCount = _cards.ownedCards.Count;
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { source.Id }), Is.True);
-        Assert.That(_mirror.copies, Is.EqualTo(2), "Copycat makes two copies, like Balatro's Cryptid.");
+        Assert.That(_mirror.copies, Is.EqualTo(2), "Clone Vial makes two copies, like Balatro's Cryptid.");
         Assert.That(_cards.ownedCards.Count, Is.EqualTo(oldOwnedCount + 2));
         var copies = _cards.ownedCards.Skip(oldOwnedCount).ToArray();
         Assert.That(copies.Select(copy => copy.Id).Distinct().Count(), Is.EqualTo(2));

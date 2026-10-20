@@ -15,7 +15,7 @@ MonoBehaviour:
   id: rel_027
   displayName: Diamond Driver
   icon: "\u2666"
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: bfc81a4522093314fb3e335575ff16be, type: 3}
   description: 'Trigger: On Card Played
 
     Condition: Suit = Diamonds
@@ -43,4 +43,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

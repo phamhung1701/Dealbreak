@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: RoyalFamilyHeirloom
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_100
-  displayName: Five-Card Override
+  displayName: Nuclear Option
   icon: ROYAL
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: a1db90126f2168a419db674ffd93e86d, type: 3}
   description: 'Trigger: On Attack Selection
 
     Condition: Royal Flush: 10/J/Q/K/A
@@ -48,4 +48,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: HandsEpic
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_109
-  displayName: Combo Driver
+  displayName: Matched Cells
   icon: HANDS+
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 16b3ced853621324f9d38d1b7fdac484, type: 3}
   description: "Trigger: On Attack Selection\nCondition: Four cards of matching rank\nEffect:
     Keep Rare; allow four matching ranks; each card on-play effect triggers twice.\nValue:
     Allow 4 same-rank cards; each card\u2019s Mod on-play effect triggers twice\nLimit:
@@ -50,4 +50,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

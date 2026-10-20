@@ -15,7 +15,7 @@ MonoBehaviour:
   id: rel_140
   displayName: Mod Bench
   icon: HAMMER
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 9b4bd53bb3e45af4cb2494d70bbae8ee, type: 3}
   description: 'Trigger: After Every 3 Nodes
 
     Condition: Choose 1 of 3 Common
@@ -49,4 +49,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

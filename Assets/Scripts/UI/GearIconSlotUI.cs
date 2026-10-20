@@ -9,7 +9,6 @@ using UnityEngine.UI;
 public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     [SerializeField] TMP_Text iconLabel;
-    Image _authoredIcon;
 
     GearData _gear;
     Action<GearData> _hover;
@@ -56,7 +55,7 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
         _detailSelected = false;
         if (TryGetComponent<Outline>(out var outline)) outline.enabled = false;
         if (iconLabel) iconLabel.gameObject.SetActive(false);
-        if (_authoredIcon) _authoredIcon.gameObject.SetActive(false);
+        ItemIconUI.Show(transform, null);
         var image = GetComponent<Image>();
         if (image) image.raycastTarget = false;
         RefreshSlotBackground();
@@ -83,15 +82,7 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
         if (image) image.preserveAspect = true;
         RefreshSlotBackground();
         if (!iconLabel) iconLabel = GetComponentInChildren<TMP_Text>();
-        bool hasAuthoredIcon = gear != null && gear.iconSprite;
-        if (hasAuthoredIcon)
-        {
-            EnsureAuthoredIcon();
-            _authoredIcon.sprite = gear.iconSprite;
-            _authoredIcon.gameObject.SetActive(true);
-        }
-        else if (_authoredIcon)
-            _authoredIcon.gameObject.SetActive(false);
+        bool hasAuthoredIcon = ItemIconUI.Show(transform, gear != null ? gear.iconSprite : null);
         if (iconLabel)
         {
             iconLabel.color = _detailSelected ? new Color(0.11f, 0.13f, 0.2f) : new Color(0.96f, 0.92f, 0.78f);
@@ -101,20 +92,6 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
             if(DealbreakUIStyle.Theme){iconLabel.fontSize=21;iconLabel.textWrappingMode=TextWrappingModes.NoWrap;iconLabel.overflowMode=TextOverflowModes.Truncate;}
             iconLabel.gameObject.SetActive(!hasAuthoredIcon);
         }
-    }
-
-    void EnsureAuthoredIcon()
-    {
-        if (_authoredIcon) return;
-        var iconObject = new GameObject("Authored Icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var rect = (RectTransform)iconObject.transform;
-        rect.SetParent(transform, false);
-        rect.anchorMin = new Vector2(0.08f, 0.08f);
-        rect.anchorMax = new Vector2(0.92f, 0.92f);
-        rect.offsetMin = rect.offsetMax = Vector2.zero;
-        _authoredIcon = iconObject.GetComponent<Image>();
-        _authoredIcon.preserveAspect = true;
-        _authoredIcon.raycastTarget = false;
     }
 
     void RefreshSlotBackground()

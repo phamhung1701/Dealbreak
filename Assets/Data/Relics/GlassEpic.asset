@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: GlassEpic
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_033
-  displayName: Glass Mode
+  displayName: Glass Shard
   icon: GLASS
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 35ccc3c6cf9dd4443bc9da0cee3938f4, type: 3}
   description: "Trigger: On Card Played\nCondition: HP = 1\nEffect: At exactly 1
     HP, card attacks deal 3\xD7 damage; otherwise card attacks deal normal damage.
     Replaces Rare Glass and has no inherited vulnerability.\nValue: \xD73 at 1 HP"
@@ -38,4 +38,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

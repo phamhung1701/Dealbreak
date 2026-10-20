@@ -15,7 +15,7 @@ MonoBehaviour:
   id: reinforced_sleeves
   displayName: Carbon Sleeves
   icon: BLOCK
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: db48e05d3a422d8429e9a2f6592368be, type: 3}
   description: Enhanced cards block +3 damage
   price: 22
   capacityCategory: 0
@@ -36,4 +36,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

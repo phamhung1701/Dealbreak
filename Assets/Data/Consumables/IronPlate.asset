@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Dealbreak.Runtime::ConsumableData
   id: iron_plate
   canonicalId: con_007
-  displayName: Armor Patch
+  displayName: Alloy Plate
   icon: DEF
+  iconSprite: {fileID: 21300000, guid: 6c65b2c0bbf7cf14ebce91e5c9d921e5, type: 3}
   description: 'Target: Card
 
     Timing: Anytime

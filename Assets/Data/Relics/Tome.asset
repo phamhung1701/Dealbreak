@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Tome
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_007
-  displayName: Pocket Guide
+  displayName: Field Tablet
   icon: TOME
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 6184997257577a9469c719c05fb28601, type: 3}
   description: 'Trigger: On Combat Start
 
     Condition: Enough free hand space
@@ -47,4 +47,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

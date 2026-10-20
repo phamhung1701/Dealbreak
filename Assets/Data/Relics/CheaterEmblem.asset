@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: CheaterEmblem
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_011
-  displayName: Extra Move
+  displayName: Second Wind
   icon: TURN
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: f6d83128726fef44689d64080570faae, type: 3}
   description: 'Trigger: After First Turn
 
     Effect: Gain an additional turn.
@@ -52,4 +52,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

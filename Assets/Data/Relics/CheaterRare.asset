@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: CheaterRare
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_024
-  displayName: Extra Move
+  displayName: Second Wind
   icon: TURN+
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: f6d83128726fef44689d64080570faae, type: 3}
   description: 'Trigger: After each normal player card action
 
     Condition: Action
@@ -58,4 +58,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

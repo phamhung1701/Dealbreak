@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: VictoryDraught
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: victory_draught
-  displayName: Recovery Can
+  displayName: Recovery Pills
   icon: HEAL
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 1d1f5eb6b26e6ab49a72c37173740371, type: 3}
   description: Heal 3 HP after each victory
   price: 24
   capacityCategory: 0
@@ -36,4 +36,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 3
-  bonusGold: 0
+  bonusCredits: 0

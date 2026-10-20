@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ArsenalRare
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_029
-  displayName: Extra Slots
+  displayName: Memory Card
   icon: HAND
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: d0ba74696ae551241a45fffb27d5f3fe, type: 3}
   description: "Trigger: Passive\nEffect: Gain 3 hand slots and take 1.5\xD7 incoming
     attack damage, rounded up once after other incoming modifiers and before block.
     Incident HP costs are unaffected.\nValue: +3 slots; \xD71.5 incoming attack"
@@ -38,4 +38,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

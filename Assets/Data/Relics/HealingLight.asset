@@ -15,7 +15,7 @@ MonoBehaviour:
   id: rel_010
   displayName: Auto-Injector
   icon: HEAL
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: d118c64849394124583bb372f761d883, type: 3}
   description: 'Trigger: On New Turn
 
     Effect: Heal HP.
@@ -44,4 +44,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

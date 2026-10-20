@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -51,6 +52,41 @@ public sealed class VisualAssetPipelineTests
         secondRoot.GetComponent<GearIconSlotUI>().Bind(gear, null, null, null, 0);
         Assert.AreEqual("♣", fallbackLabel.text);
         Assert.IsTrue(fallbackLabel.gameObject.activeSelf);
+    }
+
+    [Test]
+    public void ItemIcon_ShowsSpriteInsideParent_AndHidesItWithoutOne()
+    {
+        var texture = new Texture2D(8, 8);
+        _created.Add(texture);
+        var sprite = Sprite.Create(texture, new Rect(0, 0, 8, 8), new Vector2(.5f, .5f));
+        _created.Add(sprite);
+        var slot = new GameObject("Trick slot", typeof(RectTransform), typeof(Image));
+        _created.Add(slot);
+
+        Assert.IsTrue(ItemIconUI.Show(slot.transform, sprite));
+        Assert.AreSame(sprite, ItemIconUI.Shown(slot.transform));
+        Assert.IsTrue(ItemIconUI.Show(slot.transform, sprite));
+        Assert.AreEqual(1, slot.GetComponentsInChildren<Image>(true).Count(image => image.gameObject != slot),
+            "Showing again reuses the one icon child.");
+
+        Assert.IsFalse(ItemIconUI.Show(slot.transform, null));
+        Assert.IsNull(ItemIconUI.Shown(slot.transform));
+    }
+
+    [Test]
+    public void EveryGearAndTrick_HasAnAuthoredIconSprite()
+    {
+        var missing = AssetDatabase.FindAssets("t:GearData").Concat(AssetDatabase.FindAssets("t:ConsumableData"))
+            .Select(AssetDatabase.GUIDToAssetPath)
+            .Where(path => AssetDatabase.LoadAssetAtPath<Object>(path) switch
+            {
+                GearData gear => !gear.iconSprite,
+                ConsumableData trick => !trick.iconSprite,
+                _ => false
+            })
+            .ToArray();
+        Assert.That(missing, Is.Empty, "Item art comes from Tools/PrintArt/make_item_icons.py.");
     }
 
     [Test]

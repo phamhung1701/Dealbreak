@@ -122,8 +122,10 @@ public sealed class ItemDragUI : MonoBehaviour
         _sourceGroup.blocksRaycasts = false;
         _sourceGroup.alpha = .35f;
         EnsureVisuals();
+        // The ghost carries the slot's sprite, or its glyph text when the item has none.
         var sourceLabel = source.GetComponentInChildren<TMP_Text>();
-        _ghostLabel.text = sourceLabel ? sourceLabel.text : string.Empty;
+        bool hasSprite = ItemIconUI.Show(_ghost, ItemIconUI.Shown(source));
+        _ghostLabel.text = sourceLabel && !hasSprite ? sourceLabel.text : string.Empty;
         _ghost.sizeDelta = SizeIn(_root, source) * 1.08f;
         _ghost.gameObject.SetActive(true);
         _ghost.SetAsLastSibling();
@@ -160,7 +162,7 @@ public sealed class ItemDragUI : MonoBehaviour
     /// Flies an item from where it was earned into its backpack slot: it rises, then drops along
     /// an arc and the slot pops as it lands. Presentation only; the item is already in the slot.
     /// </summary>
-    public void FlyIntoSlot(Vector3 fromWorld, RectTransform slot, string label)
+    public void FlyIntoSlot(Vector3 fromWorld, RectTransform slot, string label, Sprite icon = null)
     {
         if (!slot) return;
         EnsureVisuals();
@@ -169,7 +171,8 @@ public sealed class ItemDragUI : MonoBehaviour
         flyer.gameObject.SetActive(true);
         flyer.sizeDelta = SizeIn(_root, slot) * 1.1f;
         var text = flyer.GetComponentInChildren<TMP_Text>();
-        if (text) text.text = label;
+        bool hasSprite = ItemIconUI.Show(flyer, icon);
+        if (text) text.text = hasSprite ? string.Empty : label;
         var frame = flyer.GetComponent<EditorialFrame>();
         if (frame && DealbreakUIStyle.Theme) { frame.rim = DealbreakUIStyle.Theme.ochre; frame.Refresh(); }
         StartCoroutine(Fly(flyer, (Vector2)_root.InverseTransformPoint(fromWorld) - _root.rect.center, slot));

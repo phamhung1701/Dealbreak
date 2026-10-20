@@ -16,6 +16,7 @@ MonoBehaviour:
   canonicalId: con_001
   displayName: Energy Bar
   icon: HP
+  iconSprite: {fileID: 21300000, guid: 6ac5ccb8ddf258e4e850ba6c5774ece8, type: 3}
   description: 'Target: Self
 
     Timing: Anytime

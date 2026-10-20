@@ -178,7 +178,7 @@ public sealed class ConsumableRewardUI : MonoBehaviour
             if (cards.GetConsumableAtSlot(i) != item || !actions.backpackSlotButtons[i]) continue;
             string icon = string.IsNullOrEmpty(item.icon) ? item.displayName : item.icon;
             ItemDragUI.Get()?.FlyIntoSlot(origin, (RectTransform)actions.backpackSlotButtons[i].transform,
-                icon.Length > 6 ? icon.Substring(0, 6) : icon);
+                icon.Length > 6 ? icon.Substring(0, 6) : icon, item.iconSprite);
             return;
         }
     }

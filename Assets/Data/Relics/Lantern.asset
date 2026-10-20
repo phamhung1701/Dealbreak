@@ -15,7 +15,7 @@ MonoBehaviour:
   id: rel_008
   displayName: Scanner
   icon: LANTERN
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: d5715b34bd555814fb81f68eb7ef44db, type: 3}
   description: 'Trigger: On District
 
     Effect: Reveal an additional node.
@@ -45,4 +45,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: RetaliationEpic
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_111
-  displayName: Payback Chip
+  displayName: Counterpunch Gloves
   icon: RETAL+
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: d70f3d3bbcf20f84eb6b71fc8412b4ac, type: 3}
   description: 'Trigger: On Counterattack Kill
 
     Condition: Counterattack defeats
@@ -47,4 +47,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

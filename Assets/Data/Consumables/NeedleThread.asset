@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Dealbreak.Runtime::ConsumableData
   id: needle_thread
   canonicalId: con_008
-  displayName: Repair Patch
+  displayName: Bandage
   icon: HP
+  iconSprite: {fileID: 21300000, guid: 4bfd71ec6474bed45ae9652290ea5c40, type: 3}
   description: 'Target: Card
 
     Timing: Anytime

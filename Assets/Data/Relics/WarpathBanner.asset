@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: WarpathBanner
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_134
-  displayName: Win-Streak Patch
+  displayName: Varsity Jacket
   icon: WARPATH
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 2a5c417b4c1c97049812ad85b64491c6, type: 3}
   description: 'Trigger: Combat Start
 
     Condition: Consecutive combat wins
@@ -47,4 +47,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

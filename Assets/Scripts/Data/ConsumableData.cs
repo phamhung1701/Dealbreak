@@ -18,6 +18,8 @@ public sealed class ConsumableData : ScriptableObject
     public string canonicalId;
     public string displayName;
     public string icon;
+    [Tooltip("Optional authored Trick icon. The existing icon text is used when this is unassigned.")]
+    public Sprite iconSprite;
     [TextArea] public string description;
     [Min(0)] public int price = 5;
     [Min(1)] public int uses = 1;

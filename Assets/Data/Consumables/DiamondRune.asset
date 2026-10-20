@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Dealbreak.Runtime::ConsumableData
   id: diamond_rune
   canonicalId: con_019
-  displayName: Diamond Switch
+  displayName: Diamond Crystal
   icon: "\u2666"
+  iconSprite: {fileID: 21300000, guid: b02c7022d29e8de488f24e4d5787f6ec, type: 3}
   description: 'Target: Card
 
     Timing: Anytime

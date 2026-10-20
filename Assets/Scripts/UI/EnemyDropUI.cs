@@ -135,8 +135,12 @@ public sealed class EnemyDropUI : MonoBehaviour
         _leave.gameObject.SetActive(waiting);
         if (!waiting) return;
         _token.anchoredPosition = Vector2.zero;
-        string icon = string.IsNullOrEmpty(drop.icon) ? string.Empty : drop.icon;
-        _tokenLabel.text = $"<size=140%>{icon}</size>\n<size=80%>{drop.displayName.ToUpperInvariant()}</size>";
+        // A sprite fills the token above the name; without one the glyph text sits over the name.
+        bool hasSprite = ItemIconUI.Show(_token, drop.iconSprite, new Vector2(.14f, .26f), new Vector2(.86f, .94f));
+        string dropName = drop.displayName.ToUpperInvariant();
+        _tokenLabel.alignment = hasSprite ? TextAlignmentOptions.Bottom : TextAlignmentOptions.Center;
+        _tokenLabel.text = hasSprite ? $"<size=70%>{dropName}</size>"
+            : $"<size=140%>{drop.icon}</size>\n<size=80%>{dropName}</size>";
     }
 
     void HandleClaimed(ConsumableData drop)
@@ -146,7 +150,7 @@ public sealed class EnemyDropUI : MonoBehaviour
         Vector3 from = _token && _token.gameObject.activeInHierarchy ? _token.position
             : _lastEnemyArea != Vector3.zero ? _lastEnemyArea : _root.position;
         string icon = string.IsNullOrEmpty(drop.icon) ? drop.displayName : drop.icon;
-        ItemDragUI.Get()?.FlyIntoSlot(from, slot, icon.Length > 6 ? icon.Substring(0, 6) : icon);
+        ItemDragUI.Get()?.FlyIntoSlot(from, slot, icon.Length > 6 ? icon.Substring(0, 6) : icon, drop.iconSprite);
     }
 
     static RectTransform SlotHolding(ConsumableData drop)

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: GoldenVault
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_127
-  displayName: Savings Account
+  displayName: Savings Safe
   icon: VAULT
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 14c8967f96120cb4fa5b75a5da783534, type: 3}
   description: 'Trigger: Headliner Defeated
 
     Condition: Unspent Credits
@@ -46,4 +46,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: GlassRare
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_032
-  displayName: Glass Mode
+  displayName: Glass Shard
   icon: GLASS
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 35ccc3c6cf9dd4443bc9da0cee3938f4, type: 3}
   description: "Trigger: On Card Played\nEffect: Card attacks and incoming attacks
     deal 2\xD7 damage. Replaces Common Glass; does not inherit +5 vulnerability.\nValue:
     \xD72 / \xD72"
@@ -38,4 +38,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

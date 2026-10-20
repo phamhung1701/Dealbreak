@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Dealbreak.Runtime::ConsumableData
   id: soul_stone
   canonicalId: con_010
-  displayName: Hunger Patch
+  displayName: Feral Capsule
   icon: ATK
+  iconSprite: {fileID: 21300000, guid: edf19d8972c41104b9f997559db16639, type: 3}
   description: 'Target: Card
 
     Timing: Anytime

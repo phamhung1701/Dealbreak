@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: HuntersLedger
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_119
-  displayName: Takedown Log
+  displayName: Notched Pistol
   icon: HUNT
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 5d58f1736bea9aa4691033d3dd5700c0, type: 3}
   description: 'Trigger: On Enforcer Kill
 
     Condition: Enforcer defeated
@@ -47,4 +47,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

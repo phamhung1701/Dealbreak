@@ -33,6 +33,8 @@ public class ActionButtonsUI : MonoBehaviour
     bool _healthLabelColorCaptured;
     HealthBarBacking _healthBar;
     UnityAction[] _backpackSlotListeners;
+    // A slot's authored glyph alignment; a Trick sprite moves the stack/charge count to the top-right corner.
+    readonly Dictionary<TMP_Text, TextAlignmentOptions> _backpackLabelAlignment = new();
     ConsumableSlotDragUI[] _backpackSlotDragInputs;
     EnemyTargetAction _enemyTargetAction;
     readonly List<CardView> _attackTargetCards = new();
@@ -566,14 +568,23 @@ public class ActionButtonsUI : MonoBehaviour
             {
                 int stackCount = cards.GetConsumableStackCountAtSlot(i);
                 var activeItem = cards.GetConsumableInstanceAtSlot(i);
-                string compactIcon = consumable != null ? consumable.icon ?? string.Empty : string.Empty;
+                bool hasSprite = ItemIconUI.Show(button.transform, consumable != null ? consumable.iconSprite : null);
+                string compactIcon = consumable != null && !hasSprite ? consumable.icon ?? string.Empty : string.Empty;
                 if (DealbreakUIStyle.Theme && compactIcon.Length > 2) compactIcon = compactIcon.Substring(0, 2);
                 label.text = consumable == null
                     ? string.Empty
-                    : (DealbreakUIStyle.Theme?compactIcon:$"{consumable.icon} {consumable.displayName}") +
+                    : ((DealbreakUIStyle.Theme?compactIcon:$"{consumable.icon} {consumable.displayName}") +
                         (stackCount > 1 ? $" ×{stackCount}" : string.Empty) +
                         (consumable.uses > 1 && activeItem != null
-                            ? DealbreakUIStyle.Theme?$" {activeItem.RemainingCharges}/{consumable.uses}":$" ({activeItem.RemainingCharges}/{consumable.uses} first)" : string.Empty);
+                            ? DealbreakUIStyle.Theme?$" {activeItem.RemainingCharges}/{consumable.uses}":$" ({activeItem.RemainingCharges}/{consumable.uses} first)" : string.Empty)).Trim();
+                if (!_backpackLabelAlignment.ContainsKey(label)) _backpackLabelAlignment[label] = label.alignment;
+                label.alignment = hasSprite ? TextAlignmentOptions.TopRight : _backpackLabelAlignment[label];
+                if (hasSprite && label.text.Length > 0)
+                {
+                    // Over the sprite the count prints small on an ink tab so it stays legible.
+                    label.text = $"<size=62%><mark=#0E1113EE padding=6,6,2,2>{label.text}</mark></size>";
+                    label.transform.SetAsLastSibling();
+                }
                 label.gameObject.SetActive(consumable != null);
                 if (DealbreakUIStyle.Theme)
                 {

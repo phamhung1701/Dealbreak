@@ -58,7 +58,7 @@ public sealed class RetaliationEmblemTests
     {
         Assert.That(_retaliation.id, Is.EqualTo("rel_016"));
         Assert.That(_retaliation.canonicalId, Is.EqualTo("rel_016"));
-        Assert.That(_retaliation.displayName, Is.EqualTo("Payback Chip"));
+        Assert.That(_retaliation.displayName, Is.EqualTo("Counterpunch Gloves"));
         Assert.That(_retaliation.rarity, Is.EqualTo("Common"));
         Assert.That(_retaliation.tier, Is.EqualTo(1));
         Assert.That(_retaliation.capacityCategory, Is.EqualTo(GearCapacityCategory.Persistent));

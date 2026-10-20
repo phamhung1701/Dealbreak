@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: HiddenTrail
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_135
-  displayName: Side Door
+  displayName: Detour Pin
   icon: TRAIL
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 5a18d703d34901047899f1b155ae156a, type: 3}
   description: 'Trigger: Before Node Entry
 
     Condition: Once per district; reachable
@@ -48,4 +48,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Dagger
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_006
-  displayName: Box Cutter
+  displayName: Scalpel
   icon: DAGGER
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 717136d1e621d01409cac57f4b636b32, type: 3}
   description: 'Trigger: On Card Played
 
     Effect: Add flat damage.
@@ -51,4 +51,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0

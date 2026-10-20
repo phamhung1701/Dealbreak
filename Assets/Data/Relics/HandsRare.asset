@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: HandsRare
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
   id: rel_020
-  displayName: Combo Driver
+  displayName: Matched Cells
   icon: RANK
-  iconSprite: {fileID: 0}
+  iconSprite: {fileID: 21300000, guid: 16b3ced853621324f9d38d1b7fdac484, type: 3}
   description: "Trigger: On Attack Selection\nCondition: Matching rank\nEffect: Play
     two or three distinct cards of the same rank together as one attack action; resolve
     each card\u2019s on-play effects in selection order.\nValue: One ordinary player
@@ -50,4 +50,4 @@ MonoBehaviour:
   recycleDiscardByCardValue: 0
   drawByCardValue: 0
   healAfterVictory: 0
-  bonusGold: 0
+  bonusCredits: 0
