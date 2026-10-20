@@ -589,11 +589,15 @@ public partial class CombatManager : Singleton<CombatManager>
         _openingPlayerAttackInProgress = _playerAttackActionCount == 0;
         _activeGearBonuses = default;
 
+        // Each card's damage is fixed here, with the hand the preview saw. Recomputing after the cards
+        // leave the hand would drop the in-hand Mods (Backup) of the played cards themselves.
+        var cardDamages = new long[cards.Count];
         long rawCardDamageTotal = 0;
         var names = new List<string>(cards.Count);
         for (int i = 0; i < cards.Count; i++)
         {
-            rawCardDamageTotal += CalculateCardAttackDamage(cardInstances[i], cardInstances, i == 0);
+            cardDamages[i] = CalculateCardAttackDamage(cardInstances[i], cardInstances, i == 0);
+            rawCardDamageTotal += cardDamages[i];
             names.Add(cardInstances[i].DisplayName);
         }
         int aggregatedDamage = (int)Math.Min(rawCardDamageTotal, int.MaxValue);
@@ -602,7 +606,10 @@ public partial class CombatManager : Singleton<CombatManager>
         {
             rawCardDamageTotal = 0;
             for (int i = 0; i < cards.Count; i++)
-                rawCardDamageTotal += CalculateCardAttackDamage(cardInstances[i], cardInstances, i == 0);
+            {
+                cardDamages[i] = CalculateCardAttackDamage(cardInstances[i], cardInstances, i == 0);
+                rawCardDamageTotal += cardDamages[i];
+            }
             aggregatedDamage = (int)Math.Min(rawCardDamageTotal, int.MaxValue);
         }
         int vampiricCost = GameplayEffectResolver.GetVampiricHealthCost(cardInstances);
@@ -689,7 +696,7 @@ public partial class CombatManager : Singleton<CombatManager>
                     }
                     if (isRoyalFamily || target.IsDefeated || !_enemies.Contains(target)) continue;
 
-                    long perCardDamage = CalculateCardAttackDamage(cardInstances[cardIndex], cardInstances, cardIndex == 0);
+                    long perCardDamage = cardDamages[cardIndex];
                     if (cardIndex == 0) perCardDamage += actionBonus;
                     if (critical) perCardDamage *= 2;
                     int requestedDamage = (int)Math.Min(Math.Max(0L, perCardDamage), damageBudget);
@@ -1764,9 +1771,24 @@ public partial class CombatManager : Singleton<CombatManager>
     /// critical roll. It runs the same calculation as TryPlayCards (card values, primed Gear
     /// bonuses, action flat damage and cap) without committing state or consuming RNG.
     /// </summary>
-    public int PreviewActionDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target = null)
+    public int PreviewActionDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target = null) =>
+        PreviewActionDamage(cards, target, out _);
+
+    /// <summary>
+    /// The whole action across its hits (Double Strike hits twice). An action damage cap such as
+    /// Scalpel's limits the total of all hits, as in TryPlayCards.
+    /// </summary>
+    public int PreviewActionTotalDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target = null)
+    {
+        int perHit = PreviewActionDamage(cards, target, out int cap);
+        long total = (long)perHit * (GameplayEffectResolver.HasDoubleStrikeEffect(cards) ? 2 : 1);
+        return (int)Math.Min(cap < 0 ? total : Math.Min(total, cap), int.MaxValue);
+    }
+
+    int PreviewActionDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target, out int cap)
     {
         var cm = CardManager.Instance;
+        cap = -1;
         if (cards == null || cards.Count == 0) return 0;
         for (int i = 0; i < cards.Count; i++) if (cards[i] == null) return 0;
         var bonuses = GearRules.PrepareActionBonuses(cm, cards, _isHeadlinerEncounter, commit: false);
@@ -1777,7 +1799,7 @@ public partial class CombatManager : Singleton<CombatManager>
             targetEnemy: target);
         int perHit = GameplayEffectResolver.CalculateActionDamage(new ActionDamageEffectContext(action, cards,
             target, cm, (int)Math.Min(raw, int.MaxValue), GameplayEffectResolver.IsHandsMultiCardAction(cards, cm)),
-            out int cap);
+            out cap);
         return cap < 0 ? perHit : Math.Min(perHit, cap);
     }
 

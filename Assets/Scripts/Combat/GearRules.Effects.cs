@@ -9,11 +9,27 @@ public static partial class GearRules
 
     // ---- Attack and defense values --------------------------------------------------------
 
-    /// <summary>Final attack multipliers/flats applied after typed effects (Club, Overflow, Glass).</summary>
+    /// <summary>
+    /// Final attack flats, then final multipliers, applied after typed effects (Club, Overflow, Glass).
+    /// Club Rare doubles "after flat bonuses", so every flat lands before any multiplier whatever the
+    /// order the Gear was acquired in.
+    /// </summary>
     public static int ApplyFinalAttackRules(CardManager cards, CardInstance card, int resolved,
         int unplayedClubCount, int overflowHandCount)
     {
         var combat = CombatManager.Instance;
+        foreach (var (gear, _) in Owned(cards))
+        {
+            switch (gear.specialRule)
+            {
+                case GearSpecialRule.OverflowEpic when combat?.IsResolvingOverflowAttack == true:
+                    resolved = ClampToInt((long)resolved + Math.Max(0, overflowHandCount));
+                    break;
+                case GearSpecialRule.GlassCommon:
+                    resolved = ClampToInt((long)resolved + 5);
+                    break;
+            }
+        }
         foreach (var (gear, _) in Owned(cards))
         {
             switch (gear.specialRule)
@@ -29,14 +45,8 @@ public static partial class GearRules
                     resolved = ClampToInt((long)resolved * numerator / denominator);
                     break;
                 }
-                case GearSpecialRule.OverflowEpic when combat?.IsResolvingOverflowAttack == true:
-                    resolved = ClampToInt((long)resolved + Math.Max(0, overflowHandCount));
-                    break;
                 case GearSpecialRule.RareClub when card.MatchesSuit(CardData.Suit.Clubs):
                     resolved = ClampToInt((long)resolved * 2);
-                    break;
-                case GearSpecialRule.GlassCommon:
-                    resolved = ClampToInt((long)resolved + 5);
                     break;
                 case GearSpecialRule.GlassRare:
                     resolved = ClampToInt((long)resolved * 2);

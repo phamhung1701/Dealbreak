@@ -359,8 +359,10 @@ public class ActionButtonsUI : MonoBehaviour
     {
         var selected = cards.SelectedCards.Select(view => view.data).ToArray();
         int damage = combat.PreviewActionDamage(selected, combat.currentEnemy);
-        return GameplayEffectResolver.HasDoubleStrikeEffect(selected)
-            ? $"{damage} damage ×2 hits" : $"{damage} damage";
+        if (!GameplayEffectResolver.HasDoubleStrikeEffect(selected)) return $"{damage} damage";
+        // A damage cap (Scalpel) limits both hits together.
+        int total = combat.PreviewActionTotalDamage(selected, combat.currentEnemy);
+        return total == damage * 2 ? $"{damage} damage ×2 hits" : $"{total} damage over 2 hits";
     }
 
     void OnPrimaryActionClicked()
