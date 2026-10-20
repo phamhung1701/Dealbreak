@@ -80,8 +80,9 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     void BindControls()
     {
         if(!actions)return;
-        var buttons=new[]{actions.playButton,actions.blockButton,actions.passButton,actions.recoverButton,actions.rankSortButton,actions.suitSortButton};
-        var details=new[]{"Play the selected card or valid combination against an exact enemy target.","Commit selected cards to block pending attacks. Inspect a card to compare its block value.","Pass the current action; while blocking, take the pending damage.","Recover when your hand is empty.","Sort your current hand by rank.","Sort your current hand by suit."};
+        // Attack and Block show no hover detail.
+        var buttons=new[]{actions.passButton,actions.recoverButton,actions.rankSortButton,actions.suitSortButton};
+        var details=new[]{"Pass the current action; while blocking, take the pending damage.","Recover when your hand is empty.","Sort your current hand by rank.","Sort your current hand by suit."};
         for(int i=0;i<buttons.Length;i++)
         {
             var button=buttons[i];if(!button)continue;string description=details[i];

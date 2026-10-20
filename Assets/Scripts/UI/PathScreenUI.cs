@@ -334,21 +334,20 @@ public class PathScreenUI : MonoBehaviour
         }
     }
 
-    // Hovering a node opens the shared detail beside it: the enemies and totals of a fight, or the
-    // Incident, once the node is revealed. Unknown nodes say only that.
+    // Only a scouted node opens the shared detail beside it on hover: the enemies and totals of a
+    // fight, or the Incident. Every other node shows no hover detail.
     static void AttachNodeDetail(GameObject buttonObject, PathNode node, RunManager run)
     {
         if (!buttonObject.TryGetComponent<ContextualInfoTrigger>(out var detail))
             detail = buttonObject.AddComponent<ContextualInfoTrigger>();
         detail.describe = () =>
         {
-            if (run == null || node == null) return null;
-            if (!node.revealed && !node.completed) return new ContextualInfo("Route", "Unknown", "Not yet scouted.");
+            if (run == null || node == null || !run.IsScoutedNode(node)) return null;
             string label = run.GetNodeLabel(node);
             string body = run.GetNodeDetail(node);
             if (body.StartsWith(label + " • ")) body = body.Substring(label.Length + 3);
             else if (body == label) body = string.Empty;
-            return new ContextualInfo(run.IsScoutedNode(node) ? "Scouted" : "Route", label, body);
+            return new ContextualInfo("Scouted", label, body);
         };
     }
 

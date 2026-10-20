@@ -58,7 +58,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 - **No in-game guidance; a tutorial is coming.** Show state and numbers (damage and block previews, Recover cost, enemy intents, choice requirements), never how-to hints. `ActionGuidanceCopyTests` pins this.
 - **No bloated UI:** show each fact once. For example, pending damage appears only under the enemies as "INCOMING n".
-- **Hover info opens next to the hovered object**, never in a fixed panel.
+- **Hover info opens next to the hovered object**, never in a fixed panel. The ATTACK and BLOCK buttons have none, and on the route map only a scouted node does.
 - No Take Damage button; PASS skips the blocking phase.
 - Supply is repeatable within a Black Market.
 - Tricks and Gear are dragged like cards (`ItemDropRules`, `ItemDragUI`): a card Trick onto a hand card (one card per drop, one charge each), damage onto an enemy, heal onto the HP bar, either onto the Black Market to sell with no confirmation, and either onto the red DISCARD strip that covers the run header while an item is held. There is no SELL panel, Sell Items mode or Trick USE button. The HP panel stays visible beside the compact hand.
