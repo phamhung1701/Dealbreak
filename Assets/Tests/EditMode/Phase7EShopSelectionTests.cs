@@ -312,6 +312,22 @@ public sealed class Phase7EShopSelectionTests
     }
 
     [Test]
+    public void GearDraggedOntoTheDiscardStrip_IsRemovedForNothing()
+    {
+        var gear = GearOffer().gear;
+        Assert.That(_cards.BuyGear(gear, 0), Is.True);
+        long instanceId = _cards.OwnedGearInstances[0].Id;
+        int creditsBefore = _cards.credits;
+
+        Assert.That(ItemDropRules.CanDropGear(instanceId, ItemDropTarget.Discard, out var preview), Is.True);
+        Assert.That(preview, Is.EqualTo("DISCARD"));
+        Assert.That(ItemDropRules.DropGear(instanceId, ItemDropTarget.Discard), Is.True);
+
+        Assert.That(_cards.GetGearInstanceById(instanceId), Is.Null);
+        Assert.That(_cards.credits, Is.EqualTo(creditsBefore));
+    }
+
+    [Test]
     public void ContinueRejectedByInputGate_LeavesShopAndNodeOpen()
     {
         GameplayInputGate.Set(GameplayInputBlockReason.FrontendMenu, true);

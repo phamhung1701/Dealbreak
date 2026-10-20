@@ -130,6 +130,21 @@ public sealed class DirectHandTargetingUITests
     }
 
     [Test]
+    public void DiscardDrop_ThrowsAwayOneCopyForNothingAnywhere()
+    {
+        Assert.That(_cards.AddConsumable(_torch, 2), Is.True);
+        int credits = _cards.credits;
+        Assert.That(ItemDropRules.CanDropTrick(0, ItemDropTarget.Discard, out var preview), Is.True,
+            "Discarding needs no Black Market and no target.");
+        Assert.That(preview, Is.EqualTo("DISCARD"));
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.Discard), Is.True);
+        Assert.That(_cards.GetConsumableStackCountAtSlot(0), Is.EqualTo(1), "One copy goes, the rest of the stack stays.");
+        Assert.That(ItemDropRules.DropTrick(0, ItemDropTarget.Discard), Is.True);
+        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
+        Assert.That(_cards.credits, Is.EqualTo(credits));
+    }
+
+    [Test]
     public void TrickDroppedOnAnotherSlot_Reorders()
     {
         Assert.That(_cards.AddConsumable(_mirror), Is.True);

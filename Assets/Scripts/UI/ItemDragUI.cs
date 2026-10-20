@@ -10,7 +10,9 @@ using UnityEngine.UI;
 /// Drags a Trick or Gear item like a card. A ghost follows the pointer; the thing under it is
 /// resolved to an <see cref="ItemDropTarget"/> and, when <see cref="ItemDropRules"/> accepts it,
 /// ringed with the change the drop would make. Over the Black Market the whole market darkens
-/// and shows the sale price. Releasing anywhere else returns the ghost to its slot.
+/// and shows the sale price. While an item is held, a red discard strip covers the run header
+/// (District, Depth); dropping there throws the item away. Releasing anywhere else returns the
+/// ghost to its slot.
 /// Presentation only: every effect runs through ItemDropRules.
 /// </summary>
 public sealed class ItemDragUI : MonoBehaviour
@@ -30,6 +32,9 @@ public sealed class ItemDragUI : MonoBehaviour
     TMP_Text _tagLabel;
     RectTransform _marketShade;
     TMP_Text _marketLabel;
+    RectTransform _discardStrip;
+    Image _discardImage;
+    TMP_Text _discardLabel;
 
     bool _dragging;
     bool _isGear;
@@ -227,6 +232,8 @@ public sealed class ItemDragUI : MonoBehaviour
     ItemDropTarget ResolveTarget(PointerEventData eventData)
     {
         Vector2 screen = eventData.position;
+        if (TryDiscardArea(out var discard) && discard.Contains(ToLocal(screen) + _root.rect.center))
+            return ItemDropTarget.Discard;
         _hits.Clear();
         if (EventSystem.current) EventSystem.current.RaycastAll(eventData, _hits);
         var cards = CardManager.Instance;
@@ -253,6 +260,43 @@ public sealed class ItemDragUI : MonoBehaviour
         return ItemDropTarget.None;
     }
 
+    // The run header's District/Depth and Headliner lines, in this layer's space.
+    bool TryDiscardArea(out Rect area)
+    {
+        area = default;
+        var status = Object.FindFirstObjectByType<RunStatusUI>();
+        if (!status) return false;
+        bool any = false;
+        foreach (var label in new[] { status.runProgressLabel, status.headlinerProgressLabel })
+        {
+            if (!label || !label.isActiveAndEnabled) continue;
+            // The rendered text, not the label rect, which runs far past it.
+            var text = label.textBounds;
+            if (text.size.x <= 0f) continue;
+            Vector2 min = _root.InverseTransformPoint(label.rectTransform.TransformPoint(text.min));
+            Vector2 max = _root.InverseTransformPoint(label.rectTransform.TransformPoint(text.max));
+            var bounds = Rect.MinMaxRect(Mathf.Min(min.x, max.x), Mathf.Min(min.y, max.y), Mathf.Max(min.x, max.x), Mathf.Max(min.y, max.y));
+            area = any ? Rect.MinMaxRect(Mathf.Min(area.xMin, bounds.xMin), Mathf.Min(area.yMin, bounds.yMin),
+                Mathf.Max(area.xMax, bounds.xMax), Mathf.Max(area.yMax, bounds.yMax)) : bounds;
+            any = true;
+        }
+        return any;
+    }
+
+    void ShowDiscardStrip()
+    {
+        bool hovered = _targetValid && _target.Kind == ItemDropKind.Discard;
+        bool shown = TryDiscardArea(out var area);
+        _discardStrip.gameObject.SetActive(shown);
+        if (!shown) return;
+        _discardStrip.sizeDelta = area.size + new Vector2(24f, 8f);
+        _discardStrip.anchoredPosition = area.center - _root.rect.center;
+        var theme = DealbreakUIStyle.Theme;
+        Color red = theme ? theme.brick : new Color(.66f, .27f, .22f);
+        _discardImage.color = new Color(red.r, red.g, red.b, hovered ? 1f : .88f);
+        _discardLabel.fontSize = hovered ? 40f : 32f;
+    }
+
     static RectTransform MarketPanel()
     {
         var shop = Object.FindFirstObjectByType<ShopUI>();
@@ -265,6 +309,7 @@ public sealed class ItemDragUI : MonoBehaviour
         _ghostFrame.rim = _targetValid ? DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.ochre : Color.yellow
             : DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.slate : Color.gray;
         _ghostFrame.Refresh();
+        ShowDiscardStrip();
         bool market = _targetValid && _target.Kind == ItemDropKind.BlackMarket;
         _marketShade.gameObject.SetActive(market);
         if (market)
@@ -272,7 +317,8 @@ public sealed class ItemDragUI : MonoBehaviour
             Cover(_marketShade, MarketPanel());
             _marketLabel.text = preview;
         }
-        var targetRect = !_targetValid || market ? null : TargetRect(_target);
+        bool discard = _targetValid && _target.Kind == ItemDropKind.Discard;
+        var targetRect = !_targetValid || market || discard ? null : TargetRect(_target);
         _ring.gameObject.SetActive(targetRect);
         _tag.gameObject.SetActive(targetRect && !string.IsNullOrEmpty(preview));
         if (!targetRect) return;
@@ -291,6 +337,7 @@ public sealed class ItemDragUI : MonoBehaviour
         if (_ring) _ring.gameObject.SetActive(false);
         if (_tag) _tag.gameObject.SetActive(false);
         if (_marketShade) _marketShade.gameObject.SetActive(false);
+        if (_discardStrip) _discardStrip.gameObject.SetActive(false);
     }
 
     RectTransform TargetRect(ItemDropTarget target)
@@ -390,6 +437,13 @@ public sealed class ItemDragUI : MonoBehaviour
         shade.raycastTarget = false;
         _marketLabel = Label(_marketShade, 64f, theme ? theme.ochre : Color.yellow);
         _marketShade.gameObject.SetActive(false);
+
+        _discardStrip = Child("Discard Strip", typeof(Image));
+        _discardImage = _discardStrip.GetComponent<Image>();
+        _discardImage.raycastTarget = false;
+        _discardLabel = Label(_discardStrip, 32f, theme ? theme.paper : Color.white);
+        _discardLabel.text = "DISCARD";
+        _discardStrip.gameObject.SetActive(false);
 
         _ring = Child("Drop Ring");
         foreach (var (min, max) in new[] { (new Vector2(0, 1), new Vector2(1, 1)), (new Vector2(0, 0), new Vector2(1, 0)),

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>What a dragged Trick or Gear item is released over.</summary>
-public enum ItemDropKind { None, HandCard, Enemy, PlayerHealth, BlackMarket, TrickSlot }
+public enum ItemDropKind { None, HandCard, Enemy, PlayerHealth, BlackMarket, TrickSlot, Discard }
 
 public readonly struct ItemDropTarget
 {
@@ -25,12 +25,14 @@ public readonly struct ItemDropTarget
     public static ItemDropTarget PlayerHealth => new(ItemDropKind.PlayerHealth);
     public static ItemDropTarget BlackMarket => new(ItemDropKind.BlackMarket);
     public static ItemDropTarget TrickSlot(int slot) => new(ItemDropKind.TrickSlot, slot: slot);
+    public static ItemDropTarget Discard => new(ItemDropKind.Discard);
 }
 
 /// <summary>
 /// The rules behind dragging a Trick or Gear item onto something: a card-targeting Trick onto a
 /// hand card, a damage Trick onto an enemy, a heal onto the HP bar, either item onto the Black
-/// Market to sell it, or a Trick onto another Trick slot to reorder. Every drop goes through the
+/// Market to sell it, a Trick onto another Trick slot to reorder, or either onto the discard strip
+/// to throw it away for nothing. Every drop goes through the
 /// existing CardManager/RunManager command for that effect, so validation and payment stay there.
 /// The preview is the number or change the drop would make, shown beside the target.
 /// </summary>
@@ -76,6 +78,9 @@ public static class ItemDropRules
                 return true;
             case ItemDropKind.TrickSlot:
                 return target.Slot >= 0 && target.Slot != slot && target.Slot < cards.BackpackCapacity;
+            case ItemDropKind.Discard:
+                preview = "DISCARD";
+                return true;
             default:
                 return false;
         }
@@ -101,6 +106,9 @@ public static class ItemDropRules
                 return RunManager.Instance.SellConsumable(slot, item, item.Definition.price);
             case ItemDropKind.TrickSlot:
                 return cards.MoveConsumableSlot(slot, target.Slot);
+            case ItemDropKind.Discard:
+                // One copy and its charges, for nothing.
+                return Saved(cards.RemoveConsumableInstanceAtSlot(slot, item));
             default:
                 return false;
         }
@@ -110,8 +118,13 @@ public static class ItemDropRules
     {
         preview = null;
         var gear = CardManager.Instance != null ? CardManager.Instance.GetGearInstanceById(gearId) : null;
-        if (gear?.Definition == null || GameplayInputGate.IsBlocked ||
-            target.Kind != ItemDropKind.BlackMarket || !CanSell(gear.Definition.price)) return false;
+        if (gear?.Definition == null || GameplayInputGate.IsBlocked) return false;
+        if (target.Kind == ItemDropKind.Discard)
+        {
+            preview = "DISCARD";
+            return true;
+        }
+        if (target.Kind != ItemDropKind.BlackMarket || !CanSell(gear.Definition.price)) return false;
         preview = SellPreview(gear.Definition.price);
         return true;
     }
@@ -119,8 +132,16 @@ public static class ItemDropRules
     public static bool DropGear(long gearId, ItemDropTarget target)
     {
         if (!CanDropGear(gearId, target, out _)) return false;
+        if (target.Kind == ItemDropKind.Discard) return Saved(CardManager.Instance.RemoveGearInstance(gearId));
         var gear = CardManager.Instance.GetGearInstanceById(gearId);
         return RunManager.Instance.SellGear(gearId, gear.Definition.price);
+    }
+
+    // A discard keeps the save in step, as a sale does (a no-op at unsafe combat boundaries).
+    static bool Saved(bool changed)
+    {
+        if (changed && RunManager.Instance != null) SaveGameService.Checkpoint(RunManager.Instance);
+        return changed;
     }
 
     /// <summary>Which hand cards a dragged Trick can be dropped on; empty for non-card Tricks.</summary>
