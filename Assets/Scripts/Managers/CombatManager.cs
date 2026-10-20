@@ -406,20 +406,54 @@ public partial class CombatManager : Singleton<CombatManager>
     public bool TryPreviewDefense(IReadOnlyList<CardView> cards, out int blockedCount, out int remainingDamage)
     {
         blockedCount = 0;
-        remainingDamage = pendingDamage;
+        remainingDamage = IncomingDamageAfterModifiers;
         var instances = Instances(cards);
         if (instances == null || instances.Length == 0 || !AreValidHandCards(instances)) return false;
         var matched = MatchDefenseAssignments(instances);
         if (matched == null) return false;
-        var reductions = new int[_pendingAttacks.Count];
+        var unblocked = new int[_pendingAttacks.Count];
+        for (int i = 0; i < unblocked.Length; i++) unblocked[i] = _pendingAttacks[i];
         for (int i = 0; i < matched.Count; i++)
+            unblocked[matched[i].AttackIndex] -= matched[i].BlockedDamage;
+        for (int i = 0; i < unblocked.Length; i++)
         {
-            reductions[matched[i].AttackIndex] += matched[i].BlockedDamage;
-            remainingDamage -= matched[i].BlockedDamage;
+            unblocked[i] = Math.Max(0, unblocked[i]);
+            if (unblocked[i] == 0) blockedCount++;
         }
-        for (int i = 0; i < reductions.Length; i++)
-            if (reductions[i] >= _pendingAttacks[i]) blockedCount++;
+        remainingDamage = PreviewIncomingDamage(unblocked);
         return true;
+    }
+
+    /// <summary>The pending enemy damage as it will land if nothing more is blocked.</summary>
+    public int IncomingDamageAfterModifiers => PreviewIncomingDamage(_pendingAttacks);
+
+    /// <summary>
+    /// What still-unblocked attack amounts deal once the player's incoming modifiers (armor, Glass,
+    /// Memory Card) apply, grouped as TakeRemainingDamage resolves them: ordinary attacks as one
+    /// aggregate hit, each Double Strike attacker on its own. Encounter Block and Shield stay with the
+    /// HP display. Changes no state.
+    /// </summary>
+    int PreviewIncomingDamage(IReadOnlyList<int> unblocked)
+    {
+        var action = new CombatActionContext(0, CombatActionOrigin.EnemyRetaliation);
+        long ordinary = 0, total = 0;
+        for (int i = 0; i < unblocked.Count && i < _pendingAttackSources.Count; i++)
+        {
+            if (_pendingAttackSources[i] != null && _pendingAttackSources[i].HasDoubleStrike)
+                total += ModifiedIncoming(action, unblocked[i]);
+            else ordinary = Math.Min(int.MaxValue, ordinary + unblocked[i]);
+        }
+        total += ModifiedIncoming(action, (int)ordinary);
+        return (int)Math.Min(total, int.MaxValue);
+    }
+
+    int ModifiedIncoming(CombatActionContext action, int amount)
+    {
+        if (amount <= 0) return 0;
+        var request = new DamageRequest(action, 0, CombatDamageOrigin.EnemyAggregate, null, player, amount,
+            allowShield: true);
+        return GameplayEffectResolver.ModifyIncomingCombatDamage(
+            new IncomingDamageEffectContext(request, this, CardManager.Instance, amount));
     }
 
     bool CanAddDefenseCard(IReadOnlyList<CardView> selectedCards, CardView candidate)

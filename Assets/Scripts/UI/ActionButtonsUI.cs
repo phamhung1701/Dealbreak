@@ -324,7 +324,7 @@ public class ActionButtonsUI : MonoBehaviour
             pendingDamageLabel.gameObject.SetActive(showDamage);
             pendingDamageLabel.text = showDamage
                 ? combat.pendingDamage > 0
-                    ? $"INCOMING {combat.pendingDamage}"
+                    ? $"INCOMING {combat.IncomingDamageAfterModifiers}"
                     : "ALL BLOCKED"
                 : string.Empty;
         }
