@@ -65,6 +65,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Enemy drops go straight into the backpack when there is room. With the backpack full the drop waits on the board (`RunManager.PendingEnemyDrop`) and the run waits with it until it is dragged in or left (LEAVE IT).
 - Copycat works like Balatro's Cryptid: copies of a hand card (`ConsumableData.copies`, 2) go into the hand.
 - Card Tricks only ever target cards in hand. Mods earned outside the Black Market (Incidents, Hammer) arrive as their Mod Trick; there is no select-a-card dialog and no Training (Upgrade) node.
+- Choosing a route has no map button. Inside a fight, Incident or Black Market a MAP button (top right) opens the route map view-only above the screen; CLOSE MAP returns to it.
 - CONTINUE TO MAP sits right of the Black Market menu. Each offer tile has a price button ("5 Credits") that buys at once; its rules text opens beside the tile on click. Supply and Stake have MIN/MAX.
 - Scouting (Black Market Intel, the Late-Night Diner tip, Lantern) reveals one seeded-random reachable node whose contents are unknown, of any kind. Fights show their enemies only once scouted (`PathNode.scouted`); Headliners are always known.
 
@@ -84,7 +85,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Driving Unity (Locus MCP)
 
-- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 40 s). Baseline: **EditMode 671 passed + 1 skipped, PlayMode 10/10**.
+- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 40 s). Baseline: **EditMode 670 passed + 1 skipped, PlayMode 10/10**.
 - Tool calls are capped at about 5 minutes.
   - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap).
   - After the soak, wait until `Application.isPlaying` is false, then read `C:\Users\Admin\AppData\LocalLow\hwng\Dealbreak\TestResults.xml` and check its timestamp.

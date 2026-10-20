@@ -16,7 +16,9 @@ public class PathScreenUI : MonoBehaviour
     AttackCardPresentationUI _presentation;
     bool _pendingMapShow;
     bool _pendingRunCompleted;
-    bool _mapToggleEnabled;
+    // The route map can be looked at (not used) from a fight, Incident or Black Market.
+    bool _peeking;
+    int _peekSiblingIndex = -1;
     Button _mapVisibilityButton;
     TMP_Text _mapVisibilityLabel;
 
@@ -32,9 +34,10 @@ public class PathScreenUI : MonoBehaviour
     void LateUpdate()
     {
         if (!_deckViewer) _deckViewer = GetComponent<DeckViewerUI>();
+        if (_peeking && (RunManager.Instance == null || RunManager.Instance.ActiveNode == null)) EndPeek();
         if (_mapVisibilityButton)
         {
-            bool visible = _mapToggleEnabled && !GameplayInputGate.IsBlocked &&
+            bool visible = (_peeking || CanPeekMap()) &&
                 !(_deckViewer && _deckViewer.panel && _deckViewer.panel.activeInHierarchy);
             if (_mapVisibilityButton.gameObject.activeSelf != visible) SetMapVisibilityControl(visible);
         }
@@ -92,7 +95,7 @@ public class PathScreenUI : MonoBehaviour
         }
         UnsubscribeFromPresentation();
         _pendingMapShow = _pendingRunCompleted = false;
-        _mapToggleEnabled = false;
+        EndPeek();
         if (_mapVisibilityButton != null) _mapVisibilityButton.gameObject.SetActive(false);
     }
 
@@ -161,7 +164,7 @@ public class PathScreenUI : MonoBehaviour
     void HandlePresentationCancelled()
     {
         _pendingMapShow = _pendingRunCompleted = false;
-        _mapToggleEnabled = false;
+        EndPeek();
         BoardPanelTransition.Hide(panel);
         SetMapVisibilityControl(false);
     }
@@ -169,7 +172,7 @@ public class PathScreenUI : MonoBehaviour
     void HandleRunStarted(string _)
     {
         _pendingMapShow = _pendingRunCompleted = false;
-        _mapToggleEnabled = false;
+        EndPeek();
         BoardPanelTransition.Hide(panel);
         SetMapVisibilityControl(false);
     }
@@ -189,7 +192,7 @@ public class PathScreenUI : MonoBehaviour
         {
             _pendingRunCompleted = true;
             _pendingMapShow = false;
-            _mapToggleEnabled = false;
+            EndPeek();
             BoardPanelTransition.Hide(panel);
             SetMapVisibilityControl(false);
             return;
@@ -199,7 +202,7 @@ public class PathScreenUI : MonoBehaviour
 
     void ShowRunCompleted()
     {
-        _mapToggleEnabled = false;
+        EndPeek();
         if (headerText) headerText.text = "VICTORY!";
         BoardPanelTransition.Show(panel);
         SetMapVisibilityControl(false);
@@ -207,6 +210,7 @@ public class PathScreenUI : MonoBehaviour
 
     void Show()
     {
+        EndPeek();
         EnsurePresentationSubscription();
         if (_presentation != null && _presentation.IsBusy)
         {
@@ -222,17 +226,14 @@ public class PathScreenUI : MonoBehaviour
         _pendingMapShow = false;
         BuildMap();
         BoardPanelTransition.Show(panel);
-        var run = RunManager.Instance;
-        // A reward modal may temporarily own the input gate while the route is shown.
-        // Keep route availability separate from whether a click is allowed this frame.
-        _mapToggleEnabled = run != null && !run.IsRunCompleted && run.ActiveNode == null;
-        SetMapVisibilityControl(_mapToggleEnabled);
+        // Choosing a route has no map button: the map simply stays open.
+        SetMapVisibilityControl(false);
     }
 
     void Hide()
     {
         _pendingMapShow = _pendingRunCompleted = false;
-        _mapToggleEnabled = false;
+        EndPeek();
         BoardPanelTransition.Hide(panel);
         SetMapVisibilityControl(false);
     }
@@ -537,7 +538,7 @@ public class PathScreenUI : MonoBehaviour
         _mapVisibilityLabel.alignment = TextAlignmentOptions.Center;
         _mapVisibilityLabel.raycastTarget = false;
         _mapVisibilityLabel.fontSize = 18f;
-        _mapVisibilityLabel.text = "CLOSE MAP";
+        _mapVisibilityLabel.text = "MAP";
         control.SetActive(false);
     }
 
@@ -546,20 +547,44 @@ public class PathScreenUI : MonoBehaviour
         if (_mapVisibilityButton == null) EnsureMapVisibilityControl();
         if (_mapVisibilityButton == null) return;
         _mapVisibilityButton.gameObject.SetActive(visible);
-        if (_mapVisibilityLabel != null) _mapVisibilityLabel.text = panel != null && panel.activeSelf ? "CLOSE MAP" : "OPEN MAP";
+        if (_mapVisibilityLabel != null) _mapVisibilityLabel.text = _peeking ? "CLOSE MAP" : "MAP";
     }
 
-    bool CanToggleMap()
+    // Inside a fight, Incident or Black Market the map can be opened to look ahead. Nodes cannot
+    // be started from it (RunManager refuses a route while a node is active).
+    bool CanPeekMap()
     {
         var run = RunManager.Instance;
-        return run != null && !run.IsRunCompleted && run.ActiveNode == null && !GameplayInputGate.IsBlocked;
+        return run != null && !run.IsRunCompleted && run.ActiveNode != null && !_pendingMapShow &&
+            !GameplayInputGate.IsBlocked && !RunResultUI.IsShowingResult;
     }
 
     void ToggleMapVisibility()
     {
-        if (panel == null || !_mapToggleEnabled || !CanToggleMap()) return;
-        panel.SetActive(!panel.activeSelf);
+        if (panel == null) return;
+        if (_peeking) { EndPeek(); return; }
+        if (!CanPeekMap()) return;
+        _peeking = true;
+        BuildMap();
+        // Drawn above the fight, Incident or Black Market it is opened from.
+        _peekSiblingIndex = panel.transform.GetSiblingIndex();
+        panel.transform.SetAsLastSibling();
+        if (_mapVisibilityButton) _mapVisibilityButton.transform.SetAsLastSibling();
+        BoardPanelTransition.Show(panel);
         SetMapVisibilityControl(true);
+    }
+
+    void EndPeek()
+    {
+        if (!_peeking) return;
+        _peeking = false;
+        if (panel)
+        {
+            BoardPanelTransition.Hide(panel);
+            if (_peekSiblingIndex >= 0) panel.transform.SetSiblingIndex(_peekSiblingIndex);
+        }
+        _peekSiblingIndex = -1;
+        if (_mapVisibilityButton) SetMapVisibilityControl(CanPeekMap());
     }
 
     static string GetNodeHeading(PathNode node, RunManager run)

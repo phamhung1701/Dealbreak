@@ -117,14 +117,16 @@ public sealed class Phase7DMapVisibilityTests
     }
 
     [Test]
-    public void MapVisibilityToggle_RequiresAwaitingRouteAndUnblockedInput()
+    public void MapButton_IsAbsentWhileChoosingARoute_AndPeeksFromAnActiveNode()
     {
         GameplayInputGate.Clear();
-        var runObject = new GameObject("Map toggle run");
-        var root = new GameObject("Map toggle canvas", typeof(RectTransform), typeof(Canvas));
+        var runObject = new GameObject("Map peek run");
+        var root = new GameObject("Map peek canvas", typeof(RectTransform), typeof(Canvas));
         root.SetActive(false);
         var panelObject = new GameObject("PathPanel", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(Image));
         panelObject.transform.SetParent(root.transform, false);
+        var market = new GameObject("ShopPanel", typeof(RectTransform));
+        market.transform.SetParent(root.transform, false);
         var ui = root.AddComponent<PathScreenUI>();
         SetField(ui, "panel", panelObject);
         try
@@ -135,76 +137,42 @@ public sealed class Phase7DMapVisibilityTests
             var control = root.transform.Find("MapVisibilityButton");
             Assert.That(control, Is.Not.Null);
 
-            GameplayInputGate.Set(GameplayInputBlockReason.ConsumableReward, true);
             InvokePrivate(ui, "ShowImmediately");
-            Assert.That(control.gameObject.activeSelf, Is.True,
-                "A temporary reward gate must not permanently disable the route-map control.");
-            GameplayInputGate.Clear();
-            InvokePrivate(ui, "ToggleMapVisibility");
-            Assert.That(panelObject.activeSelf, Is.False,
-                "The map must remain closeable once the temporary reward gate clears.");
-            InvokePrivate(ui, "ToggleMapVisibility");
-            Assert.That(panelObject.activeSelf, Is.True);
+            InvokePrivate(ui, "LateUpdate");
+            Assert.That(control.gameObject.activeSelf, Is.False, "Choosing a route has no map button.");
+
+            panelObject.SetActive(false);
+            var active = new PathNode { id = 7, kind = MapNodeType.Shop };
+            typeof(RunManager).GetField("_activeNode", System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic).SetValue(run, active);
+            InvokePrivate(ui, "LateUpdate");
+            Assert.That(control.gameObject.activeSelf, Is.True, "A Black Market, Incident or fight offers the map.");
+            Assert.That(control.GetComponentInChildren<TMPro.TMP_Text>().text, Is.EqualTo("MAP"));
 
             InvokePrivate(ui, "ToggleMapVisibility");
+            Assert.That(panelObject.activeSelf, Is.True);
+            Assert.That(panelObject.transform.GetSiblingIndex(), Is.GreaterThan(market.transform.GetSiblingIndex()),
+                "The map opens above the screen it is looked at from.");
+            Assert.That(control.GetComponentInChildren<TMPro.TMP_Text>().text, Is.EqualTo("CLOSE MAP"));
+            InvokePrivate(ui, "ToggleMapVisibility");
             Assert.That(panelObject.activeSelf, Is.False);
+            Assert.That(panelObject.transform.GetSiblingIndex(), Is.LessThan(market.transform.GetSiblingIndex()),
+                "Closing restores the map's place.");
 
             GameplayInputGate.Set(GameplayInputBlockReason.FrontendMenu, true);
             InvokePrivate(ui, "ToggleMapVisibility");
-            Assert.That(panelObject.activeSelf, Is.False, "A blocked UI state must not reopen the map.");
+            Assert.That(panelObject.activeSelf, Is.False, "A blocked UI state must not open the map.");
             GameplayInputGate.Clear();
 
             InvokePrivate(ui, "ToggleMapVisibility");
             Assert.That(panelObject.activeSelf, Is.True);
-
-            typeof(RunManager).GetProperty(nameof(RunManager.IsRunCompleted))
-                .GetSetMethod(true).Invoke(run, new object[] { true });
-            InvokePrivate(ui, "ToggleMapVisibility");
-            Assert.That(panelObject.activeSelf, Is.True, "A completed run must not toggle the route map.");
+            typeof(RunManager).GetField("_activeNode", System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic).SetValue(run, null);
+            InvokePrivate(ui, "LateUpdate");
+            Assert.That(panelObject.activeSelf, Is.False, "Leaving the node ends the look-ahead.");
 
             InvokePrivate(ui, "HandleRunCompleted");
-            Assert.That(control.gameObject.activeSelf, Is.False, "The map toggle must be hidden for final victory.");
-        }
-        finally
-        {
-            GameplayInputGate.Clear();
-            Object.DestroyImmediate(root);
-            Object.DestroyImmediate(runObject);
-        }
-    }
-
-    [Test]
-    public void MapVisibilityToggle_IsHiddenWhenMapFlowIsCancelledOrReset()
-    {
-        GameplayInputGate.Clear();
-        var runObject = new GameObject("Map lifecycle run");
-        var root = new GameObject("Map lifecycle canvas", typeof(RectTransform), typeof(Canvas));
-        root.SetActive(false);
-        var panelObject = new GameObject("PathPanel", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster), typeof(Image));
-        panelObject.transform.SetParent(root.transform, false);
-        var ui = root.AddComponent<PathScreenUI>();
-        SetField(ui, "panel", panelObject);
-        try
-        {
-            runObject.AddComponent<RunManager>();
-            root.SetActive(true);
-            InvokePrivate(ui, "EnsureMapVisibilityControl");
-            var control = root.transform.Find("MapVisibilityButton");
-
-            InvokePrivate(ui, "ShowImmediately");
-            Assert.That(control.gameObject.activeSelf, Is.True);
-            InvokePrivate(ui, "HandleRunStarted", "new-seed");
-            Assert.That(control.gameObject.activeSelf, Is.False);
-
-            InvokePrivate(ui, "ShowImmediately");
-            Assert.That(control.gameObject.activeSelf, Is.True);
-            InvokePrivate(ui, "HandlePresentationCancelled");
-            Assert.That(control.gameObject.activeSelf, Is.False);
-
-            InvokePrivate(ui, "ShowImmediately");
-            Assert.That(control.gameObject.activeSelf, Is.True);
-            InvokePrivate(ui, "OnDisable");
-            Assert.That(control.gameObject.activeSelf, Is.False);
+            Assert.That(control.gameObject.activeSelf, Is.False, "The map button is hidden for final victory.");
         }
         finally
         {
