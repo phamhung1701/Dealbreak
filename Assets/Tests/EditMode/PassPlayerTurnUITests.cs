@@ -71,6 +71,22 @@ public sealed class PassPlayerTurnUITests
         Assert.That(_passButton.interactable, Is.True);
     }
 
+    [Test]
+    public void PassButtonIsAvailableAfterAnAttackReturnsStraightToThePlayerTurn()
+    {
+        // A zero-attack response re-enters the player turn while the attack is still resolving.
+        var type = EnemyTypeData.Create("Harmless Pass UI Enemy", 100, 0, 0);
+        _objects.Add(type);
+        var enemy = new EnemyRuntime(type);
+        _combat.StartEnemy(enemy);
+
+        Assert.That(_combat.TryPlayCards(new[] { _cards.hand[0] }, enemy), Is.True);
+
+        Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
+        Assert.That(_combat.CanPassPlayerTurn, Is.True);
+        Assert.That(_passButton.interactable, Is.True);
+    }
+
     Button MakeButton(Transform parent, string name)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));

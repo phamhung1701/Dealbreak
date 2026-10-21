@@ -104,6 +104,10 @@ public partial class CombatManager : Singleton<CombatManager>
     public event Action<DamageResult> OnDamageResolved;
     public event Action<DefenseAttackResult> OnDefenseAttackResolved;
     public event Action<string> OnCombatLog;
+    /// <summary>Raised when the outermost combat command unwinds, after any encounter result. Command
+    /// availability (for example <see cref="CanPassPlayerTurn"/>) is only final here: state events
+    /// raised mid-command still see the action as resolving.</summary>
+    public event Action OnCommandCompleted;
 
     public bool IsResolvingAction => _isResolvingAction;
 
@@ -123,7 +127,9 @@ public partial class CombatManager : Singleton<CombatManager>
 
     void EndCommand()
     {
-        if (--_commandDepth == 0) PublishEncounterResult();
+        if (--_commandDepth != 0) return;
+        PublishEncounterResult();
+        OnCommandCompleted?.Invoke();
     }
 
     void PublishEncounterResult()

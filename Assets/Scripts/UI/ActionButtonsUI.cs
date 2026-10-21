@@ -51,6 +51,7 @@ public class ActionButtonsUI : MonoBehaviour
             CombatManager.Instance.OnCombatLog += HandleCombatLog;
             CombatManager.Instance.OnEnemiesChanged += HandleEnemiesChanged;
             CombatManager.Instance.OnEncounterResult += HandleEncounterResult;
+            CombatManager.Instance.OnCommandCompleted += RefreshAll;
         }
         if (CardManager.Instance != null)
         {
@@ -92,6 +93,7 @@ public class ActionButtonsUI : MonoBehaviour
             CombatManager.Instance.OnCombatLog -= HandleCombatLog;
             CombatManager.Instance.OnEnemiesChanged -= HandleEnemiesChanged;
             CombatManager.Instance.OnEncounterResult -= HandleEncounterResult;
+            CombatManager.Instance.OnCommandCompleted -= RefreshAll;
         }
         var run = RunManager.Instance;
         if (run != null)
