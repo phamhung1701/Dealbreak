@@ -408,7 +408,7 @@ public sealed class Phase7EShopSelectionTests
         Assert.That(view.purchaseButton.gameObject.activeSelf,Is.True,"The price button shows before any click.");
         Assert.That(view.purchaseButton.GetComponentInChildren<TMP_Text>(true).text,Is.EqualTo($"{offer.price} Credits"));
         var detail=ButtonFor(offer).GetComponent<ContextualInfoTrigger>();
-        Assert.That(detail.clickOnly,Is.True,"Offer details open on click, not on hover.");
+        Assert.That(detail.pinOnClick,Is.True,"Offer details open on click, not on hover.");
         Assert.That(detail.Info.Value.Body,Does.Contain(offer.gear.description));
         Click(offer);
         Assert.That(_cards.credits,Is.EqualTo(before),"Clicking the tile only opens its detail.");

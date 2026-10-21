@@ -1,25 +1,42 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-/// <summary>Inspect/focus adapter; all commit input still routes through the existing handlers.</summary>
+/// <summary>
+/// Inspect/focus adapter; all commit input still routes through the existing handlers. Details open
+/// on click or keyboard focus, never on hover: a selected card or Gear shows its own, an enemy pins
+/// its detail from its target click, and a hand card outside a fight pins it here.
+/// </summary>
 public sealed class CombatInspectUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
-    ISelectHandler, IDeselectHandler, ISubmitHandler
+    IPointerClickHandler, ISelectHandler, IDeselectHandler, ISubmitHandler
 {
     bool _pointer, _focus;
-    public bool IsInspected => _pointer || _focus;
-    public void OnPointerEnter(PointerEventData _) { _pointer = true; Inspect(); }
-    public void OnPointerExit(PointerEventData _) { _pointer = false; if (!_focus) Leave(); }
-    public void OnSelect(BaseEventData _)
+    /// <summary>The pointer is over the object; presentation only (an enemy's outline), never its detail.</summary>
+    public bool IsHovered => _pointer;
+    public bool IsInspected => _focus;
+    public void OnPointerEnter(PointerEventData _) => _pointer = true;
+    public void OnPointerExit(PointerEventData _) => _pointer = false;
+    public void OnPointerClick(PointerEventData eventData)
     {
+        if (eventData.button != PointerEventData.InputButton.Left || !TryGetComponent<CardView>(out var card)) return;
+        var cards = CardManager.Instance;
+        // In a fight a click selects the card, and the selection shows its detail.
+        if (card.homeField != null && !DealbreakUIRuntime.CombatActive && cards?.CanRouteHandEnhancementTargetClick != true) Pin();
+    }
+    public void Pin() => ContextualTooltipUI.Instance?.Pin(this);
+    // A click selects a Selectable too; only keyboard or gamepad focus inspects.
+    public void OnSelect(BaseEventData eventData)
+    {
+        if (eventData is PointerEventData) return;
         _focus = true;
         if (TryGetComponent<CardView>(out var card) && !GameplayInputGate.IsBlocked) card.SetInspectFocus(true);
         Inspect();
     }
     public void OnDeselect(BaseEventData _)
     {
+        if (!_focus) return;
         _focus = false;
         if (TryGetComponent<CardView>(out var card)) card.SetInspectFocus(false);
-        if (!_pointer) Leave();
+        Leave();
     }
     void OnDisable()
     {

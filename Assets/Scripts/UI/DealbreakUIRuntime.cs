@@ -69,8 +69,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         {
             var button=actions.backpackSlotButtons[i];if(!button)continue;
             int slot=i;
+            // The slot's own click (ActionButtonsUI) pins this detail, after a drag's click suppression.
             var trigger=button.GetComponent<ContextualInfoTrigger>()??button.gameObject.AddComponent<ContextualInfoTrigger>();
-            trigger.pinOnClick=true;
             trigger.describe=()=>{
                 var cards=CardManager.Instance;var item=cards?.GetConsumableInstanceAtSlot(slot);if(item==null)return null;
                 return new ContextualInfo("Trick",item.Definition.displayName,$"{item.Definition.description}\n\nStack {cards.GetConsumableStackCountAtSlot(slot)} • Charges {item.RemainingCharges}/{item.Definition.uses}");
@@ -80,7 +80,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     void BindControls()
     {
         if(!actions)return;
-        // Attack and Block show no hover detail.
+        // Attack and Block show no detail; the others show theirs when clicked while unavailable.
         var buttons=new[]{actions.passButton,actions.recoverButton,actions.rankSortButton,actions.suitSortButton};
         var details=new[]{"Pass the current action; while blocking, take the pending damage.","Recover when your hand is empty.","Sort your current hand by rank.","Sort your current hand by suit."};
         for(int i=0;i<buttons.Length;i++)

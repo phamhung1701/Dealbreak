@@ -173,7 +173,7 @@ public static class TutorialScript
             TutorialTargets.PlayerHealth));
         steps.Add(TrickLesson("trick-card", "Mod a card", ConsumableEffectType.ApplyEnhancement,
             trick => $"Card Tricks only work on cards in your hand. Drag the {trick.displayName} onto any card to give it the " +
-                $"{(trick.enhancementToApply ? trick.enhancementToApply.displayName : "new")} Mod. Hover the card to read it.",
+                $"{(trick.enhancementToApply ? trick.enhancementToApply.displayName : "new")} Mod. Click the card to read it.",
             TutorialTargets.Hand));
         steps.Add(TrickLesson("trick-enemy", "Hit an enemy", ConsumableEffectType.DirectEnemyDamage,
             trick => $"Drag the {trick.displayName} onto an enemy: {trick.damageAmount} damage, and no card spent.",

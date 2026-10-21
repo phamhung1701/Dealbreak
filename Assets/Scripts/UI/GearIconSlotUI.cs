@@ -4,15 +4,13 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>One glyph-only Gear slot. The rail supplies its tooltip and detail actions.</summary>
+/// <summary>One glyph-only Gear slot. The rail supplies its detail action; a click opens it.</summary>
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ArtifactIconSlotUI")]
-public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+public sealed class GearIconSlotUI : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] TMP_Text iconLabel;
 
     GearData _gear;
-    Action<GearData> _hover;
-    Action<GearData> _leave;
     Action<GearData> _select;
     long _instanceId;
     Sprite _occupiedSlotSprite;
@@ -48,8 +46,6 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
     {
         if (TryGetComponent<Selectable>(out var selectable)) selectable.interactable = false;
         _gear = null;
-        _hover = null;
-        _leave = null;
         _select = null;
         _instanceId = 0;
         _detailSelected = false;
@@ -61,14 +57,11 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
         RefreshSlotBackground();
     }
 
-    public void Bind(GearData gear, Action<GearData> hover, Action<GearData> leave,
-        Action<GearData> select, long instanceId, bool detailSelected = false)
+    public void Bind(GearData gear, Action<GearData> select, long instanceId, bool detailSelected = false)
     {
         if (TryGetComponent<Selectable>(out var selectable)) selectable.interactable = true;
         if (!TryGetComponent<GearSlotDragUI>(out _)) gameObject.AddComponent<GearSlotDragUI>();
         _gear = gear;
-        _hover = hover;
-        _leave = leave;
         _select = select;
         _instanceId = instanceId;
         _detailSelected = detailSelected;
@@ -130,26 +123,11 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerEnterHandler, IPoint
                 : new Color(0.16f, 0.20f, 0.27f, 0.78f);
     }
 
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        if (_gear) _hover?.Invoke(_gear);
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        if (_gear) _leave?.Invoke(_gear);
-    }
-
     public void OnPointerClick(PointerEventData eventData)
     {
         if (_gear && !GameplayInputGate.IsBlocked &&
             CardManager.Instance?.IsHandEnhancementTargeting != true && CardManager.Instance?.IsEnemyTargeting != true &&
             eventData.button == PointerEventData.InputButton.Left)
             _select?.Invoke(_gear);
-    }
-
-    void OnDisable()
-    {
-        if (_gear) _leave?.Invoke(_gear);
     }
 }

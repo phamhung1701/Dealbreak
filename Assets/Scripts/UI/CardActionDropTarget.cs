@@ -101,6 +101,8 @@ public class CardActionDropTarget : MonoBehaviour, IPointerEnterHandler, IPointe
         var target = ResolveEnemyTarget();
         if (CardManager.Instance != null && CardManager.Instance.HandleEnemyTargetClick(target)) return;
         CombatManager.Instance?.SelectEnemyTarget(target);
+        // Choosing the target also opens (or, clicked again, closes) the enemy's detail beside it.
+        if (TryGetComponent<CombatInspectUI>(out var inspect)) inspect.Pin();
     }
 
     void ResolveReferences()

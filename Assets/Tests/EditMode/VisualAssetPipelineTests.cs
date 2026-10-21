@@ -36,7 +36,7 @@ public sealed class VisualAssetPipelineTests
         var labelObject = new GameObject("Glyph", typeof(RectTransform), typeof(TextMeshProUGUI));
         labelObject.transform.SetParent(root.transform, false);
         var label = labelObject.GetComponent<TMP_Text>();
-        root.GetComponent<GearIconSlotUI>().Bind(gear, null, null, null, 0);
+        root.GetComponent<GearIconSlotUI>().Bind(gear, null, 0);
 
         var iconImage = root.GetComponentsInChildren<Image>(true).FirstOrDefault(image => image.gameObject != root);
         Assert.IsNotNull(iconImage);
@@ -49,7 +49,7 @@ public sealed class VisualAssetPipelineTests
         var fallback = new GameObject("Glyph", typeof(RectTransform), typeof(TextMeshProUGUI));
         fallback.transform.SetParent(secondRoot.transform, false);
         var fallbackLabel = fallback.GetComponent<TMP_Text>();
-        secondRoot.GetComponent<GearIconSlotUI>().Bind(gear, null, null, null, 0);
+        secondRoot.GetComponent<GearIconSlotUI>().Bind(gear, null, 0);
         Assert.AreEqual("♣", fallbackLabel.text);
         Assert.IsTrue(fallbackLabel.gameObject.activeSelf);
     }

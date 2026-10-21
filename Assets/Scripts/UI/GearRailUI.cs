@@ -13,7 +13,7 @@ public sealed class GearRailUI : MonoBehaviour
     public TMP_Text capacityLabel;
     public float slotSize = 44f;
 
-    [Header("Hover tooltip")]
+    [Header("Legacy hover tooltip (kept hidden: details open on click)")]
     public GameObject tooltipPanel;
     public TMP_Text tooltipText;
 
@@ -28,7 +28,6 @@ public sealed class GearRailUI : MonoBehaviour
 
     readonly List<GearIconSlotUI> _slots = new();
     CardManager _subscribedSource;
-    GearData _hovered;
     long _selectedInstanceId;
     Vector2 _lastDetailParentSize;
     bool _hasLastDetailParentSize;
@@ -120,8 +119,7 @@ public sealed class GearRailUI : MonoBehaviour
                     var slot = _slots[count];
                     slot.SetSlotSprites(occupiedSlotSprite, emptySlotSprite, selectedSlotSprite);
                     var instanceId = cards.GetGearInstanceAt(currentGearIndex)?.Id ?? 0;
-                    slot.Bind(gear, ShowTooltip, HideTooltipFor,
-                        selectedGear => SelectGear(instanceId, selectedGear),
+                    slot.Bind(gear, selectedGear => SelectGear(instanceId, selectedGear),
                         instanceId, _selectedInstanceId == instanceId);
                     slot.gameObject.SetActive(true);
                 }
@@ -142,7 +140,6 @@ public sealed class GearRailUI : MonoBehaviour
         for (int i = visibleSlotCount; i < _slots.Count; i++)
             _slots[i].gameObject.SetActive(false);
 
-        if (_hovered && (!cards || !cards.ownedGear.Contains(_hovered))) HideTooltip();
         if (_selectedInstanceId != 0 && (!cards || cards.GetGearInstanceById(_selectedInstanceId) == null)) CloseDetail();
     }
 
@@ -195,26 +192,8 @@ public sealed class GearRailUI : MonoBehaviour
 
     void HandleEncounterResult(EncounterResult _) => CloseDetail();
 
-    void ShowTooltip(GearData gear)
-    {
-        _hovered = gear;
-        if (ContextualTooltipUI.Instance || CombatDetailPanelUI.IsCombatActive) return;
-        if (_selectedInstanceId != 0 && detailPanel && detailPanel.activeSelf) HideTooltip();
-        else
-        {
-            if (tooltipText) tooltipText.text = Describe(gear);
-            if (tooltipPanel) tooltipPanel.SetActive(true);
-        }
-    }
-
-    void HideTooltipFor(GearData gear)
-    {
-        if (_hovered == gear) HideTooltip();
-    }
-
     void HideTooltip()
     {
-        _hovered = null;
         if (ContextualTooltipUI.Instance || CombatDetailPanelUI.IsCombatActive) return;
         if (tooltipPanel) tooltipPanel.SetActive(false);
     }
@@ -338,7 +317,4 @@ public sealed class GearRailUI : MonoBehaviour
             if (slot) slot.SetDetailSelected(false);
         if (detailPanel) detailPanel.SetActive(false);
     }
-
-    static string Describe(GearData gear) => gear
-        ? $"{gear.displayName}\n{gear.description}" : string.Empty;
 }

@@ -11,7 +11,7 @@ using UnityEngine.UI;
 /// </summary>
 public sealed class TutorialCoachUI : MonoBehaviour
 {
-    // Above hover details (90), below modal menus such as pause (100).
+    // Above details (90), below modal menus such as pause (100).
     const int SortingOrder = 95;
     const float PanelWidth = 440f, Padding = 26f, Gap = 18f, HighlightPad = 8f;
 

@@ -467,7 +467,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         var combat = CombatManager.Instance;
         bool selected = cards != null && cards.SelectedCards.Count > 0 && combat.currentState == GameState.PlayerTurn;
         bool valid = selected && combat.CanPlayCards(cards.SelectedCards, DisplayedEnemy);
-        bool inspecting = TryGetComponent<CombatInspectUI>(out var inspect) && inspect.IsInspected;
+        bool inspecting = TryGetComponent<CombatInspectUI>(out var inspect) && (inspect.IsHovered || inspect.IsInspected);
         if (portrait && _targetOutline == null)
         {
             _targetOutline = portrait.GetComponent<Outline>() ?? portrait.gameObject.AddComponent<Outline>();

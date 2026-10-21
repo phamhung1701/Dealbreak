@@ -426,7 +426,7 @@ public class ShopUI : MonoBehaviour
 
             var button = btn.GetComponent<Button>();
             var inspect=btn.GetComponent<ContextualInfoTrigger>()??btn.AddComponent<ContextualInfoTrigger>();
-            inspect.pinOnClick=true;inspect.clickOnly=true;inspect.enabled=true;
+            inspect.pinOnClick=true;inspect.enabled=true;
             string inspectedId=offer.StableId;
             inspect.describe=()=>
             {

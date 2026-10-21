@@ -5,7 +5,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-/// <summary>One shared detail frame for all screens, with live data and bounded scrolling.</summary>
+/// <summary>
+/// One shared detail frame for all screens, with live data and bounded scrolling. Details open on
+/// click (pinned) or keyboard focus, never on hover; a selected card or Gear shows its own.
+/// </summary>
 public sealed class ContextualTooltipUI : MonoBehaviour
 {
     public static ContextualTooltipUI Instance {get;private set;}
@@ -48,7 +51,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     public void Inspect(MonoBehaviour source){if(!source)return;_source=source;_dismissed=null;_leaveUntil=float.PositiveInfinity;}
     public void Leave(MonoBehaviour source){if(_source==source)_leaveUntil=Time.unscaledTime+.18f;}
     public void Pin(MonoBehaviour source){_pinned=_pinned==source?null:source;_dismissed=null;}
-    /// <summary>Drops any hover or pinned detail coming from this object, e.g. when it is picked up to drag.</summary>
+    /// <summary>Drops any focused or pinned detail coming from this object, e.g. when it is picked up to drag.</summary>
     public void Release(Component owner)
     {
         if(!owner)return;

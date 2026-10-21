@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public readonly struct ContextualInfo
 {
@@ -8,22 +9,26 @@ public readonly struct ContextualInfo
     public ContextualInfo(string category,string title,string body){Category=category;Title=title;Body=body;}
 }
 
-/// <summary>Data adapter for offers, routes, HUD, settings, and Tricks. Describing must be read-only.</summary>
-public sealed class ContextualInfoTrigger : MonoBehaviour,IPointerEnterHandler,IPointerExitHandler,ISelectHandler,IDeselectHandler,IPointerClickHandler
+/// <summary>
+/// Data adapter for offers, routes, HUD, settings, and Tricks. Describing must be read-only.
+/// Details open on click (or keyboard focus), never on hover; a second click closes them.
+/// </summary>
+public sealed class ContextualInfoTrigger : MonoBehaviour,ISelectHandler,IDeselectHandler,IPointerClickHandler
 {
     public string category,title;
     [TextArea] public string description;
-    public bool pinOnClick,allowWhileBlocked;
-    // Opens only when clicked (pinned), never on hover: Black Market offers show details on click.
-    public bool clickOnly;
+    // Set on a button whose click is meant to show its detail (Black Market tiles, deck cards). Other
+    // buttons act on click and show their detail on click only while unavailable.
+    public bool pinOnClick;
+    public bool allowWhileBlocked;
     public Func<ContextualInfo?> describe;
-    bool _pointer,_focus;
-    public bool IsInspected => _pointer||_focus;
+    bool _focus;
+    public bool IsInspected => _focus;
     public ContextualInfo? Info => describe!=null?describe():string.IsNullOrEmpty(title)?null:new ContextualInfo(category,title,description);
-    public void OnPointerEnter(PointerEventData _){_pointer=true;if(!clickOnly)ContextualTooltipUI.Instance?.Inspect(this);}
-    public void OnPointerExit(PointerEventData _){_pointer=false;if(!_focus)ContextualTooltipUI.Instance?.Leave(this);}
-    public void OnSelect(BaseEventData _){_focus=true;if(!clickOnly)ContextualTooltipUI.Instance?.Inspect(this);}
-    public void OnDeselect(BaseEventData _){_focus=false;if(!_pointer)ContextualTooltipUI.Instance?.Leave(this);}
-    public void OnPointerClick(PointerEventData e){if(pinOnClick&&e.button==PointerEventData.InputButton.Left)ContextualTooltipUI.Instance?.Pin(this);}
-    void OnDisable(){_pointer=_focus=false;ContextualTooltipUI.Instance?.Leave(this);}
+    bool ClickShowsDetail => pinOnClick||!TryGetComponent<Selectable>(out var selectable)||!selectable.IsInteractable();
+    // A click selects a button too; only keyboard or gamepad focus inspects, the click pins instead.
+    public void OnSelect(BaseEventData e){if(e is PointerEventData)return;_focus=true;ContextualTooltipUI.Instance?.Inspect(this);}
+    public void OnDeselect(BaseEventData _){if(!_focus)return;_focus=false;ContextualTooltipUI.Instance?.Leave(this);}
+    public void OnPointerClick(PointerEventData e){if(e.button==PointerEventData.InputButton.Left&&ClickShowsDetail)ContextualTooltipUI.Instance?.Pin(this);}
+    void OnDisable(){_focus=false;ContextualTooltipUI.Instance?.Leave(this);}
 }

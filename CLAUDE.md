@@ -58,7 +58,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 - **No in-game guidance outside the tutorial.** Show state and numbers (damage and block previews, Recover cost, enemy intents, choice requirements), never how-to hints. `ActionGuidanceCopyTests` pins this. How-to copy lives only in the scripted tutorial run (`Assets/Scripts/Tutorial`, lessons in `TutorialScript`, content in `Resources/TutorialRun`); the first NEW RUN starts it until `TutorialProgress` is set, it never touches the run save, and its steps refuse off-script commands through `TutorialGate`.
 - **No bloated UI:** show each fact once. For example, pending damage appears only under the enemies as "INCOMING n".
-- **Hover info opens next to the hovered object**, never in a fixed panel. The ATTACK and BLOCK buttons have none, and on the route map only a scouted node does.
+- **Info opens on click, next to the clicked object** (owner, 2026-10-21), never on hover and never in a fixed panel; a second click or a click elsewhere closes it. A selected hand card or Gear shows its own; clicking an enemy targets it and opens its info; a button whose click acts (PASS, RECOVER) shows its info on click only while unavailable. Keyboard focus also opens it. The ATTACK and BLOCK buttons have none, and on the route map only a scouted node does.
 - No Take Damage button; PASS skips the blocking phase.
 - Every played card (attack or Block) and every Incident discard goes straight back into the draw pile, which reshuffles. The discard pile no longer fills in play; Ace Protocol and Diamond Driver take their card from the draw pile.
 - Supply is repeatable within a Black Market.
@@ -77,7 +77,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Art direction (owner, 2026-10-21): modern neo-punk editorial, not retro comic or handmade paper. Near-black stage, off-white type, signal red for attack/damage/danger, acid lime for selection and valid targets. Functional UI is flat rectangles with 1px hairlines; a border appears only for grouping, selection or state. Texture (halftone, grain) lives in artwork and one faint background grain. Buttons differ by weight (`EditorialButton.Role`: solid red, solid off-white, outline, bare text, red outline), not by shape. Scene corrections live in `DealbreakNeoPunkAuthoring`, the last authoring pass.
 - Styling: `DealbreakUIRuntime` and `DealbreakUIStyle`. Theme color fields keep legacy names: ink = stage, charcoal = surface, slate = hairline/disabled grey, paper = off-white, brick = signal red, ochre = acid lime. Components: `EditorialFrame`, `EditorialButton`, `EditorialSurface`.
 - Many layouts are written by editor authoring scripts in `Assets/Editor/` (for example `DealbreakUIArtCorrectionAuthoring`). When moving an element, change the scene and its authoring script together.
-- `ContextualTooltipUI` is the single hover detail. Sources are `CombatInspectUI` (cards, enemies, Gear) and `ContextualInfoTrigger` (everything else, including map nodes).
+- `ContextualTooltipUI` is the single detail panel (click-pinned). Sources are `CombatInspectUI` (cards, enemies, Gear) and `ContextualInfoTrigger` (everything else, including map nodes).
   - Placement: hand cards open above the card; everything else opens right, then left, above, below.
   - It draws at sorting order 90: above gameplay, below modal menus (100).
   - Panels that open beside slots must call `ContextualTooltipUI.RegisterObstacle(rect)`.

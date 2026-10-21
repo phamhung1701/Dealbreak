@@ -122,7 +122,7 @@ public sealed class GearRailUITests
     }
 
     [Test]
-    public void Acquisition_ShowsOnlyIconUntilHoveredOrClicked()
+    public void Acquisition_ShowsOnlyIconUntilClicked()
     {
         var gear = Gear("relic-1", "Hidden Name", "★", "Detail body");
         Assert.That(_cards.BuyGear(gear, 0), Is.True);
@@ -141,11 +141,7 @@ public sealed class GearRailUITests
         Assert.That(_tooltipPanel.activeSelf, Is.False);
         Assert.That(_detailPanel.activeSelf, Is.False);
 
-        slot.OnPointerEnter(null);
-        Assert.That(_tooltipPanel.activeSelf, Is.True);
-        Assert.That(_tooltip.text, Does.Contain("Hidden Name"));
-        slot.OnPointerExit(null);
-        Assert.That(_tooltipPanel.activeSelf, Is.False);
+        Assert.That(slot, Is.Not.InstanceOf<IPointerEnterHandler>(), "Details open on click, never on hover.");
         slot.OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
         Assert.That(_detailPanel.activeSelf, Is.True);
         Assert.That(_detail.text, Does.Contain("Detail body"));
@@ -195,7 +191,6 @@ public sealed class GearRailUITests
         slot.OnPointerClick(new PointerEventData(null) { button = PointerEventData.InputButton.Left });
         Assert.That(_detailPanel.activeSelf, Is.True);
         Assert.That(_detail.fontSize, Is.GreaterThanOrEqualTo(18f));
-        slot.OnPointerEnter(null);
         Assert.That(_tooltipPanel.activeSelf, Is.False, "Selected details must not be covered by a duplicate hover tooltip.");
         _cards.BeginEnemyTargeting(_ => { }, _ => true);
         Assert.That(_detailPanel.activeSelf, Is.False);
