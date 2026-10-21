@@ -13,7 +13,7 @@ public sealed class GearContentBatch2Tests
     CardManager _cards;
     CombatManager _combat;
     RunManager _run;
-    GearData _lantern, _hammer, _light;
+    GearData _lantern, _hammer, _light, _ghostLens;
     CardEnhancementData _mending;
 
     [SetUp]
@@ -23,8 +23,9 @@ public sealed class GearContentBatch2Tests
         _lantern = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Lantern.asset");
         _hammer = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Hammer.asset");
         _light = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/HealingLight.asset");
+        _ghostLens = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/GhostLens.asset");
         _mending = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Mending.asset");
-        Assert.That(new UnityEngine.Object[] { _lantern, _hammer, _light, _mending }, Has.All.Not.Null);
+        Assert.That(new UnityEngine.Object[] { _lantern, _hammer, _light, _ghostLens, _mending }, Has.All.Not.Null);
         var canvas = Make<Canvas>("Batch2 Canvas");
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var holder = new GameObject("Batch2 Hand", typeof(RectTransform), typeof(HorizontalLayoutGroup));
@@ -41,7 +42,7 @@ public sealed class GearContentBatch2Tests
         view.face = prefab.GetComponent<Image>();
         view.canvasGroup = prefab.GetComponent<CanvasGroup>();
         _cards = Make<CardManager>("Batch2 Cards");
-        _cards.Configure(field, drag, view, new[] { _lantern, _hammer, _light,
+        _cards.Configure(field, drag, view, new[] { _lantern, _hammer, _light, _ghostLens,
             AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/ClubPower.asset"),
             AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/SpadePower.asset"),
             AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Tome.asset") },
@@ -121,6 +122,36 @@ public sealed class GearContentBatch2Tests
         _run.RefreshCurrentMapEffects();
         Assert.That(_run.currentPath.Count(n => !before[n.id].scouted && n.scouted), Is.EqualTo(1),
             "The Artifact reveals at most one node per map.");
+    }
+
+    [Test]
+    public void GhostLens_IsALegendaryThatScoutsEveryNodeAhead_OnPurchaseAndEachNewDistrict()
+    {
+        Assert.That((_ghostLens.displayName, _ghostLens.rarity, _ghostLens.tier), Is.EqualTo(("Ghost Lens", "Legendary", 1)));
+        Assert.That(_ghostLens.iconSprite, Is.Not.Null);
+        var before = _run.currentPath.ToDictionary(n => n.id,
+            n => (n.accessible, n.completed, n.kind, n.contentId, next: string.Join(",", n.next)));
+        Assert.That(_cards.BuyGear(_ghostLens, 0), Is.True);
+        foreach (var node in _run.currentPath)
+        {
+            Assert.That((node.accessible, node.completed, node.kind, node.contentId, string.Join(",", node.next)),
+                Is.EqualTo(before[node.id]), "Scouting reveals nodes; it never changes the map.");
+            bool headliner = node.kind == MapNodeType.Headliner;
+            Assert.That(_run.IsScoutedNode(node), Is.EqualTo(!headliner), $"Node {node.id} ({node.kind})");
+            if (!headliner) Assert.That(_run.NodeDetailsVisible(node), Is.True, $"Node {node.id} shows its contents.");
+        }
+        var visited = _run.currentPath.First(n => n.accessible);
+        visited.completed = true;
+        visited.scouted = false;
+        _run.RefreshCurrentMapEffects();
+        Assert.That(visited.scouted, Is.False, "A completed node is not scouted again.");
+
+        _run.headlinerIndex = 1;
+        typeof(RunManager).GetMethod("GenerateAndAnnounceCycle",
+            BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(_run, null);
+        Assert.That(_run.CurrentMapIndex, Is.EqualTo(1));
+        Assert.That(_run.currentPath.Where(n => n.kind != MapNodeType.Headliner).All(_run.IsScoutedNode), Is.True,
+            "Every new District arrives fully scouted.");
     }
 
     [Test]

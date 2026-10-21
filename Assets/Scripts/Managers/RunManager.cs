@@ -234,6 +234,24 @@ public partial class RunManager : Singleton<RunManager>
         return true;
     }
 
+    /// <summary>
+    /// Scouts every node on the current map still ahead (Ghost Lens): each shows its kind and contents.
+    /// Consumes no randomness. Returns whether any node changed.
+    /// </summary>
+    internal bool RevealAllNodes()
+    {
+        bool changed = false;
+        foreach (var node in currentPath)
+        {
+            if (node.completed || node == _activeNode || node.kind == MapNodeType.Headliner ||
+                node.revealed && node.scouted) continue;
+            node.revealed = true;
+            node.scouted = true;
+            changed = true;
+        }
+        return changed;
+    }
+
     /// <summary>The node most recently revealed by scouting on this map; runtime presentation only.</summary>
     public PathNode LastScoutedNode { get; private set; }
 

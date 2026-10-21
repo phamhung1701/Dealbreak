@@ -57,6 +57,7 @@ ICONS = {
     "Gear/FieldTablet": "Drone/29",
     "Gear/FirstAidKit": "Medicine/16",
     "Gear/FlipSwitch": "Drone/45",
+    "Gear/GhostLens": "Artifacts/9",
     "Gear/GlassShard": "Drone/12",
     "Gear/GoldPistol": "Weapon/36",
     "Gear/GrapplingHook": "Drone/14",

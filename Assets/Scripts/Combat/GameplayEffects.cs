@@ -29,7 +29,8 @@ public enum GameplayEffectKind
     WildSuit = 21,
     DestroyBlockingCard = 22,
     MimicInHandEffects = 23,
-    DoubleStrike = 24
+    DoubleStrike = 24,
+    RevealAllMapNodes = 25
 }
 
 public enum GameplayEffectTrigger
@@ -991,6 +992,13 @@ public static class GameplayEffectResolver
             for (int effectIndex = 0; effectIndex < EffectCount(source); effectIndex++)
             {
                 var effect = EffectAt(source, effectIndex);
+                // Revealing the whole map is idempotent: it simply runs on every map-ready pass.
+                if (effect.kind == GameplayEffectKind.RevealAllMapNodes &&
+                    Applies(source, effect, GameplayEffectTrigger.MapReady, null))
+                {
+                    changed |= context.Run.RevealAllNodes();
+                    continue;
+                }
                 if (effect.kind != GameplayEffectKind.RevealMapNode ||
                     !Applies(source, effect, GameplayEffectTrigger.MapReady, null) ||
                     source.State.GetCounter(effectIndex) == context.MapIndex + 1)
