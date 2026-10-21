@@ -20,6 +20,7 @@ public class RunStatusUI : MonoBehaviour
     readonly DisplayedNumber _shownCredits = new();
     Color _creditsLabelColor;
     bool _creditsLabelColorCaptured;
+    bool _creditsHeld;
 
     void OnEnable()
     {
@@ -74,7 +75,8 @@ public class RunStatusUI : MonoBehaviour
     void Update()
     {
         RefreshTiming();
-        if (_shownCredits.Tick(Time.unscaledDeltaTime)) RefreshCredits(CardManager.Instance);
+        if (_shownCredits.Tick(Time.unscaledDeltaTime) || _creditsHeld && !CreditsHudUI.HoldsCredits)
+            RefreshCredits(CardManager.Instance);
     }
 
     void Refresh()
@@ -206,7 +208,8 @@ public class RunStatusUI : MonoBehaviour
         ownedGearLabel.text = text.ToString();
     }
 
-    // Credits count toward their new total with a spend/earn tint in play mode.
+    // Credits count toward their new total with a spend/earn tint in play mode. Beside the coin the
+    // label is the bare number; while defeated enemies' Credits are still flying in, it waits for them.
     void RefreshCredits(CardManager cards)
     {
         if (!creditsLabel) return;
@@ -217,12 +220,14 @@ public class RunStatusUI : MonoBehaviour
         }
         if (cards == null || cards.HasInfiniteMoney)
         {
-            creditsLabel.text = cards == null ? "CREDITS —" : "CREDITS ∞";
+            creditsLabel.text = cards == null ? "—" : "∞";
             creditsLabel.color = _creditsLabelColor;
             return;
         }
-        _shownCredits.SetTarget(cards.credits, Application.isPlaying && isActiveAndEnabled);
-        creditsLabel.text = $"CREDITS {_shownCredits.Shown}";
+        bool animate = Application.isPlaying && isActiveAndEnabled;
+        _creditsHeld = animate && CreditsHudUI.HoldsCredits;
+        if (!_creditsHeld) _shownCredits.SetTarget(cards.credits, animate);
+        creditsLabel.text = $"{_shownCredits.Shown}";
         creditsLabel.color = _shownCredits.Tint(_creditsLabelColor);
     }
 

@@ -111,6 +111,8 @@ ICONS = {
     "Tricks/Shears": "Medicine/27",
     "Tricks/SpadeCrystal": "Artifacts/42",
     "Tricks/ThrowingStar": "Energy/9",
+    # HUD
+    "Hud/Credits": "Medicine/12",
 }
 
 # Suit items carry a printed suit badge: the reprint drops the painting's colour coding.

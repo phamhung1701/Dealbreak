@@ -319,6 +319,8 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     }
 
     public bool IsDefeatCuePlaying => _defeatCue != null;
+    /// <summary>Raised as an enemy's killing hit visibly lands, when its defeat cue starts to play.</summary>
+    public static event System.Action<EnemyDisplayUI> DefeatHitLanded;
     public bool IsPerfectBlockCueVisible => _perfectBlockCueText != null && _perfectBlockCueText.gameObject.activeSelf;
 
     /// <summary>Plays the defeat fade once the killing hit visibly lands.</summary>
@@ -351,6 +353,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     System.Collections.IEnumerator DefeatCueRoutine(float delay)
     {
         if (delay > 0f) yield return new WaitForSeconds(delay);
+        DefeatHitLanded?.Invoke(this);
         var rect = (RectTransform)transform;
         Vector3 initialScale = _preDefeatScale;
         var hitColor = new Color(1f, 0.35f, 0.2f, 1f);

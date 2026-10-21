@@ -84,6 +84,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Timing and motion:
   - `AttackCardPresentationUI.ImpactDelay(hitIndex)` is when a hit visibly lands; enemy HP drain, shake and the defeat fade wait for it.
   - `DisplayedNumber` eases HP and Credits.
+  - Credits show as a coin and a number just above the HP panel (`CreditsHudUI`, coin sprite `DealbreakUITheme.creditsIcon`). A defeated enemy's Credits fly into the coin as its killing hit lands (`EnemyDisplayUI.DefeatHitLanded`); the count waits for the board and the coins (`CreditsHudUI.HoldsCredits`).
   - `BoardPanelTransition` fades panels (`FadeIn` for modal overlays).
 - Map: `MapNodePresentation` draws node glyphs as wide tags with the label inside; a lime outer ring marks scouted nodes and a known Enforcer prints in signal red. A scouted node opens its info on the first click and is entered on the second; other nodes are entered on the first click. `RunManager.GetNodeDetail`, `IsScoutedNode` and `NodeDetailsVisible` define what a node reveals.
 

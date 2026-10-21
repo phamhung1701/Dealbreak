@@ -39,6 +39,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         _enemyContainer=enemies?enemies.enemyContainer:null;
         if(handCount){_countAnchorMin=handCount.rectTransform.anchorMin;_countAnchorMax=handCount.rectTransform.anchorMax;}
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
+        // Credits sit just above the HP panel, so they show wherever it does.
+        if(playerState&&actions&&actions.TryGetComponent<RunStatusUI>(out var status))CreditsHudUI.Install(playerState,status.creditsLabel);
         var canvas=actions?actions.GetComponentInParent<Canvas>():GetComponentInParent<Canvas>();
         if(canvas){ScreenShakeUI.Install(canvas.rootCanvas);EnemyDropUI.Install(canvas.rootCanvas);}
     }

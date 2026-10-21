@@ -178,9 +178,12 @@ public sealed class ItemDragUI : MonoBehaviour
         StartCoroutine(Fly(flyer, (Vector2)_root.InverseTransformPoint(fromWorld) - _root.rect.center, slot));
     }
 
+    const float Rise = .18f, Fall = .42f;
+    /// <summary>How long a <see cref="FlyIntoSlot"/> flight takes to reach its slot.</summary>
+    public const float FlightSeconds = Rise + Fall;
+
     IEnumerator Fly(RectTransform flyer, Vector2 start, RectTransform slot)
     {
-        const float Rise = .18f, Fall = .42f;
         Vector2 peak = start + new Vector2(0f, 70f);
         float elapsed = 0f;
         while (elapsed < Rise && flyer)
