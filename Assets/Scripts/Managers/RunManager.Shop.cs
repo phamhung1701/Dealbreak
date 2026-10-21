@@ -325,6 +325,11 @@ public partial class RunManager
         _madeSuccessfulPurchaseInCurrentShop = state.MadePricedPurchase;
         if (cached) return;
         ResolvePendingInvestments(_activeNode);
+        if (IsTutorialRun)
+        {
+            PrepareTutorialShopOffers();
+            return;
+        }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (DevModeRuntime.UnlimitedShopOffers)
         {
@@ -445,11 +450,13 @@ public partial class RunManager
             services.Remove(ShopOfferKind.Supply);
             services.Insert(0, ShopOfferKind.Supply);
         }
-        for (int i = 0; i < 2; i++)
-        {
-            int price = services[i] == ShopOfferKind.Contract ? 20 : services[i] == ShopOfferKind.Supply ? 3 : 5;
-            _activeShopOffers.Add(new ShopOffer { kind = services[i], basePrice = price, price = price });
-        }
+        for (int i = 0; i < 2; i++) _activeShopOffers.Add(ServiceOffer(services[i]));
+    }
+
+    static ShopOffer ServiceOffer(ShopOfferKind kind)
+    {
+        int price = kind == ShopOfferKind.Contract ? 20 : kind == ShopOfferKind.Supply ? 3 : 5;
+        return new ShopOffer { kind = kind, basePrice = price, price = price };
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

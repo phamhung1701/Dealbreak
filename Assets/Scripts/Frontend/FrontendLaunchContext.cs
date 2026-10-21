@@ -9,12 +9,13 @@ public static class FrontendLaunchContext
     static RunSaveData _pendingContinue;
     static string _pendingRunSeed;
     static bool _hasPendingRun;
+    static bool _pendingTutorial;
     static MainMenuDestination _pendingMenuDestination;
     static bool _hasPendingMenuDestination;
 
     public static void RequestContinue(RunSaveData data)
     {
-        _pendingRunSeed = null; _hasPendingRun = false;
+        _pendingRunSeed = null; _hasPendingRun = false; _pendingTutorial = false;
         _pendingContinue = data;
     }
 
@@ -27,6 +28,7 @@ public static class FrontendLaunchContext
     public static void RequestRun(string seed)
     {
         _pendingContinue = null;
+        _pendingTutorial = false;
         _pendingRunSeed = RunRandomContext.NormalizeSeed(seed);
         _hasPendingRun = true;
     }
@@ -38,6 +40,24 @@ public static class FrontendLaunchContext
         _pendingRunSeed = null;
         _hasPendingRun = false;
         return hadRequest;
+    }
+
+    public static void RequestTutorial()
+    {
+        _pendingContinue = null;
+        _pendingRunSeed = null;
+        _hasPendingRun = false;
+        _pendingTutorial = true;
+    }
+
+    /// <summary>Whether the Game scene is loading for the tutorial; read before the run starts.</summary>
+    public static bool HasPendingTutorial => _pendingTutorial;
+
+    public static bool TryConsumeTutorial()
+    {
+        bool requested = _pendingTutorial;
+        _pendingTutorial = false;
+        return requested;
     }
 
     public static void RequestMainMenu(MainMenuDestination destination)
@@ -59,6 +79,7 @@ public static class FrontendLaunchContext
         _pendingContinue = null;
         _pendingRunSeed = null;
         _hasPendingRun = false;
+        _pendingTutorial = false;
         _pendingMenuDestination = MainMenuDestination.Home;
         _hasPendingMenuDestination = false;
     }

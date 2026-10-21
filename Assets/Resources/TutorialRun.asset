@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c83d05be8ae474e4d8aea03e187d8483, type: 3}
+  m_Name: TutorialRun
+  m_EditorClassIdentifier: Dealbreak.Runtime::TutorialRunDefinition
+  seed: TUTORIAL
+  fights:
+  - enemies:
+    - enemyName: Scrapper
+      hp: 12
+      attack: 3
+      credits: 8
+    hand:
+    - suit: 3
+      rank: 6
+    - suit: 1
+      rank: 8
+    - suit: 0
+      rank: 4
+    - suit: 2
+      rank: 2
+    - suit: 0
+      rank: 2
+    - suit: 1
+      rank: 1
+    - suit: 3
+      rank: 0
+    - suit: 2
+      rank: 7
+    grants: []
+    drop: {fileID: 11400000, guid: 5bfda6f81d9cda940865345962fa1b4b, type: 2}
+  - enemies:
+    - enemyName: Scrapper
+      hp: 4
+      attack: 2
+      credits: 5
+    - enemyName: Heavy
+      hp: 16
+      attack: 3
+      credits: 10
+    hand:
+    - suit: 2
+      rank: 0
+    - suit: 0
+      rank: 3
+    - suit: 3
+      rank: 5
+    - suit: 1
+      rank: 9
+    - suit: 0
+      rank: 7
+    - suit: 2
+      rank: 4
+    - suit: 2
+      rank: 1
+    - suit: 1
+      rank: 6
+    grants:
+    - {fileID: 11400000, guid: 19a811f4bf8d7ff488da8a870ea449a0, type: 2}
+    - {fileID: 11400000, guid: ecbcc3c6975e13b4bbe29c436d8d3e41, type: 2}
+    drop: {fileID: 0}
+  marketGear: {fileID: 11400000, guid: 036e941a9c77458459837d745cb26e94, type: 2}
+  marketTrick: {fileID: 11400000, guid: 5bfda6f81d9cda940865345962fa1b4b, type: 2}
+  headlinerSuit: 3
+  headlinerAttack: 4
+  headlinerHand:
+  - suit: 1
+    rank: 8
+  - suit: 2
+    rank: 7
+  - suit: 0
+    rank: 5
+  - suit: 3
+    rank: 6
+  - suit: 3
+    rank: 4
+  - suit: 0
+    rank: 9
+  - suit: 1
+    rank: 3
+  - suit: 3
+    rank: 1

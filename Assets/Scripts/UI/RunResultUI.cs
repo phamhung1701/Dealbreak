@@ -164,7 +164,12 @@ public class RunResultUI : MonoBehaviour
                 : string.Empty;
     }
 
-    void HandleRunCompleted() => ShowWhenPresentationIdle(true);
+    // The tutorial ends on its own closing step, not on a run summary.
+    void HandleRunCompleted()
+    {
+        if (RunManager.Instance != null && RunManager.Instance.IsTutorialRun) return;
+        ShowWhenPresentationIdle(true);
+    }
 
     void ShowWhenPresentationIdle(bool victory)
     {

@@ -51,13 +51,19 @@ public class GameController : MonoBehaviour
         run.goblinType = goblinType;
         run.knightType = knightType;
         run.contentCatalog = registry.runContent;
-        SaveGameService.Attach(run);
+        // The tutorial runs without the autosave, so it can neither write nor delete the run save.
+        if (!FrontendLaunchContext.HasPendingTutorial) SaveGameService.Attach(run);
         _configured = true;
     }
 
     void Start()
     {
         if (!_configured) return;
+        if (FrontendLaunchContext.TryConsumeTutorial())
+        {
+            TutorialDirector.Begin(RunManager.Instance, TutorialRunDefinition.Load());
+            return;
+        }
         if (FrontendLaunchContext.TryConsumeContinue(out var saved))
         {
             RestoreSavedRun(saved);

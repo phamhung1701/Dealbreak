@@ -57,6 +57,17 @@ public sealed class GameFlowService : MonoBehaviour
         return true;
     }
 
+    /// <summary>Starts the scripted tutorial run. It never reads, writes or deletes the run save.</summary>
+    public void StartTutorial()
+    {
+        if (SavePromptUI.IsOpen) return;
+        DevModeRuntime.Disable();
+        RestoreGlobalRuntimeState();
+        FrontendLaunchContext.RequestTutorial();
+        LoadingScreenUI.Show();
+        SceneManager.LoadScene(GameSceneName);
+    }
+
     public void StartDevRun(string seed, bool infiniteHealth, bool infiniteMoney, bool unlimitedShopOffers)
     {
         DevModeRuntime.Configure(true, infiniteHealth, infiniteMoney, unlimitedShopOffers);

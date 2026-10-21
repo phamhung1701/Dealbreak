@@ -498,6 +498,7 @@ public class ActionButtonsUI : MonoBehaviour
         var cards = CardManager.Instance;
         if (combat == null || GameplayInputGate.IsBlocked ||
             cards != null && (cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting)) return;
+        if (!TutorialGate.Allows(TutorialCommand.Pass)) return;
         if (combat.currentState == GameState.EnemyAttacking) combat.TakeRemainingDamage();
         else combat.PassPlayerTurn();
         RefreshAll();

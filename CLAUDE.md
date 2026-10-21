@@ -56,7 +56,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Owner UX decisions
 
-- **No in-game guidance; a tutorial is coming.** Show state and numbers (damage and block previews, Recover cost, enemy intents, choice requirements), never how-to hints. `ActionGuidanceCopyTests` pins this.
+- **No in-game guidance outside the tutorial.** Show state and numbers (damage and block previews, Recover cost, enemy intents, choice requirements), never how-to hints. `ActionGuidanceCopyTests` pins this. How-to copy lives only in the scripted tutorial run (`Assets/Scripts/Tutorial`, lessons in `TutorialScript`, content in `Resources/TutorialRun`); the first NEW RUN starts it until `TutorialProgress` is set, it never touches the run save, and its steps refuse off-script commands through `TutorialGate`.
 - **No bloated UI:** show each fact once. For example, pending damage appears only under the enemies as "INCOMING n".
 - **Hover info opens next to the hovered object**, never in a fixed panel. The ATTACK and BLOCK buttons have none, and on the route map only a scouted node does.
 - No Take Damage button; PASS skips the blocking phase.

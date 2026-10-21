@@ -183,7 +183,7 @@ public partial class RunManager : Singleton<RunManager>
         LastScoutedNode = null;
         _visitedNodeTypesCurrentMap.Clear();
         _visitedNodeTypesMapIndex = mapIndex;
-        currentPath.AddRange(GenerateMapForIndex(mapIndex));
+        currentPath.AddRange(IsTutorialRun ? BuildTutorialPath() : GenerateMapForIndex(mapIndex));
         GameplayEffectResolver.ApplyMapReady(new MapReadyEffectContext(this, CardManager.Instance, mapIndex));
     }
 
@@ -405,6 +405,7 @@ public partial class RunManager : Singleton<RunManager>
             _ => FindEnemy(node.contentId)
         };
         if (enemyType == null) return false;
+        if (IsTutorialRun) PrepareTutorialEncounter(node);
 
         var members = ComposeEncounter(node, enemyType, authoredElite != null);
         var enemies = new List<EnemyRuntime>(members.Count);
@@ -455,6 +456,7 @@ public partial class RunManager : Singleton<RunManager>
 
     EnemyTypeData FindEnemy(string contentId)
     {
+        if (_tutorialEnemies.TryGetValue(contentId ?? string.Empty, out var tutorialEnemy)) return tutorialEnemy;
         foreach (var enemy in GetNormalEnemies())
         {
             if (enemy == null) continue;
@@ -830,6 +832,7 @@ public partial class RunManager : Singleton<RunManager>
         _visitedNodeTypesCurrentMap.Clear();
         _visitedNodeTypesMapIndex = -1;
         currentPath.Clear();
+        ResetTutorialState();
     }
 
     static void DestroyRuntimeObject(UnityEngine.Object target)

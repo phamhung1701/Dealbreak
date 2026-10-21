@@ -21,13 +21,13 @@ public sealed class RunSaveMenuUI : MonoBehaviour
         ContinueButton.onClick = new Button.ButtonClickedEvent();
         ContinueButton.onClick.AddListener(Continue);
         var label = ContinueButton.GetComponentInChildren<TMP_Text>(); if (label) label.text = "CONTINUE";
-        var buttons = new[] { ContinueButton, menu.newRunButton, menu.settingsButton, menu.creditsButton, menu.quitButton };
+        var buttons = new[] { ContinueButton, menu.newRunButton, menu.TutorialButton, menu.settingsButton, menu.creditsButton, menu.quitButton };
         for (int i = 0; i < buttons.Length; i++)
         {
             if (!buttons[i]) continue;
             var rect = buttons[i].GetComponent<RectTransform>();
             if(DealbreakUIStyle.Theme) rect.anchorMin=rect.anchorMax=new Vector2(.22f,.32f);
-            rect.anchoredPosition = new Vector2(0, 110 - i * 65); rect.sizeDelta = new Vector2(430, 54);
+            rect.anchoredPosition = new Vector2(0, 175 - i * 65); rect.sizeDelta = new Vector2(430, 54);
             if(buttons[i].GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open)
             {rect.anchorMin=rect.anchorMax=new Vector2(.08f,.32f);rect.pivot=new Vector2(0,.5f);var text=buttons[i].GetComponentInChildren<TMP_Text>();if(text)text.alignment=TextAlignmentOptions.MidlineLeft;}
         }

@@ -193,6 +193,7 @@ public partial class RunManager
         if (node == null || cards == null || _randomContext == null) return false;
         int context = unchecked(node.mapIndex * 7919 ^ node.id);
         if (!_consumableDropResolvedContexts.Add(context)) return false;
+        if (IsTutorialRun) return GrantEnemyDrop(TutorialDropFor(node));
         var candidates = cards.consumableCatalog
             .Where(value => value != null && value.dropAvailable && value.dropChance > 0f &&
                 value.effectType != ConsumableEffectType.ApplyEnhancement)
@@ -202,16 +203,23 @@ public partial class RunManager
         for (int i = 0; i < candidates.Length; i++)
         {
             if (random.NextFloat() >= Mathf.Clamp01(candidates[i].dropChance)) continue;
-            var selected = candidates[i];
-            if (cards.CanAddConsumable(selected) && cards.AddConsumable(selected))
-            {
-                OnEnemyDropClaimed?.Invoke(selected);
-                return true;
-            }
-            _pendingEnemyDrop = selected;
-            OnEnemyDropChanged?.Invoke();
-            return true;
+            return GrantEnemyDrop(candidates[i]);
         }
         return false;
+    }
+
+    // A drop goes straight into the backpack, or waits on the board while the backpack is full.
+    bool GrantEnemyDrop(ConsumableData drop)
+    {
+        var cards = CardManager.Instance;
+        if (drop == null || cards == null) return false;
+        if (cards.CanAddConsumable(drop) && cards.AddConsumable(drop))
+        {
+            OnEnemyDropClaimed?.Invoke(drop);
+            return true;
+        }
+        _pendingEnemyDrop = drop;
+        OnEnemyDropChanged?.Invoke();
+        return true;
     }
 }
