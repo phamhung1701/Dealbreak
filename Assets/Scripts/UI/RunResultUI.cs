@@ -160,7 +160,7 @@ public class RunResultUI : MonoBehaviour
         if (rewardBanner) rewardBanner.SetActive(reward != null);
         if (rewardLabel)
             rewardLabel.text = reward != null
-                ? $"BOSS REWARD  •  {reward.DisplayName} added to your draw pile"
+                ? $"HEADLINER REWARD  •  {reward.DisplayName} added to your draw pile"
                 : string.Empty;
     }
 
