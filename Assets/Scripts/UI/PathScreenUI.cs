@@ -254,10 +254,13 @@ public class PathScreenUI : MonoBehaviour
         var run = RunManager.Instance;
         if (run == null || run.currentPath == null || run.currentPath.Count == 0) return;
 
-        Vector2 nodeSize = new Vector2(Mathf.Clamp(bounds.rect.width / 12f, 62f, DealbreakUIStyle.Theme?72f:88f), 62f);
+        var displayColumns = run.currentPath.Select(node => node.col).Distinct().OrderBy(value => value).ToList();
+        // Labels sit inside the nodes, so each node is a wide tag sized to its share of the route.
+        float columnWidth = bounds.rect.width / (displayColumns.Count + 1);
+        Vector2 nodeSize = new Vector2(Mathf.Clamp(columnWidth * 0.8f, 100f, 150f),
+            Mathf.Clamp(bounds.rect.height * 0.13f, 64f, 84f));
         float halfH = nodeSize.y * 0.5f;
         float usableWidth = Mathf.Max(0f, bounds.rect.width - nodeSize.x - 2f * horizontalInset);
-        var displayColumns = run.currentPath.Select(node => node.col).Distinct().OrderBy(value => value).ToList();
         float xStep = usableWidth / displayColumns.Count;
         float laneGap = Mathf.Min(laneSpacing, Mathf.Max(0f, bounds.rect.height - 2f * (verticalInset + halfH)) * 0.5f);
         Vector2 center = bounds.rect.center;
@@ -323,19 +326,23 @@ public class PathScreenUI : MonoBehaviour
                 button.interactable = !node.completed && node.accessible;
                 var image = buttonObject.GetComponent<Image>();
                 if (image) image.color = GetNodeColor(node);
-                var label = buttonObject.GetComponentInChildren<TMP_Text>();
-                if (label) label.color = node.accessible && !node.completed
-                    ? new Color(1f, 0.94f, 0.76f) : new Color(0.64f, 0.71f, 0.73f);
                 buttonObject.transform.localScale = Vector3.one * (node.accessible && !node.completed ? 1.08f : 1f);
                 int id = node.id;
-                button.onClick.AddListener(() => run.OnPathChosen(id));
+                var detail = buttonObject.GetComponent<ContextualInfoTrigger>();
+                // A scouted node opens its detail on the first click and is entered on the second.
+                button.onClick.AddListener(() =>
+                {
+                    var details = ContextualTooltipUI.Instance;
+                    if (run.IsScoutedNode(node) && details && !details.IsPinned(detail)) details.Pin(detail);
+                    else run.OnPathChosen(id);
+                });
             }
             MapNodePresentation.Apply(buttonObject, node, run.IsScoutedNode(node));
         }
     }
 
-    // Only a scouted node opens the shared detail beside it on hover: the enemies and totals of a
-    // fight, or the Incident. Every other node shows no hover detail.
+    // Only a scouted node opens the shared detail beside it on click: the enemies and totals of a
+    // fight, or the Incident. Every other node shows no detail and is entered on its first click.
     static void AttachNodeDetail(GameObject buttonObject, PathNode node, RunManager run)
     {
         if (!buttonObject.TryGetComponent<ContextualInfoTrigger>(out var detail))

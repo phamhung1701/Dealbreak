@@ -16,6 +16,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     public TMP_Text title,body;
     public ScrollRect scroll;
     public bool HasPinnedDetail => _pinned!=null;
+    public bool IsPinned(MonoBehaviour source) => source&&_pinned==source;
     MonoBehaviour _source,_pinned,_dismissed;
     float _leaveUntil;
     string _lastHeading,_lastBody;
