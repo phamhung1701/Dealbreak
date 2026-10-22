@@ -7,17 +7,24 @@ using UnityEngine;
 public partial class RunManager
 {
     // The sum of each vector is the number of Goods; every Goods slot rolls Gear or a Trick.
-    [Header("Black Market Goods count (x + y + z)")]
-    public Vector3Int midShopGoods = new(2, 2, 1);
-
-    [UnityEngine.Serialization.FormerlySerializedAs("preBossShopGoods")]
-    public Vector3Int preHeadlinerShopGoods = new(1, 1, 3);
+    // A run takes the counts from GameBalance; a loaded save keeps the counts it was saved with.
+    Vector3Int? _midShopGoods, _preHeadlinerShopGoods;
+    internal Vector3Int midShopGoods
+    {
+        get => _midShopGoods ?? GameBalance.Current.blackMarket.midGoods;
+        set => _midShopGoods = value;
+    }
+    internal Vector3Int preHeadlinerShopGoods
+    {
+        get => _preHeadlinerShopGoods ?? GameBalance.Current.blackMarket.preHeadlinerGoods;
+        set => _preHeadlinerShopGoods = value;
+    }
 
     List<ShopOffer> _activeShopOffers = new();
     readonly Dictionary<(int map, int node), ShopCheckpointState> _shopStates = new();
     ShopCheckpointState _activeShopState;
     bool _shopTransaction;
-    public int GoodsRefreshPrice => _activeShopState?.RefreshPrice ?? 3;
+    public int GoodsRefreshPrice => _activeShopState?.RefreshPrice ?? GameBalance.Current.blackMarket.refreshBasePrice;
     public int GoodsRefreshCount => _activeShopState?.RefreshCount ?? 0;
     HashSet<ShopOfferKind> _usedSpecialShopOffers = new();
     HashSet<string> _purchasedConsumablesInShop = new(StringComparer.Ordinal);
@@ -37,7 +44,7 @@ public partial class RunManager
         var instance = cards != null ? cards.GetGearInstanceById(gearInstanceId) : null;
         if (instance == null || instance.Definition == null || instance.Definition.price < 0 ||
             instance.Definition.price != expectedAuthoredPrice) return false;
-        int payout = expectedAuthoredPrice / 2;
+        int payout = SalePayout(expectedAuthoredPrice);
         if (!cards.RemoveGearInstance(gearInstanceId)) return false;
         if (payout > 0) cards.AddCredits(payout);
         SaveGameService.Checkpoint(this);
@@ -51,12 +58,15 @@ public partial class RunManager
         var definition = expectedInstance.Definition;
         if (cards == null || definition == null || definition.price < 0 ||
             definition.price != expectedAuthoredPrice) return false;
-        int payout = expectedAuthoredPrice / 2;
+        int payout = SalePayout(expectedAuthoredPrice);
         if (!cards.RemoveConsumableInstanceAtSlot(slotIndex, expectedInstance)) return false;
         if (payout > 0) cards.AddCredits(payout);
         SaveGameService.Checkpoint(this);
         return true;
     }
+
+    static int SalePayout(int authoredPrice) =>
+        (int)((long)authoredPrice * GameBalance.Current.blackMarket.sellPercent / 100L);
 
     bool IsActiveShopForSale() => !_shopTransaction && _activeNode != null && !_activeNode.completed &&
         _activeNode.kind == MapNodeType.Shop && CardManager.Instance != null;
@@ -200,7 +210,8 @@ public partial class RunManager
     {
         var cards = CardManager.Instance;
         if (cards == null || !IsActiveShopForSale()) return 0;
-        return Math.Max(0, Math.Min(cards.credits / 3, Math.Min(cards.deck.Count, cards.HandCapacity - cards.HandCount)));
+        int affordable = cards.credits / GameBalance.Current.blackMarket.supplyPricePerCard;
+        return Math.Max(0, Math.Min(affordable, Math.Min(cards.deck.Count, cards.HandCapacity - cards.HandCount)));
     }
 
     public bool SetSupplyQuantity(string stableId, int quantity)
@@ -223,7 +234,7 @@ public partial class RunManager
         try
         {
             // CardManager commits zones and payment before publishing either notification.
-            int drawn = CardManager.Instance.PurchaseExistingDraw(quantity, 3);
+            int drawn = CardManager.Instance.PurchaseExistingDraw(quantity, GameBalance.Current.blackMarket.supplyPricePerCard);
             if (drawn <= 0) return false;
             _madeSuccessfulPurchaseInCurrentShop = true;
             // The offer stays available; the next quantity defaults to what is still affordable.
@@ -301,7 +312,7 @@ public partial class RunManager
             totalStake += stake;
             if (random.NextInt(0, 2) != 0) continue;
             wins++;
-            payout = Math.Min(int.MaxValue, payout + (long)stake * 3L);
+            payout = Math.Min(int.MaxValue, payout + (long)stake * GameBalance.Current.blackMarket.stakePayoutMultiplier);
         }
         int losses = _pendingInvestmentStakes.Count - wins;
         _pendingInvestmentStakes.Clear();
@@ -343,11 +354,9 @@ public partial class RunManager
         AddSpecialShopOffers(context);
     }
 
-    // Each Goods slot is Gear 75% of the time and a Trick 25%. Gear rolls its rarity 6:3:1 for
-    // Common, Rare and Epic, then a Gear of that rarity; Legendary Gear is never sold. Owned Gear
+    // Each Goods slot is Gear or a Trick (GameBalance: 75% Gear). Gear rolls its rarity by weight
+    // (6:3:1 Common, Rare, Epic), then a Gear of that rarity; Legendary Gear is never sold. Owned Gear
     // and Gear tiers are not considered: every Gear is sold as a standalone item.
-    public const int ShopGearPercent = 75;
-    static readonly (string rarity, int weight)[] ShopGearRarityWeights = { ("Common", 6), ("Rare", 3), ("Epic", 1) };
 
     List<ShopOffer> GenerateShopGoods(int generation)
     {
@@ -370,7 +379,7 @@ public partial class RunManager
         var trickRandom = _randomContext.CreateStream("shop-consumables", context);
         for (int slot = 0; slot < goodsCount; slot++)
         {
-            bool gearSlot = kindRandom.NextInt(0, 100) < ShopGearPercent;
+            bool gearSlot = kindRandom.NextInt(0, 100) < GameBalance.Current.blackMarket.gearSlotPercent;
             var gear = gearSlot ? TakeShopGear(gearPool, rarityRandom, gearRandom) : null;
             if (gear != null)
             {
@@ -399,13 +408,15 @@ public partial class RunManager
     // back to the next rarity in Common, Rare, Epic order, wrapping round.
     static GearData TakeShopGear(List<GearData> pool, IRandomSource rarityRandom, IRandomSource gearRandom)
     {
-        int totalWeight = ShopGearRarityWeights.Sum(entry => entry.weight);
+        var weights = GameBalance.Current.blackMarket.gearRarityWeights;
+        int totalWeight = weights.Sum(entry => Math.Max(0, entry.weight));
+        if (totalWeight <= 0) return null;
         int roll = rarityRandom.NextInt(0, totalWeight);
         int rolled = 0;
-        while (roll >= ShopGearRarityWeights[rolled].weight) roll -= ShopGearRarityWeights[rolled++].weight;
-        for (int offset = 0; offset < ShopGearRarityWeights.Length; offset++)
+        while (roll >= Math.Max(0, weights[rolled].weight)) roll -= Math.Max(0, weights[rolled++].weight);
+        for (int offset = 0; offset < weights.Length; offset++)
         {
-            string rarity = ShopGearRarityWeights[(rolled + offset) % ShopGearRarityWeights.Length].rarity;
+            string rarity = weights[(rolled + offset) % weights.Length].rarity;
             var candidates = pool.Where(value => string.Equals(value.rarity, rarity, StringComparison.OrdinalIgnoreCase)).ToList();
             if (candidates.Count == 0) continue;
             var gear = candidates[gearRandom.NextInt(0, candidates.Count)];
@@ -450,12 +461,20 @@ public partial class RunManager
             services.Remove(ShopOfferKind.Supply);
             services.Insert(0, ShopOfferKind.Supply);
         }
-        for (int i = 0; i < 2; i++) _activeShopOffers.Add(ServiceOffer(services[i]));
+        int offered = Math.Min(services.Count, GameBalance.Current.blackMarket.servicesOffered);
+        for (int i = 0; i < offered; i++) _activeShopOffers.Add(ServiceOffer(services[i]));
     }
 
     static ShopOffer ServiceOffer(ShopOfferKind kind)
     {
-        int price = kind == ShopOfferKind.Contract ? 20 : kind == ShopOfferKind.Supply ? 3 : 5;
+        var balance = GameBalance.Current.blackMarket;
+        int price = kind switch
+        {
+            ShopOfferKind.Contract => balance.contractPrice,
+            ShopOfferKind.Supply => balance.supplyPricePerCard,
+            ShopOfferKind.Investment => balance.stakePrice,
+            _ => balance.intelPrice
+        };
         return new ShopOffer { kind = kind, basePrice = price, price = price };
     }
 

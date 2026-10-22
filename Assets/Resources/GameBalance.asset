@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9109dc405639faa45b03d75265ea8aee, type: 3}
+  m_Name: GameBalance
+  m_EditorClassIdentifier: Dealbreak.Runtime::GameBalance
+  districtScaling:
+    hpGrowthPercent: 20
+    attackGrowthPercent: 7
+    infiniteHpPercent: 110
+    infiniteAttackPercent: 104
+  enforcers:
+    hpPercent: 150
+    attackBonus: 2
+    creditsMultiplier: 2
+  blackMarket:
+    midGoods: {x: 2, y: 2, z: 1}
+    preHeadlinerGoods: {x: 1, y: 1, z: 3}
+    gearSlotPercent: 75
+    gearRarityWeights:
+    - rarity: Common
+      weight: 6
+    - rarity: Rare
+      weight: 3
+    - rarity: Epic
+      weight: 1
+    refreshBasePrice: 3
+    sellPercent: 50
+    servicesOffered: 2
+    contractPrice: 20
+    intelPrice: 5
+    stakePrice: 5
+    supplyPricePerCard: 3
+    stakePayoutMultiplier: 3
+  contracts:
+    combatWinsRequired: 2
+    combatDeadlineDistricts: 12
+    combatReward: 6
+    flawlessReward: 10
+    enforcerRewardRarity: Rare
+    enforcerFallbackHeal: 5
+    failureHpLoss: 5
+  redlineDeal:
+    appearanceOneIn: 20
+    allInGearRarity: Legendary
+    allInMaxHealth: 5
+    bigCutGearRarity: Epic
+    bigCutHpCost: 15
+    smallCutHpCost: 5

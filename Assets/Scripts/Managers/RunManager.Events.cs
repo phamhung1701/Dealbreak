@@ -41,17 +41,18 @@ public partial class RunManager
         var cards = CardManager.Instance;
         var combat = CombatManager.Instance;
         if (cards == null || combat == null) return "Ritual unavailable";
+        var balance = GameBalance.Current.redlineDeal;
         if (choiceIndex == 0)
-            return GetRitualGearCandidates("Legendary").Length > 0
-                ? string.Empty : "No eligible Legendary Gear reward";
+            return GetRitualGearCandidates(balance.allInGearRarity).Length > 0
+                ? string.Empty : $"No eligible {balance.allInGearRarity} Gear reward";
         if (choiceIndex == 1)
-            return combat.player.currentHealth > 15 && GetRitualGearCandidates("Epic").Length > 0
-                ? string.Empty : combat.player.currentHealth <= 15
-                    ? "Requires more than 15 HP" : "No eligible Epic Gear reward";
+            return combat.player.currentHealth > balance.bigCutHpCost && GetRitualGearCandidates(balance.bigCutGearRarity).Length > 0
+                ? string.Empty : combat.player.currentHealth <= balance.bigCutHpCost
+                    ? $"Requires more than {balance.bigCutHpCost} HP" : $"No eligible {balance.bigCutGearRarity} Gear reward";
         if (choiceIndex == 2)
-            return combat.player.currentHealth > 5 && GetRitualUpgradeCandidates().Length > 0
-                ? string.Empty : combat.player.currentHealth <= 5
-                    ? "Requires more than 5 HP" : "No eligible Gear upgrade";
+            return combat.player.currentHealth > balance.smallCutHpCost && GetRitualUpgradeCandidates().Length > 0
+                ? string.Empty : combat.player.currentHealth <= balance.smallCutHpCost
+                    ? $"Requires more than {balance.smallCutHpCost} HP" : "No eligible Gear upgrade";
         return "Choice unavailable";
     }
 
@@ -84,10 +85,11 @@ public partial class RunManager
     {
         if (_pendingBloodRitualReward || !string.IsNullOrEmpty(GetBloodRitualUnavailableReason(choiceIndex))) return false;
         var combat = CombatManager.Instance;
+        var balance = GameBalance.Current.redlineDeal;
         var candidates = choiceIndex switch
         {
-            0 => GetRitualGearCandidates("Legendary"),
-            1 => GetRitualGearCandidates("Epic"),
+            0 => GetRitualGearCandidates(balance.allInGearRarity),
+            1 => GetRitualGearCandidates(balance.bigCutGearRarity),
             _ => GetRitualUpgradeCandidates()
         };
         if (candidates.Length == 0) return false;
@@ -96,7 +98,7 @@ public partial class RunManager
         var random = (_randomContext ?? new RunRandomContext(runSeed))
             .CreateStream("blood-ritual-reward", context);
         _pendingBloodRitualGear = candidates[random.NextInt(0, candidates.Length)];
-        _pendingBloodRitualCost = choiceIndex == 1 ? 15 : choiceIndex == 2 ? 5 : 0;
+        _pendingBloodRitualCost = choiceIndex == 1 ? balance.bigCutHpCost : choiceIndex == 2 ? balance.smallCutHpCost : 0;
         _pendingBloodRitualSetMaxHealth = choiceIndex == 0;
         _pendingBloodRitualReward = true;
 
@@ -180,7 +182,7 @@ public partial class RunManager
             _pendingBloodRitualCost > 0 && !combat.CanTakeRunDamage(_pendingBloodRitualCost)) return false;
         if (!cards.GrantGearReward(gear, replacement)) return false;
         if (_pendingBloodRitualSetMaxHealth)
-            combat.SetPlayerMaxHealthAndClamp(5);
+            combat.SetPlayerMaxHealthAndClamp(GameBalance.Current.redlineDeal.allInMaxHealth);
         else if (_pendingBloodRitualCost > 0)
             combat.TakeRunDamage(_pendingBloodRitualCost);
         return true;

@@ -201,7 +201,8 @@ public static class RunMapGenerator
                 if (ritual != null && randomContext != null)
                 {
                     int context = unchecked(mapIndex * 7919 ^ nodeId);
-                    if (randomContext.CreateStream("blood-ritual-appearance", context).NextInt(0, 20) == 0)
+                    if (randomContext.CreateStream("blood-ritual-appearance", context)
+                            .NextInt(0, GameBalance.Current.redlineDeal.appearanceOneIn) == 0)
                         return ritual.id;
                     events = events.Where(value => value != null && value.flow != RunEventFlow.BloodRitual).ToArray();
                 }

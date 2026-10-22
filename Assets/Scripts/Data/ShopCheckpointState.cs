@@ -11,5 +11,5 @@ public sealed class ShopCheckpointState
     public bool MadePricedPurchase;
     public bool Completed;
     public int RefreshPrice => (int)System.Math.Min(int.MaxValue,
-        3L + (long)RefreshCount * (RefreshCount + 3L) / 2L);
+        GameBalance.Current.blackMarket.refreshBasePrice + (long)RefreshCount * (RefreshCount + 3L) / 2L);
 }

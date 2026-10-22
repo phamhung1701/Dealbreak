@@ -456,8 +456,11 @@ public partial class RunManager : Singleton<RunManager>
     }
 
     // Generic Enforcers: one formula for the generated type, previews and spawns.
-    static (int hp, int attack) ApplyGenericEnforcerBonus((int hp, int attack) stats) =>
-        (Mathf.CeilToInt(stats.hp * 1.5f), stats.attack + 2);
+    static (int hp, int attack) ApplyGenericEnforcerBonus((int hp, int attack) stats)
+    {
+        var balance = GameBalance.Current.enforcers;
+        return (Mathf.CeilToInt(stats.hp * (balance.hpPercent / 100f)), stats.attack + balance.attackBonus);
+    }
 
     EnemyTypeData CreateEliteType(EnemyTypeData source)
     {
@@ -467,7 +470,7 @@ public partial class RunManager : Singleton<RunManager>
             $"Enforcer {source.enemyName}",
             stats.hp,
             stats.attack,
-            source.creditsReward * 2);
+            source.creditsReward * GameBalance.Current.enforcers.creditsMultiplier);
         var ability = contentCatalog != null ? contentCatalog.eliteAbility : null;
         elite.abilities = ability != null ? new[] { ability } : Array.Empty<EnemyAbility>();
         _generatedEnemyTypes.Add(elite);
@@ -795,6 +798,7 @@ public partial class RunManager : Singleton<RunManager>
     void ResetRuntimeState()
     {
         _activeNode = null;
+        _midShopGoods = _preHeadlinerShopGoods = null;
         _activeEvent = null;
         _shopStates.Clear();
         _activeShopState = null;

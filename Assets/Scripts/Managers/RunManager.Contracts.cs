@@ -43,7 +43,7 @@ public partial class RunManager
         selection.description = "Choose one objective. The Contract occupies no Gear slot; its 20 Credits fee is charged only when you confirm an objective. Cancel keeps your Credits.";
         selection.choices = new[]
         {
-            new RunEventChoice { label = "Combat Contract", description = $"Win 2 encounters within {RunLength.Districts} Districts. Reward: 6 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
+            new RunEventChoice { label = "Combat Contract", description = $"Win 2 encounters within {GameBalance.Current.contracts.combatDeadlineDistricts} Districts. Reward: 6 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
             new RunEventChoice { label = "Enforcer Contract", description = "Defeat a reachable Enforcer before leaving this District. Reward: a Rare Gear item, or heal 5 HP if none is eligible. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
             new RunEventChoice { label = "Flawless Contract", description = "Win 1 encounter without losing HP. Reward: 10 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
             new RunEventChoice { label = "Cancel", description = "Return to the Black Market. The Contract fee is not charged.", effects = Array.Empty<RunEffect>() }
@@ -101,7 +101,7 @@ public partial class RunManager
             objective = objective,
             startedAtMapIndex = CurrentMapIndex,
             startedAtNodeId = _activeNode.id,
-            deadlineMapExclusive = (int)Math.Min(int.MaxValue, (long)CurrentMapIndex + RunLength.Districts),
+            deadlineMapExclusive = (int)Math.Min(int.MaxValue, (long)CurrentMapIndex + GameBalance.Current.contracts.combatDeadlineDistricts),
             stableId = $"quest:{RunRandomContext.NormalizeSeed(runSeed)}:{_activeNode.mapIndex}:{_activeNode.id}:{choiceIndex}"
         };
         OnHideEvent?.Invoke();
@@ -135,7 +135,7 @@ public partial class RunManager
         if (contract.objective == RunContractObjective.WinTwoEncounters && encounter)
         {
             contract.encounterWins++;
-            if (contract.encounterWins >= 2) ResolveContractSuccess();
+            if (contract.encounterWins >= GameBalance.Current.contracts.combatWinsRequired) ResolveContractSuccess();
         }
     }
 
@@ -146,17 +146,18 @@ public partial class RunManager
         _activeContract = null;
         var cards = CardManager.Instance;
         var combat = CombatManager.Instance;
+        var balance = GameBalance.Current.contracts;
         switch (contract.objective)
         {
             case RunContractObjective.WinTwoEncounters:
-                cards?.AddCredits(6);
+                cards?.AddCredits(balance.combatReward);
                 break;
             case RunContractObjective.WinCombatWithoutHpLoss:
-                cards?.AddCredits(10);
+                cards?.AddCredits(balance.flawlessReward);
                 break;
             case RunContractObjective.DefeatEliteThisMap:
                 var eligible = cards?.gearCatalog.Where(item => item != null &&
-                        string.Equals(item.rarity, "Rare", StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(item.rarity, balance.enforcerRewardRarity, StringComparison.OrdinalIgnoreCase) &&
                         !cards.HasGear(item) &&
                         (!item.OccupiesCapacitySlot || cards.GearSlotsUsed < cards.GearCapacity) &&
                         (item.tier <= 1 || cards.ownedGear.Any(owned => owned != null &&
@@ -171,14 +172,14 @@ public partial class RunManager
                     var random = (_randomContext ?? new RunRandomContext(runSeed)).CreateStream("quest-rare-reward", context);
                     if (!cards.GrantGearReward(eligible[random.NextInt(0, eligible.Length)]))
                     {
-                        combat?.HealPlayer(5);
-                        Debug.Log("Contract reward could not be collected; healed 5 HP instead.", this);
+                        combat?.HealPlayer(balance.enforcerFallbackHeal);
+                        Debug.Log($"Contract reward could not be collected; healed {balance.enforcerFallbackHeal} HP instead.", this);
                     }
                 }
                 else
                 {
-                    combat?.HealPlayer(5);
-                    Debug.Log("Contract reward: no Rare Gear slot was available; healed 5 HP instead.", this);
+                    combat?.HealPlayer(balance.enforcerFallbackHeal);
+                    Debug.Log($"Contract reward: no {balance.enforcerRewardRarity} Gear slot was available; healed {balance.enforcerFallbackHeal} HP instead.", this);
                 }
                 break;
             default:
@@ -198,7 +199,7 @@ public partial class RunManager
         _activeContract = null;
         var combat = CombatManager.Instance;
         int hp = combat != null ? combat.player.currentHealth : 0;
-        int safeLoss = Math.Min(5, Math.Max(0, hp - 1));
+        int safeLoss = Math.Min(GameBalance.Current.contracts.failureHpLoss, Math.Max(0, hp - 1));
         if (safeLoss > 0) combat.TakeRunDamage(safeLoss);
         Debug.Log($"Contract failed ({contract.objective}); applied {safeLoss} nonlethal HP loss.", this);
     }

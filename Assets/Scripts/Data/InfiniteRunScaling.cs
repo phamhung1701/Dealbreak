@@ -25,8 +25,9 @@ public static class InfiniteRunScaling
         var baseline = EnemyMapScaling.Scale(baseHp, baseAttack,
             Math.Min(RunLength.LastDistrictIndex, Math.Max(0, mapIndex)));
         if (mapIndex < FirstInfiniteMapIndex) return baseline;
-        return (ScaleStat(baseline.hp, mapIndex, 1.10m),
-            ScaleStat(baseline.attack, mapIndex, 1.04m));
+        var balance = GameBalance.Current.districtScaling;
+        return (ScaleStat(baseline.hp, mapIndex, balance.infiniteHpPercent / 100m),
+            ScaleStat(baseline.attack, mapIndex, balance.infiniteAttackPercent / 100m));
     }
 
     public static int ScaleReward(int baseReward, int mapIndex) =>
