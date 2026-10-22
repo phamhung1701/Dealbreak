@@ -110,7 +110,7 @@ public sealed class DeckMutationTests
     }
 
     [Test]
-    public void Torch_TakesOneHandCardPerUse_AndPreservesLastCard()
+    public void Torch_TakesOneHandCardPerUse_AndDestroyingTheLastCardLosesTheRun()
     {
         Assert.That(_cards.AddConsumable(_torch), Is.True);
         _cards.DrawToHand(2);
@@ -123,22 +123,53 @@ public sealed class DeckMutationTests
         var ids = _cards.ownedCards.Select(card => card.Id).Where(id => id != first).ToArray();
         foreach (int id in ids)
             Assert.That(_cards.DestroyOwnedCard(_cards.FindOwnedCard(id)), Is.True);
-        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { first }), Is.False);
         Assert.That(_cards.ownedCards.Count, Is.EqualTo(1));
-        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(1));
+        Assert.That(_combat.currentState, Is.Not.EqualTo(GameState.GameOver));
+        EncounterResult? result = null;
+        _combat.OnEncounterResult += value => result = value;
+
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { first }), Is.True,
+            "Shears may take the last card.");
+
+        Assert.That(_cards.ownedCards, Is.Empty);
+        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
+        Assert.That(result, Is.EqualTo(EncounterResult.Defeat), "With no cards left the run is lost at once.");
+        Assert.That(_combat.currentState, Is.EqualTo(GameState.GameOver));
     }
 
     [Test]
-    public void Rune_SameSuitAndCancellationCostNothing_ThenSpendsThreeInOneSlot()
+    public void DestroyingTheLastCardInCombat_IsADefeat()
+    {
+        var enemy = EnemyTypeData.Create("Deck-out enemy", 100, 1, 0); _created.Add(enemy);
+        _combat.StartEnemy(new EnemyRuntime(enemy));
+        EncounterResult? result = null;
+        _combat.OnEncounterResult += value => result = value;
+        foreach (var card in _cards.ownedCards.ToArray())
+            Assert.That(_cards.DestroyOwnedCard(card), Is.True);
+
+        Assert.That(result, Is.EqualTo(EncounterResult.Defeat));
+        Assert.That(_combat.currentState, Is.EqualTo(GameState.GameOver));
+    }
+
+    [Test]
+    public void Rune_SpendsOneChargePerHandCard_SameSuitIncluded_ThenSpendsThreeInOneSlot()
     {
         Assert.That(_cards.AddConsumable(_spade), Is.True);
         Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
-        var same = _cards.ownedCards.First(card => card.Suit == CardData.Suit.Spades);
-        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { same.Id }), Is.False);
+        var outside = _cards.deck.First();
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { outside.Id }), Is.False,
+            "A Draw Pile card is never a target.");
         Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(3));
         _cards.DrawToHand(8);
-        var others = _cards.hand.Where(card => card.Suit != CardData.Suit.Spades).Take(3).ToArray();
-        Assert.That(others.Length, Is.EqualTo(3));
+        var same = _cards.hand.First(card => card.Suit != CardData.Suit.Spades);
+        same.TryChangeSuit(CardData.Suit.Spades);
+        Assert.That(_cards.CanTargetDeckMutationAtSlot(0, same.Id), Is.True);
+        Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { same.Id }), Is.True,
+            "A card already of the suit is a valid target, so Gear that counts Trick uses still fires.");
+        Assert.That(same.Suit, Is.EqualTo(CardData.Suit.Spades));
+        Assert.That(_cards.GetConsumableInstanceAtSlot(0).RemainingCharges, Is.EqualTo(2));
+        var others = _cards.hand.Where(card => card.Suit != CardData.Suit.Spades).Take(2).ToArray();
+        Assert.That(others.Length, Is.EqualTo(2));
         foreach (var card in others)
         {
             Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { card.Id }), Is.True);

@@ -64,6 +64,7 @@ public partial class CombatManager : Singleton<CombatManager>
     bool _isEliteOrHeadlinerEncounter;
     bool _isHeadlinerEncounter;
     bool _isEliteEncounter;
+    bool _deckedOut;
     int _eliteKillCount;
     public int EliteKillCount => _eliteKillCount;
     public int EncounterDefeatedEnemyCount => _processedEnemyDeaths.Count;
@@ -257,6 +258,7 @@ public partial class CombatManager : Singleton<CombatManager>
         _isEliteOrHeadlinerEncounter = encounterKind is MapNodeType.Elite or MapNodeType.Headliner;
         _isHeadlinerEncounter = encounterKind == MapNodeType.Headliner;
         _encounterResolved = false;
+        _deckedOut = false;
         player.ResetShield();
         player.ResetEncounterBlock();
         var cards = CardManager.Instance;
@@ -1709,12 +1711,31 @@ public partial class CombatManager : Singleton<CombatManager>
 #endif
     }
 
+    /// <summary>
+    /// Destroying the last owned card (Shears, Lighter, Dealbreaker) loses the run at once. Inside a
+    /// combat command the command's terminal check resolves it; otherwise it resolves here, and
+    /// outside an encounter the run itself is lost.
+    /// </summary>
+    public void ResolveDeckedOut()
+    {
+        if (_deckedOut || _reactionFaulted) return;
+        _deckedOut = true;
+        if (_commandDepth > 0) return;
+        BeginCommand();
+        try
+        {
+            _encounterResolved = false;
+            ResolveEncounter(EncounterResult.Defeat);
+        }
+        finally { EndCommand(); }
+    }
+
     // The single terminal check shared by every combat command tail. Defeat wins over Victory;
     // no surviving enemy ends the encounter from any live state, discarding pending attacks.
     bool TryResolveTerminalOutcome()
     {
         if (_encounterResolved || _reactionFaulted) return true;
-        if (player.IsDefeated)
+        if (player.IsDefeated || _deckedOut)
         {
             ResolveEncounter(EncounterResult.Defeat);
             return true;
@@ -1969,6 +1990,7 @@ public partial class CombatManager : Singleton<CombatManager>
         _isEliteOrHeadlinerEncounter = false;
         _isHeadlinerEncounter = false;
         _isEliteEncounter = false;
+        _deckedOut = false;
         _eliteKillCount = 0;
         _earnedCreditsReward = 0;
         _processedEnemyDeaths.Clear();

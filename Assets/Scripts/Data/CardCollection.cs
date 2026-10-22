@@ -93,7 +93,7 @@ public sealed class CardCollection
 
     public bool TryRemoveOwnedCards(IReadOnlyList<CardInstance> cards)
     {
-        if (cards == null || cards.Count == 0 || cards.Count >= _ownedCards.Count) return false;
+        if (cards == null || cards.Count == 0 || cards.Count > _ownedCards.Count) return false;
         var seen = new HashSet<CardInstance>();
         foreach (var card in cards)
             if (card == null || !seen.Add(card) || !_ownedCards.Contains(card)) return false;

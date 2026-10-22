@@ -286,20 +286,19 @@ public partial class CardManager : Singleton<CardManager>
             combat.IsResolvingAction) return false;
         bool inCombat = combat.currentState == GameState.PlayerTurn || combat.currentState == GameState.EnemyAttacking;
         bool canEdit = inCombat || combat.currentState == GameState.Idle || combat.currentState == GameState.GameWon;
-        // Card-targeting Tricks are dropped on a hand card, so only cards in hand are targets.
+        // Card-targeting Tricks are dropped on a hand card, so every card in hand is a target: a Mod
+        // Trick replaces the card's Mod and a Crystal also takes a card already of its suit.
         bool hasTarget = _cards.Hand.Any(card => DeckMutationService.CanTarget(_cards, card, true));
-        bool hasRuneTarget = _cards.Hand.Any(card => card != null && card.Suit != consumable.targetSuit);
-        bool hasEnhancementTarget = _cards.Hand.Any(card => card != null && card.Enhancement == null);
         return consumable.effectType switch
         {
             ConsumableEffectType.Heal => consumable.healAmount > 0 &&
                 combat.player.currentHealth < combat.player.maxHealth,
             ConsumableEffectType.DirectEnemyDamage => combat.Enemies.Any(enemy =>
                 enemy != null && combat.CanUseConsumableDamage(consumable.damageAmount, enemy)),
-            ConsumableEffectType.ApplyEnhancement => consumable.enhancementToApply != null && hasEnhancementTarget,
+            ConsumableEffectType.ApplyEnhancement => consumable.enhancementToApply != null && hasTarget,
             ConsumableEffectType.DuplicateCard => canEdit && hasTarget,
-            ConsumableEffectType.DestroyCards => canEdit && _cards.OwnedCards.Count > 1 && hasTarget,
-            ConsumableEffectType.ChangeSuit => canEdit && hasRuneTarget,
+            ConsumableEffectType.DestroyCards => canEdit && hasTarget,
+            ConsumableEffectType.ChangeSuit => canEdit && hasTarget,
             _ => false
         };
     }
@@ -359,7 +358,9 @@ public partial class CardManager : Singleton<CardManager>
         _consumableUseInProgress = true;
         try
         {
-            if (!card.TryApplyEnhancement(consumable.enhancementToApply)) return false;
+            // The same Mod again is a valid use that leaves the card as it is.
+            if (!ReferenceEquals(card.Enhancement, consumable.enhancementToApply) &&
+                !card.TryApplyEnhancement(consumable.enhancementToApply, replaceExisting: true)) return false;
             RefreshTrackedView(card);
             // The target and exact item were validated above; no callbacks run before charge commit.
             CompleteConsumableUse(slotIndex, instance, combat, wasInEncounter);
@@ -412,17 +413,18 @@ public partial class CardManager : Singleton<CardManager>
                 break;
             case ConsumableEffectType.ChangeSuit:
                 if (selected.Count < 1 || selected.Count > 3 ||
-                    !Enum.IsDefined(typeof(CardData.Suit), definition.targetSuit) ||
-                    selected.Any(card => card.Suit == definition.targetSuit)) return false;
+                    !Enum.IsDefined(typeof(CardData.Suit), definition.targetSuit)) return false;
+                // A card already of the suit is a valid target that keeps its suit and still spends a charge.
                 var previousSuits = selected.Select(card => card.Suit).ToArray();
                 int changedCount = 0;
                 while (changedCount < selected.Count &&
-                    selected[changedCount].TryChangeSuit(definition.targetSuit))
+                    (selected[changedCount].Suit == definition.targetSuit ||
+                        selected[changedCount].TryChangeSuit(definition.targetSuit)))
                     changedCount++;
                 if (changedCount != selected.Count)
                 {
                     for (int i = 0; i < changedCount; i++)
-                        selected[i].TryChangeSuit(previousSuits[i]);
+                        if (selected[i].Suit != previousSuits[i]) selected[i].TryChangeSuit(previousSuits[i]);
                     return false;
                 }
                 for (int i = 0; i < selected.Count; i++) RefreshTrackedView(selected[i]);
@@ -435,6 +437,7 @@ public partial class CardManager : Singleton<CardManager>
         CompleteConsumableUse(slotIndex, item, combat, wasInEncounter);
         OnDeckChanged?.Invoke();
         OnBuildChanged?.Invoke();
+        ResolveDeckedOutIfEmpty();
         return true;
     }
 
@@ -448,7 +451,7 @@ public partial class CardManager : Singleton<CardManager>
         switch (item.effectType)
         {
             case ConsumableEffectType.ApplyEnhancement:
-                return item.enhancementToApply != null && card.Enhancement == null && _cards.ContainsInHand(card);
+                return item.enhancementToApply != null && _cards.ContainsInHand(card);
             case ConsumableEffectType.DuplicateCard:
             case ConsumableEffectType.DestroyCards:
             case ConsumableEffectType.ChangeSuit:
@@ -474,8 +477,7 @@ public partial class CardManager : Singleton<CardManager>
         if (!CanUseConsumableAtSlot(slotIndex, combat)) return false;
         var definition = GetConsumableAtSlot(slotIndex);
         var card = FindOwnedCard(cardId);
-        return DeckMutationService.CanTarget(_cards, card, true) &&
-            (definition.effectType != ConsumableEffectType.ChangeSuit || card.Suit != definition.targetSuit);
+        return definition != null && DeckMutationService.CanTarget(_cards, card, true);
     }
 
     static bool IsActiveEncounter(CombatManager combat) => combat != null &&
@@ -757,7 +759,14 @@ public partial class CardManager : Singleton<CardManager>
         RemoveTrackedViews(card);
         OnDeckChanged?.Invoke();
         OnBuildChanged?.Invoke();
+        ResolveDeckedOutIfEmpty();
         return true;
+    }
+
+    // Destroying the last owned card loses the run (CombatManager.ResolveDeckedOut).
+    void ResolveDeckedOutIfEmpty()
+    {
+        if (_cards.OwnedCards.Count == 0) CombatManager.Instance?.ResolveDeckedOut();
     }
 
     public void NotifyCardInstanceChanged(CardInstance card)

@@ -22,7 +22,7 @@ public static class DeckMutationService
     public static bool CanDestroy(CardCollection collection, IReadOnlyList<CardInstance> targets, bool inCombat)
     {
         if (collection == null || targets == null || targets.Count < 1 || targets.Count > 2 ||
-            targets.Count >= collection.OwnedCards.Count) return false;
+            targets.Count > collection.OwnedCards.Count) return false;
         var seen = new HashSet<CardInstance>();
         foreach (var target in targets)
             if (!CanTarget(collection, target, inCombat) || !seen.Add(target)) return false;

@@ -247,16 +247,36 @@ public sealed class TargetedConsumableTests
     }
 
     [Test]
-    public void Whetstone_CannotReplaceAnExistingEnhancementAndIsNotConsumed()
+    public void Whetstone_ReplacesAnExistingModOnAHandCard()
     {
         Assert.That(_cards.AddConsumable(_whetstone), Is.True);
-        var card = _cards.ownedCards.First(value => value.Enhancement == null);
-        Assert.That(_cards.ApplyEnhancement(card.Id, _sharpened), Is.True);
+        _cards.DrawToHand(1);
+        var card = _cards.hand.First(value => value.Enhancement == null);
+        var other = ScriptableObject.CreateInstance<CardEnhancementData>();
+        _created.Add(other);
+        Assert.That(_cards.ApplyEnhancement(card.Id, other), Is.True);
+        card.GainPermanentAttackBonus(2);
 
-        Assert.That(_cards.UseEnhancementConsumableAtSlot(0, card.Id), Is.False);
+        Assert.That(_cards.CanTargetConsumableAtSlot(0, card.Id), Is.True);
+        Assert.That(_cards.UseEnhancementConsumableAtSlot(0, card.Id), Is.True);
 
         Assert.That(card.Enhancement, Is.SameAs(_sharpened));
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(1));
+        Assert.That(card.PermanentAttackBonus, Is.EqualTo(2), "Permanent attack stays when the Mod is replaced.");
+        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
+    }
+
+    [Test]
+    public void Whetstone_OnACardWithTheSameModIsStillAUse()
+    {
+        Assert.That(_cards.AddConsumable(_whetstone), Is.True);
+        _cards.DrawToHand(1);
+        var card = _cards.hand.First(value => value.Enhancement == null);
+        Assert.That(_cards.ApplyEnhancement(card.Id, _sharpened), Is.True);
+
+        Assert.That(_cards.UseEnhancementConsumableAtSlot(0, card.Id), Is.True);
+
+        Assert.That(card.Enhancement, Is.SameAs(_sharpened));
+        Assert.That(_cards.BackpackSlotsUsed, Is.Zero);
     }
 
     [Test]
