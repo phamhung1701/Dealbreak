@@ -105,36 +105,16 @@ public class RunStatusUI : MonoBehaviour
             }
         }
 
-        if (run == null)
-        {
-            if (runProgressLabel) runProgressLabel.text = "Run —";
-            if (headlinerProgressLabel) headlinerProgressLabel.text = "Headliner —";
-            return;
-        }
-
-        int completedNodes = 0;
-        foreach (var node in run.currentPath)
-            if (node.completed && !node.isShopCheckpoint && node.kind != MapNodeType.Headliner) completedNodes++;
-
+        // The HUD no longer names the District or Headliner (the route map shows both); it only
+        // carries an active Contract's progress.
+        if (headlinerProgressLabel && headlinerProgressLabel.gameObject.activeSelf)
+            headlinerProgressLabel.gameObject.SetActive(false);
         if (runProgressLabel)
         {
-            string mapProgress = run.IsInfiniteMode
-                ? $"District {run.CurrentCycle}/∞"
-                : $"District {Mathf.Clamp(run.CurrentCycle, 1, run.HeadlinerTotal)}/{run.HeadlinerTotal}";
-            string routeProgress = run.IsRunCompleted
-                ? "Run Complete"
-                : $"{mapProgress}  •  Depth {completedNodes}/{RunMapGenerator.RouteColumnCount}";
-            runProgressLabel.text = routeProgress;
-            if (run.ActiveContract != null)
-                runProgressLabel.text += $"\n{FormatContractProgress(run.ActiveContract)}";
-        }
-
-        if (headlinerProgressLabel)
-        {
-            string headlinerName = run.CurrentHeadliner != null ? run.CurrentHeadliner.enemyName : "Complete";
-            headlinerProgressLabel.text = run.IsInfiniteMode
-                ? $"District {run.CurrentCycle} Headliner  •  {headlinerName}"
-                : $"Headliner {Mathf.Min(run.headlinerIndex + 1, run.HeadlinerTotal)}/{run.HeadlinerTotal}  •  {headlinerName}";
+            var contract = run != null && !run.IsRunCompleted ? run.ActiveContract : null;
+            runProgressLabel.text = contract != null ? FormatContractProgress(contract) : string.Empty;
+            if (runProgressLabel.gameObject.activeSelf != (contract != null))
+                runProgressLabel.gameObject.SetActive(contract != null);
         }
 
         RefreshTiming();

@@ -31,6 +31,8 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     enum Side{Right,Left,Above,Below}
     static readonly Side[] BesideOrder={Side.Right,Side.Left,Side.Above,Side.Below};
     static readonly Side[] HandOrder={Side.Above,Side.Right,Side.Left};
+    static readonly Side[] RowOrder={Side.Below,Side.Right,Side.Left};
+    static bool IsRow(Rect bounds)=>bounds.width>bounds.height*1.5f;
 
     /// <summary>
     /// Registers a panel a tooltip must step around, such as the Trick and Gear action panels that
@@ -176,9 +178,12 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);rect.sizeDelta=new(width,height);
 
         var anchor=view&&view.visualRoot?view.visualRoot:(RectTransform)source.transform;
-        var target=slotDetail?SlotGroupBounds(parent,anchor,source.GetComponent<GearIconSlotUI>()!=null):BoundsIn(parent,anchor);
+        bool gearSlot=source.GetComponent<GearIconSlotUI>()!=null;
+        // The Gear and Trick rows run across the header, so their details open under the slot.
+        bool headerRow=slotDetail&&IsRow(GroupBounds(parent,anchor,gearSlot));
+        var target=headerRow?BoundsIn(parent,anchor):slotDetail?SlotGroupBounds(parent,anchor,gearSlot):BoundsIn(parent,anchor);
         var size=new Vector2(width,height);
-        var order=handCard?HandOrder:BesideOrder;
+        var order=handCard?HandOrder:headerRow?RowOrder:BesideOrder;
         Vector2 chosen=Avoid(parent,Beside(order[0],target,size),size,rect,handCard);
         foreach(var side in order)
         {

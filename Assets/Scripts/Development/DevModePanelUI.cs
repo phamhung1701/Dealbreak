@@ -67,8 +67,9 @@ public sealed class DevModePanelUI : MonoBehaviour
         _indicator = new GameObject("DEV MODE Indicator", typeof(RectTransform));
         _indicator.transform.SetParent(_canvas.transform, false);
         var rect = (RectTransform)_indicator.transform;
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0, -35); rect.sizeDelta = new Vector2(300, 48);
+        // Bottom right, just above the DEV button: the header carries the Gear and Trick rows.
+        rect.anchorMin = rect.anchorMax = new Vector2(1f, 0f);
+        rect.anchoredPosition = new Vector2(-170, 112); rect.sizeDelta = new Vector2(300, 48);
         AddText(_indicator.transform, "DEV MODE — click to manage", new Vector2(0, 0), 20, TextAlignmentOptions.Center);
         var button = _indicator.AddComponent<Button>();
         button.targetGraphic = _indicator.AddComponent<Image>();

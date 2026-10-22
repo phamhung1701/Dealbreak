@@ -10,8 +10,8 @@ using UnityEngine.UI;
 /// Drags a Trick or Gear item like a card. A ghost follows the pointer; the thing under it is
 /// resolved to an <see cref="ItemDropTarget"/> and, when <see cref="ItemDropRules"/> accepts it,
 /// ringed with the change the drop would make. Over the Black Market the whole market darkens
-/// and shows the sale price. While an item is held, a red discard strip covers the run header
-/// (District, Depth); dropping there throws the item away. A Gear dropped on a matching copy
+/// and shows the sale price. While an item is held, a red discard strip covers the DEALBREAK
+/// wordmark in the header's corner; dropping there throws the item away. A Gear dropped on a matching copy
 /// merges them. Releasing anywhere else returns the ghost to its slot.
 /// Presentation only: every effect runs through ItemDropRules.
 /// </summary>
@@ -269,27 +269,23 @@ public sealed class ItemDragUI : MonoBehaviour
         return ItemDropTarget.None;
     }
 
-    // The run header's District/Depth and Headliner lines, in this layer's space.
+    // The DEALBREAK wordmark in the header's left corner, in this layer's space.
+    TMP_Text _wordmark;
     bool TryDiscardArea(out Rect area)
     {
         area = default;
-        var status = Object.FindFirstObjectByType<RunStatusUI>();
-        if (!status) return false;
-        bool any = false;
-        foreach (var label in new[] { status.runProgressLabel, status.headlinerProgressLabel })
-        {
-            if (!label || !label.isActiveAndEnabled) continue;
-            // The rendered text, not the label rect, which runs far past it.
-            var text = label.textBounds;
-            if (text.size.x <= 0f) continue;
-            Vector2 min = _root.InverseTransformPoint(label.rectTransform.TransformPoint(text.min));
-            Vector2 max = _root.InverseTransformPoint(label.rectTransform.TransformPoint(text.max));
-            var bounds = Rect.MinMaxRect(Mathf.Min(min.x, max.x), Mathf.Min(min.y, max.y), Mathf.Max(min.x, max.x), Mathf.Max(min.y, max.y));
-            area = any ? Rect.MinMaxRect(Mathf.Min(area.xMin, bounds.xMin), Mathf.Min(area.yMin, bounds.yMin),
-                Mathf.Max(area.xMax, bounds.xMax), Mathf.Max(area.yMax, bounds.yMax)) : bounds;
-            any = true;
-        }
-        return any;
+        if (!_wordmark)
+            foreach (var text in Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
+                if (text.name == "Dealbreak Shell Title" && text.GetComponentInParent<ActionButtonsUI>()) { _wordmark = text; break; }
+        var label = _wordmark;
+        if (!label || !label.isActiveAndEnabled) return false;
+        // The rendered text, not the label rect, which runs past it.
+        var bounds = label.textBounds;
+        if (bounds.size.x <= 0f) return false;
+        Vector2 min = _root.InverseTransformPoint(label.rectTransform.TransformPoint(bounds.min));
+        Vector2 max = _root.InverseTransformPoint(label.rectTransform.TransformPoint(bounds.max));
+        area = Rect.MinMaxRect(Mathf.Min(min.x, max.x), Mathf.Min(min.y, max.y), Mathf.Max(min.x, max.x), Mathf.Max(min.y, max.y));
+        return true;
     }
 
     void ShowDiscardStrip()

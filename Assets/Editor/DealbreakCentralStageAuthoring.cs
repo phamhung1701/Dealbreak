@@ -26,55 +26,109 @@ public static class DealbreakCentralStageAuthoring
         DealbreakNeoPunkAuthoring.Apply();
     }
 
-    /// <summary>Re-applies only the Gear and Trick slot columns to Game.unity.</summary>
+    /// <summary>Re-applies only the header rows (Gear, Tricks) and the widened stage to Game.unity.</summary>
+    [MenuItem("Dealbreak/UI/Apply Header Inventory Layout")]
     public static void ApplyInventoryLayout() => Edit("Assets/Scenes/Game.unity", scene =>
     {
         var root = scene.GetRootGameObjects().First(g => g.name == "Canvas");
         InventoryLayout(root.transform, root.GetComponent<ActionButtonsUI>(), root.GetComponent<DealbreakUIRuntime>());
+        StageLayout(root);
     });
 
-    // Gear and Trick slots stand as two tall columns down the left margin, between the run header
-    // and the HP panel, clear of the hand (x 326+). Measured in 1920x1080 reference pixels, y down.
+    // Gear and Trick slots run as two rows across the run header, Balatro style, where the District
+    // and Headliner lines used to be: each row has its heading and count in a narrow column on its
+    // left. Measured in 1920x1080 reference pixels, y down.
     const float RefWidth = 1920, RefHeight = 1080;
-    const float ItemSlot = 120, ItemGap = 12, ColumnTop = 150, SlotsTop = 235, SlotRows = 5;
-    const float GearLeft = 34, GearRight = 166, TrickLeft = 172, TrickRight = 316;
+    const float ItemSlot = 100, ItemGap = 10, RowTop = 18, RowBottom = RowTop + ItemSlot;
+    const float GearLabelLeft = 382, GearSlotsLeft = 476, GearSlots = 5;
+    const float TrickLabelLeft = 1052, TrickSlotsLeft = 1146, LabelWidth = 86;
+
+    static float RowRight(float left, float slots) => left + slots * ItemSlot + (slots - 1) * ItemGap;
 
     static void InventoryLayout(Transform root, ActionButtonsUI actions, DealbreakUIRuntime runtime)
     {
         var canvas = new Rect(0, 0, RefWidth, RefHeight);
-        float slotsBottom = SlotsTop + SlotRows * ItemSlot + (SlotRows - 1) * ItemGap;
 
         var gear = root.GetComponentInChildren<GearRailUI>(true);
-        var bar = PlacePx(gear.transform, canvas, GearLeft, ColumnTop, GearRight, slotsBottom + 8);
-        PlacePx(gear.transform.Find("GearHeader"), bar, GearLeft, ColumnTop, GearRight, ColumnTop + 40);
-        PlacePx(gear.capacityLabel.transform, bar, GearLeft, ColumnTop + 40, GearRight, ColumnTop + 72);
+        float gearRight = RowRight(GearSlotsLeft, GearSlots);
+        var bar = PlacePx(gear.transform, canvas, GearLabelLeft, RowTop - 6, gearRight + 6, RowBottom + 6);
+        PlacePx(gear.transform.Find("GearHeader"), bar, GearLabelLeft, RowTop + 14, GearLabelLeft + LabelWidth, RowTop + 52);
+        PlacePx(gear.capacityLabel.transform, bar, GearLabelLeft, RowTop + 52, GearLabelLeft + LabelWidth, RowTop + 82);
         if (gear.slotsRoot.parent is RectTransform gearViewport)
-            PlacePx(gearViewport, bar, GearLeft, SlotsTop, GearRight, slotsBottom + 8);
+        {
+            PlacePx(gearViewport, bar, GearSlotsLeft, RowTop, gearRight + 6, RowBottom);
+            if (gearViewport.TryGetComponent<ScrollRect>(out var scroll)) { scroll.horizontal = true; scroll.vertical = false; }
+        }
         gear.slotSize = ItemSlot;
         foreach (var slot in gear.slotsRoot.GetComponentsInChildren<GearIconSlotUI>(true))
             ((RectTransform)slot.transform).sizeDelta = new Vector2(ItemSlot, ItemSlot);
-        var vertical = gear.slotsRoot.GetComponent<VerticalLayoutGroup>();
-        if (vertical) vertical.spacing = ItemGap;
-        var grid = gear.slotsRoot.GetComponent<GridLayoutGroup>();
-        if (grid) { grid.cellSize = new Vector2(ItemSlot, ItemSlot); grid.spacing = new Vector2(ItemGap, ItemGap); }
-        gear.capacityLabel.fontSize = 25;
-        gear.transform.Find("GearHeader").GetComponent<TMP_Text>().fontSize = 32;
+        // The slots lay out left to right; the row grows to its preferred width.
+        var slots = gear.slotsRoot;
+        var vertical = slots.GetComponent<VerticalLayoutGroup>();
+        if (vertical) Object.DestroyImmediate(vertical);
+        var row = slots.GetComponent<HorizontalLayoutGroup>();
+        if (!row) row = slots.gameObject.AddComponent<HorizontalLayoutGroup>();
+        row.spacing = ItemGap;
+        row.childAlignment = TextAnchor.MiddleLeft;
+        row.childControlWidth = row.childControlHeight = false;
+        row.childForceExpandWidth = row.childForceExpandHeight = false;
+        row.padding = new RectOffset(0, 0, 0, 0);
+        slots.anchorMin = new Vector2(0, 0); slots.anchorMax = new Vector2(0, 1); slots.pivot = new Vector2(0, .5f);
+        slots.offsetMin = slots.offsetMax = Vector2.zero;
+        if (slots.TryGetComponent<ContentSizeFitter>(out var fit))
+        { fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize; fit.verticalFit = ContentSizeFitter.FitMode.Unconstrained; }
+        gear.capacityLabel.fontSize = 22;
+        gear.capacityLabel.alignment = TextAlignmentOptions.Left;
+        var gearHeading = gear.transform.Find("GearHeader").GetComponent<TMP_Text>();
+        gearHeading.fontSize = 28;
+        gearHeading.alignment = TextAlignmentOptions.Left;
 
-        // The Trick column stays under PlayerArea, so its anchors run above that area's top edge.
+        // The Trick row stays under PlayerArea, so its anchors run above that area's top edge.
         var player = (RectTransform)root.Find("PlayerArea");
         var area = PxRect(player, canvas);
-        float trickInset = (TrickRight - TrickLeft - ItemSlot) / 2;
-        PlacePx(player.Find("TricksHeading"), area, TrickLeft, ColumnTop, TrickRight, ColumnTop + 40);
-        player.Find("TricksHeading").GetComponent<TMP_Text>().fontSize = 32;
-        PlacePx(runtime.trickCapacity.transform, area, TrickLeft, ColumnTop + 40, TrickRight, ColumnTop + 72);
-        runtime.trickCapacity.fontSize = 25;
+        var trickHeading = player.Find("TricksHeading").GetComponent<TMP_Text>();
+        PlacePx(trickHeading.transform, area, TrickLabelLeft, RowTop + 14, TrickLabelLeft + LabelWidth, RowTop + 52);
+        trickHeading.fontSize = 28;
+        trickHeading.alignment = TextAlignmentOptions.Left;
+        PlacePx(runtime.trickCapacity.transform, area, TrickLabelLeft, RowTop + 52, TrickLabelLeft + LabelWidth, RowTop + 82);
+        runtime.trickCapacity.fontSize = 22;
+        runtime.trickCapacity.alignment = TextAlignmentOptions.Left;
         for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
         {
             if (!actions.backpackSlotButtons[i]) continue;
-            float top = SlotsTop + i * (ItemSlot + ItemGap);
-            PlacePx(actions.backpackSlotButtons[i].transform, area,
-                TrickLeft + trickInset, top, TrickRight - trickInset, top + ItemSlot);
+            float left = TrickSlotsLeft + i * (ItemSlot + ItemGap);
+            PlacePx(actions.backpackSlotButtons[i].transform, area, left, RowTop, left + ItemSlot, RowBottom);
         }
+
+        // The run header keeps only the wordmark, the rows above and the pause button. The District
+        // and Headliner lines are gone; an active Contract's progress sits above the draw pile.
+        var status = root.GetComponent<RunStatusUI>();
+        var header = (RectTransform)root.Find("RunHeader");
+        var headerBox = PxRect(header, canvas);
+        status.headlinerProgressLabel.text = string.Empty;
+        status.headlinerProgressLabel.gameObject.SetActive(false);
+        PlacePx(status.runProgressLabel.transform, headerBox, 1500, 498, 1882, 534);
+        status.runProgressLabel.text = string.Empty;
+        status.runProgressLabel.fontSize = 20;
+        status.runProgressLabel.alignment = TextAlignmentOptions.BottomRight;
+        status.runProgressLabel.enableAutoSizing = false;
+        // A Headliner's reward banner drops under the header rows instead of over them.
+        var banner = (RectTransform)root.Find("HeadlinerRewardBanner");
+        if (banner) { banner.offsetMin = new Vector2(-430, -215); banner.offsetMax = new Vector2(430, -161); }
+    }
+
+    // With the left column free, the shared stage (fight, route map, Black Market, Incident) widens
+    // left and centres over the hand; it starts under the header rows.
+    static readonly Vector2 StageMin = new(.06f, .18f), StageMax = new(.88f, .86f);
+
+    static void StageLayout(GameObject root)
+    {
+        var stage = root.GetComponent<SharedContentStageUI>();
+        stage.stageMin = StageMin;
+        stage.stageMax = StageMax;
+        stage.ApplyLayout();
+        float centre = (StageMin.x + StageMax.x) * .5f;
+        DealbreakUIStyle.Place(root.transform.Find("CombatStatusPanel"), centre - .29f, .38f, centre + .29f, .435f);
     }
 
     /// <summary>Anchors <paramref name="t"/> to a reference-pixel box inside <paramref name="parent"/> and returns the box.</summary>
@@ -133,7 +187,6 @@ public static class DealbreakCentralStageAuthoring
         runtime.incident.titleLabel.fontSize = 42;
         runtime.incident.descriptionLabel.fontSize = 25;
 
-        InventoryLayout(root.transform, actions, runtime);
         var player = root.transform.Find("PlayerArea");
         var deck = root.GetComponentInChildren<DrawDeckStackUI>(true);
         DealbreakUIStyle.Place(deck.transform, .905f, .285f, .98f, .50f);
@@ -145,10 +198,6 @@ public static class DealbreakCentralStageAuthoring
         var status = root.GetComponent<RunStatusUI>();
         var notch = root.transform.Find("RunHeader/EditorialNotch");
         if (notch) notch.gameObject.SetActive(false);
-        DealbreakUIStyle.Place(status.runProgressLabel.transform, .215f, .52f, .72f, 1);
-        DealbreakUIStyle.Place(status.headlinerProgressLabel.transform, .215f, .05f, .76f, .49f);
-        status.runProgressLabel.alignment = status.headlinerProgressLabel.alignment = TextAlignmentOptions.Left;
-        status.runProgressLabel.fontSize = 27.5f; status.headlinerProgressLabel.fontSize = 22;
         var logo = DealbreakUIStyle.Child(root.transform, "Dealbreak Shell Title", typeof(TextMeshProUGUI));
         DealbreakUIStyle.Place(logo, .025f, .905f, .18f, .985f);
         logo.GetComponent<TMP_Text>().text = "DEALBREAK";
@@ -200,6 +249,9 @@ public static class DealbreakCentralStageAuthoring
         DealbreakUIStyle.Place(pause.settingsButton.transform, .08f, .58f, .92f, .66f);
         DealbreakUIStyle.Place(pause.restartButton.transform, .08f, .33f, .92f, .42f);
         DealbreakUIStyle.Place(pause.abandonButton.transform, .08f, .17f, .92f, .26f);
+        // Last: the header rows and the widened stage override the older column and stage placement.
+        InventoryLayout(root.transform, actions, runtime);
+        StageLayout(root);
         CleanCopy(scene);
     }
 

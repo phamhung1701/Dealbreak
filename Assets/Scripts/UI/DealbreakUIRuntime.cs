@@ -98,10 +98,9 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         }
         if(actions.GetComponent<RunStatusUI>() is RunStatusUI status)
         {
-            var headliner=status.headlinerProgressLabel.GetComponent<ContextualInfoTrigger>();
-            if(headliner)headliner.describe=()=>new ContextualInfo("Headliner",RunManager.Instance?.CurrentHeadliner?.enemyName,RunManager.Instance?.CurrentHeadlinerDescription);
+            // The header no longer names the District or Headliner; the progress line is an active Contract's.
             var progress=status.runProgressLabel.GetComponent<ContextualInfoTrigger>();
-            if(progress)progress.describe=()=>new ContextualInfo("District",status.runProgressLabel.text,null);
+            if(progress)progress.describe=()=>new ContextualInfo("Contract",status.runProgressLabel.text,null);
         }
     }
     void LateUpdate()
