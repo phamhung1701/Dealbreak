@@ -92,7 +92,7 @@ public partial class RunManager
             nodes.Add(new PathNode { id = i, kind = MapNodeType.Combat, type = "combat",
                 contentId = TutorialFightPrefix + i, col = i, row = 1 });
         int shop = nodes.Count;
-        nodes.Add(new PathNode { id = shop, kind = MapNodeType.Shop, type = "shop", contentId = "shop-mid",
+        nodes.Add(new PathNode { id = shop, kind = MapNodeType.Shop, type = "shop", contentId = RunMapGenerator.MidBlackMarketContentId,
             col = shop, row = 1, isShopCheckpoint = true });
         nodes.Add(new PathNode { id = shop + 1, kind = MapNodeType.Headliner, type = "boss", contentId = "boss",
             col = shop + 1, row = 1 });

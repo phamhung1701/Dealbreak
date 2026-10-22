@@ -1,11 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 public static class RunMapGenerator
 {
-    public const int RowCount = 3;
-    public const int RouteColumnCount = 5;
+    static RouteBalance Layout => GameBalance.Current.route;
+
+    public static int RouteColumnCount => Layout.columns.Length;
+    public static int RowCount => Layout.columns.Length > 0 ? Layout.columns[0].rows?.Length ?? 0 : 0;
+
+    public const string MidBlackMarketContentId = "shop-mid";
+    public const string PreHeadlinerBlackMarketContentId = "shop-preboss";
 
     public static List<PathNode> Generate(
         RunRandomContext randomContext,
@@ -13,6 +19,7 @@ public static class RunMapGenerator
         RunContentCatalog catalog,
         EnemyTypeData[] fallbackEnemies = null)
     {
+        ValidateLayout();
         var layoutRandom = randomContext.CreateStream("map-layout", mapIndex);
         var contentRandom = randomContext.CreateStream("map-content", mapIndex);
         var nodes = new List<PathNode>();
@@ -32,7 +39,7 @@ public static class RunMapGenerator
                 if (kind == MapNodeType.Shop)
                     kind = MapNodeType.Combat;
                 bool hidden = kind == MapNodeType.Risk ||
-                    (kind == MapNodeType.Event && contentRandom.NextInt(0, 2) == 0);
+                    (kind == MapNodeType.Event && contentRandom.NextInt(0, Layout.hiddenIncidentOneIn) == 0);
                 int nodeId = nextId++;
                 var node = new PathNode
                 {
@@ -72,7 +79,7 @@ public static class RunMapGenerator
             type = "boss",
             kind = MapNodeType.Headliner,
             col = RouteColumnCount,
-            row = 1,
+            row = RowCount / 2,
             accessible = false,
             revealed = true,
             hidden = false,
@@ -85,18 +92,33 @@ public static class RunMapGenerator
         nodes.Add(headliner);
 
         ApplyEliteRoutePolicy(randomContext, mapIndex, catalog, fallbackEnemies, columns);
-        InsertShopCheckpoint(nodes, columns[1], columns[2], mapIndex, headliner.id + 1, 1.5f);
-        InsertShopCheckpoint(nodes, columns[4], new[] { headliner }, mapIndex, headliner.id + 2, 4.5f);
+        int mid = Layout.midBlackMarketAfterColumn;
+        InsertShopCheckpoint(nodes, columns[mid], columns[mid + 1], mapIndex, headliner.id + 1, mid + 0.5f,
+            MidBlackMarketContentId);
+        InsertShopCheckpoint(nodes, columns[^1], new[] { headliner }, mapIndex, headliner.id + 2,
+            RouteColumnCount - 0.5f, PreHeadlinerBlackMarketContentId);
 
         return nodes;
     }
 
+    static void ValidateLayout()
+    {
+        var columns = Layout.columns;
+        if (columns == null || columns.Length < 2)
+            throw new InvalidOperationException("GameBalance.route needs at least two columns.");
+        int rows = RowCount;
+        if (rows <= 0 || columns.Any(column => column.rows == null || column.rows.Length != rows))
+            throw new InvalidOperationException("GameBalance.route columns must all have the same, non-zero row count.");
+        if (Layout.midBlackMarketAfterColumn < 0 || Layout.midBlackMarketAfterColumn > columns.Length - 2)
+            throw new InvalidOperationException("GameBalance.route.midBlackMarketAfterColumn must leave a column after it.");
+    }
+
     static void InsertShopCheckpoint(List<PathNode> nodes, IEnumerable<PathNode> predecessors,
-        IEnumerable<PathNode> successors, int mapIndex, int id, float column)
+        IEnumerable<PathNode> successors, int mapIndex, int id, float column, string contentId)
     {
         var shop = new PathNode { id = id, kind = MapNodeType.Shop, type = "shop",
-            contentId = column < 2 ? "shop-mid" : "shop-preboss", mapIndex = mapIndex,
-            col = column, row = 1, revealed = true, isShopCheckpoint = true };
+            contentId = contentId, mapIndex = mapIndex,
+            col = column, row = RowCount / 2, revealed = true, isShopCheckpoint = true };
         foreach (var next in successors) shop.next.Add(next.id);
         foreach (var previous in predecessors)
         {
@@ -125,7 +147,7 @@ public static class RunMapGenerator
 
         foreach (var elite in eliteNodes)
         {
-            if (presenceRandom.NextInt(0, 2) == 0)
+            if (presenceRandom.NextInt(0, Layout.enforcerDemotedOneIn) == 0)
             {
                 elite.kind = MapNodeType.Combat;
                 elite.type = ToLegacyType(MapNodeType.Combat);
@@ -158,14 +180,7 @@ public static class RunMapGenerator
         }
     }
 
-    static List<MapNodeType> GetColumnKinds(int column) => column switch
-    {
-        0 => new() { MapNodeType.Combat, MapNodeType.Combat, MapNodeType.Combat },
-        1 => new() { MapNodeType.Event, MapNodeType.Combat, MapNodeType.Shop },
-        2 => new() { MapNodeType.Elite, MapNodeType.Combat, MapNodeType.Risk },
-        3 => new() { MapNodeType.Event, MapNodeType.Event, MapNodeType.Combat },
-        _ => new() { MapNodeType.Elite, MapNodeType.Combat, MapNodeType.Shop }
-    };
+    static List<MapNodeType> GetColumnKinds(int column) => new(Layout.columns[column].rows);
 
     static string PickContentId(
         MapNodeType kind,

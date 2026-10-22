@@ -16,6 +16,7 @@ public sealed class GameBalance : ScriptableObject
     public RedlineDealBalance redlineDeal = new();
     public GearBalance gear = new();
     public EnemyAbilityBalance enemyAbilities = new();
+    public RouteBalance route = new();
 
     static GameBalance _current;
 
@@ -310,4 +311,33 @@ public sealed class EnemyAbilityBalance
     [Header("Captaincy (Crew Aura)")]
     [Tooltip("Attack each ally gains while its captain stands.")]
     [Min(0)] public int captaincyAttackBonus = 1;
+}
+
+[Serializable]
+public struct RouteColumn
+{
+    [Tooltip("One node kind per row, shuffled per District.")]
+    public MapNodeType[] rows;
+}
+
+/// <summary>District route layout. Changing it changes every seeded map.</summary>
+[Serializable]
+public sealed class RouteBalance
+{
+    [Tooltip("Route columns before the Headliner. Every column has the same number of rows. " +
+        "Black Markets are checkpoints, never route nodes: a Black Market listed here becomes a Street Fight.")]
+    public RouteColumn[] columns =
+    {
+        new() { rows = new[] { MapNodeType.Combat, MapNodeType.Combat, MapNodeType.Combat } },
+        new() { rows = new[] { MapNodeType.Event, MapNodeType.Combat, MapNodeType.Combat } },
+        new() { rows = new[] { MapNodeType.Elite, MapNodeType.Combat, MapNodeType.Risk } },
+        new() { rows = new[] { MapNodeType.Event, MapNodeType.Event, MapNodeType.Combat } },
+        new() { rows = new[] { MapNodeType.Elite, MapNodeType.Combat, MapNodeType.Combat } }
+    };
+    [Tooltip("The mid-route Black Market follows this column (zero-based). The other always precedes the Headliner.")]
+    [Min(0)] public int midBlackMarketAfterColumn = 1;
+    [Tooltip("An Enforcer node becomes a Street Fight one time in this many.")]
+    [Min(1)] public int enforcerDemotedOneIn = 2;
+    [Tooltip("An Incident node is hidden one time in this many.")]
+    [Min(1)] public int hiddenIncidentOneIn = 2;
 }

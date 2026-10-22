@@ -250,8 +250,15 @@ public sealed class CombatShopEconomyTests
     }
     object Open(int map, bool preHeadliner)
     {
-        Set("_activeNode", new PathNode { id = preHeadliner ? 17 : 16, mapIndex = map,
-            kind = MapNodeType.Shop, col = preHeadliner ? 4.5f : 1.5f, isShopCheckpoint = true });
+        // The last Black Market is the checkpoint that leads to the Headliner.
+        run.currentPath.Clear();
+        var headliner = new PathNode { id = 18, mapIndex = map, kind = MapNodeType.Headliner, col = 5 };
+        var shop = new PathNode { id = preHeadliner ? 17 : 16, mapIndex = map,
+            kind = MapNodeType.Shop, col = preHeadliner ? 4.5f : 1.5f, isShopCheckpoint = true };
+        if (preHeadliner) shop.next.Add(headliner.id);
+        run.currentPath.Add(shop);
+        run.currentPath.Add(headliner);
+        Set("_activeNode", shop);
         typeof(RunManager).GetMethod("PrepareShopOffers", Private).Invoke(run, new object[] { 4 });
         return run;
     }

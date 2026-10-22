@@ -363,7 +363,7 @@ public partial class RunManager
         var cards = CardManager.Instance;
         var result = new List<ShopOffer>();
         int context = unchecked((_activeNode.mapIndex * 397 ^ _activeNode.id) + generation * 104729);
-        var slots = _activeNode.isShopCheckpoint && _activeNode.col > 4 ? preHeadlinerShopGoods : midShopGoods;
+        var slots = IsPreHeadlinerBlackMarket(_activeNode) ? preHeadlinerShopGoods : midShopGoods;
         int goodsCount = Mathf.Clamp(slots.x + slots.y + slots.z, 1, 20);
         bool WasBought(ShopOfferKind kind, string id) => _activeShopState != null &&
             _activeShopState.PurchasedGoods.Contains(ShopOffer.PersistentGoodsPrefix(kind) + ":" + id);
@@ -453,9 +453,10 @@ public partial class RunManager
             ShopOfferKind.Investment, ShopOfferKind.Supply };
         services.Shuffle(_randomContext.CreateStream("shop-services", context));
         // Intel scouts the route ahead; the last Black Market before the Headliner has none left.
-        if (_activeNode.isShopCheckpoint && _activeNode.col > 4) services.Remove(ShopOfferKind.Guidance);
+        bool preHeadliner = IsPreHeadlinerBlackMarket(_activeNode);
+        if (preHeadliner) services.Remove(ShopOfferKind.Guidance);
         bool supplyAtMid = _randomContext.CreateStream("shop-supply-checkpoint", _activeNode.mapIndex).NextInt(0, 2) == 0;
-        bool isMid = _activeNode.col < 2f;
+        bool isMid = !preHeadliner;
         if (_activeNode.isShopCheckpoint && supplyAtMid == isMid && services.IndexOf(ShopOfferKind.Supply) >= 2)
         {
             services.Remove(ShopOfferKind.Supply);
@@ -464,6 +465,10 @@ public partial class RunManager
         int offered = Math.Min(services.Count, GameBalance.Current.blackMarket.servicesOffered);
         for (int i = 0; i < offered; i++) _activeShopOffers.Add(ServiceOffer(services[i]));
     }
+
+    // The Black Market checkpoint that leads straight to the Headliner, whatever the route's width.
+    bool IsPreHeadlinerBlackMarket(PathNode node) => node != null && node.isShopCheckpoint &&
+        node.next.Any(id => FindNode(id)?.kind == MapNodeType.Headliner);
 
     static ShopOffer ServiceOffer(ShopOfferKind kind)
     {

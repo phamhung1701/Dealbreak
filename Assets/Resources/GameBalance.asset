@@ -123,3 +123,13 @@ MonoBehaviour:
     silenceAboveHealthPercent: 50
     witheringAboveHealthPercent: 50
     captaincyAttackBonus: 1
+  route:
+    columns:
+    - rows: 000000000000000000000000
+    - rows: 030000000000000000000000
+    - rows: 010000000000000005000000
+    - rows: 030000000300000000000000
+    - rows: 010000000000000000000000
+    midBlackMarketAfterColumn: 1
+    enforcerDemotedOneIn: 2
+    hiddenIncidentOneIn: 2
