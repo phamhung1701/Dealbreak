@@ -1754,7 +1754,7 @@ public partial class CombatManager : Singleton<CombatManager>
                 if (healed > 0) Log($"Gear restored {healed} HP after victory.");
             }
             SetState(GameState.GameWon);
-            Log($"Encounter cleared! +{reward}g");
+            Log($"Encounter cleared! +{reward} Credits");
         }
         else
         {

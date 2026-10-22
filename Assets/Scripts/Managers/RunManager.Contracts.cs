@@ -26,7 +26,7 @@ public partial class RunManager
         if (IsContractCancel(choiceIndex)) return string.Empty;
         var cards = CardManager.Instance;
         if (cards == null || !cards.CanAfford(_pendingContractPrice))
-            return $"Need {_pendingContractPrice}g to accept the Contract";
+            return $"Need {_pendingContractPrice} Credits to accept the Contract";
         return ContractChoices[choiceIndex] == RunContractObjective.DefeatEliteThisMap && !CanReachEliteAfterActiveNode()
             ? "No reachable Enforcer remains in this District" : string.Empty;
     }
@@ -43,7 +43,7 @@ public partial class RunManager
         selection.description = "Choose one objective. The Contract occupies no Gear slot; its 20 Credits fee is charged only when you confirm an objective. Cancel keeps your Credits.";
         selection.choices = new[]
         {
-            new RunEventChoice { label = "Combat Contract", description = "Win 2 encounters within 12 Districts. Reward: 6 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
+            new RunEventChoice { label = "Combat Contract", description = $"Win 2 encounters within {RunLength.Districts} Districts. Reward: 6 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
             new RunEventChoice { label = "Enforcer Contract", description = "Defeat a reachable Enforcer before leaving this District. Reward: a Rare Gear item, or heal 5 HP if none is eligible. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
             new RunEventChoice { label = "Flawless Contract", description = "Win 1 encounter without losing HP. Reward: 10 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
             new RunEventChoice { label = "Cancel", description = "Return to the Black Market. The Contract fee is not charged.", effects = Array.Empty<RunEffect>() }
@@ -101,7 +101,7 @@ public partial class RunManager
             objective = objective,
             startedAtMapIndex = CurrentMapIndex,
             startedAtNodeId = _activeNode.id,
-            deadlineMapExclusive = (int)Math.Min(int.MaxValue, (long)CurrentMapIndex + 12L),
+            deadlineMapExclusive = (int)Math.Min(int.MaxValue, (long)CurrentMapIndex + RunLength.Districts),
             stableId = $"quest:{RunRandomContext.NormalizeSeed(runSeed)}:{_activeNode.mapIndex}:{_activeNode.id}:{choiceIndex}"
         };
         OnHideEvent?.Invoke();

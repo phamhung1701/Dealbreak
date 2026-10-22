@@ -5,7 +5,7 @@ public static class EnemyMapScaling
 {
     public static (int hp, int attack) Scale(int baseHp, int baseAttack, int mapIndex)
     {
-        int index = Math.Min(11, Math.Max(0, mapIndex));
+        int index = Math.Min(RunLength.LastDistrictIndex, Math.Max(0, mapIndex));
         int hp = ScaleValue(baseHp, 1m + 0.2m * index);
         int attack = ScaleValue(baseAttack, 1m + 0.07m * index);
         return (hp, attack);

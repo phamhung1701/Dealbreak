@@ -4,7 +4,7 @@ using UnityEngine;
 
 public partial class RunManager
 {
-    public bool CanCaptureSave => !IsRunCompleted && HeadlinerTotal == 12 && !string.IsNullOrEmpty(runSeed) &&
+    public bool CanCaptureSave => !IsRunCompleted && HeadlinerTotal == RunLength.Districts && !string.IsNullOrEmpty(runSeed) &&
         CombatManager.Instance != null && CombatManager.Instance.CanCapturePersistentState &&
         CardManager.Instance != null && !_shopTransaction &&
         (_activeNode == null || _activeNode.kind is MapNodeType.Shop or MapNodeType.Event or MapNodeType.Risk) &&

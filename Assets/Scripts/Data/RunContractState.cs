@@ -19,7 +19,7 @@ public sealed class RunContractState
 
     public string ObjectiveDescription => objective switch
     {
-        RunContractObjective.WinTwoEncounters => "Win 2 encounters within 12 maps.",
+        RunContractObjective.WinTwoEncounters => $"Win 2 encounters within {RunLength.Districts} Districts.",
         RunContractObjective.DefeatEliteThisMap => "Defeat an Enforcer before leaving this District.",
         RunContractObjective.WinCombatWithoutHpLoss => "Win 1 encounter without losing HP.",
         _ => "Complete the contract objective."

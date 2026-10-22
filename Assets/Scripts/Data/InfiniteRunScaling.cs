@@ -3,7 +3,7 @@ using System;
 /// <summary>Finite, deterministic stat/reward scaling for maps after the authored 12-map run.</summary>
 public static class InfiniteRunScaling
 {
-    public const int FirstInfiniteMapIndex = 12;
+    public const int FirstInfiniteMapIndex = RunLength.Districts;
     public const int MaximumValue = int.MaxValue;
 
     public static int ScaleStat(int map12Value, int mapIndex, decimal multiplier)
@@ -23,7 +23,7 @@ public static class InfiniteRunScaling
     public static (int hp, int attack) Scale(int baseHp, int baseAttack, int mapIndex)
     {
         var baseline = EnemyMapScaling.Scale(baseHp, baseAttack,
-            Math.Min(11, Math.Max(0, mapIndex)));
+            Math.Min(RunLength.LastDistrictIndex, Math.Max(0, mapIndex)));
         if (mapIndex < FirstInfiniteMapIndex) return baseline;
         return (ScaleStat(baseline.hp, mapIndex, 1.10m),
             ScaleStat(baseline.attack, mapIndex, 1.04m));

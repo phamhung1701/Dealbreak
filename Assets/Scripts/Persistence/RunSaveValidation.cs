@@ -27,10 +27,10 @@ public static class RunSaveValidation
         Require(c != null, "Save content catalog unavailable.");
         Require(!string.IsNullOrWhiteSpace(s.seed) && s.seed.Length <= 256 && s.seed == RunRandomContext.NormalizeSeed(s.seed), "Invalid seed.");
         Require(s.checkpoint == "safe-node", "Unsupported checkpoint kind.");
-        Require(s.bossIndex >= 0 && (s.infiniteMode || s.bossIndex < 12) && s.completedNodeCount >= 0, "Invalid progression.");
-        Require(s.bosses != null && s.bosses.Count == 12 && s.bosses.All(b => b != null), "Missing boss sequence.");
-        Require(s.bosses.Select(b => (b.rank, b.suit)).Distinct().Count() == 12, "Duplicate boss identity.");
-        for (int i = 0; i < 12; i++)
+        Require(s.bossIndex >= 0 && (s.infiniteMode || s.bossIndex < RunLength.Districts) && s.completedNodeCount >= 0, "Invalid progression.");
+        Require(s.bosses != null && s.bosses.Count == RunLength.Districts && s.bosses.All(b => b != null), "Missing boss sequence.");
+        Require(s.bosses.Select(b => (b.rank, b.suit)).Distinct().Count() == RunLength.Districts, "Duplicate boss identity.");
+        for (int i = 0; i < RunLength.Districts; i++)
         {
             var b = s.bosses[i];
             Require(b.rank == (int)CardData.Rank.Jack + i / 4 && Defined<CardData.Suit>(b.suit) &&
