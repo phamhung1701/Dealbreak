@@ -26,7 +26,7 @@ public static partial class GearRules
                     resolved = ClampToInt((long)resolved + Math.Max(0, overflowHandCount));
                     break;
                 case GearSpecialRule.GlassCommon:
-                    resolved = ClampToInt((long)resolved + 5);
+                    resolved = ClampToInt((long)resolved + Tuning.glassShardAttackBonus);
                     break;
             }
         }
@@ -39,20 +39,20 @@ public static partial class GearRules
                     long numerator = 1, denominator = 1;
                     for (int clubIndex = 0; clubIndex < unplayedClubCount; clubIndex++)
                     {
-                        numerator *= 5;
-                        denominator *= 4;
+                        numerator *= Tuning.clubAmplifierEpicNumerator;
+                        denominator *= Tuning.clubAmplifierEpicDenominator;
                     }
                     resolved = ClampToInt((long)resolved * numerator / denominator);
                     break;
                 }
                 case GearSpecialRule.RareClub when card.MatchesSuit(CardData.Suit.Clubs):
-                    resolved = ClampToInt((long)resolved * 2);
+                    resolved = ClampToInt((long)resolved * Tuning.clubAmplifierRareMultiplier);
                     break;
                 case GearSpecialRule.GlassRare:
-                    resolved = ClampToInt((long)resolved * 2);
+                    resolved = ClampToInt((long)resolved * Tuning.glassShardRareAttackMultiplier);
                     break;
-                case GearSpecialRule.GlassEpic when combat?.player?.currentHealth == 1:
-                    resolved = ClampToInt((long)resolved * 3);
+                case GearSpecialRule.GlassEpic when combat?.player?.currentHealth == Tuning.glassShardEpicAtHealth:
+                    resolved = ClampToInt((long)resolved * Tuning.glassShardEpicAttackMultiplier);
                     break;
             }
         }
@@ -70,7 +70,8 @@ public static partial class GearRules
 
     /// <summary>Gold Pistol: the opening attack gains 1 damage per 10 Credits held.</summary>
     public static int GoldPistolBonus(CardManager cards) =>
-        cards != null && cards.HasGearSpecialRule(GearSpecialRule.GildedBlade) ? Math.Max(0, cards.credits / 10) : 0;
+        cards != null && cards.HasGearSpecialRule(GearSpecialRule.GildedBlade)
+            ? Math.Max(0, cards.credits / Tuning.goldPistolCreditsPerDamage) : 0;
 
     /// <summary>Mimic Epic also repeats in-hand effects of cards matching the committed rank.</summary>
     public static bool IsMimicEpic(GearData gear) => gear != null && gear.specialRule == GearSpecialRule.MimicEpic;
@@ -88,10 +89,10 @@ public static partial class GearRules
     public static bool EnablesRoyalFamily(CardManager cards) => cards != null &&
         cards.ownedGear.Any(gear => gear != null && gear.specialRule == GearSpecialRule.RoyalFamilyHeirloom);
 
-    /// <summary>Arsenal Gear hand size: Rare +3; Epic adds floor(H(face cards held)).</summary>
+    /// <summary>Memory Card hand size: Rare +3; Epic adds floor(H(face cards held)).</summary>
     public static int HandCapacityBonus(CardManager cards, GearData gear)
     {
-        if (gear.specialRule == GearSpecialRule.RareArsenal) return 3;
+        if (gear.specialRule == GearSpecialRule.RareArsenal) return Tuning.memoryCardRareHandBonus;
         if (gear.specialRule != GearSpecialRule.ArsenalEpic) return 0;
         int faces = cards.hand.Count(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King);
         double harmonic = 0d;
@@ -99,7 +100,6 @@ public static partial class GearRules
         return (int)Math.Floor(harmonic);
     }
 
-    /// <summary>Penalties on aggregate enemy retaliation: Glass (+5 or ×2), then Arsenal (×1.5).</summary>
     /// <summary>
     /// Dealbreaker: once per combat, an enemy hit that would be lethal destroys one random card from
     /// the hand and is negated. The card is picked by card id, not hand order, from
@@ -124,6 +124,7 @@ public static partial class GearRules
         return false;
     }
 
+    /// <summary>Penalties on aggregate enemy retaliation: Glass Shard (+5 or ×2), then Memory Card (×1.5).</summary>
     public static int ApplyAggregateIncomingRules(CardManager cards, int damage)
     {
         bool arsenal = false, glassCommon = false, glassRare = false;
@@ -133,9 +134,9 @@ public static partial class GearRules
             glassCommon |= gear.specialRule == GearSpecialRule.GlassCommon;
             glassRare |= gear.specialRule == GearSpecialRule.GlassRare;
         }
-        if (glassCommon) damage = ClampToInt((long)damage + 5);
-        else if (glassRare) damage = ClampToInt((long)damage * 2);
-        if (arsenal) damage = ClampToInt(((long)damage * 3 + 1) / 2);
+        if (glassCommon) damage = ClampToInt((long)damage + Tuning.glassShardIncomingBonus);
+        else if (glassRare) damage = ClampToInt((long)damage * Tuning.glassShardRareIncomingMultiplier);
+        if (arsenal) damage = ClampToInt(((long)damage * Tuning.memoryCardRareIncomingPercent + 50) / 100);
         return damage;
     }
 
@@ -165,21 +166,22 @@ public static partial class GearRules
                 () =>
                 {
                     int before = context.Combat.player.currentHealth;
-                    int healed = context.Combat.HealPlayer(3);
-                    if (before * 2 < context.Combat.player.maxHealth) context.Cards.AddCredits(3);
+                    int heal = Tuning.heartMedsHeal;
+                    int healed = context.Combat.HealPlayer(heal);
+                    if (before * 2 < context.Combat.player.maxHealth) context.Cards.AddCredits(Tuning.heartMedsLowHealthCredits);
                     if (gear.specialRule == GearSpecialRule.HeartEpic && context.Combat.CanPlayerHeal())
                     {
                         var state = gearInstance.State;
-                        int overheal = Math.Max(0, 3 - healed);
-                        state.SetCounter(GearCounterKeys.HeartEpicStoredOverheal,
-                            Math.Min(10, state.GetCounter(GearCounterKeys.HeartEpicStoredOverheal) + overheal));
+                        int overheal = Math.Max(0, heal - healed);
+                        state.SetCounter(GearCounterKeys.HeartEpicStoredOverheal, Math.Min(Tuning.heartMedsEpicOverhealCap,
+                            state.GetCounter(GearCounterKeys.HeartEpicStoredOverheal) + overheal));
                     }
                 });
         if (gear.specialRule is GearSpecialRule.RareDiamond or GearSpecialRule.DiamondEpic &&
             context.Card.MatchesSuit(CardData.Suit.Diamonds))
             queue.Enqueue(context.Action.ActionId, context.HitIndex, CombatReactionPhase.CardCommitted,
                 CombatReactionSourceCategory.Gear, sourceOrder, int.MaxValue,
-                () => context.Cards.DrawToHand(2));
+                () => context.Cards.DrawToHand(Tuning.diamondDriverDraw));
     }
 
     /// <summary>Spade Gear draws on a full Spade block (Epic banks over-block); Retaliation Gear
@@ -196,7 +198,7 @@ public static partial class GearRules
             if (block >= attack && attack > 0)
                 queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
                     CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue - 1,
-                    () => context.Cards.DrawToHand(1));
+                    () => context.Cards.DrawToHand(Tuning.spadeShieldDraw));
             if (rule == GearSpecialRule.SpadeEpic && block > attack)
                 source.State.SetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks,
                     source.State.GetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks) + 1);
@@ -217,8 +219,9 @@ public static partial class GearRules
                             ? result =>
                             {
                                 if (!result.WasLethal) return;
-                                source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, growth + 1);
-                                context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +1 counter damage.");
+                                int gained = Tuning.counterpunchGlovesEpicGrowth;
+                                source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, growth + gained);
+                                context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +{gained} counter damage.");
                             }
                             : null));
         }

@@ -213,7 +213,7 @@ public sealed class BreadConsumableTests
 
         Assert.That(_run.PendingConsumableReward, Is.Null);
         Assert.That(_cards.IsBackpackFull, Is.True);
-        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(CardManager.TRAVELER_BACKPACK_CAPACITY));
+        Assert.That(_cards.BackpackSlotsUsed, Is.EqualTo(GameBalance.Current.gear.cargoCaseBackpackSlots));
         Assert.That(_cards.GetConsumableStackCountAtSlot(0), Is.EqualTo(3));
         Assert.That(_cards.GetConsumableCount(_bread), Is.EqualTo(3));
     }

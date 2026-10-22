@@ -264,7 +264,7 @@ public sealed class Phase6GearTests
         Assert.That(_run.PendingConsumableReward, Is.Null);
         Assert.That(_run.PurchaseShopOffer(c.id.Insert(0, "artifact:")), Is.True);
         Assert.That(_run.PaidItemPurchaseCount, Is.EqualTo(3));
-        Assert.That(_run.PendingConsumableReward.SourceLabel, Is.EqualTo("Merchant’s Gift"));
+        Assert.That(_run.PendingConsumableReward.SourceLabel, Is.EqualTo(gift.displayName));
         Assert.That(_run.PendingConsumableReward.Choices.Single().effectType,
             Is.Not.EqualTo(ConsumableEffectType.ApplyEnhancement));
         Assert.That(_run.DeclinePendingConsumableReward(), Is.True);
@@ -273,7 +273,7 @@ public sealed class Phase6GearTests
             typeof(RunManager).GetMethod("ApplyVictoryGearRewards", BindingFlags.Instance | BindingFlags.NonPublic)
                 .Invoke(_run, new object[] { false });
         Assert.That(_run.CombatWinCount, Is.EqualTo(3));
-        Assert.That(_run.PendingConsumableReward.SourceLabel, Is.EqualTo("Scavenger’s Satchel"));
+        Assert.That(_run.PendingConsumableReward.SourceLabel, Is.EqualTo(satchel.displayName));
     }
 
     [Test]

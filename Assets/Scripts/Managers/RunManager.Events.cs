@@ -224,7 +224,7 @@ public partial class RunManager
         if (IsHammerEvent())
             return choice.interaction is RunEventChoiceInteraction.HammerRetry or RunEventChoiceInteraction.HammerDecline
                 ? string.Empty : choice.interaction == RunEventChoiceInteraction.ChooseEnhancementTarget
-                    ? _pendingHammerEnhancements.Count == 3 ? GetModRewardUnavailableReason(_pendingHammerEnhancements)
+                    ? _pendingHammerEnhancements.Count == GearRules.ModBenchChoices ? GetModRewardUnavailableReason(_pendingHammerEnhancements)
                         : "Choice unavailable"
                     : "Choice unavailable";
         if (choice.interaction == RunEventChoiceInteraction.ChooseEnhancementTarget)
@@ -446,16 +446,16 @@ public partial class RunManager
         if (!_pendingHammerReward)
         {
             int last = instance.State.GetCounter(GearCounterKeys.HammerLastRewardNode);
-            if (_completedNodeCount - last < 3) return;
+            if (_completedNodeCount - last < GearRules.ModBenchNodesPerReward) return;
             var common = cards.enhancementCatalog
                 .Where(value => value != null && string.Equals(value.rarity, "Common", StringComparison.Ordinal))
                 .OrderBy(value => value.canonicalId, StringComparer.Ordinal)
                 .ThenBy(value => value.id, StringComparer.Ordinal).ToList();
-            if (common.Count < 3) return;
+            if (common.Count < GearRules.ModBenchChoices) return;
             if (_randomContext == null) _randomContext = new RunRandomContext(runSeed);
             var random = _randomContext.CreateStream("hammer-common-enhancements", _completedNodeCount);
             _pendingHammerEnhancements.Clear();
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < GearRules.ModBenchChoices; i++)
             {
                 int selected = random.NextInt(0, common.Count);
                 _pendingHammerEnhancements.Add(common[selected]);
@@ -471,21 +471,22 @@ public partial class RunManager
         _hammerRetryPending = false;
         _pendingHammerEvent = ScriptableObject.CreateInstance<RunEventDefinition>();
         _pendingHammerEvent.id = $"artifact-hammer:{_completedNodeCount}";
-        _pendingHammerEvent.title = "HAMMER";
+        string benchName = instance.Definition.displayName;
+        _pendingHammerEvent.title = benchName.ToUpperInvariant();
         _pendingHammerEvent.category = MapNodeType.Event;
         _pendingHammerEvent.flow = RunEventFlow.HammerReward;
         _pendingHammerEvent.description = hasTarget
-            ? "Choose one of three cached Common Mods."
+            ? $"Choose one of {GearRules.ModBenchChoices} cached Common Mods."
             : "Trick slots are full. Retry after another node, or decline this reward.";
         _pendingHammerEvent.choices = hasTarget
             ? new[]
             {
-                new RunEventChoice { label = "Choose Mod", description = "Take one of the three cached Common Mods as a Trick.", interaction = RunEventChoiceInteraction.ChooseEnhancementTarget }
+                new RunEventChoice { label = "Choose Mod", description = $"Take one of the {GearRules.ModBenchChoices} cached Common Mods as a Trick.", interaction = RunEventChoiceInteraction.ChooseEnhancementTarget }
             }
             : new[]
             {
                 new RunEventChoice { label = "Retry Later", description = "Continue the run and retry when a Trick slot is free.", interaction = RunEventChoiceInteraction.HammerRetry },
-                new RunEventChoice { label = "Decline", description = "Leave the Hammer reward unused.", interaction = RunEventChoiceInteraction.HammerDecline }
+                new RunEventChoice { label = "Decline", description = $"Leave the {benchName} reward unused.", interaction = RunEventChoiceInteraction.HammerDecline }
             };
         _activeEvent = _pendingHammerEvent;
         GameplayInputGate.Set(GameplayInputBlockReason.GearChoice, true);

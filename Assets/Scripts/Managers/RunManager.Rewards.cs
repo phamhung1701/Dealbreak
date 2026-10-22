@@ -157,10 +157,11 @@ public partial class RunManager
                 .OrderBy(value => value.id, StringComparer.Ordinal).ToList();
             if (candidates.Count == 0) return;
             candidates.Shuffle(_randomContext.CreateStream("alchemist-options", mapIndex));
-            choices = candidates.Take(Mathf.Min(3, candidates.Count)).ToArray();
+            choices = candidates.Take(Mathf.Min(GearRules.ModCaseChoices, candidates.Count)).ToArray();
             _alchemistChoicesByMap.Add(mapIndex, choices);
         }
-        QueueConsumableReward($"alchemist:{mapIndex}", "Alchemist’s Kit", choices);
+        QueueConsumableReward($"alchemist:{mapIndex}",
+            GearRules.OwnedGearName(cards, GearSpecialRule.AlchemistsKit), choices);
     }
 
     public string GetEnhancementTargetUnavailableReason(int cardId)
@@ -180,10 +181,10 @@ public partial class RunManager
         GearRules.OnEncounterWon(cards, CombatManager.Instance, wasElite, wasHeadliner);
         if (!GearRules.CountsWinsForSatchelRewards(cards)) return;
         _combatWinCount = IncrementToMaximum(_combatWinCount);
-        if (_combatWinCount % 3 != 0) return;
+        if (!GearRules.SupplyCrateRewardDue(_combatWinCount)) return;
         _satchelRewardCount = IncrementToMaximum(_satchelRewardCount);
         QueueRandomNonEnhancementReward(
-            $"scavenger-satchel:{_satchelRewardCount}", "Scavenger’s Satchel",
+            $"scavenger-satchel:{_satchelRewardCount}", GearRules.OwnedGearName(cards, GearSpecialRule.ScavengersSatchel),
             "scavenger-satchel", _satchelRewardCount);
     }
 

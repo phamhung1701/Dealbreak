@@ -10,6 +10,8 @@ using System.Linq;
 /// </summary>
 public static partial class GearRules
 {
+    static GearBalance Tuning => GameBalance.Current.gear;
+
     /// <summary>Per-action stateful attack bonuses, prepared before the action commits.</summary>
     public struct ActionBonuses
     {
@@ -34,13 +36,13 @@ public static partial class GearRules
     {
         if (cards == null) return;
         if (cards.HasGearSpecialRule(GearSpecialRule.PreparationManual))
-            player.GainEncounterBlock(cards.DistinctConsumableTypeCount * 2);
+            player.GainEncounterBlock(cards.DistinctConsumableTypeCount * Tuning.guardDroneBlockPerTrickType);
         foreach (var (gear, instance) in Owned(cards))
             if (gear.specialRule == GearSpecialRule.WarpathBanner)
-                player.GainEncounterBlock(Math.Min(6,
-                    instance.State.GetCounter(GearCounterKeys.WarpathBannerWinStreak) * 2));
+                player.GainEncounterBlock(Math.Min(Tuning.varsityJacketMaxStreak,
+                    instance.State.GetCounter(GearCounterKeys.WarpathBannerWinStreak)) * Tuning.varsityJacketBlockPerWin);
         if (eliteOrHeadliner && cards.HasGearSpecialRule(GearSpecialRule.ChallengerCrest))
-            player.GainShield(1);
+            player.GainShield(Tuning.riotHelmetShield);
     }
 
     // ---- Player attack actions ------------------------------------------------------------
@@ -57,7 +59,7 @@ public static partial class GearRules
             var state = instance.State;
             if (headlinerEncounter && gear.specialRule == GearSpecialRule.KingslayersMark &&
                 state.GetEncounterCounter(GearCounterKeys.KingslayerCharges) > 0)
-                bonuses.Kingslayer = 1;
+                bonuses.Kingslayer = Tuning.spotterEyeAttackBonus;
             if (gear.specialRule is GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic)
             {
                 var source = instance.PreparedDwarfSourceCard;
@@ -65,7 +67,7 @@ public static partial class GearRules
                     playedCards.Any(card => card != null && card.Rank > source.Rank);
                 if (qualifying)
                 {
-                    bonuses.Dwarf = 1;
+                    bonuses.Dwarf = Tuning.lowballAttackBonus;
                     bonuses.DwarfSource = source;
                 }
             }
@@ -123,14 +125,14 @@ public static partial class GearRules
             {
                 if (card == null) continue;
                 if (gear.specialRule is GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic &&
-                    card.Rank < CardData.Rank.Five)
+                    card.Rank < Tuning.lowballBelowRank)
                     instance.PreparedDwarfSourceCard = card;
                 if (headlinerEncounter && gear.specialRule == GearSpecialRule.KingslayersMark)
                 {
                     int mask = state.GetEncounterCounter(GearCounterKeys.KingslayerRankMask) | (1 << (int)card.Rank);
                     int uniqueRanks = 0;
                     for (int bits = mask; bits != 0; bits >>= 1) uniqueRanks += bits & 1;
-                    if (uniqueRanks >= 3)
+                    if (uniqueRanks >= Tuning.spotterEyeDistinctRanks)
                     {
                         state.SetEncounterCounter(GearCounterKeys.KingslayerRankMask, 0);
                         state.SetEncounterCounter(GearCounterKeys.KingslayerCharges,
@@ -142,10 +144,10 @@ public static partial class GearRules
                     card.MatchesSuit(CardData.Suit.Diamonds))
                 {
                     int count = state.GetCounter(GearCounterKeys.DiamondEpicSuitCount) + 1;
-                    if (count >= 3)
+                    if (count >= Tuning.diamondDriverEpicDiamondsPerChoice)
                     {
                         diamondChoices++;
-                        count -= 3;
+                        count -= Tuning.diamondDriverEpicDiamondsPerChoice;
                     }
                     state.SetCounter(GearCounterKeys.DiamondEpicSuitCount, count);
                 }
@@ -203,10 +205,11 @@ public static partial class GearRules
             var source = instance.PendingDwarfSourceCard;
             if (source == null || cards.FindOwnedCard(source.Id) != source ||
                 !committedCards.Any(card => card != null && card.Rank > source.Rank)) continue;
-            source.GainPermanentAttackBonus(1);
+            int growth = Tuning.lowballEpicPermanentAttack;
+            source.GainPermanentAttackBonus(growth);
             cards.NotifyCardInstanceChanged(source);
             instance.PendingDwarfSourceCard = null;
-            log?.Invoke($"{gear.displayName}: prepared {source.DisplayName} permanently gained +1 attack.");
+            log?.Invoke($"{gear.displayName}: prepared {source.DisplayName} permanently gained +{growth} attack.");
         }
     }
 
@@ -228,12 +231,13 @@ public static partial class GearRules
         }
     }
 
-    /// <summary>Bounty Ledger scales defeated-enemy Credits (×1.5 Enforcer, ×1.25 Headliner).</summary>
+    /// <summary>Bounty Hologram scales defeated-enemy Credits (×1.5 Enforcer, ×1.25 Headliner).</summary>
     public static int ScaleVictoryCredits(CardManager cards, int credits, bool headlinerEncounter,
         bool eliteOrHeadlinerEncounter)
     {
         if (cards == null || !cards.HasGearSpecialRule(GearSpecialRule.BountyLedger)) return credits;
-        int numerator = headlinerEncounter ? 125 : eliteOrHeadlinerEncounter ? 150 : 100;
+        int numerator = headlinerEncounter ? Tuning.bountyHologramHeadlinerPercent
+            : eliteOrHeadlinerEncounter ? Tuning.bountyHologramEnforcerPercent : 100;
         return (int)Math.Min(int.MaxValue, ((long)credits * numerator + 50) / 100);
     }
 }

@@ -13,8 +13,6 @@ public partial class CardManager : Singleton<CardManager>
     public const int BASE_BACKPACK_CAPACITY = 3;
     // Kept for existing content/tests that explicitly mean the backpack's unmodified baseline.
     public const int BACKPACK_CAPACITY = BASE_BACKPACK_CAPACITY;
-    public const int TRAVELER_BACKPACK_CAPACITY = 5;
-    public const int RARE_CONSUMABLES_PER_SLOT = 3;
 
     [Header("References")]
     public Field handField;

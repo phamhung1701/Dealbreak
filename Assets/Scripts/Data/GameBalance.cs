@@ -14,6 +14,7 @@ public sealed class GameBalance : ScriptableObject
     public BlackMarketBalance blackMarket = new();
     public ContractBalance contracts = new();
     public RedlineDealBalance redlineDeal = new();
+    public GearBalance gear = new();
 
     static GameBalance _current;
 
@@ -127,4 +128,131 @@ public sealed class RedlineDealBalance
 
     [Header("Take the Small Cut (upgrade an owned Gear)")]
     [Min(0)] public int smallCutHpCost = 5;
+}
+
+/// <summary>Numbers for Gear special rules (<see cref="GearRules"/>), grouped by Gear family.</summary>
+[Serializable]
+public sealed class GearBalance
+{
+    [Header("Heart Meds (Rare, Epic)")]
+    [Min(0)] public int heartMedsHeal = 3;
+    [Tooltip("Credits paid when a Heart is played below half HP.")]
+    [Min(0)] public int heartMedsLowHealthCredits = 3;
+    [Tooltip("Epic: most overheal banked as attack.")]
+    [Min(0)] public int heartMedsEpicOverhealCap = 10;
+
+    [Header("Diamond Driver (Rare, Epic)")]
+    [Min(0)] public int diamondDriverDraw = 2;
+    [Tooltip("Epic: Diamonds played per discard choice.")]
+    [Min(1)] public int diamondDriverEpicDiamondsPerChoice = 3;
+
+    [Header("Spade Shield (Rare, Epic)")]
+    [Min(0)] public int spadeShieldDraw = 1;
+
+    [Header("Club Amplifier (Rare, Epic)")]
+    [Min(1)] public int clubAmplifierRareMultiplier = 2;
+    [Tooltip("Epic: a Club's damage is multiplied by numerator/denominator once per unplayed Club in hand.")]
+    [Min(1)] public int clubAmplifierEpicNumerator = 5;
+    [Min(1)] public int clubAmplifierEpicDenominator = 4;
+
+    [Header("Glass Shard (Common, Rare, Epic)")]
+    [Min(0)] public int glassShardAttackBonus = 5;
+    [Min(0)] public int glassShardIncomingBonus = 5;
+    [Min(1)] public int glassShardRareAttackMultiplier = 2;
+    [Min(1)] public int glassShardRareIncomingMultiplier = 2;
+    [Min(1)] public int glassShardEpicAttackMultiplier = 3;
+    [Tooltip("Epic: the multiplier applies at exactly this HP.")]
+    [Min(1)] public int glassShardEpicAtHealth = 1;
+
+    [Header("Memory Card (Rare)")]
+    [Min(0)] public int memoryCardRareHandBonus = 3;
+    [Tooltip("Incoming retaliation in percent, rounded half up.")]
+    [Min(100)] public int memoryCardRareIncomingPercent = 150;
+
+    [Header("Overflow Canister (Common, Rare and Epic)")]
+    [Min(0)] public int overflowCanisterCapacity = 2;
+    [Min(0)] public int overflowCanisterRareCapacity = 3;
+
+    [Header("Cargo Case (Common, Rare)")]
+    [Min(1)] public int cargoCaseBackpackSlots = 5;
+    [Tooltip("Rare: identical Tricks per backpack slot.")]
+    [Min(1)] public int cargoCaseRareTricksPerSlot = 3;
+
+    [Header("Guard Drone")]
+    [Tooltip("Encounter Block per distinct Trick held.")]
+    [Min(0)] public int guardDroneBlockPerTrickType = 2;
+
+    [Header("Varsity Jacket")]
+    [Tooltip("Encounter Block per combat win in the current streak.")]
+    [Min(0)] public int varsityJacketBlockPerWin = 2;
+    [Min(0)] public int varsityJacketMaxStreak = 3;
+
+    [Header("Riot Helmet")]
+    [Min(0)] public int riotHelmetShield = 1;
+
+    [Header("Spotter Eye")]
+    [Tooltip("Distinct ranks played against a Headliner to earn a charge.")]
+    [Min(1)] public int spotterEyeDistinctRanks = 3;
+    [Min(0)] public int spotterEyeAttackBonus = 1;
+
+    [Header("Lowball (Rare, Epic)")]
+    [Tooltip("A card below this rank primes the bonus.")]
+    public CardData.Rank lowballBelowRank = CardData.Rank.Five;
+    [Min(0)] public int lowballAttackBonus = 1;
+    [Tooltip("Epic: permanent attack the primed card gains when a higher card kills.")]
+    [Min(0)] public int lowballEpicPermanentAttack = 1;
+
+    [Header("Counterpunch Gloves (Epic)")]
+    [Tooltip("Permanent counter damage gained per counterattack kill.")]
+    [Min(0)] public int counterpunchGlovesEpicGrowth = 1;
+
+    [Header("Bounty Hologram")]
+    [Tooltip("Credits from a won Enforcer encounter, in percent, rounded half up.")]
+    [Min(0)] public int bountyHologramEnforcerPercent = 150;
+    [Tooltip("Credits from a won Headliner encounter, in percent, rounded half up.")]
+    [Min(0)] public int bountyHologramHeadlinerPercent = 125;
+
+    [Header("Gold Pistol")]
+    [Tooltip("Opening attack gains 1 damage per this many Credits held.")]
+    [Min(1)] public int goldPistolCreditsPerDamage = 10;
+
+    [Header("Survivor's Badge")]
+    [Tooltip("Max HP gained per Headliner win.")]
+    [Min(0)] public int survivorsBadgeMaxHealth = 3;
+    [Tooltip("Extra max HP when the Headliner win cost no HP.")]
+    [Min(0)] public int survivorsBadgeFlawlessBonus = 3;
+
+    [Header("Savings Safe")]
+    [Tooltip("Interest on held Credits after a Headliner win, in percent, rounded half up.")]
+    [Min(0)] public int savingsSafeInterestPercent = 10;
+
+    [Header("City Boots")]
+    [Tooltip("Distinct node types visited in a District to earn the reward.")]
+    [Min(1)] public int cityBootsNodeTypes = 3;
+    [Min(0)] public int cityBootsHeal = 3;
+    [Min(0)] public int cityBootsCredits = 3;
+
+    [Header("Black Market Gear")]
+    [Tooltip("Cashback Card: refund in percent of Credits spent, rounded half up.")]
+    [Min(0)] public int cashbackCardPercent = 15;
+    [Tooltip("Loyalty Card: Gear and Trick prices in percent, rounded half up.")]
+    [Min(0)] public int loyaltyCardPricePercent = 80;
+    [Tooltip("Loyalty Gift: paid Gear or Trick purchases per Trick reward.")]
+    [Min(1)] public int loyaltyGiftPurchasesPerReward = 3;
+
+    [Header("Rewards")]
+    [Tooltip("Supply Crate: combat wins per Trick reward.")]
+    [Min(1)] public int supplyCrateWinsPerReward = 3;
+    [Tooltip("Mod Case: Mod Tricks offered at each District start.")]
+    [Min(1)] public int modCaseChoices = 3;
+    [Tooltip("Mod Bench: completed nodes between Mod rewards.")]
+    [Min(1)] public int modBenchNodesPerReward = 3;
+    [Tooltip("Mod Bench: Common Mods offered per reward.")]
+    [Min(1)] public int modBenchChoices = 3;
+
+    [Header("First Trick of an encounter")]
+    [Tooltip("Grappling Hook: cards drawn.")]
+    [Min(0)] public int grapplingHookDraw = 1;
+    [Tooltip("First-Aid Kit: HP healed.")]
+    [Min(0)] public int firstAidKitHeal = 3;
 }

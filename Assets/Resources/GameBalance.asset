@@ -55,3 +55,53 @@ MonoBehaviour:
     bigCutGearRarity: Epic
     bigCutHpCost: 15
     smallCutHpCost: 5
+  gear:
+    heartMedsHeal: 3
+    heartMedsLowHealthCredits: 3
+    heartMedsEpicOverhealCap: 10
+    diamondDriverDraw: 2
+    diamondDriverEpicDiamondsPerChoice: 3
+    spadeShieldDraw: 1
+    clubAmplifierRareMultiplier: 2
+    clubAmplifierEpicNumerator: 5
+    clubAmplifierEpicDenominator: 4
+    glassShardAttackBonus: 5
+    glassShardIncomingBonus: 5
+    glassShardRareAttackMultiplier: 2
+    glassShardRareIncomingMultiplier: 2
+    glassShardEpicAttackMultiplier: 3
+    glassShardEpicAtHealth: 1
+    memoryCardRareHandBonus: 3
+    memoryCardRareIncomingPercent: 150
+    overflowCanisterCapacity: 2
+    overflowCanisterRareCapacity: 3
+    cargoCaseBackpackSlots: 5
+    cargoCaseRareTricksPerSlot: 3
+    guardDroneBlockPerTrickType: 2
+    varsityJacketBlockPerWin: 2
+    varsityJacketMaxStreak: 3
+    riotHelmetShield: 1
+    spotterEyeDistinctRanks: 3
+    spotterEyeAttackBonus: 1
+    lowballBelowRank: 4
+    lowballAttackBonus: 1
+    lowballEpicPermanentAttack: 1
+    counterpunchGlovesEpicGrowth: 1
+    bountyHologramEnforcerPercent: 150
+    bountyHologramHeadlinerPercent: 125
+    goldPistolCreditsPerDamage: 10
+    survivorsBadgeMaxHealth: 3
+    survivorsBadgeFlawlessBonus: 3
+    savingsSafeInterestPercent: 10
+    cityBootsNodeTypes: 3
+    cityBootsHeal: 3
+    cityBootsCredits: 3
+    cashbackCardPercent: 15
+    loyaltyCardPricePercent: 80
+    loyaltyGiftPurchasesPerReward: 3
+    supplyCrateWinsPerReward: 3
+    modCaseChoices: 3
+    modBenchNodesPerReward: 3
+    modBenchChoices: 3
+    grapplingHookDraw: 1
+    firstAidKitHeal: 3

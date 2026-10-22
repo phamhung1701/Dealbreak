@@ -258,10 +258,10 @@ public partial class RunManager
         if (refund > 0 && cards != null) cards.AddCredits(refund);
         if (!modifiers.MerchantsGift) return;
         _paidItemPurchaseCount = IncrementToMaximum(_paidItemPurchaseCount);
-        if (_paidItemPurchaseCount % 3 != 0) return;
+        if (!GearRules.LoyaltyGiftRewardDue(_paidItemPurchaseCount)) return;
         _merchantGiftRewardCount = IncrementToMaximum(_merchantGiftRewardCount);
-        QueueRandomNonEnhancementReward(
-            $"merchant-gift:{_merchantGiftRewardCount}", "Merchant’s Gift", "merchant-gift", _merchantGiftRewardCount);
+        QueueRandomNonEnhancementReward($"merchant-gift:{_merchantGiftRewardCount}",
+            GearRules.OwnedGearName(cards, GearSpecialRule.MerchantsGift), "merchant-gift", _merchantGiftRewardCount);
     }
 
     int CalculateEffectiveShopPrice(ShopOfferKind kind, int basePrice)
