@@ -23,4 +23,5 @@ public static class GearCounterKeys
     public const int SpadeEpicOverblocks = -1071;
     public const int KingslayerRankMask = -1381;
     public const int KingslayerCharges = -1382;
+    public const int DealbreakerUsed = -36;
 }

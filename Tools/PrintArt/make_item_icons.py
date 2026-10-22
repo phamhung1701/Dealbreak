@@ -51,6 +51,7 @@ ICONS = {
     "Gear/CityBoots": "Radiation/19",
     "Gear/ClubAmplifier": "Artifacts/45",
     "Gear/CounterpunchGloves": "Cloak and Gloves/36",
+    "Gear/Dealbreaker": "Artifacts/8",
     "Gear/DetourPin": "Drone/5",
     "Gear/DiamondDriver": "Energy/46",
     "Gear/EchoDriver": "Energy/20",

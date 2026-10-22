@@ -96,6 +96,30 @@ public static partial class GearRules
     }
 
     /// <summary>Penalties on aggregate enemy retaliation: Glass (+5 or ×2), then Arsenal (×1.5).</summary>
+    /// <summary>
+    /// Dealbreaker: once per combat, an enemy hit that would be lethal destroys one random card from
+    /// the hand and is negated. The card is picked by card id, not hand order, from
+    /// <paramref name="random"/>. With an empty hand nothing happens and the charge is kept.
+    /// </summary>
+    public static bool TryDealbreakerSave(CardManager cards, Func<IRandomSource> random, Action<string> log)
+    {
+        if (cards == null || cards.hand.Count == 0) return false;
+        foreach (var (gear, instance) in Owned(cards))
+        {
+            if (gear.specialRule != GearSpecialRule.Dealbreaker || instance == null ||
+                instance.State.GetEncounterCounter(GearCounterKeys.DealbreakerUsed) != 0) continue;
+            var candidates = cards.hand.Where(card => card != null).OrderBy(card => card.Id).ToArray();
+            if (candidates.Length == 0) return false;
+            var source = random?.Invoke();
+            var destroyed = candidates[source != null ? source.NextInt(0, candidates.Length) : 0];
+            if (!cards.DestroyOwnedCard(destroyed)) return false;
+            instance.State.SetEncounterCounter(GearCounterKeys.DealbreakerUsed, 1);
+            log?.Invoke($"{gear.displayName}: destroyed {destroyed.DisplayName} to negate a lethal hit.");
+            return true;
+        }
+        return false;
+    }
+
     public static int ApplyAggregateIncomingRules(CardManager cards, int damage)
     {
         bool arsenal = false, glassCommon = false, glassRare = false;

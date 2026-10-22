@@ -37,6 +37,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
   - Pickpocket per completed card action
 - Fleeing is not death: no kill draw and no Credits. Death, reward and terminal results each happen once. The final Headliner reward comes before run completion.
 - Event HP costs and resource payments are not combat damage: they never consume Shield or trigger reactions.
+- Dealbreaker (`rel_036`, Legendary): once per combat, an enemy hit that would be lethal and that Shield will not absorb destroys one random hand card (picked by card id from a node-keyed `dealbreaker` stream) and is negated. It runs only in `PlayerRuntime.ModifyIncomingCombatDamage` via `CombatManager.TryNegateLethalHit`, never in previews; an empty hand keeps the charge.
 
 ## Architecture contracts
 

@@ -88,6 +88,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 660a4575b7b95b7499a8c2f6f7c78443, type: 2}
   - {fileID: 11400000, guid: 280e91e529a61594aac0a455bc2a0c31, type: 2}
   - {fileID: 11400000, guid: 124dbb52569c55943ba7ff001b9db1cc, type: 2}
+  - {fileID: 11400000, guid: 6842400f50e739e4cabd13792bbc00db, type: 2}
   enhancements:
   - {fileID: 11400000, guid: df3c7ab7238098c479e6077dcb8fbee9, type: 2}
   - {fileID: 11400000, guid: 6b373811d1407e5499cb6fed5706a76c, type: 2}

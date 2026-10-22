@@ -421,6 +421,9 @@ public partial class RunManager
             .OrderBy(value => value.canonicalId, StringComparer.Ordinal)
             .ThenBy(value => value.id, StringComparer.Ordinal).ToArray();
 
+    /// <summary>A stream keyed by the active node, for a once-per-node pick that needs no saved state.</summary>
+    internal IRandomSource CreateActiveNodeRandom(string streamName) => CreateEventRandom(0, streamName);
+
     IRandomSource CreateEventRandom(int choiceIndex, string streamName = "run-event-enhancement")
     {
         if (_randomContext == null) _randomContext = new RunRandomContext(runSeed);

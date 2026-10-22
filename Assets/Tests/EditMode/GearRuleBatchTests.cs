@@ -124,6 +124,45 @@ public sealed class GearRuleBatchTests
     }
 
     [Test]
+    public void Dealbreaker_NegatesOneLethalEnemyHitPerCombat_ByDestroyingAHandCard()
+    {
+        var dealbreaker = AssetDatabaseGear("rel_036");
+        Assert.That((dealbreaker.displayName, dealbreaker.rarity, dealbreaker.specialRule),
+            Is.EqualTo(("Dealbreaker", "Legendary", GearSpecialRule.Dealbreaker)));
+        _cards.Configure(_field, _cards.dragCanvas, _cards.cardPrefab, new[] { dealbreaker }, Array.Empty<CardEnhancementData>());
+        Buy(dealbreaker);
+        _combat.player.TakeDamage(20);
+        var enemy = StartTarget(200, 6);
+        _combat.CriticalChancePercent = 0;
+
+        // A hit that leaves the player alive spends nothing.
+        Assert.That(_combat.TryPlayCards(new[] { FindView(c => c.Rank == CardData.Rank.Two) }, enemy), Is.True);
+        int owned = _cards.ownedCards.Count;
+        _combat.TakeRemainingDamage();
+        Assert.That((_combat.player.currentHealth, _cards.ownedCards.Count), Is.EqualTo((4, owned)));
+
+        // Shield absorbs a lethal hit first, so Dealbreaker keeps its charge.
+        _combat.player.GainShield(1);
+        Assert.That(_combat.TryPlayCards(new[] { FindView(c => c.Rank == CardData.Rank.Two) }, enemy), Is.True);
+        _combat.TakeRemainingDamage();
+        Assert.That((_combat.player.currentHealth, _combat.player.shieldCharges, _cards.ownedCards.Count), Is.EqualTo((4, 0, owned)));
+
+        // The lethal hit is negated and one card in hand is destroyed for good.
+        Assert.That(_combat.TryPlayCards(new[] { FindView(c => c.Rank == CardData.Rank.Two) }, enemy), Is.True);
+        var hand = _cards.hand.ToArray();
+        _combat.TakeRemainingDamage();
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(4), "The lethal hit is negated.");
+        Assert.That(_cards.ownedCards.Count, Is.EqualTo(owned - 1));
+        var destroyed = hand.Single(card => !_cards.ownedCards.Contains(card));
+        Assert.That(_cards.deck.Contains(destroyed) || _cards.hand.Contains(destroyed), Is.False);
+
+        // Once per combat: the next lethal hit lands.
+        Assert.That(_combat.TryPlayCards(new[] { FindView(c => c.Rank == CardData.Rank.Two) }, enemy), Is.True);
+        _combat.TakeRemainingDamage();
+        Assert.That(_combat.player.IsDefeated, Is.True);
+    }
+
+    [Test]
     public void Cheater_OnlyGrantsAfterFirstCompletedAction_AndUsesNormalTurnStart()
     {
         Buy(_cheater);

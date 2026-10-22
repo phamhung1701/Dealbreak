@@ -59,8 +59,9 @@ public enum GearSpecialRule
     SpadeEpic = 46,
     HiddenTrail = 47,
     WanderersBoots = 48,
-    WarpathBanner = 49
+    WarpathBanner = 49,
     // 50 was MasterThief, an enemy ability listed here by mistake; keep the value retired.
+    Dealbreaker = 51
 }
 
 [CreateAssetMenu(fileName = "Gear", menuName = "Game/Gear Data")]

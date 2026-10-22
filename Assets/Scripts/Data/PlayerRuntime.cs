@@ -60,8 +60,9 @@ public sealed class PlayerRuntime : ICombatDamageTarget
             return Math.Max(0, damage);
         int modified = GameplayEffectResolver.ModifyIncomingCombatDamage(
             new IncomingDamageEffectContext(request, context, CardManager.Instance, damage));
-        return request.Origin is CombatDamageOrigin.EnemyAggregate or CombatDamageOrigin.Recovery
+        int damageTaken = request.Origin is CombatDamageOrigin.EnemyAggregate or CombatDamageOrigin.Recovery
             ? ConsumeEncounterBlock(modified) : modified;
+        return context.TryNegateLethalHit(request, damageTaken) ? 0 : damageTaken;
     }
 
     public int ApplyResolvedCombatDamage(int amount) => TakeDamage(amount);

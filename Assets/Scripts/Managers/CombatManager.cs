@@ -581,6 +581,21 @@ public partial class CombatManager : Singleton<CombatManager>
 
     public void ConfigureDuelistSuitRandom(IRandomSource random) => _duelistSuitRandom = random;
 
+    /// <summary>
+    /// Called while an enemy hit resolves on the player, after reductions and block: a hit that would
+    /// be lethal and that Shield will not absorb may be negated by Gear (Dealbreaker). Execution only;
+    /// previews never reach it. The pick uses a stream keyed by the current node, so it needs no saved state.
+    /// </summary>
+    internal bool TryNegateLethalHit(DamageRequest request, int damage)
+    {
+        bool fromEnemy = request.Origin is CombatDamageOrigin.EnemyAggregate or CombatDamageOrigin.Recovery ||
+            request.Origin == CombatDamageOrigin.Reactive && request.Source is EnemyRuntime;
+        if (!fromEnemy || damage <= 0 || damage < player.currentHealth ||
+            request.AllowShield && player.shieldCharges > 0) return false;
+        return GearRules.TryDealbreakerSave(CardManager.Instance,
+            () => RunManager.Instance != null ? RunManager.Instance.CreateActiveNodeRandom("dealbreaker") : null, Log);
+    }
+
     // Combat resolves committed card data. CardView overloads only adapt UI selections.
     static CardInstance[] Instances(IReadOnlyList<CardView> views)
     {
