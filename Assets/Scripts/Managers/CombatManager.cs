@@ -674,6 +674,8 @@ public partial class CombatManager : Singleton<CombatManager>
         var cm = CardManager.Instance;
         bool handsGroup = GameplayEffectResolver.IsHandsMultiCardAction(cardInstances, cm);
         _handsEpicAction = handsGroup && GearRules.HandsActionRepeatsCardEffects(cm);
+        bool nuclearGroup = GameplayEffectResolver.IsNuclearOptionGroup(cardInstances, cm);
+        bool hitsPerCard = isRoyalFamily || handsGroup || nuclearGroup;
         bool critical = false;
         bool isAcePair = cards.Count == 2 && GameplayEffectResolver.CanPlayAsAcePair(cardInstances);
         bool hasCriticalChanceOverride = GameplayEffectResolver.TryGetCriticalChanceOverride(
@@ -701,7 +703,7 @@ public partial class CombatManager : Singleton<CombatManager>
             new ActionDamageEffectContext(_activeAction, cardInstances, target, cm, aggregatedDamage,
                 handsGroup),
             out int actionDamageCap);
-        _nextReactiveHitIndex = Math.Max(hitCount, handsGroup ? cards.Count : hitCount);
+        _nextReactiveHitIndex = Math.Max(hitCount, hitsPerCard ? cards.Count : hitCount);
 
         try
         {
@@ -731,7 +733,7 @@ public partial class CombatManager : Singleton<CombatManager>
 
             int totalHpLost = 0;
             int resolvedHits = 0;
-            if (isRoyalFamily || handsGroup)
+            if (hitsPerCard)
             {
                 long damageBudget = actionDamageCap < 0
                     ? Math.Max(0L, (long)damagePerHit)
@@ -844,7 +846,9 @@ public partial class CombatManager : Singleton<CombatManager>
             if (!reactionFailed && isExplosive && !isRoyalFamily)
                 ResolveExplosiveDamage(cardInstances, target, damagePerHit, critical);
 
-            if (hitCount == 1)
+            if (isRoyalFamily)
+                Log($"Played {string.Join(" + ", names)} on {target.DisplayName}: Royal Flush, instant defeat!");
+            else if (hitCount == 1 || hitsPerCard)
                 Log($"Played {string.Join(" + ", names)} on {target.DisplayName}{(critical ? " (CRITICAL)" : string.Empty)} for {totalHpLost} damage! (HP: {target.currentHp}/{target.maxHp})");
             else
                 Log($"Played {string.Join(" + ", names)} on {target.DisplayName}{(critical ? " (CRITICAL)" : string.Empty)}: {resolvedHits}/{hitCount} hits dealt {totalHpLost} damage. (HP: {target.currentHp}/{target.maxHp})");
@@ -1836,9 +1840,14 @@ public partial class CombatManager : Singleton<CombatManager>
     public int PreviewActionTotalDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target = null)
     {
         int perHit = PreviewActionDamage(cards, target, out int cap);
-        long total = (long)perHit * (GameplayEffectResolver.HasDoubleStrikeEffect(cards) ? 2 : 1);
+        long total = (long)perHit * (PreviewHitsTwice(cards) ? 2 : 1);
         return (int)Math.Min(cap < 0 ? total : Math.Min(total, cap), int.MaxValue);
     }
+
+    /// <summary>Double Strike repeats a single hit; group actions hit once per card instead.</summary>
+    public bool PreviewHitsTwice(IReadOnlyList<CardInstance> cards) =>
+        GameplayEffectResolver.HasDoubleStrikeEffect(cards) &&
+        !GameplayEffectResolver.HitsOncePerCard(cards, CardManager.Instance);
 
     int PreviewActionDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target, out int cap)
     {

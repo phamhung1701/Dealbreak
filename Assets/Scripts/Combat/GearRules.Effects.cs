@@ -89,6 +89,10 @@ public static partial class GearRules
     public static bool EnablesRoyalFamily(CardManager cards) => cards != null &&
         cards.ownedGear.Any(gear => gear != null && gear.specialRule == GearSpecialRule.RoyalFamilyHeirloom);
 
+    /// <summary>Nuclear Option: the most cards one attack may commit, or 0 without it.</summary>
+    public static int NuclearOptionMaxCards(CardManager cards) =>
+        EnablesRoyalFamily(cards) ? Tuning.nuclearOptionMaxCards : 0;
+
     /// <summary>Memory Card hand size: Rare +3; Epic adds floor(H(face cards held)).</summary>
     public static int HandCapacityBonus(CardManager cards, GearData gear)
     {

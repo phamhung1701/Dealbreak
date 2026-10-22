@@ -99,7 +99,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         if (cards == null || combat == null || cards.SelectedCards.Count == 0) return string.Empty;
         var instances = new CardInstance[cards.SelectedCards.Count];
         for (int i = 0; i < instances.Length; i++) instances[i] = cards.SelectedCards[i].data;
-        if (GameplayEffectResolver.IsRoyalFamilySelection(instances, cards)) return "ROYAL FAMILY • Instant defeat";
+        if (GameplayEffectResolver.IsRoyalFamilySelection(instances, cards)) return "ROYAL FLUSH • Instant defeat";
         long power = 0;
         for (int i = 0; i < instances.Length; i++) power += combat.CalculateCardAttackDamage(instances[i], instances, i == 0);
         return $"{instances.Length} selected • Attack power {Math.Min(int.MaxValue, power)}";

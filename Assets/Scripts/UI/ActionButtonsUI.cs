@@ -287,9 +287,10 @@ public class ActionButtonsUI : MonoBehaviour
         {
             _primaryActionLabel.text = cards.IsEnemyTargeting ? "Cancel" : combat.currentState switch
             {
-                GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilySelection(cards.SelectedCards.Select(view => view.data).ToArray(), cards) => "ATTACK ROYAL FAMILY",
+                GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilySelection(cards.SelectedCards.Select(view => view.data).ToArray(), cards) => "ATTACK ROYAL FLUSH",
                 GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) => "ATTACK ACE PAIR",
                 GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) => $"ATTACK SAME-RANK {selectedCount}",
+                GameState.PlayerTurn when GameplayEffectResolver.IsNuclearOptionGroup(cards.SelectedCards, cards) => $"ATTACK {selectedCount} CARDS",
                 GameState.PlayerTurn => "ATTACK",
                 GameState.EnemyAttacking => "CONFIRM BLOCK",
                 _ => "ACTION"
@@ -340,13 +341,15 @@ public class ActionButtonsUI : MonoBehaviour
                 GameState.PlayerTurn when cards.HandCount == 0 =>
                     $"Recover: take {combat.TotalEnemyAttack}, draw 1",
                 GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilySelection(cards.SelectedCards.Select(view => view.data).ToArray(), cards) =>
-                    "Royal Family • instant defeat",
-                GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilyPartialSelection(cards.SelectedCards, cards) =>
-                    $"Royal Family {selectedCount}/5",
+                    "Royal Flush • instant defeat",
                 GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) =>
                     $"Ace pair • {DamagePreview(cards, combat)}",
                 GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) =>
                     $"Same rank ×{selectedCount} • {DamagePreview(cards, combat)}",
+                GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsRoyalFamilyPartialSelection(cards.SelectedCards, cards) =>
+                    $"Royal Flush {selectedCount}/{AttackSelectionRules.RoyalFlushSize} • {DamagePreview(cards, combat)}",
+                GameState.PlayerTurn when GameplayEffectResolver.IsNuclearOptionGroup(cards.SelectedCards, cards) =>
+                    $"{selectedCount} cards • {DamagePreview(cards, combat)}",
                 GameState.PlayerTurn when hasSelected => DamagePreview(cards, combat),
                 GameState.EnemyAttacking when hasSelected && combat.TryPreviewDefense(cards.SelectedCards, out int blocked, out int remaining) =>
                     $"Blocks {blocked} of {combat.PendingAttackCount} • {remaining} damage left",
@@ -361,7 +364,7 @@ public class ActionButtonsUI : MonoBehaviour
     {
         var selected = cards.SelectedCards.Select(view => view.data).ToArray();
         int damage = combat.PreviewActionDamage(selected, combat.currentEnemy);
-        if (!GameplayEffectResolver.HasDoubleStrikeEffect(selected)) return $"{damage} damage";
+        if (!combat.PreviewHitsTwice(selected)) return $"{damage} damage";
         // A damage cap (Scalpel) limits both hits together.
         int total = combat.PreviewActionTotalDamage(selected, combat.currentEnemy);
         return total == damage * 2 ? $"{damage} damage ×2 hits" : $"{total} damage over 2 hits";

@@ -218,6 +218,10 @@ public sealed class GearBalance
     [Tooltip("Opening attack gains 1 damage per this many Credits held.")]
     [Min(1)] public int goldPistolCreditsPerDamage = 10;
 
+    [Header("Nuclear Option")]
+    [Tooltip("Most cards one attack may commit; each card hits separately. A Royal Flush always takes five.")]
+    [Min(2)] public int nuclearOptionMaxCards = 5;
+
     [Header("Survivor's Badge")]
     [Tooltip("Max HP gained per Headliner win.")]
     [Min(0)] public int survivorsBadgeMaxHealth = 3;

@@ -1040,11 +1040,33 @@ public static class GameplayEffectResolver
         if (selected.Count == 0) return true;
         if (CanContinueSameRankSelection(selected, candidate, cards)) return true;
         if (!HasRoyalFamilyHeirloom(cards)) return false;
+        // Nuclear Option takes any cards up to its limit; a Royal Flush may always reach five.
+        if (selected.Count < GearRules.NuclearOptionMaxCards(cards)) return true;
         var proposed = new List<CardInstance>(selected.Count + 1);
         for (int i = 0; i < selected.Count; i++) proposed.Add(selected[i]?.data);
         proposed.Add(candidate.data);
         return AttackSelectionRules.IsRoyalFamilyPartial(proposed);
     }
+
+    /// <summary>
+    /// Nuclear Option: two or more cards, up to its limit, attack one enemy as one action and hit
+    /// one by one. A Royal Flush, an Ace pair and a same-rank (Hands) group keep their own rules.
+    /// </summary>
+    public static bool IsNuclearOptionGroup(IReadOnlyList<CardInstance> cards, CardManager manager)
+    {
+        if (cards == null || cards.Count < 2 || cards.Count > GearRules.NuclearOptionMaxCards(manager)) return false;
+        for (int i = 0; i < cards.Count; i++) if (cards[i] == null) return false;
+        return !AttackSelectionRules.IsRoyalFamily(cards) && !CanPlayAsAcePair(cards) &&
+            !IsHandsMultiCardAction(cards, manager);
+    }
+
+    public static bool IsNuclearOptionGroup(IReadOnlyList<CardView> cards, CardManager manager) =>
+        IsNuclearOptionGroup(Instances(cards), manager);
+
+    /// <summary>Group actions hit once per card, so Double Strike does not repeat them.</summary>
+    public static bool HitsOncePerCard(IReadOnlyList<CardInstance> cards, CardManager manager) =>
+        IsRoyalFamilySelection(cards, manager) || IsHandsMultiCardAction(cards, manager) ||
+        IsNuclearOptionGroup(cards, manager);
 
     public static bool HasRoyalFamilyHeirloom(CardManager manager) => GearRules.EnablesRoyalFamily(manager);
 
@@ -1186,12 +1208,11 @@ public static class GameplayEffectResolver
     public static bool CanPlaySelection(IReadOnlyList<CardInstance> cards, EnemyRuntime target,
         CardManager manager)
     {
-        if (target == null || target.IsDefeated || cards == null || cards.Count == 0 || cards.Count > 5) return false;
+        if (target == null || target.IsDefeated || cards == null || cards.Count == 0) return false;
         if (!cards.All(card => card != null)) return false;
         if (cards.Count <= 4 && (cards.Count == 1 || CanPlayAsAcePair(cards) || IsSameRankMultiCardAction(cards, manager))) return true;
-        if (cards.Count == 5)
-            return IsRoyalFamilySelection(cards, manager);
-        return false;
+        if (cards.Count == AttackSelectionRules.RoyalFlushSize && IsRoyalFamilySelection(cards, manager)) return true;
+        return IsNuclearOptionGroup(cards, manager);
     }
 
     public static void EnqueueCardCommitted(CardCommittedEffectContext context, CombatReactionQueue queue)

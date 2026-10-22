@@ -683,6 +683,7 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - The route layout is data; the pre-Headliner Black Market is the checkpoint that leads to the Headliner, not column 4.5.
 - Text that quotes balance numbers stays authored; `BalanceTextDriftTests` pins Gear, enemy-ability, Redline Deal and `Resources/QuestContract` text to the balance.
 - Fixes found on the way: Gold Pistol's Credits bonus applied with any opening-attack Gear; reward pop-ups and the Mod Bench used old Gear names; "g"/"gold"/"maps" copy.
+- Nuclear Option (`rel_100`, owner decision): one attack may commit up to `gear.nuclearOptionMaxCards` (5) cards of any kind on one enemy, each card hitting separately as one action. Ace pairs, Hands same-rank sets and the one-suit Royal Flush (instant defeat) keep their rules; a mixed-suit 10-J-Q-K-A is now an ordinary group. Player-facing "Royal Family" became "Royal Flush". The Double Strike preview no longer doubles group actions, which hit once per card.
 
 ## 10. Instructions for Future Locus Sessions
 

@@ -11,6 +11,8 @@ public static class AttackSelectionRules
         CardData.Rank.Ace
     };
 
+    public static int RoyalFlushSize => RoyalRanks.Length;
+
     public static bool IsRoyalFamilyPartial(IReadOnlyList<CardInstance> cards)
     {
         if (cards == null || cards.Count == 0 || cards.Count > RoyalRanks.Length) return false;

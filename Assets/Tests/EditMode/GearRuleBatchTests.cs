@@ -472,7 +472,7 @@ public sealed class GearRuleBatchTests
     }
 
     [Test]
-    public void RoyalFamily_InvalidMixedSuitSelectionConsumesNothing()
+    public void RoyalFamily_MixedSuitIsNoRoyalFlush_ButANuclearOptionGroupDealingCardDamage()
     {
         Buy(_royal);
         AddFaceCard(CardData.Suit.Clubs, CardData.Rank.Jack);
@@ -488,19 +488,19 @@ public sealed class GearRuleBatchTests
             cards.Select(view => view.data).ToArray()));
         cards.Add(FindView(c => c.Rank == CardData.Rank.Ace && c.Suit == CardData.Suit.Hearts,
             cards.Select(view => view.data).ToArray()));
-        var target = StartTarget(100, 1);
-        int handCount = _cards.HandCount;
-        int credits = _cards.credits;
+        var target = StartTarget(500, 1);
+        _combat.CriticalChancePercent = 0;
+        var instances = cards.Select(view => view.data).ToArray();
+        int expected = instances.Sum(card => _combat.CalculateCardAttackDamage(card, instances, false));
         int damageEvents = 0;
         _combat.OnDamageResolved += _ => damageEvents++;
 
-        Assert.That(_combat.CanPlayCards(cards, target), Is.False);
-        Assert.That(_combat.TryPlayCards(cards, target), Is.False);
-        Assert.That(_cards.HandCount, Is.EqualTo(handCount));
-        Assert.That(_cards.credits, Is.EqualTo(credits));
-        Assert.That(target.currentHp, Is.EqualTo(100));
-        Assert.That(damageEvents, Is.Zero);
-        Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
+        Assert.That(GameplayEffectResolver.IsRoyalFamilySelection(instances, _cards), Is.False);
+        Assert.That(GameplayEffectResolver.IsNuclearOptionGroup(instances, _cards), Is.True);
+        Assert.That(_combat.TryPlayCards(cards, target), Is.True);
+        Assert.That(target.IsDefeated, Is.False, "Only a one-suit Royal Flush defeats instantly.");
+        Assert.That(target.currentHp, Is.EqualTo(500 - expected));
+        Assert.That(damageEvents, Is.EqualTo(cards.Count));
     }
 
     [Test]
@@ -570,6 +570,91 @@ public sealed class GearRuleBatchTests
         Assert.That(_combat.TryPlayCards(royal, headliner), Is.False, "A resolved encounter cannot award victory twice.");
         Assert.That(encounterResults, Has.Count.EqualTo(1));
         Assert.That(_cards.credits, Is.EqualTo(13));
+    }
+
+    [Test]
+    public void NuclearOption_AnyCardsUpToItsLimitHitOneEnemyOneByOneAsOneAction()
+    {
+        int limit = GameBalance.Current.gear.nuclearOptionMaxCards;
+        var ranks = new[] { CardData.Rank.Two, CardData.Rank.Four, CardData.Rank.Seven, CardData.Rank.Nine,
+            CardData.Rank.Three, CardData.Rank.Five };
+        Assert.That(ranks.Length, Is.GreaterThan(limit), "The fixture needs one card past the limit.");
+        var views = new List<CardView>();
+        foreach (var rank in ranks.Take(limit + 1))
+            views.Add(FindView(c => c.Rank == rank, views.Select(view => view.data).ToArray()));
+        var group = views.Take(limit).ToArray();
+        var instances = group.Select(view => view.data).ToArray();
+        var target = StartTarget(500, 1);
+        _combat.CriticalChancePercent = 0;
+
+        _cards.ToggleCardSelection(group[0]);
+        _cards.ToggleCardSelection(group[1]);
+        Assert.That(_cards.SelectedCards, Has.Count.EqualTo(1), "Without Nuclear Option a click replaces the selection.");
+        Assert.That(_combat.CanPlayCards(instances.Take(3).ToArray(), target), Is.False);
+
+        Buy(_royal);
+        _cards.ClearSelection();
+        foreach (var view in views) _cards.ToggleCardSelection(view);
+        Assert.That(_cards.SelectedCards, Is.EqualTo(group), $"Selection stops at {limit} cards.");
+        Assert.That(GameplayEffectResolver.IsNuclearOptionGroup(instances, _cards), Is.True);
+        Assert.That(_combat.CanPlayCards(_cards.SelectedCards, target), Is.True);
+        Assert.That(_combat.CanPlayCards(views.Select(view => view.data).ToArray(), target), Is.False,
+            "One card past the limit is refused.");
+
+        int expected = instances.Sum(card => _combat.CalculateCardAttackDamage(card, instances, false));
+        Assert.That(_combat.PreviewActionTotalDamage(instances, target), Is.EqualTo(expected));
+        var hits = new List<DamageResult>();
+        _combat.OnDamageResolved += hits.Add;
+
+        Assert.That(_combat.TryPlayCards(_cards.GetSelectedCardsSnapshot(), target), Is.True);
+        Assert.That(hits.Select(hit => hit.Request.HitCard), Is.EqualTo(instances), "Each card hits once, in order.");
+        Assert.That(target.currentHp, Is.EqualTo(500 - expected));
+        Assert.That(_combat.CompletedPlayerTurnCount, Is.EqualTo(1), "The whole group spends one player action.");
+    }
+
+    [Test]
+    public void NuclearOption_AcePairsSameRankSetsAndRoyalFlushKeepTheirOwnRules()
+    {
+        Buy(_royal);
+        var two = FindView(c => c.Rank == CardData.Rank.Two);
+        var ace = FindView(c => c.Rank == CardData.Rank.Ace, two.data);
+        var acePair = new[] { two.data, ace.data };
+        Assert.That(GameplayEffectResolver.IsNuclearOptionGroup(acePair, _cards), Is.False);
+        Assert.That(GameplayEffectResolver.CanPlayAsAcePair(acePair), Is.True);
+
+        Buy(_hands);
+        var sixes = EnsureRankInHand(CardData.Rank.Six, 2).Select(view => view.data).ToArray();
+        Assert.That(GameplayEffectResolver.IsHandsMultiCardAction(sixes, _cards), Is.True);
+        Assert.That(GameplayEffectResolver.IsNuclearOptionGroup(sixes, _cards), Is.False);
+
+        var royal = new[] { CardData.Rank.Ten, CardData.Rank.Jack, CardData.Rank.Queen, CardData.Rank.King,
+            CardData.Rank.Ace }.Select((rank, index) =>
+            {
+                var definition = CardData.Create(CardData.Suit.Hearts, rank);
+                _assets.Add(definition);
+                return new CardInstance(definition, 9000 + index);
+            }).ToArray();
+        Assert.That(GameplayEffectResolver.IsRoyalFamilySelection(royal, _cards), Is.True);
+        Assert.That(GameplayEffectResolver.IsNuclearOptionGroup(royal, _cards), Is.False);
+    }
+
+    [Test]
+    public void DoubleStrikePreview_RepeatsSingleHitsButNotGroupsThatHitOncePerCard()
+    {
+        var doubleStrike = ScriptableObject.CreateInstance<CardEnhancementData>();
+        doubleStrike.displayName = "Test Double Strike";
+        doubleStrike.effects = new[] { new GameplayEffectDefinition { kind = GameplayEffectKind.DoubleStrike } };
+        _assets.Add(doubleStrike);
+        var first = FindView(c => c.Rank == CardData.Rank.Two);
+        var second = FindView(c => c.Rank == CardData.Rank.Four, first.data);
+        Assert.That(first.data.TryApplyEnhancement(doubleStrike), Is.True);
+        StartTarget(500, 1);
+        Assert.That(_combat.PreviewHitsTwice(new[] { first.data }), Is.True);
+
+        Buy(_royal);
+        var group = new[] { first.data, second.data };
+        Assert.That(_combat.PreviewHitsTwice(group), Is.False);
+        Assert.That(_combat.PreviewActionTotalDamage(group), Is.EqualTo(_combat.PreviewActionDamage(group)));
     }
 
     void AddFaceCard(CardData.Suit suit, CardData.Rank rank)

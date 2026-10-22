@@ -70,6 +70,8 @@ public sealed class BalanceTextDriftTests
         AssertQuotes(Gear("GlassShardEpic"), "Glass Shard Epic",
             $"At exactly {g.glassShardEpicAtHealth} HP, card attacks deal {g.glassShardEpicAttackMultiplier}× damage");
         AssertQuotes(Gear("GoldPistol"), "Gold Pistol", $"+1 damage per {g.goldPistolCreditsPerDamage} Credits held");
+        AssertQuotes(Gear("NuclearOption"), "Nuclear Option", $"2 to {g.nuclearOptionMaxCards} cards",
+            $"up to {g.nuclearOptionMaxCards} cards", $"{g.nuclearOptionMaxCards} cards maximum");
         AssertQuotes(Gear("GrapplingHook"), "Grappling Hook", $"draws {g.grapplingHookDraw}");
         AssertQuotes(Gear("GuardDrone"), "Guard Drone", $"+{g.guardDroneBlockPerTrickType} Block/type");
         AssertQuotes(Gear("HeartMedsRare"), "Heart Meds Rare",

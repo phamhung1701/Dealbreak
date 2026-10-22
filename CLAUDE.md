@@ -64,6 +64,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - No Take Damage button; PASS skips the blocking phase.
 - Every played card (attack or Block) and every Incident discard goes straight back into the draw pile, which reshuffles. The discard pile no longer fills in play; Ace Protocol and Diamond Driver take their card from the draw pile.
 - Supply is repeatable within a Black Market.
+- Nuclear Option (`rel_100`, Legendary): one attack may commit up to 5 cards of any kind (`gear.nuclearOptionMaxCards`) on one enemy, each card hitting separately. Ace pairs and Hands same-rank sets keep their rules; a one-suit Royal Flush (10-J-Q-K-A) defeats instantly.
 - Black Market Goods: each slot is Gear 75% / Trick 25%; Gear rarity 6:3:1 Common/Rare/Epic, never Legendary. Shop Gear is standalone (`BuyStandaloneGear`): no tier-upgrade preference or replacement, and owned copies are sold.
 - Tricks and Gear are dragged like cards (`ItemDropRules`, `ItemDragUI`): a card Trick onto a hand card (one card per drop, one charge each), damage onto an enemy, heal onto the HP bar, either onto the Black Market to sell with no confirmation, a Gear onto a matching copy to merge them into the next tier (the result takes the slot it was dropped on), and either onto the red DISCARD strip that covers the run header while an item is held. There is no SELL panel, Sell Items mode, Merge button or Trick USE button. The HP panel stays visible beside the compact hand.
 - Enemy drops go straight into the backpack when there is room. With the backpack full the drop waits on the board (`RunManager.PendingEnemyDrop`) and the run waits with it until it is dragged in or left (LEAVE IT).
@@ -92,7 +93,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Driving Unity (Locus MCP)
 
-- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-22): **EditMode 1793 passed + 1 skipped (1794 cases, the per-Gear matrices and balance drift tests included), PlayMode 10/10 plus the 12-District soak**.
+- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-22): **EditMode 1796 passed + 1 skipped (1797 cases, the per-Gear matrices and balance drift tests included), PlayMode 10/10 plus the 12-District soak**.
 - Tool calls are capped at about 5 minutes.
   - The full EditMode run (and some batches) blocks the main thread long enough that `unity_test_run` aborts with `native_main_thread_unresponsive` while the run goes on. Start it from `unity_execute` instead: `UnityTestApi.Start(new Locus.UnityTestRunOptions { Mode = Locus.UnityTestMode.Edit, Assemblies = new[]{"Dealbreak.EditModeTests"}, ResultDetail = Locus.UnityTestResultDetail.Failures })`, then poll `UnityTestApi.Status(runId)` in later calls. PlayMode and the soak work the same way (`Mode = Play`, `Groups`).
   - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap). Never poll it with `unity_execute` and `request_editor_status: "editing"`: that leaves Play mode and aborts the soak; wait on `TestResults.xml` instead.
