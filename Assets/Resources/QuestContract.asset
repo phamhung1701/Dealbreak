@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56ede82db3e0bdd49bbf245bd4ba24ac, type: 3}
+  m_Name: QuestContract
+  m_EditorClassIdentifier: Dealbreak.Runtime::RunEventDefinition
+  id: quest-contract-select
+  category: 3
+  flow: 3
+  title: QUEST CONTRACT
+  description: Choose one objective. The Contract occupies no Gear slot; its 20 Credits
+    fee is charged only when you confirm an objective. Cancel keeps your Credits.
+  choices:
+  - label: Combat Contract
+    description: 'Win 2 encounters within 12 Districts. Reward: 6 Credits. Failure:
+      lose 5 HP.'
+    effects: []
+    interaction: 0
+    requiredDiscardValue: 0
+  - label: Enforcer Contract
+    description: 'Defeat a reachable Enforcer before leaving this District. Reward:
+      a Rare Gear item, or heal 5 HP if none is eligible. Failure: lose 5 HP.'
+    effects: []
+    interaction: 0
+    requiredDiscardValue: 0
+  - label: Flawless Contract
+    description: 'Win 1 encounter without losing HP. Reward: 10 Credits. Failure:
+      lose 5 HP.'
+    effects: []
+    interaction: 0
+    requiredDiscardValue: 0
+  - label: Cancel
+    description: Return to the Black Market. The Contract fee is not charged.
+    effects: []
+    interaction: 0
+    requiredDiscardValue: 0

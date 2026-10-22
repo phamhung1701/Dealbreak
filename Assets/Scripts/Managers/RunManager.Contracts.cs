@@ -21,6 +21,22 @@ public partial class RunManager
 
     static bool IsContractCancel(int choiceIndex) => choiceIndex == ContractChoices.Length;
 
+    // Title, text and choices are authored in Resources/QuestContract: one choice per ContractChoices
+    // entry, in order, then Cancel. BalanceTextDriftTests pin its numbers to GameBalance.
+    static RunEventDefinition _contractSelectionTemplate;
+    static RunEventDefinition ContractSelectionTemplate
+    {
+        get
+        {
+            if (_contractSelectionTemplate == null)
+                _contractSelectionTemplate = Resources.Load<RunEventDefinition>("QuestContract");
+            if (_contractSelectionTemplate == null || _contractSelectionTemplate.choices == null ||
+                _contractSelectionTemplate.choices.Length != ContractChoices.Length + 1)
+                throw new InvalidOperationException("Resources/QuestContract needs one choice per Contract, then Cancel.");
+            return _contractSelectionTemplate;
+        }
+    }
+
     string GetContractChoiceUnavailableReason(int choiceIndex)
     {
         if (IsContractCancel(choiceIndex)) return string.Empty;
@@ -35,19 +51,10 @@ public partial class RunManager
     {
         if (_activeNode == null || _activeNode.kind != MapNodeType.Shop || _activeContract != null ||
             _pendingContractSelectionEvent != null || OnShowEvent == null) return false;
-        var selection = ScriptableObject.CreateInstance<RunEventDefinition>();
+        var selection = Instantiate(ContractSelectionTemplate);
         selection.id = $"quest-contract-select:{_activeNode.mapIndex}:{_activeNode.id}";
         selection.category = MapNodeType.Event;
         selection.flow = RunEventFlow.ContractSelection;
-        selection.title = "QUEST CONTRACT";
-        selection.description = "Choose one objective. The Contract occupies no Gear slot; its 20 Credits fee is charged only when you confirm an objective. Cancel keeps your Credits.";
-        selection.choices = new[]
-        {
-            new RunEventChoice { label = "Combat Contract", description = $"Win 2 encounters within {GameBalance.Current.contracts.combatDeadlineDistricts} Districts. Reward: 6 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
-            new RunEventChoice { label = "Enforcer Contract", description = "Defeat a reachable Enforcer before leaving this District. Reward: a Rare Gear item, or heal 5 HP if none is eligible. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
-            new RunEventChoice { label = "Flawless Contract", description = "Win 1 encounter without losing HP. Reward: 10 Credits. Failure: lose 5 HP.", effects = Array.Empty<RunEffect>() },
-            new RunEventChoice { label = "Cancel", description = "Return to the Black Market. The Contract fee is not charged.", effects = Array.Empty<RunEffect>() }
-        };
         _pendingContractPrice = Math.Max(0, pendingPrice);
         _pendingContractSelectionEvent = selection;
         _activeEvent = selection;

@@ -93,13 +93,16 @@ public sealed class ShopOffer
         if (kind == ShopOfferKind.Consumable)
             return consumable != null ? consumable.description : string.Empty;
         if (kind == ShopOfferKind.Investment)
-            return "Stake Credits now; at the next Black Market, receive 3× the stake or nothing.";
+            return $"Stake Credits now; at the next Black Market, receive {GameBalance.Current.blackMarket.stakePayoutMultiplier}× the stake or nothing.";
         if (kind == ShopOfferKind.Guidance)
             return "Reveal 1 random hidden node on the current district.";
         if (kind == ShopOfferKind.Supply)
-            return "Draw cards from the existing Draw Pile for 3 Credits each, up to your hand limit. No recycling.";
+            return $"Draw cards from the existing Draw Pile for {GameBalance.Current.blackMarket.supplyPricePerCard} Credits each, up to your hand limit. No recycling.";
         if (kind == ShopOfferKind.Contract)
-            return $"Choose: win 2 encounters within {GameBalance.Current.contracts.combatDeadlineDistricts} Districts for 6 Credits; defeat a reachable Enforcer before leaving this district for an eligible Rare Gear or heal 5 HP if none is collectible; or win an encounter with zero actual HP loss for 10 Credits. Contract is run-local and uses no Gear slot. One active Contract maximum; failure settles once for up to 5 HP, never below 1.";
+        {
+            var c = GameBalance.Current.contracts;
+            return $"Choose: win {c.combatWinsRequired} encounters within {c.combatDeadlineDistricts} Districts for {c.combatReward} Credits; defeat a reachable Enforcer before leaving this district for an eligible {c.enforcerRewardRarity} Gear or heal {c.enforcerFallbackHeal} HP if none is collectible; or win an encounter with zero actual HP loss for {c.flawlessReward} Credits. Contract is run-local and uses no Gear slot. One active Contract maximum; failure settles once for up to {c.failureHpLoss} HP, never below 1.";
+        }
         return string.Empty;
     }
 }
