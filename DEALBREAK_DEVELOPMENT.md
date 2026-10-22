@@ -692,6 +692,11 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - Gear prices follow rarity (Common 10, Rare 20, Epic 30). Headhunter Rifle, Riot Helmet and Flip Switch are Rare. Numbers: Counterpunch 3, Tactical Plating -6 only while an attacker has 10+ HP (`GameplayConditionKind.AttackerHealthAtLeast`), Power Baton +6, Recovery Pills 5, Matched Cells cap 12, Diamond Driver (Common) draws 1, Riot Helmet 2 Shield, Spotter Eye +8, Lowball +5, Flip Switch +5 per switch, Bounty Hologram +25% for both, Savings Safe 30%, City Boots 6 Credits, Loyalty Card 10%, Supply Crate every win, Glass Shard Epic at 5 HP or less.
 - Reworks: Counterpunch Rare counters the blocked damage, ×1.5 on a Perfect Block; Epic ×2 and grows +1 on each kill by its own counterattack. Spade Shield Rare/Epic: a Spade over-block counts as a Perfect Block (the separate Spade draw is gone); Epic banks the over-blocked damage. Headhunter Rifle counts Enforcer and Headliner wins, +3 each on every attack in those encounters. Gold Pistol applies to every attack. Lighter draws its effect amount after destroying.
 
+## Trigger Animations and Header Rows — October 23, 2026
+
+- Mods and Gear show when they work, after Balatro: gameplay reports each activation to `EffectTriggerFeed` (attack and block values through an `EffectTriggerTrace` filled by the committing calculation; previews never report), and `EffectTriggerPresenterUI` plays them in order. The card or Gear hops, a tag names the effect, Credits fly into the chip and healing onto the HP bar; Overclocked drains HP from the bar into its card before the attack. Played cards stand lifted while their pre-hit triggers play, and the board waits for combat triggers.
+- The HUD drops the District and Headliner lines. Gear and Tricks are two rows of slots across the header; the stage widens into the freed left column and centres over the hand; slot details open below the slot; the item DISCARD strip covers the wordmark; an active Contract's progress sits above the draw pile.
+
 ## 10. Instructions for Future Locus Sessions
 
 1. Read `DEALBREAK_DEVELOPMENT.md` before beginning substantial project work.
