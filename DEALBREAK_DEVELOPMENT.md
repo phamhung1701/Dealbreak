@@ -685,6 +685,13 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - Fixes found on the way: Gold Pistol's Credits bonus applied with any opening-attack Gear; reward pop-ups and the Mod Bench used old Gear names; "g"/"gold"/"maps" copy.
 - Nuclear Option (`rel_100`, owner decision): one attack may commit up to `gear.nuclearOptionMaxCards` (5) cards of any kind on one enemy, each card hitting separately as one action. Ace pairs, Hands same-rank sets and the one-suit Royal Flush (instant defeat) keep their rules; a mixed-suit 10-J-Q-K-A is now an ordinary group. Player-facing "Royal Family" became "Royal Flush". The Double Strike preview no longer doubles group actions, which hit once per card.
 
+## Readable Item Text and Gear Tweaks — October 22, 2026
+
+- Every Gear and Trick shows one short in-game sentence (workbook column "Ingame description"); the old Trigger/Condition/Effect/Value blocks are gone. `BalanceTextDriftTests` pins the quoted numbers to `GameBalance`, to typed Gear effect amounts, to Trick fields and to the Mod a Mod Trick applies. Owned Counterpunch Gloves Epic, Lowball Epic and Memory Card Epic add a live "Currently +n" line (`GearRules.LiveStatus`).
+- Tricks: a Mod Trick may target any hand card and replaces its Mod (permanent attack stays); a Crystal also takes a card already of its suit, spending a charge, so Gear that counts Trick uses fires; Shears may take the last card. Destroying the last owned card by any means loses the run (`CombatManager.ResolveDeckedOut`). Predatory's growth reads its Mod amount.
+- Gear prices follow rarity (Common 10, Rare 20, Epic 30). Headhunter Rifle, Riot Helmet and Flip Switch are Rare. Numbers: Counterpunch 3, Tactical Plating -6 only while an attacker has 10+ HP (`GameplayConditionKind.AttackerHealthAtLeast`), Power Baton +6, Recovery Pills 5, Matched Cells cap 12, Diamond Driver (Common) draws 1, Riot Helmet 2 Shield, Spotter Eye +8, Lowball +5, Flip Switch +5 per switch, Bounty Hologram +25% for both, Savings Safe 30%, City Boots 6 Credits, Loyalty Card 10%, Supply Crate every win, Glass Shard Epic at 5 HP or less.
+- Reworks: Counterpunch Rare counters the blocked damage, ×1.5 on a Perfect Block; Epic ×2 and grows +1 on every enemy defeat. Spade Shield Rare/Epic: a Spade over-block counts as a Perfect Block (the separate Spade draw is gone); Epic banks the over-blocked damage. Headhunter Rifle counts Enforcer and Headliner wins, +3 each on every attack in those encounters. Gold Pistol applies to every attack. Lighter draws its effect amount after destroying.
+
 ## 10. Instructions for Future Locus Sessions
 
 1. Read `DEALBREAK_DEVELOPMENT.md` before beginning substantial project work.
