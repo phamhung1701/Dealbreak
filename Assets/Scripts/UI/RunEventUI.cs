@@ -128,7 +128,7 @@ public class RunEventUI : MonoBehaviour
             layout.childControlWidth = true;
             layout.childForceExpandWidth = true;
         }
-        var fitter = content.GetComponent<ContentSizeFitter>() ?? content.gameObject.AddComponent<ContentSizeFitter>();
+        var fitter = content.TryGetComponent(out ContentSizeFitter existingContentSizeFitter) ? existingContentSizeFitter : content.gameObject.AddComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
     }
@@ -142,7 +142,7 @@ public class RunEventUI : MonoBehaviour
         _descriptionLayoutPrepared = true;
         _descriptionScrollRect = viewport.GetComponent<ScrollRect>();
         _descriptionScrollRect.content = content;
-        var fitter = content.GetComponent<ContentSizeFitter>() ?? content.gameObject.AddComponent<ContentSizeFitter>();
+        var fitter = content.TryGetComponent(out ContentSizeFitter existingContentSizeFitter) ? existingContentSizeFitter : content.gameObject.AddComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         descriptionLabel.overflowMode = TextOverflowModes.Overflow;
@@ -297,7 +297,7 @@ public class RunEventUI : MonoBehaviour
         if (rect == null) return;
         float textWidth = Mathf.Max(1f, availableWidth - 32f);
         float textHeight = label.GetPreferredValues(label.text, textWidth, 0f).y;
-        var layout = buttonObject.GetComponent<LayoutElement>() ?? buttonObject.AddComponent<LayoutElement>();
+        var layout = buttonObject.TryGetComponent(out LayoutElement existingLayoutElement) ? existingLayoutElement : buttonObject.AddComponent<LayoutElement>();
         layout.minWidth = 0f;
         layout.preferredWidth = -1f;
         layout.flexibleWidth = 1f;

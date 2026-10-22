@@ -254,7 +254,7 @@ public class ShopUI : MonoBehaviour
         content.sizeDelta = Vector2.zero;
         var layout = content.GetComponent<VerticalLayoutGroup>();
         if (layout != null) { layout.childControlHeight = true; layout.childControlWidth = true; layout.childForceExpandWidth = true; }
-        var fitter = content.GetComponent<ContentSizeFitter>() ?? content.gameObject.AddComponent<ContentSizeFitter>();
+        var fitter = content.TryGetComponent(out ContentSizeFitter existingContentSizeFitter) ? existingContentSizeFitter : content.gameObject.AddComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         _offersScroll = viewportObject.GetComponent<ScrollRect>();
@@ -418,7 +418,7 @@ public class ShopUI : MonoBehaviour
                     : offer.kind == ShopOfferKind.Supply ? "3 Credits / card" : $"{offer.price} Credits";
                 text.text = $"<b>{offer.DisplayName}</b>\n{priceLabel}{status}";
                 text.overflowMode = TextOverflowModes.Overflow;
-                var row = btn.GetComponent<LayoutElement>() ?? btn.AddComponent<LayoutElement>();
+                var row = btn.TryGetComponent(out LayoutElement existingLayoutElement) ? existingLayoutElement : btn.AddComponent<LayoutElement>();
                 float textWidth = Mathf.Max(1f, ((RectTransform)container).rect.width - 32f);
                 row.minHeight = Mathf.Max(84f, text.GetPreferredValues(text.text, textWidth, 0f).y + 20f);
                 row.preferredHeight = row.minHeight;
@@ -484,7 +484,7 @@ public class ShopUI : MonoBehaviour
         go.name = "RefreshGoods";
         var label = go.GetComponentInChildren<TMP_Text>();
         if (label) label.text = $"Refresh Goods • {run.GoodsRefreshPrice} Credits";
-        var layout = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+        var layout = go.TryGetComponent(out LayoutElement existingLayoutElement) ? existingLayoutElement : go.AddComponent<LayoutElement>();
         layout.minHeight = layout.preferredHeight = 42;
         var button = go.GetComponent<Button>();
         int expected = run.GoodsRefreshCount;

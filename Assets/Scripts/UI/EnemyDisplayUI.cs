@@ -96,10 +96,10 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         _enemyTargetEligible = targeting && eligible;
         if (wasTargeting && !targeting) RefreshStateGuidance();
         if (_enemyTargeting && _targetCanvasGroup == null)
-            _targetCanvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+            _targetCanvasGroup = TryGetComponent(out CanvasGroup existingCanvasGroup) ? existingCanvasGroup : gameObject.AddComponent<CanvasGroup>();
         if (_enemyTargeting && portrait != null && _targetOutline == null)
         {
-            _targetOutline = portrait.GetComponent<Outline>() ?? portrait.gameObject.AddComponent<Outline>();
+            _targetOutline = portrait.TryGetComponent(out Outline existingOutline) ? existingOutline : portrait.gameObject.AddComponent<Outline>();
             _targetOutline.effectDistance = new Vector2(3f, -3f);
         }
         RefreshEnemyTargetPresentation();
@@ -473,7 +473,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         bool inspecting = TryGetComponent<CombatInspectUI>(out var inspect) && (inspect.IsHovered || inspect.IsInspected);
         if (portrait && _targetOutline == null)
         {
-            _targetOutline = portrait.GetComponent<Outline>() ?? portrait.gameObject.AddComponent<Outline>();
+            _targetOutline = portrait.TryGetComponent(out Outline existingOutline) ? existingOutline : portrait.gameObject.AddComponent<Outline>();
             _targetOutline.effectDistance = new Vector2(3f, -3f);
         }
         if (_targetOutline)
