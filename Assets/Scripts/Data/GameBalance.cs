@@ -210,7 +210,7 @@ public sealed class GearBalance
     [Min(100)] public int counterpunchGlovesRarePerfectPercent = 150;
     [Tooltip("Epic: counterattack after a Perfect Block, in percent of the blocked damage, rounded down.")]
     [Min(100)] public int counterpunchGlovesEpicPerfectPercent = 200;
-    [Tooltip("Epic: permanent counterattack damage gained per enemy defeated.")]
+    [Tooltip("Epic: permanent counterattack damage gained per counterattack kill.")]
     [Min(0)] public int counterpunchGlovesEpicGrowth = 1;
 
     [Header("Headhunter Rifle")]

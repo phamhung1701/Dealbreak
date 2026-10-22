@@ -1363,7 +1363,6 @@ public partial class CombatManager : Singleton<CombatManager>
         if (enemy == null || !_enemies.Contains(enemy) || !_processedEnemyDeaths.Add(enemy)) return;
         _earnedCreditsReward += Mathf.Max(0, enemy.CreditsReward);
         if (_isEliteEncounter) _eliteKillCount++;
-        GearRules.OnEnemyDefeated(CardManager.Instance, Log);
         int returnedCredits = enemy.ClaimStolenCredits();
         if (returnedCredits > 0) CardManager.Instance.AddCredits(returnedCredits);
         RemoveEnemy(enemy);

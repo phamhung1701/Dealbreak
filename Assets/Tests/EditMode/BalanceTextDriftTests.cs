@@ -66,7 +66,7 @@ public sealed class BalanceTextDriftTests
             $"×{Ratio(g.counterpunchGlovesRarePerfectPercent, 100)} on a Perfect Block");
         AssertQuotes(Gear("CounterpunchGlovesEpic"), "Counterpunch Gloves Epic",
             $"×{Ratio(g.counterpunchGlovesEpicPerfectPercent, 100)} on a Perfect Block",
-            $"permanently gain +{g.counterpunchGlovesEpicGrowth} DMG for each enemy defeated");
+            $"permanently gain +{g.counterpunchGlovesEpicGrowth} DMG for each enemy they defeat");
         AssertQuotes(Gear("DiamondDriverRare"), "Diamond Driver Rare", $"draws {g.diamondDriverDraw} cards");
         AssertQuotes(Gear("DiamondDriverEpic"), "Diamond Driver Epic", $"draws {g.diamondDriverDraw} cards",
             $"Every {Ordinal(g.diamondDriverEpicDiamondsPerChoice)} Diamond");

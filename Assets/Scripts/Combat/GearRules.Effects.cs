@@ -236,7 +236,7 @@ public static partial class GearRules
 
     /// <summary>Spade Shield Epic banks the over-blocked damage for the next attack; Counterpunch
     /// Rare and Epic counterattack the blocked enemy for the blocked damage, more on a Perfect Block
-    /// (Epic adds its growth).</summary>
+    /// (Epic adds its growth, which grows when its own counterattack kills).</summary>
     public static void EnqueueAttackBlockedRules(GameplayEffectSource source, AttackBlockedEffectContext context,
         CombatReactionQueue queue, int sourceOrder)
     {
@@ -263,7 +263,17 @@ public static partial class GearRules
                 queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
                     CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue,
                     () => context.Combat.QueueReactiveDamage(context.Combat.player, context.AttackedEnemy,
-                        retaliation, sourceOrder, int.MaxValue, sourceCategory: source.Category));
+                        retaliation, sourceOrder, int.MaxValue, sourceCategory: source.Category,
+                        onResolved: rule == GearSpecialRule.RetaliationEpic
+                            ? result =>
+                            {
+                                int gained = Tuning.counterpunchGlovesEpicGrowth;
+                                if (!result.WasLethal || gained <= 0) return;
+                                source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, ClampToInt(
+                                    (long)source.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) + gained));
+                                context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +{gained} counter damage.");
+                            }
+                            : null));
         }
     }
 }

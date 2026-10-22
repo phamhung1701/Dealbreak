@@ -203,20 +203,6 @@ public static partial class GearRules
         return ClampToInt(bonus);
     }
 
-    /// <summary>Counterpunch Gloves Epic: every defeated enemy permanently grows its counterattack.</summary>
-    public static void OnEnemyDefeated(CardManager cards, Action<string> log)
-    {
-        foreach (var (gear, instance) in Owned(cards))
-        {
-            if (gear.specialRule != GearSpecialRule.RetaliationEpic) continue;
-            int gained = Tuning.counterpunchGlovesEpicGrowth;
-            if (gained <= 0) continue;
-            instance.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth,
-                ClampToInt((long)instance.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) + gained));
-            log?.Invoke($"{gear.displayName}: permanently gained +{gained} counterattack damage.");
-        }
-    }
-
     /// <summary>Dwarf Epic: a prepared low card permanently gains attack when a higher card kills.</summary>
     public static void OnKill(CardManager cards, IReadOnlyList<CardInstance> committedCards, Action<string> log)
     {

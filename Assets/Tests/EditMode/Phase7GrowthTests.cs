@@ -98,7 +98,7 @@ public sealed class Phase7GrowthTests
     }
 
     [Test]
-    public void RetaliationEpic_GrowsOnEveryEnemyDefeatAndCarriesGrowthForward()
+    public void RetaliationEpic_GrowsOnlyOnItsOwnCounterattackKills()
     {
         var retaliation = Gear("rel_111", GearSpecialRule.RetaliationEpic);
         var first = Enemy("Retaliation nonlethal", 5);
@@ -114,12 +114,15 @@ public sealed class Phase7GrowthTests
         Assert.That(state.GetCounter(-111), Is.Zero);
         ResolveRetaliation(blockCard, second, 4);
         Assert.That(second.IsDefeated, Is.True, "A Perfect Block (4 on 4) counters for 4 × 2 = 8.");
-        Assert.That(state.GetCounter(-111), Is.EqualTo(1), "Any enemy defeat grows the counterattack.");
+        Assert.That(state.GetCounter(-111), Is.EqualTo(1), "A counterattack kill grows the counterattack.");
         Assert.That(GearRules.LiveStatus(_cards, retaliation, _cards.GetGearInstance(retaliation)), Is.EqualTo("Currently +1."));
         third.ApplyResolvedCombatDamage(third.currentHp);
         typeof(CombatManager).GetMethod("HandleEnemyDefeated", BindingFlags.Instance | BindingFlags.NonPublic)
             .Invoke(_combat, new object[] { third });
-        Assert.That(state.GetCounter(-111), Is.EqualTo(2), "A kill by any means counts, not only a counterattack kill.");
+        Assert.That(state.GetCounter(-111), Is.EqualTo(1), "A kill by other means does not count.");
+        ResolveRetaliation(blockCard, first, 5);
+        Assert.That(first.IsDefeated, Is.True);
+        Assert.That(state.GetCounter(-111), Is.EqualTo(2));
     }
 
     [Test]
