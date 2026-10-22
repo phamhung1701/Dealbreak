@@ -75,14 +75,10 @@ public sealed class CoreGameplayEffectsTests
             Assert.That(gearItems[i].tier, Is.EqualTo(1));
             Assert.That(gearItems[i].rarity, Is.EqualTo("Common"));
             Assert.That(gearItems[i].capacityCategory, Is.EqualTo(GearCapacityCategory.Persistent));
-            Assert.That(gearItems[i].reduceEnemyAttackByCardValue || gearItems[i].recycleDiscardByCardValue ||
-                gearItems[i].drawByCardValue, Is.False);
             Assert.That(enhancements[i].canonicalId, Is.EqualTo($"enh_{i + 1:000}"));
             Assert.That(enhancements[i].effects, Has.Length.EqualTo(1));
             Assert.That(enhancements[i].tier, Is.EqualTo(1));
             Assert.That(enhancements[i].rarity, Is.EqualTo("Common"));
-            Assert.That(enhancements[i].healOnPlay + enhancements[i].drawOnPlay +
-                enhancements[i].attackBonus + enhancements[i].defenseBonus, Is.Zero);
         }
         Assert.That(_hardened.displayName, Is.EqualTo("Plated"));
         Assert.That(_hardened.id, Is.EqualTo("reinforced"), "Keep stable legacy Shop IDs and GUIDs.");

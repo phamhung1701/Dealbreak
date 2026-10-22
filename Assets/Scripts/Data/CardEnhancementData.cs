@@ -19,10 +19,4 @@ public sealed class CardEnhancementData : ScriptableObject
     [Header("Typed Gameplay Effects")]
     public GameplayEffectDefinition[] effects = System.Array.Empty<GameplayEffectDefinition>();
     public GameplayRuleModifierData[] ruleModifiers = System.Array.Empty<GameplayRuleModifierData>();
-
-    [Header("Legacy Prototype Hooks (used only without typed effects)")]
-    public int attackBonus;
-    public int defenseBonus;
-    [Min(0)] public int healOnPlay;
-    [Min(0)] public int drawOnPlay;
 }

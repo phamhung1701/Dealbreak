@@ -229,7 +229,7 @@ public sealed class GearRuleBatchTests
         Assert.That(_cards.HandCount, Is.EqualTo(CardManager.HAND_SIZE));
         var draw = ScriptableObject.CreateInstance<CardEnhancementData>();
         draw.displayName = "Draw Two on Play";
-        draw.drawOnPlay = 2;
+        draw.effects = new[] { TestEffects.DrawOnPlay(2) };
         _assets.Add(draw);
         foreach (var card in _cards.ownedCards)
             Assert.That(card.TryApplyEnhancement(draw), Is.True);
@@ -277,7 +277,7 @@ public sealed class GearRuleBatchTests
         _combat.StartEncounter(new[] { first, fallback });
         _cards.DrawToHand(CardManager.HAND_SIZE);
         var draw = ScriptableObject.CreateInstance<CardEnhancementData>();
-        draw.displayName = "Draw Two on Play"; draw.drawOnPlay = 2;
+        draw.displayName = "Draw Two on Play"; draw.effects = new[] { TestEffects.DrawOnPlay(2) };
         _assets.Add(draw);
         foreach (var card in _cards.ownedCards) Assert.That(card.TryApplyEnhancement(draw), Is.True);
         var selected = FindView(_ => true);
@@ -304,7 +304,7 @@ public sealed class GearRuleBatchTests
         _combat.StartEncounter(new[] { lastEnemy });
         _cards.DrawToHand(CardManager.HAND_SIZE);
         var draw = ScriptableObject.CreateInstance<CardEnhancementData>();
-        draw.displayName = "Draw Two on Play"; draw.drawOnPlay = 2;
+        draw.displayName = "Draw Two on Play"; draw.effects = new[] { TestEffects.DrawOnPlay(2) };
         _assets.Add(draw);
         foreach (var card in _cards.ownedCards) Assert.That(card.TryApplyEnhancement(draw), Is.True);
         var selected = FindView(_ => true);
@@ -432,7 +432,7 @@ public sealed class GearRuleBatchTests
         {
             var onPlay = ScriptableObject.CreateInstance<CardEnhancementData>();
             onPlay.displayName = $"Committed Heal {i + 1}";
-            onPlay.healOnPlay = i + 1;
+            onPlay.effects = new[] { TestEffects.HealOnPlay(i + 1) };
             _assets.Add(onPlay);
             Assert.That(group[i].data.TryApplyEnhancement(onPlay), Is.True);
         }
@@ -523,7 +523,7 @@ public sealed class GearRuleBatchTests
         var royal = royalCards.ToArray();
         var onPlay = ScriptableObject.CreateInstance<CardEnhancementData>();
         onPlay.displayName = "Royal Heal";
-        onPlay.healOnPlay = 1;
+        onPlay.effects = new[] { TestEffects.HealOnPlay(1) };
         _assets.Add(onPlay);
         var wildHeal = ScriptableObject.CreateInstance<CardEnhancementData>();
         wildHeal.displayName = "Wild Royal";

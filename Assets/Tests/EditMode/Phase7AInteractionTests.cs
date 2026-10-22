@@ -71,7 +71,7 @@ public sealed class Phase7AInteractionTests
         _combat.StartEncounter(enemies);
         Assert.That(_combat.TryPlayCards(new[] { HandViews()[0] }, enemies[0]), Is.True);
         var bonus = ScriptableObject.CreateInstance<GearData>();
-        bonus.defenseBonus = 3;
+        bonus.effects = new[] { TestEffects.FlatBlock(3) };
         _created.Add(bonus);
         _cards.ownedGear.Add(bonus);
 
@@ -111,7 +111,7 @@ public sealed class Phase7AInteractionTests
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
 
         var bonus = ScriptableObject.CreateInstance<GearData>();
-        bonus.defenseBonus = 5;
+        bonus.effects = new[] { TestEffects.FlatBlock(5) };
         _created.Add(bonus);
         _cards.ownedGear.Add(bonus);
         var defender = HandViews().First(view => _combat.CalculateCardDefense(view.data) >= 5);

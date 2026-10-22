@@ -194,7 +194,6 @@ public sealed class Phase7EGearCapacityTests
         gear.id = id;
         gear.displayName = id;
         gear.price = price;
-        gear.damageMultiplier = 1;
         _assets.Add(gear);
         return gear;
     }

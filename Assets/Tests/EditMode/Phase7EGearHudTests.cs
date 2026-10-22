@@ -155,7 +155,6 @@ public sealed class Phase7EGearHudTests
         gear.id = id;
         gear.displayName = displayName;
         gear.icon = icon;
-        gear.damageMultiplier = 1;
         _assets.Add(gear);
         return gear;
     }

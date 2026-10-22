@@ -190,11 +190,11 @@ public sealed class Phase7CCombatPairTests
         var first = ScriptableObject.CreateInstance<CardEnhancementData>();
         first.id = "phase7c_first";
         first.displayName = "First selected";
-        first.healOnPlay = 1;
+        first.effects = new[] { TestEffects.HealOnPlay(1) };
         var second = ScriptableObject.CreateInstance<CardEnhancementData>();
         second.id = "phase7c_second";
         second.displayName = "Second selected";
-        second.healOnPlay = 2;
+        second.effects = new[] { TestEffects.HealOnPlay(2) };
         _created.Add(first);
         _created.Add(second);
         Assert.That(_cards.ApplyEnhancement(ace.data.Id, first), Is.True);
@@ -243,9 +243,10 @@ public sealed class Phase7CCombatPairTests
         var gear = ScriptableObject.CreateInstance<GearData>();
         gear.id = "phase7c_pair_artifact";
         gear.displayName = "Paired Artifact";
-        gear.damageMultiplier = 2;
-        gear.flatDamageBonus = 3;
-        gear.reduceEnemyAttackByCardValue = true;
+        gear.effects = new[]
+        {
+            TestEffects.AttackMultiplier(2), TestEffects.FlatAttack(3), TestEffects.ReduceAttackByCardValue()
+        };
         _created.Add(gear);
         _cards.ownedGear.Add(gear);
         _combat.CriticalChancePercent = 0;

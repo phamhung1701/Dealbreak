@@ -93,30 +93,6 @@ public class GearData : ScriptableObject
     public GameplayRuleModifierData[] ruleModifiers = System.Array.Empty<GameplayRuleModifierData>();
     public GearSpecialRule specialRule;
 
-    [Header("Legacy Prototype Hooks (used only without typed effects)")]
-    public bool restrictToSuit;
-    public CardData.Suit affectedSuit;
-    public bool requiresEnhancedCard;
-
-    [Header("Card Hooks")]
-    [Min(1)] public int damageMultiplier = 1;
-    public int flatDamageBonus;
-    public int defenseBonus;
-    public bool reduceEnemyAttackByCardValue;
-    public bool recycleDiscardByCardValue;
-    public bool drawByCardValue;
-
-    [Header("Encounter Hooks")]
-    [Min(0)] public int healAfterVictory;
-    [Min(0)] public int bonusCredits;
-
-    public bool Matches(CardInstance card)
-    {
-        if (card == null) return false;
-        if (restrictToSuit && !card.MatchesSuit(affectedSuit)) return false;
-        return !requiresEnhancedCard || card.Enhancement != null;
-    }
-
     public int ModifyAttack(CardInstance card, int currentDamage) =>
         GameplayEffectResolver.ModifyWithSingleGear(this, card, currentDamage, false);
 

@@ -23,17 +23,15 @@ MonoBehaviour:
   rarity: Common
   tier: 1
   upgradeFromId: 
-  effects: []
+  effects:
+  - kind: 2
+    trigger: 1
+    amount: 3
+    conditions:
+    - kind: 1
+      suit: 0
+      rank: 0
+      expected: 1
+      value: 0
   ruleModifiers: []
   specialRule: 0
-  restrictToSuit: 0
-  affectedSuit: 0
-  requiresEnhancedCard: 1
-  damageMultiplier: 1
-  flatDamageBonus: 0
-  defenseBonus: 3
-  reduceEnemyAttackByCardValue: 0
-  recycleDiscardByCardValue: 0
-  drawByCardValue: 0
-  healAfterVictory: 0
-  bonusCredits: 0

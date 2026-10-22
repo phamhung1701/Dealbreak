@@ -42,14 +42,3 @@ MonoBehaviour:
       requireMatchingRank: 0
       maximumCards: 0
   specialRule: 0
-  restrictToSuit: 0
-  affectedSuit: 0
-  requiresEnhancedCard: 0
-  damageMultiplier: 1
-  flatDamageBonus: 0
-  defenseBonus: 0
-  reduceEnemyAttackByCardValue: 0
-  recycleDiscardByCardValue: 0
-  drawByCardValue: 0
-  healAfterVictory: 0
-  bonusCredits: 0

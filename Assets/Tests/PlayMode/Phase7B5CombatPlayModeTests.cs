@@ -111,7 +111,9 @@ public sealed class Phase7B5CombatPlayModeTests
         var enemyType = EnemyTypeData.Create("Overflow target", 500, 1, 0);
         combat.StartEnemy(new EnemyRuntime(enemyType));
         var draw = ScriptableObject.CreateInstance<CardEnhancementData>();
-        draw.displayName = "Quickdraw Two"; draw.drawOnPlay = 2;
+        draw.displayName = "Quickdraw Two";
+        draw.effects = new[] { new GameplayEffectDefinition { kind = GameplayEffectKind.Draw,
+            trigger = GameplayEffectTrigger.CardCommitted, amount = 2 } };
         var handViews = handObject.GetComponentsInChildren<CardView>();
         Assert.That(handViews.Length, Is.GreaterThanOrEqualTo(2));
         Assert.That(handViews[0].data.TryApplyEnhancement(draw), Is.True);

@@ -125,17 +125,14 @@ public sealed class Phase7B5CombatCharacterizationTests
         var gear = ScriptableObject.CreateInstance<GearData>();
         gear.id = "phase7b5_spade";
         gear.displayName = "Phase7B5 Spade";
-        gear.damageMultiplier = 1;
-        gear.restrictToSuit = true;
-        gear.affectedSuit = CardData.Suit.Spades;
-        gear.reduceEnemyAttackByCardValue = true;
+        gear.effects = new[] { TestEffects.ReduceAttackByCardValue(TestEffects.Suit(CardData.Suit.Spades)) };
         _created.Add(gear);
         _cards.ownedGear.Add(gear);
 
         var mending = ScriptableObject.CreateInstance<CardEnhancementData>();
         mending.id = "phase7b5_mending";
         mending.displayName = "Phase7B5 Mending";
-        mending.healOnPlay = 2;
+        mending.effects = new[] { TestEffects.HealOnPlay(2) };
         _created.Add(mending);
 
         var growth = CreateAbility(EnemyAbilityEffect.IncreaseAttackAfterPlayerCard, 1);

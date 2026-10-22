@@ -32,7 +32,3 @@ MonoBehaviour:
     amount: 3
     conditions: []
   ruleModifiers: []
-  attackBonus: 0
-  defenseBonus: 0
-  healOnPlay: 0
-  drawOnPlay: 0

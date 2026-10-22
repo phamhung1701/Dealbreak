@@ -16,24 +16,17 @@ MonoBehaviour:
   displayName: Payout Tracker
   icon: GOLD
   iconSprite: {fileID: 21300000, guid: 30093a65de9be9a48832c280e65f43d5, type: 3}
-  description: Gain +4 gold after each victory
+  description: Gain +4 Credits after each victory
   price: 20
   capacityCategory: 0
   canonicalId: 
   rarity: Common
   tier: 1
   upgradeFromId: 
-  effects: []
+  effects:
+  - kind: 6
+    trigger: 4
+    amount: 4
+    conditions: []
   ruleModifiers: []
   specialRule: 0
-  restrictToSuit: 0
-  affectedSuit: 0
-  requiresEnhancedCard: 0
-  damageMultiplier: 1
-  flatDamageBonus: 0
-  defenseBonus: 0
-  reduceEnemyAttackByCardValue: 0
-  recycleDiscardByCardValue: 0
-  drawByCardValue: 0
-  healAfterVictory: 0
-  bonusCredits: 4

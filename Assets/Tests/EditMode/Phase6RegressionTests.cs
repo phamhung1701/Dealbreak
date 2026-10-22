@@ -78,12 +78,9 @@ public sealed class Phase6RegressionTests
         Assert.That(_cards.ApplyEnhancement(card.Id, _enhancement), Is.True);
 
         var club = CreateGear("club", 0);
-        club.restrictToSuit = true;
-        club.affectedSuit = CardData.Suit.Clubs;
-        club.damageMultiplier = 2;
+        club.effects = new[] { TestEffects.AttackMultiplier(2, TestEffects.Suit(CardData.Suit.Clubs)) };
         var artisan = CreateGear("artisan", 0);
-        artisan.requiresEnhancedCard = true;
-        artisan.flatDamageBonus = 3;
+        artisan.effects = new[] { TestEffects.FlatAttack(3, TestEffects.Enhanced) };
 
         _cards.ownedGear.Clear();
         _cards.ownedGear.Add(club);
@@ -213,7 +210,6 @@ public sealed class Phase6RegressionTests
         gear.id = id;
         gear.displayName = id;
         gear.price = price;
-        gear.damageMultiplier = 1;
         _assets.Add(gear);
         return gear;
     }
@@ -224,7 +220,7 @@ public sealed class Phase6RegressionTests
         enhancement.id = id;
         enhancement.displayName = id;
         enhancement.price = price;
-        enhancement.attackBonus = attack;
+        enhancement.effects = attack != 0 ? new[] { TestEffects.FlatAttack(attack) } : System.Array.Empty<GameplayEffectDefinition>();
         _assets.Add(enhancement);
         return enhancement;
     }

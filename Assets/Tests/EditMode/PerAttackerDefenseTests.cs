@@ -470,7 +470,7 @@ public sealed class PerAttackerDefenseTests
         {
             var enhancement = ScriptableObject.CreateInstance<CardEnhancementData>();
             _created.Add(enhancement);
-            enhancement.defenseBonus = 10 - _combat.CalculateCardDefense(view.data);
+            enhancement.effects = new[] { TestEffects.FlatBlock(10 - _combat.CalculateCardDefense(view.data)) };
             Assert.That(_cards.ApplyEnhancement(view.data.Id, enhancement), Is.True);
         }
         AddDefenseBonus(2);
@@ -553,7 +553,7 @@ public sealed class PerAttackerDefenseTests
         {
             var enhancement = ScriptableObject.CreateInstance<CardEnhancementData>();
             _created.Add(enhancement);
-            enhancement.defenseBonus = targets[i] - _combat.CalculateCardDefense(pair[i].data);
+            enhancement.effects = new[] { TestEffects.FlatBlock(targets[i] - _combat.CalculateCardDefense(pair[i].data)) };
             Assert.That(_cards.ApplyEnhancement(pair[i].data.Id, enhancement), Is.True);
             Assert.That(_combat.CalculateCardDefense(pair[i].data), Is.EqualTo(targets[i]));
         }
@@ -624,7 +624,7 @@ public sealed class PerAttackerDefenseTests
     void AddDefenseBonus(int bonus)
     {
         var gear = ScriptableObject.CreateInstance<GearData>();
-        gear.defenseBonus = bonus;
+        gear.effects = new[] { TestEffects.FlatBlock(bonus) };
         _created.Add(gear);
         _cards.ownedGear.Add(gear);
     }

@@ -22,17 +22,10 @@ public sealed class Phase5BuildProgressionTests
         _gears = new[]
         {
             CreateGear("clubs", 10, gear =>
-            {
-                gear.restrictToSuit = true;
-                gear.affectedSuit = CardData.Suit.Clubs;
-                gear.damageMultiplier = 2;
-            }),
+                gear.effects = new[] { TestEffects.AttackMultiplier(2, TestEffects.Suit(CardData.Suit.Clubs)) }),
             CreateGear("artisan", 12, gear =>
-            {
-                gear.requiresEnhancedCard = true;
-                gear.flatDamageBonus = 3;
-            }),
-            CreateGear("victory", 14, gear => gear.healAfterVictory = 2)
+                gear.effects = new[] { TestEffects.FlatAttack(3, TestEffects.Enhanced) }),
+            CreateGear("victory", 14, gear => gear.effects = new[] { TestEffects.HealAfterVictory(2) })
         };
         _enhancements = new[]
         {
@@ -192,7 +185,6 @@ public sealed class Phase5BuildProgressionTests
         gear.id = id;
         gear.displayName = id;
         gear.price = price;
-        gear.damageMultiplier = 1;
         configure?.Invoke(gear);
         _assets.Add(gear);
         return gear;
@@ -204,9 +196,11 @@ public sealed class Phase5BuildProgressionTests
         enhancement.id = id;
         enhancement.displayName = id;
         enhancement.price = price;
-        enhancement.attackBonus = attack;
-        enhancement.defenseBonus = defense;
-        enhancement.healOnPlay = heal;
+        var effects = new System.Collections.Generic.List<GameplayEffectDefinition>();
+        if (attack != 0) effects.Add(TestEffects.FlatAttack(attack));
+        if (defense != 0) effects.Add(TestEffects.FlatBlock(defense));
+        if (heal > 0) effects.Add(TestEffects.HealOnPlay(heal));
+        enhancement.effects = effects.ToArray();
         _assets.Add(enhancement);
         return enhancement;
     }

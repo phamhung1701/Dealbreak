@@ -457,84 +457,25 @@ public readonly struct NodeCompletedEffectContext
     }
 }
 
-// Legacy fields feed this same foundation only when a definition has no authored effects.
 public static class GameplayEffectResolver
 {
-    public static int EffectCount(GameplayEffectSource source)
-    {
-        if (source.Gear != null)
-        {
-            var definition = source.Gear.Definition;
-            if (definition.effects != null && definition.effects.Length > 0) return definition.effects.Length;
-            int count = 0;
-            if (definition.damageMultiplier > 1) count++;
-            if (definition.flatDamageBonus != 0) count++;
-            if (definition.defenseBonus != 0) count++;
-            if (definition.reduceEnemyAttackByCardValue) count++;
-            if (definition.recycleDiscardByCardValue) count++;
-            if (definition.drawByCardValue) count++;
-            if (definition.healAfterVictory > 0) count++;
-            if (definition.bonusCredits > 0) count++;
-            return count;
-        }
-        var enhancement = source.Card?.Enhancement;
-        if (enhancement == null) return 0;
-        if (enhancement.effects != null && enhancement.effects.Length > 0) return enhancement.effects.Length;
-        int legacyCount = 0;
-        if (enhancement.attackBonus != 0) legacyCount++;
-        if (enhancement.defenseBonus != 0) legacyCount++;
-        if (enhancement.healOnPlay > 0) legacyCount++;
-        if (enhancement.drawOnPlay > 0) legacyCount++;
-        return legacyCount;
-    }
+    static GameplayEffectDefinition[] Effects(GameplayEffectSource source) =>
+        source.Gear != null ? source.Gear.Definition.effects : source.Card?.Enhancement?.effects;
+
+    public static int EffectCount(GameplayEffectSource source) => Effects(source)?.Length ?? 0;
 
     public static GameplayEffectDefinition EffectAt(GameplayEffectSource source, int index)
     {
-        if (source.Gear != null)
-        {
-            var a = source.Gear.Definition;
-            if (a.effects != null && a.effects.Length > 0) return a.effects[index];
-            var effect = new GameplayEffectDefinition { conditions = Array.Empty<GameplayEffectCondition>() };
-            if (a.damageMultiplier > 1 && index-- == 0) return With(effect, GameplayEffectKind.AttackMultiplier, GameplayEffectTrigger.AttackCalculated, a.damageMultiplier);
-            if (a.flatDamageBonus != 0 && index-- == 0) return With(effect, GameplayEffectKind.FlatAttack, GameplayEffectTrigger.AttackCalculated, a.flatDamageBonus);
-            if (a.defenseBonus != 0 && index-- == 0) return With(effect, GameplayEffectKind.FlatBlock, GameplayEffectTrigger.DefenseCalculated, a.defenseBonus);
-            if (a.reduceEnemyAttackByCardValue && index-- == 0) return With(effect, GameplayEffectKind.ReduceAttackByCardValue, GameplayEffectTrigger.CardCommitted, 1);
-            if (a.recycleDiscardByCardValue && index-- == 0) return With(effect, GameplayEffectKind.RecycleDiscardByCardValue, GameplayEffectTrigger.CardCommitted, 1);
-            if (a.drawByCardValue && index-- == 0) return With(effect, GameplayEffectKind.DrawByCardValue, GameplayEffectTrigger.CardCommitted, 1);
-            effect.conditions = Array.Empty<GameplayEffectCondition>();
-            if (a.healAfterVictory > 0 && index-- == 0) return With(effect, GameplayEffectKind.Heal, GameplayEffectTrigger.EncounterWon, a.healAfterVictory);
-            if (a.bonusCredits > 0 && index == 0) return With(effect, GameplayEffectKind.BonusCredits, GameplayEffectTrigger.EncounterWon, a.bonusCredits);
-        }
-        else if (source.Card?.Enhancement != null)
-        {
-            var e = source.Card.Enhancement;
-            if (e.effects != null && e.effects.Length > 0) return e.effects[index];
-            if (e.attackBonus != 0 && index-- == 0) return With(default, GameplayEffectKind.FlatAttack, GameplayEffectTrigger.AttackCalculated, e.attackBonus);
-            if (e.defenseBonus != 0 && index-- == 0) return With(default, GameplayEffectKind.FlatBlock, GameplayEffectTrigger.DefenseCalculated, e.defenseBonus);
-            if (e.healOnPlay > 0 && index-- == 0) return With(default, GameplayEffectKind.Heal, GameplayEffectTrigger.CardCommitted, e.healOnPlay);
-            if (e.drawOnPlay > 0 && index == 0) return With(default, GameplayEffectKind.Draw, GameplayEffectTrigger.CardCommitted, e.drawOnPlay);
-        }
-        throw new ArgumentOutOfRangeException(nameof(index));
-    }
-
-    static GameplayEffectDefinition With(GameplayEffectDefinition effect, GameplayEffectKind kind,
-        GameplayEffectTrigger trigger, int amount)
-    {
-        effect.kind = kind;
-        effect.trigger = trigger;
-        effect.amount = amount;
-        return effect;
+        var effects = Effects(source);
+        if (effects == null || index < 0 || index >= effects.Length)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        return effects[index];
     }
 
     static bool Applies(GameplayEffectSource source, GameplayEffectDefinition effect,
         GameplayEffectTrigger trigger, CardInstance card, int attackValue = 0,
         int selectedCardCount = 1, bool handsMultiCardAction = false)
     {
-        if (source.Gear != null &&
-            (source.Gear.Definition.effects == null || source.Gear.Definition.effects.Length == 0) &&
-            trigger != GameplayEffectTrigger.EncounterWon &&
-            !source.Gear.Definition.Matches(card))
-            return false;
         return effect.trigger == trigger && effect.Matches(card, attackValue, selectedCardCount,
             handsMultiCardAction) &&
             (source.Card == null || ReferenceEquals(source.Card, card));

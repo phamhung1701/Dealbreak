@@ -524,15 +524,14 @@ public sealed class Phase7B5CombatFoundationTests
         var gear = ScriptableObject.CreateInstance<GearData>();
         gear.id = "phase7b5_once";
         gear.displayName = "Once Per Card";
-        gear.damageMultiplier = 1;
-        gear.reduceEnemyAttackByCardValue = true;
+        gear.effects = new[] { TestEffects.ReduceAttackByCardValue() };
         _created.Add(gear);
         _cards.ownedGear.Add(gear);
 
         var enhancement = ScriptableObject.CreateInstance<CardEnhancementData>();
         enhancement.id = "phase7b5_heal";
         enhancement.displayName = "Heal Once";
-        enhancement.healOnPlay = 2;
+        enhancement.effects = new[] { TestEffects.HealOnPlay(2) };
         _created.Add(enhancement);
         Assert.That(_cards.ApplyEnhancement(card.data.Id, enhancement), Is.True);
         _combat.TakeRunDamage(5);
