@@ -16,19 +16,9 @@ MonoBehaviour:
   displayName: Lowball
   icon: LOW++
   iconSprite: {fileID: 21300000, guid: 149a80a936b83ee4a871d8bffec8dd99, type: 3}
-  description: 'Trigger: On Kill
-
-    Condition: Prepared higher-rank attack kills
-    enemy
-
-    Effect: Keep Rare; prepared higher-rank attack kill permanently strengthens
-    low-rank source.
-
-    Value: +1 permanent attack to low-rank source card
-
-    Limit:
-    Prepared higher-rank attack must kill; source physical card must remain owned;
-    run-local'
+  description: Gain an additional turn if every played card is below 5. Playing a
+    card below 5 adds 5 DMG to your next attack with a higher card. If that attack
+    defeats an enemy, the low card permanently gains 1 DMG.
   price: 30
   capacityCategory: 0
   canonicalId: rel_113

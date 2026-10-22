@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Savings Safe
   icon: VAULT
   iconSprite: {fileID: 21300000, guid: 14c8967f96120cb4fa5b75a5da783534, type: 3}
-  description: 'Trigger: Headliner Defeated
-
-    Condition: Unspent Credits
-
-    Effect:
-    Headliner defeat grants 10% of unspent Credits.
-
-    Value: 10%
-
-    Limit: Savings
-    accumulate; provisional'
-  price: 30
+  description: Gain 30% of your current Credits after defeating a Headliner.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_127
   rarity: Rare

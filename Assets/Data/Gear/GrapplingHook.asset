@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Grappling Hook
   icon: DRAW
   iconSprite: {fileID: 21300000, guid: 5c08bae19b133514cbc79a6f780db2ac, type: 3}
-  description: 'Trigger: On Trick Use
-
-    Condition: First trick used this encounter
-
-    Effect:
-    First trick used each encounter draws 1.
-
-    Value: 1 card
-
-    Limit: First
-    per encounter'
-  price: 20
+  description: The first Trick used in each combat draws 1 card.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_117
   rarity: Common

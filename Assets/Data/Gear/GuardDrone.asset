@@ -16,19 +16,8 @@ MonoBehaviour:
   displayName: Guard Drone
   icon: BLOCK
   iconSprite: {fileID: 21300000, guid: 234f74298678a1744b586c75c5988aa7, type: 3}
-  description: 'Trigger: Combat Start
-
-    Condition: Distinct trick types in backpack
-
-    Effect:
-    Starting block per distinct trick type in backpack.
-
-    Value: +2 Block/type
-
-    Limit:
-    Encounter-long numeric Block; consumed point-for-point before Shield; expires
-    after encounter'
-  price: 20
+  description: Start each combat with 2 Block for each different Trick you own.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_123
   rarity: Common

@@ -16,20 +16,9 @@ MonoBehaviour:
   displayName: Spotter Eye
   icon: KING
   iconSprite: {fileID: 21300000, guid: 9a6e4c70c6dd35947b4e02774c1b7e25, type: 3}
-  description: 'Trigger: On Attack
-
-    Condition: Versus Headliner; 3 different
-    ranks played
-
-    Effect: Vs Headliner, play 3 different ranks to empower next
-    attack; consume charge and repeat.
-
-    Value: +1 damage to next attack
-
-    Limit:
-    Headliner only; 3 distinct manually played physical ranks; one charge per attack;
-    encounter reset'
-  price: 20
+  description: Against a Headliner, play 3 different ranks to add 8 DMG to your next
+    attack.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_138
   rarity: Common

@@ -386,6 +386,26 @@ public sealed class PerAttackerDefenseTests
         Assert.That(_cards.HandCount, Is.EqualTo(before - 1 + expectedDraw));
     }
 
+    [TestCase(true, 1)]
+    [TestCase(false, 0)]
+    public void PerfectParry_SpadeShieldRareCountsOnlyASpadeOverblock(bool spade, int expectedDraw)
+    {
+        _cards.ownedGear.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/SpadeShieldRare.asset"));
+        var defense = HandViews()[1];
+        defense.data.TryChangeSuit(spade ? CardData.Suit.Spades : CardData.Suit.Hearts);
+        int value = _combat.CalculateCardDefense(defense.data);
+        Assert.That(value, Is.GreaterThan(1));
+        StartDefenseWindow(value - 1);
+        var results = new List<DefenseAttackResult>();
+        _combat.OnDefenseAttackResolved += results.Add;
+        int before = _cards.HandCount;
+
+        Assert.That(_combat.TryDefendWithCards(new[] { defense }), Is.True);
+
+        Assert.That(_cards.HandCount, Is.EqualTo(before - 1 + expectedDraw));
+        Assert.That(results.Single().IsPerfectBlock, Is.EqualTo(spade));
+    }
+
     [Test]
     public void PerfectParry_SeparatePartialCommitsAwardOnlyAtWindowCompletion()
     {

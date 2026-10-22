@@ -16,19 +16,8 @@ MonoBehaviour:
   displayName: Varsity Jacket
   icon: WARPATH
   iconSprite: {fileID: 21300000, guid: 2a5c417b4c1c97049812ad85b64491c6, type: 3}
-  description: 'Trigger: Combat Start
-
-    Condition: Consecutive combat wins
-
-    Effect:
-    Consecutive combat wins increase starting block next combat.
-
-    Value: +2 encounter
-    Block per consecutive Combat/Enforcer/Headliner victory
-
-    Limit: Cap 6; reset
-    by a completed noncombat node; consumed before Shield; expires at encounter end'
-  price: 20
+  description: Start each combat with 2 Block per combat won in a row, up to 6.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_134
   rarity: Common

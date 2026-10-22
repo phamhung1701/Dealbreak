@@ -17,9 +17,11 @@ public static class GearCounterKeys
     public const int BalancersScalePreviousGroup = -1181;
     public const int BalancersScaleBonus = -1182;
     public const int WarpathBannerWinStreak = -1340;
+    public const int DwarfEpicPermanentGained = -1131;
 
     // Encounter counters
     public const int AceReturnUsed = -114;
+    // Spade Shield Epic: over-blocked damage banked for the next attack (counted Spade blocks before 2026-10-22).
     public const int SpadeEpicOverblocks = -1071;
     public const int KingslayerRankMask = -1381;
     public const int KingslayerCharges = -1382;

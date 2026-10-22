@@ -16,10 +16,8 @@ MonoBehaviour:
   displayName: Glass Shard
   icon: GLASS
   iconSprite: {fileID: 21300000, guid: 35ccc3c6cf9dd4443bc9da0cee3938f4, type: 3}
-  description: "Trigger: On Card Played\nEffect: Card attacks and incoming attacks
-    deal 2\xD7 damage. Replaces Common Glass; does not inherit +5 vulnerability.\nValue:
-    \xD72 / \xD72"
-  price: 30
+  description: Deal double DMG and take double DMG.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_032
   rarity: Rare

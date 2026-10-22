@@ -149,7 +149,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,string.Join("\n\n",new[]{$"HP {data.currentHp}/{data.maxHp} • Attack {data.EffectiveAttack}",enemy.DetailGuidance,traits,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part))));return true;
         }
         if(source.TryGetComponent<GearIconSlotUI>(out var gear)&&gear.Gear)
-        {info=new("Gear",gear.Gear.displayName,gear.Gear.description);return true;}
+        {info=new("Gear",gear.Gear.displayName,GearRules.OwnedDescription(CardManager.Instance,gear.Gear,gear.InstanceId));return true;}
         if(source.TryGetComponent<DrawDeckStackUI>(out _)&&CardManager.Instance!=null)
         {var c=CardManager.Instance;info=new("Deck","Draw Pile",$"Draw {c.deck.Count}\nHand {c.HandCount}/{c.HandCapacity}");return true;}
         return false;

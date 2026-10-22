@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Dealbreaker
   icon: DEAL
   iconSprite: {fileID: 21300000, guid: 0773300f3841b284ab4d0c299de0ef59, type: 3}
-  description: 'Trigger: On Taking Damage
-
-    Condition: The taken damage is lethal
-
-    Effect:
-    Once per combat, when an enemy would deal lethal damage, destroy one random card
-    from your hand to negate that damage.
-
-    Value: 1
-
-    Limit: One lethal damage
-    taken'
+  description: Once per combat, when an enemy hit would be lethal, destroy a random
+    hand card to negate it.
   price: 30
   capacityCategory: 0
   canonicalId: rel_036

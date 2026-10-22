@@ -54,7 +54,7 @@ public sealed class RetaliationEmblemTests
     }
 
     [Test]
-    public void Asset_IsCanonicalCommonTierOneTypedFiveDamageBlockReaction()
+    public void Asset_IsCanonicalCommonTierOneTypedThreeDamageBlockReaction()
     {
         Assert.That(_retaliation.id, Is.EqualTo("rel_016"));
         Assert.That(_retaliation.canonicalId, Is.EqualTo("rel_016"));
@@ -62,11 +62,11 @@ public sealed class RetaliationEmblemTests
         Assert.That(_retaliation.rarity, Is.EqualTo("Common"));
         Assert.That(_retaliation.tier, Is.EqualTo(1));
         Assert.That(_retaliation.capacityCategory, Is.EqualTo(GearCapacityCategory.Persistent));
-        Assert.That(_retaliation.price, Is.EqualTo(20), "Temporary prototype price; workbook price is blank.");
+        Assert.That(_retaliation.price, Is.EqualTo(10), "Gear prices follow rarity: Common 10, Rare 20, Epic 30.");
         Assert.That(_retaliation.effects, Has.Length.EqualTo(1));
         Assert.That(_retaliation.effects[0].kind, Is.EqualTo(GameplayEffectKind.CounterDamage));
         Assert.That(_retaliation.effects[0].trigger, Is.EqualTo(GameplayEffectTrigger.AttackBlocked));
-        Assert.That(_retaliation.effects[0].amount, Is.EqualTo(5));
+        Assert.That(_retaliation.effects[0].amount, Is.EqualTo(3));
     }
 
     [Test]
@@ -79,11 +79,11 @@ public sealed class RetaliationEmblemTests
         var defense = FindView(card => _combat.CalculateCardDefense(card) >= 2);
 
         Assert.That(_combat.TryDefendWithCards(new[] { defense }, enemy), Is.True);
-        Assert.That(enemy.currentHp, Is.EqualTo(hpBeforeBlock - 5));
+        Assert.That(enemy.currentHp, Is.EqualTo(hpBeforeBlock - 3));
         var retaliationHits = damage.Where(result => result.Request.Origin == CombatDamageOrigin.Reactive).ToArray();
         Assert.That(retaliationHits, Has.Length.EqualTo(1));
         Assert.That(retaliationHits[0].Request.Target, Is.SameAs(enemy));
-        Assert.That(retaliationHits[0].Request.RequestedDamage, Is.EqualTo(5));
+        Assert.That(retaliationHits[0].Request.RequestedDamage, Is.EqualTo(3));
         Assert.That(_combat.pendingDamage, Is.Zero);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
     }
@@ -102,8 +102,8 @@ public sealed class RetaliationEmblemTests
         Assert.That(_combat.CalculateCardDefense(three.data), Is.GreaterThanOrEqualTo(3));
 
         Assert.That(_combat.TryDefendWithCards(new[] { three, two }, enemies[0]), Is.True);
-        Assert.That(enemies[0].currentHp, Is.EqualTo(firstHp - 5));
-        Assert.That(enemies[1].currentHp, Is.EqualTo(secondHp - 5));
+        Assert.That(enemies[0].currentHp, Is.EqualTo(firstHp - 3));
+        Assert.That(enemies[1].currentHp, Is.EqualTo(secondHp - 3));
         var retaliationTargets = damage
             .Where(result => result.Request.Origin == CombatDamageOrigin.Reactive)
             .Select(result => result.Request.Target).ToArray();
@@ -132,10 +132,10 @@ public sealed class RetaliationEmblemTests
     [Test]
     public void CounterattackDefeatingLastEnemy_ResolvesVictoryExactlyOnce()
     {
-        var enemy = StartEnemy(6, 1);
+        var enemy = StartEnemy(4, 1);
         var ace = FindView(card => card.Rank == CardData.Rank.Ace);
         Assert.That(_combat.TryPlayCards(new[] { ace }, enemy), Is.True);
-        Assert.That(enemy.currentHp, Is.EqualTo(5));
+        Assert.That(enemy.currentHp, Is.EqualTo(3));
         var resultCount = 0;
         EncounterResult? terminal = null;
         _combat.OnEncounterResult += result => { resultCount++; terminal = result; };

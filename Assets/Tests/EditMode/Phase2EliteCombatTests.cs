@@ -158,7 +158,7 @@ public sealed class Phase2EliteCombatTests
             .OrderBy(view => _combat.CalculateCardAttackDamage(view.data)).First();
         Assert.That(_combat.TryPlayCards(new[] { attack }, captain), Is.True);
         Assert.That(_combat.pendingDamage, Is.EqualTo(9));
-        captain.currentHp = 5;
+        captain.currentHp = 3;
         var defense = _field.cardsHolder.GetComponentsInChildren<CardView>()
             .First(view => view.data != null && _cards.hand.Contains(view.data) && _combat.CalculateCardDefense(view.data) >= 3);
         Assert.That(_combat.TryDefendWithCards(new[] { defense }, captain), Is.True);

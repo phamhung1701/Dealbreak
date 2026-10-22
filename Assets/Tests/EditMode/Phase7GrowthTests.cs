@@ -56,7 +56,7 @@ public sealed class Phase7GrowthTests
     }
 
     [Test]
-    public void EliteKillGrowth_IsRunLocalAndFeedsOnlyOpeningAttackBonuses()
+    public void EliteKillGrowth_NotchedPistolFeedsTheOpeningAttack_HeadhunterEveryEnforcerOrHeadlinerAttack()
     {
         var hunter = Gear("rel_119", GearSpecialRule.HuntersLedger);
         var trophy = Gear("rel_137", GearSpecialRule.TrophyRack);
@@ -71,11 +71,20 @@ public sealed class Phase7GrowthTests
         _created.Add(cardData);
         var card = new CardInstance(cardData, 7001);
         SetPrivate(_combat, "_openingPlayerAttackInProgress", true);
-        Assert.That(_combat.CalculateCardAttackDamage(card), Is.EqualTo(card.BaseAttackValue + 2));
+        Assert.That(_combat.CalculateCardAttackDamage(card), Is.EqualTo(card.BaseAttackValue + 1 + 3),
+            "Notched Pistol +1 on the opening attack; Headhunter Rifle +3 per Enforcer or Headliner kill.");
         SetPrivate(_combat, "_openingPlayerAttackInProgress", false);
         SetPrivate(_combat, "_playerAttackActionCount", 1);
-        Assert.That(_combat.CalculateCardAttackDamage(card), Is.EqualTo(card.BaseAttackValue),
-            "Growth applies only to the first attack action in the Boss encounter.");
+        Assert.That(_combat.CalculateCardAttackDamage(card), Is.EqualTo(card.BaseAttackValue + 3),
+            "Headhunter Rifle applies to every attack against an Enforcer or Headliner.");
+        _combat.Reset();
+        _combat.StartEncounter(new[] { Enemy("Growth street") }, MapNodeType.Combat);
+        Assert.That(_combat.CalculateCardAttackDamage(card), Is.EqualTo(card.BaseAttackValue + 1),
+            "In an ordinary combat only Notched Pistol's opening bonus applies, not Headhunter Rifle.");
+
+        InvokeVictoryRewards(wasHeadliner: true);
+        Assert.That(_cards.GetGearInstance(hunter).State.GetCounter(-119), Is.EqualTo(1), "Notched Pistol counts Enforcers only.");
+        Assert.That(_cards.GetGearInstance(trophy).State.GetCounter(-137), Is.EqualTo(2), "Headhunter Rifle also counts Headliners.");
     }
 
     [Test]
@@ -89,7 +98,7 @@ public sealed class Phase7GrowthTests
     }
 
     [Test]
-    public void RetaliationEpic_GrowsOnlyOnCounterattackKillsAndCarriesGrowthForward()
+    public void RetaliationEpic_GrowsOnEveryEnemyDefeatAndCarriesGrowthForward()
     {
         var retaliation = Gear("rel_111", GearSpecialRule.RetaliationEpic);
         var first = Enemy("Retaliation nonlethal", 5);
@@ -99,12 +108,35 @@ public sealed class Phase7GrowthTests
         var cardData = CardData.Create(CardData.Suit.Clubs, CardData.Rank.Four);
         _created.Add(cardData);
         var blockCard = new CardInstance(cardData, 7010);
-        ResolveRetaliation(blockCard, first, 4);
-        Assert.That(_cards.GetGearInstance(retaliation).State.GetCounter(-111), Is.Zero);
+        var state = _cards.GetGearInstance(retaliation).State;
+        ResolveRetaliation(blockCard, first, 5);
+        Assert.That(first.currentHp, Is.EqualTo(1), "Blocking 4 of 5 is not perfect: the counter is the 4 blocked.");
+        Assert.That(state.GetCounter(-111), Is.Zero);
         ResolveRetaliation(blockCard, second, 4);
-        Assert.That(_cards.GetGearInstance(retaliation).State.GetCounter(-111), Is.EqualTo(1));
-        ResolveRetaliation(blockCard, third, 4);
-        Assert.That(_cards.GetGearInstance(retaliation).State.GetCounter(-111), Is.EqualTo(2));
+        Assert.That(second.IsDefeated, Is.True, "A Perfect Block (4 on 4) counters for 4 × 2 = 8.");
+        Assert.That(state.GetCounter(-111), Is.EqualTo(1), "Any enemy defeat grows the counterattack.");
+        Assert.That(GearRules.LiveStatus(_cards, retaliation, _cards.GetGearInstance(retaliation)), Is.EqualTo("Currently +1."));
+        third.ApplyResolvedCombatDamage(third.currentHp);
+        typeof(CombatManager).GetMethod("HandleEnemyDefeated", BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(_combat, new object[] { third });
+        Assert.That(state.GetCounter(-111), Is.EqualTo(2), "A kill by any means counts, not only a counterattack kill.");
+    }
+
+    [Test]
+    public void RareRetaliation_CountersTheBlockedDamage_TimesOneAndAHalfOnAPerfectBlock()
+    {
+        Gear("rel_022", GearSpecialRule.RareRetaliation);
+        var enemy = Enemy("Retaliation rare", 30);
+        _combat.StartEncounter(new[] { enemy });
+        var cardData = CardData.Create(CardData.Suit.Clubs, CardData.Rank.Four);
+        _created.Add(cardData);
+        var blockCard = new CardInstance(cardData, 7020);
+        ResolveRetaliation(blockCard, enemy, 5);
+        Assert.That(enemy.currentHp, Is.EqualTo(26), "Blocking 4 of 5 counters for 4.");
+        ResolveRetaliation(blockCard, enemy, 2);
+        Assert.That(enemy.currentHp, Is.EqualTo(24), "Over-blocking counters only the 2 blocked.");
+        ResolveRetaliation(blockCard, enemy, 4);
+        Assert.That(enemy.currentHp, Is.EqualTo(18), "A Perfect Block counters for 4 × 1.5 = 6.");
     }
 
     void ResolveRetaliation(CardInstance blockingCard, EnemyRuntime enemy, int incomingAttack)

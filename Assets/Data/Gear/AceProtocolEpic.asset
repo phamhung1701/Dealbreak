@@ -16,17 +16,8 @@ MonoBehaviour:
   displayName: Ace Protocol
   icon: ACE++
   iconSprite: {fileID: 21300000, guid: fabf9978af02ad0498d9d93e484c029a, type: 3}
-  description: 'Trigger: On Ace Pair
-
-    Condition: Ace paired with a Face card
-
-    Effect:
-    Keep Rare; pairing Ace with Face guarantees crit.
-
-    Value: Guaranteed critical
-    hit
-
-    Limit: Ace paired with J (Jack)'
+  description: Increase Ace critical chance to 50%, or 100% when played with a J,
+    Q or K. Once per combat, a critical Ace returns to your hand.
   price: 30
   capacityCategory: 0
   canonicalId: rel_115

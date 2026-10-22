@@ -16,11 +16,8 @@ MonoBehaviour:
   displayName: Matched Cells
   icon: RANK
   iconSprite: {fileID: 21300000, guid: 16b3ced853621324f9d38d1b7fdac484, type: 3}
-  description: "Trigger: On Attack Selection\nCondition: Matching rank\nEffect: Play
-    two or three distinct cards of the same rank together as one attack action; resolve
-    each card\u2019s on-play effects in selection order.\nValue: One ordinary player
-    action\nLimit: 2\u20133 cards; matching rank"
-  price: 30
+  description: Play 2 or 3 cards of the same rank together as one attack.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_020
   rarity: Rare

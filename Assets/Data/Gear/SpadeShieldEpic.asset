@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Spade Shield
   icon: "\u2660++"
   iconSprite: {fileID: 21300000, guid: a6d38eb264b8da54fab02cabdf5d360d, type: 3}
-  description: 'Trigger: On Card Played
-
-    Condition: Suit = Spades; Spade block
-    unused
-
-    Effect: Keep Rare; unused Spade block adds damage to next attack.
-
-    Value:
-    +1 damage per unused Spade Block to next attack
-
-    Limit: Retains Rare draw/doubled
-    Block; encounter-local charge consumed by next attack'
+  description: Spade cards block double DMG. Over-blocking with a Spade still counts
+    as a Perfect Block, and the over-blocked DMG is added to your next attack.
   price: 30
   capacityCategory: 0
   canonicalId: rel_107

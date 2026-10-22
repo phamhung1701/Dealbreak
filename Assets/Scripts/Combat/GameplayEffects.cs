@@ -27,6 +27,7 @@ public enum GameplayEffectKind
     ExplosiveAreaDamage = 19,
     PermanentKillAttack = 20,
     WildSuit = 21,
+    // Once per encounter, destroys the first blocking card, then draws `amount` cards.
     DestroyBlockingCard = 22,
     MimicInHandEffects = 23,
     DoubleStrike = 24,
@@ -66,7 +67,9 @@ public enum GameplayConditionKind
     AttackValueGreaterThan = 2,
     MultiCardAction = 3,
     HandsMultiCardAction = 4,
-    CardRank = 5
+    CardRank = 5,
+    // Incoming damage only: an attacking enemy has at least `value` current HP.
+    AttackerHealthAtLeast = 6
 }
 
 public enum GameplayRuleModifierKind
@@ -108,10 +111,11 @@ public struct GameplayEffectCondition
     public int value;
 
     public bool Matches(CardInstance card, int attackValue = 0, int selectedCardCount = 1,
-        bool handsMultiCardAction = false)
+        bool handsMultiCardAction = false, int attackerHealth = 0)
     {
         return kind switch
         {
+            GameplayConditionKind.AttackerHealthAtLeast => attackerHealth >= value,
             GameplayConditionKind.CardSuit => card != null && card.MatchesSuit(suit),
             GameplayConditionKind.CardRank => card != null && card.Rank == rank,
             GameplayConditionKind.EnhancedCard => (card?.Enhancement != null) == expected,
@@ -154,11 +158,12 @@ public struct GameplayEffectDefinition
     };
 
     public bool Matches(CardInstance card, int attackValue = 0, int selectedCardCount = 1,
-        bool handsMultiCardAction = false)
+        bool handsMultiCardAction = false, int attackerHealth = 0)
     {
         if (conditions == null) return true;
         for (int i = 0; i < conditions.Length; i++)
-            if (!conditions[i].Matches(card, attackValue, selectedCardCount, handsMultiCardAction)) return false;
+            if (!conditions[i].Matches(card, attackValue, selectedCardCount, handsMultiCardAction, attackerHealth))
+                return false;
         return true;
     }
 }
@@ -474,10 +479,10 @@ public static class GameplayEffectResolver
 
     static bool Applies(GameplayEffectSource source, GameplayEffectDefinition effect,
         GameplayEffectTrigger trigger, CardInstance card, int attackValue = 0,
-        int selectedCardCount = 1, bool handsMultiCardAction = false)
+        int selectedCardCount = 1, bool handsMultiCardAction = false, int attackerHealth = 0)
     {
         return effect.trigger == trigger && effect.Matches(card, attackValue, selectedCardCount,
-            handsMultiCardAction) &&
+            handsMultiCardAction, attackerHealth) &&
             (source.Card == null || ReferenceEquals(source.Card, card));
     }
 
@@ -908,6 +913,7 @@ public static class GameplayEffectResolver
         int damage = Math.Max(0, context.RawDamage);
         var cards = context.Cards;
         if (cards == null) return damage;
+        int attackerHealth = AttackerHealth(context);
         long reductions = 0;
         for (int gearIndex = 0; gearIndex < cards.ownedGear.Count; gearIndex++)
         {
@@ -918,7 +924,8 @@ public static class GameplayEffectResolver
             {
                 var effect = EffectAt(source, j);
                 if (effect.kind == GameplayEffectKind.IncomingCombatDamageReduction &&
-                    Applies(source, effect, GameplayEffectTrigger.IncomingDamageCalculated, null))
+                    Applies(source, effect, GameplayEffectTrigger.IncomingDamageCalculated, null,
+                        attackerHealth: attackerHealth))
                     reductions += Math.Max(0, effect.amount);
             }
         }
@@ -926,6 +933,19 @@ public static class GameplayEffectResolver
         if (context.Request.Origin == CombatDamageOrigin.EnemyAggregate)
             damage = GearRules.ApplyAggregateIncomingRules(cards, damage);
         return damage;
+    }
+
+    // The attacker's current HP: the hitting enemy, or for aggregate retaliation the healthiest
+    // surviving enemy, since every surviving enemy attacks.
+    static int AttackerHealth(IncomingDamageEffectContext context)
+    {
+        if (context.Request.Source is EnemyRuntime attacker) return Math.Max(0, attacker.currentHp);
+        int health = 0;
+        var enemies = context.Combat?.Enemies;
+        if (enemies != null)
+            for (int i = 0; i < enemies.Count; i++)
+                if (enemies[i] != null && !enemies[i].IsDefeated) health = Math.Max(health, enemies[i].currentHp);
+        return health;
     }
 
     public static void InitializeNodeCounters(GameplayEffectSource source, int completedNodeCount)
@@ -1350,14 +1370,13 @@ public static class GameplayEffectResolver
         GearRules.EnqueueAttackBlockedRules(source, context, queue, sourceOrder);
     }
 
-    public static int CalculateRetaliationDamage(int committedBlock, int incomingAttack)
+    /// <summary>Counterpunch damage: the damage actually blocked, times <paramref name="percent"/>
+    /// (100 normally, more after a Perfect Block), rounded down.</summary>
+    public static int CalculateRetaliationDamage(int committedBlock, int incomingAttack, int percent = 100)
     {
-        int block = Math.Max(0, committedBlock);
-        int attack = Math.Max(0, incomingAttack);
-        int actuallyBlocked = Math.Min(block, attack);
+        long actuallyBlocked = Math.Min(Math.Max(0, committedBlock), Math.Max(0, incomingAttack));
         if (actuallyBlocked <= 0) return 0;
-        return (long)block * 2 > (long)attack * 3
-            ? ClampToInt((long)actuallyBlocked * 2) : actuallyBlocked;
+        return ClampToInt(actuallyBlocked * Math.Max(0, percent) / 100);
     }
 
     public static void EnqueueAttackCommitted(AttackCommittedEffectContext context,
@@ -1501,8 +1520,10 @@ public static class GameplayEffectResolver
             case GameplayEffectKind.DestroyBlockingCard:
                 if (card == null || cards == null) break;
                 string destroyedName = card.DisplayName;
-                if (cards.DestroyOwnedCard(card))
-                    combat.LogEffect($"{source.DisplayName}: destroyed {destroyedName} after blocking.");
+                if (!cards.DestroyOwnedCard(card)) break;
+                combat.LogEffect($"{source.DisplayName}: destroyed {destroyedName} after blocking.");
+                int drew = amount > 0 ? cards.DrawToHand(amount) : 0;
+                if (drew > 0) combat.LogEffect($"{source.DisplayName}: Drew {drew} card(s).");
                 break;
         }
     }

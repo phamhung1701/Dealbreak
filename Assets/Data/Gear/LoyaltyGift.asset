@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Loyalty Gift
   icon: GIFT
   iconSprite: {fileID: 21300000, guid: 1a4520feb8e8dd94b9811486c95373b6, type: 3}
-  description: 'Trigger: Item Purchases
-
-    Condition: Every 3 item purchases
-
-    Effect:
-    After 3 item purchases: random non-mod trick.
-
-    Value: 1
-
-    Limit: Free
-    rewards do not count; full tray replace/decline'
-  price: 30
+  description: Gain a random non-Mod Trick after every 3 purchases.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_131
   rarity: Rare

@@ -16,15 +16,12 @@ MonoBehaviour:
   displayName: Flip Switch
   icon: SCALE
   iconSprite: {fileID: 21300000, guid: c201e92f181140b4ba96c8cedc7b779a, type: 3}
-  description: "Trigger: On Card Played\nCondition: Manually played card rank is
-    low or Face\nEffect: Alternate manually playing low-rank and Face cards to empower
-    attacks; repeating group resets bonus.\nValue: +1 damage to next attack on manual
-    Low\u2194Face alternation\nLimit: Low is rank below Five; Face is Jack/Queen/King;
-    consume once; repeating category clears before attack"
+  description: 'Switch between playing low cards (below 5) and face cards: each switch
+    adds 5 DMG to your next attack. Playing the same kind twice in a row resets it.'
   price: 20
   capacityCategory: 0
   canonicalId: rel_118
-  rarity: Common
+  rarity: Rare
   tier: 1
   upgradeFromId: 
   effects: []

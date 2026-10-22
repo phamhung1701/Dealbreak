@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Heart Meds
   icon: "\u2665+"
   iconSprite: {fileID: 21300000, guid: 3c764977673816b478b0cd37ff1e7494, type: 3}
-  description: 'Trigger: On Card Played
-
-    Condition: Suit = Hearts; overhealing
-
-    Effect:
-    Keep Rare healing/Credits; overhealing builds Vitality spent for bonus damage
-    on next Heart attack.
-
-    Value: Overheal becomes Vitality 1:1
-
-    Limit: Retains
-    Rare Heal 3 and conditional Credits 3; Heal Lock-prevented healing gives no Vitality'
+  description: Playing a Heart card heals 3 HP. Below 50% HP, also gain 3 Credits.
+    Overhealing is stored, up to 10, and added to your next Heart attack.
   price: 30
   capacityCategory: 0
   canonicalId: rel_105

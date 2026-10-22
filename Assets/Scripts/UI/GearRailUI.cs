@@ -212,7 +212,7 @@ public sealed class GearRailUI : MonoBehaviour
         _selectedInstanceId = instanceId;
         HideTooltip();
         if (ContextualTooltipUI.Instance || CombatDetailPanelUI.IsCombatActive) { Refresh(); return; }
-        if (detailText) detailText.text = $"<size=22><b>{gear.displayName}</b></size>\n{gear.description}";
+        if (detailText) detailText.text = $"<size=22><b>{gear.displayName}</b></size>\n{GearRules.OwnedDescription(CardManager.Instance, gear, instanceId)}";
         PositionDetailBesideSlot(instanceId);
         if (detailPanel)
         {

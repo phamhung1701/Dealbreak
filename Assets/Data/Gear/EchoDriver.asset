@@ -16,11 +16,9 @@ MonoBehaviour:
   displayName: Echo Driver
   icon: MIMIC
   iconSprite: {fileID: 21300000, guid: a19b110b258f03f44b1ca99f52e83d2a, type: 3}
-  description: 'Trigger: On Card Played
-
-    Effect: Retrigger the in-hand effects
-    of every card in hand when a card is played.'
-  price: 25
+  description: When you play a card, the in-hand effects of every card in hand trigger
+    again.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_017
   rarity: Rare

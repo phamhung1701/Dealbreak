@@ -317,10 +317,12 @@ public sealed class Phase7GearMechanicsTests
         SetOwnedCards(new[] { source, higher });
         GearRules.AdvanceActionState(_cards, new[] { source }, default, false, false);
         var bonuses = GearRules.PrepareActionBonuses(_cards, new[] { higher }, false);
-        Assert.That(bonuses.Dwarf, Is.EqualTo(1));
+        Assert.That(bonuses.Dwarf, Is.EqualTo(5));
         GearRules.AdvanceActionState(_cards, new[] { higher }, bonuses, false, false);
         GearRules.OnKill(_cards, new[] { higher }, null);
         Assert.That(source.PermanentAttackBonus, Is.EqualTo(1));
+        var lowball = _cards.ownedGear[0];
+        Assert.That(GearRules.LiveStatus(_cards, lowball, _cards.GetGearInstance(lowball)), Is.EqualTo("Currently +1."));
         Assert.That(_cards.FindOwnedCard(source.Id), Is.SameAs(source));
     }
 
@@ -340,7 +342,7 @@ public sealed class Phase7GearMechanicsTests
         Assert.That(state.GetEncounterCounter(-1382), Is.EqualTo(1));
         var attack = Card(CardData.Suit.Diamonds, CardData.Rank.Ten, 504);
         var bonuses = GearRules.PrepareActionBonuses(_cards, new[] { attack }, true);
-        Assert.That(bonuses.Kingslayer, Is.EqualTo(1));
+        Assert.That(bonuses.Kingslayer, Is.EqualTo(8));
         GearRules.AdvanceActionState(_cards, new[] { attack }, bonuses, false, true);
         Assert.That(state.GetEncounterCounter(-1382), Is.Zero);
         _cards.ResetGearEncounterEffectState();
@@ -348,7 +350,7 @@ public sealed class Phase7GearMechanicsTests
     }
 
     [Test]
-    public void Balancer_AlternationAddsOneAndRepeatingGroupResetsBeforeItCanBuff()
+    public void Balancer_AlternationAddsFiveAndRepeatingGroupResetsBeforeItCanBuff()
     {
         Gear("rel_118", GearSpecialRule.BalancersScale);
         var low = Card(CardData.Suit.Clubs, CardData.Rank.Four, 601);
@@ -356,7 +358,7 @@ public sealed class Phase7GearMechanicsTests
         var state = _cards.GetGearInstance(_cards.ownedGear[0]).State;
         GearRules.AdvanceActionState(_cards, new[] { low }, default, false, false);
         GearRules.AdvanceActionState(_cards, new[] { face }, default, false, false);
-        Assert.That(state.GetCounter(-1182), Is.EqualTo(1));
+        Assert.That(state.GetCounter(-1182), Is.EqualTo(5));
         Assert.That(GearRules.PrepareActionBonuses(_cards, new[] { face }, false).Balancer, Is.Zero);
         Assert.That(state.GetCounter(-1182), Is.Zero);
     }
@@ -382,7 +384,7 @@ public sealed class Phase7GearMechanicsTests
     }
 
     [Test]
-    public void SpadeEpic_FullBlockDrawsAndUnusedBlockBanksOneNextAttackBonus()
+    public void SpadeEpic_BanksTheOverBlockedDamageForTheNextAttack()
     {
         var spade = Gear("rel_107", GearSpecialRule.SpadeEpic);
         spade.effects = new[] { new GameplayEffectDefinition
@@ -412,7 +414,7 @@ public sealed class Phase7GearMechanicsTests
         SetPrivate(_combat, "_activeAction", null);
         SetPrivate(_combat, "_isResolvingAction", false);
         queue.Clear();
-        Assert.That(_cards.hand.Count, Is.EqualTo(2), "Rare draw behavior is retained on Epic.");
+        Assert.That(_cards.hand.Count, Is.EqualTo(2), "The block itself draws nothing; an over-block counts toward the Perfect Block draw instead.");
         Assert.That(_cards.GetGearInstance(spade).State.GetEncounterCounter(-1071), Is.EqualTo(1));
         var attack = Card(CardData.Suit.Clubs, CardData.Rank.Five, 803);
         Assert.That(GearRules.PrepareActionBonuses(_cards, new[] { attack }, false).Spade, Is.EqualTo(1));
@@ -455,10 +457,10 @@ public sealed class Phase7GearMechanicsTests
         Assert.That(_combat.player.currentHealth, Is.EqualTo(25));
         ApplyNode(MapNodeType.Event, 0);
         Assert.That(_combat.player.currentHealth, Is.EqualTo(28));
-        Assert.That(_cards.credits, Is.EqualTo(3));
+        Assert.That(_cards.credits, Is.EqualTo(6));
         ApplyNode(MapNodeType.Risk, 0);
         Assert.That(_combat.player.currentHealth, Is.EqualTo(28));
-        Assert.That(_cards.credits, Is.EqualTo(3));
+        Assert.That(_cards.credits, Is.EqualTo(6));
 
         ApplyNode(MapNodeType.Combat, 1);
         ApplyNode(MapNodeType.Elite, 1);

@@ -148,9 +148,6 @@ public sealed class GearBalance
     [Tooltip("Epic: Diamonds played per discard choice.")]
     [Min(1)] public int diamondDriverEpicDiamondsPerChoice = 3;
 
-    [Header("Spade Shield (Rare, Epic)")]
-    [Min(0)] public int spadeShieldDraw = 1;
-
     [Header("Club Amplifier (Rare, Epic)")]
     [Min(1)] public int clubAmplifierRareMultiplier = 2;
     [Tooltip("Epic: a Club's damage is multiplied by numerator/denominator once per unplayed Club in hand.")]
@@ -163,8 +160,8 @@ public sealed class GearBalance
     [Min(1)] public int glassShardRareAttackMultiplier = 2;
     [Min(1)] public int glassShardRareIncomingMultiplier = 2;
     [Min(1)] public int glassShardEpicAttackMultiplier = 3;
-    [Tooltip("Epic: the multiplier applies at exactly this HP.")]
-    [Min(1)] public int glassShardEpicAtHealth = 1;
+    [Tooltip("Epic: the multiplier applies at or below this HP.")]
+    [Min(1)] public int glassShardEpicAtOrBelowHealth = 5;
 
     [Header("Memory Card (Rare)")]
     [Min(0)] public int memoryCardRareHandBonus = 3;
@@ -190,32 +187,44 @@ public sealed class GearBalance
     [Min(0)] public int varsityJacketMaxStreak = 3;
 
     [Header("Riot Helmet")]
-    [Min(0)] public int riotHelmetShield = 1;
+    [Min(0)] public int riotHelmetShield = 2;
 
     [Header("Spotter Eye")]
     [Tooltip("Distinct ranks played against a Headliner to earn a charge.")]
     [Min(1)] public int spotterEyeDistinctRanks = 3;
-    [Min(0)] public int spotterEyeAttackBonus = 1;
+    [Min(0)] public int spotterEyeAttackBonus = 8;
 
     [Header("Lowball (Rare, Epic)")]
     [Tooltip("A card below this rank primes the bonus.")]
     public CardData.Rank lowballBelowRank = CardData.Rank.Five;
-    [Min(0)] public int lowballAttackBonus = 1;
+    [Min(0)] public int lowballAttackBonus = 5;
     [Tooltip("Epic: permanent attack the primed card gains when a higher card kills.")]
     [Min(0)] public int lowballEpicPermanentAttack = 1;
 
-    [Header("Counterpunch Gloves (Epic)")]
-    [Tooltip("Permanent counter damage gained per counterattack kill.")]
+    [Header("Flip Switch")]
+    [Tooltip("Next-attack damage gained per switch between a low card and a face card.")]
+    [Min(0)] public int flipSwitchAttackBonus = 5;
+
+    [Header("Counterpunch Gloves (Rare, Epic)")]
+    [Tooltip("Rare: counterattack after a Perfect Block, in percent of the blocked damage, rounded down.")]
+    [Min(100)] public int counterpunchGlovesRarePerfectPercent = 150;
+    [Tooltip("Epic: counterattack after a Perfect Block, in percent of the blocked damage, rounded down.")]
+    [Min(100)] public int counterpunchGlovesEpicPerfectPercent = 200;
+    [Tooltip("Epic: permanent counterattack damage gained per enemy defeated.")]
     [Min(0)] public int counterpunchGlovesEpicGrowth = 1;
+
+    [Header("Headhunter Rifle")]
+    [Tooltip("Attack damage against Enforcers and Headliners gained per Enforcer or Headliner defeated.")]
+    [Min(0)] public int headhunterRifleAttackPerKill = 3;
 
     [Header("Bounty Hologram")]
     [Tooltip("Credits from a won Enforcer encounter, in percent, rounded half up.")]
-    [Min(0)] public int bountyHologramEnforcerPercent = 150;
+    [Min(0)] public int bountyHologramEnforcerPercent = 125;
     [Tooltip("Credits from a won Headliner encounter, in percent, rounded half up.")]
     [Min(0)] public int bountyHologramHeadlinerPercent = 125;
 
     [Header("Gold Pistol")]
-    [Tooltip("Opening attack gains 1 damage per this many Credits held.")]
+    [Tooltip("Every attack gains 1 damage per this many Credits held.")]
     [Min(1)] public int goldPistolCreditsPerDamage = 10;
 
     [Header("Nuclear Option")]
@@ -230,25 +239,25 @@ public sealed class GearBalance
 
     [Header("Savings Safe")]
     [Tooltip("Interest on held Credits after a Headliner win, in percent, rounded half up.")]
-    [Min(0)] public int savingsSafeInterestPercent = 10;
+    [Min(0)] public int savingsSafeInterestPercent = 30;
 
     [Header("City Boots")]
     [Tooltip("Distinct node types visited in a District to earn the reward.")]
     [Min(1)] public int cityBootsNodeTypes = 3;
     [Min(0)] public int cityBootsHeal = 3;
-    [Min(0)] public int cityBootsCredits = 3;
+    [Min(0)] public int cityBootsCredits = 6;
 
     [Header("Black Market Gear")]
     [Tooltip("Cashback Card: refund in percent of Credits spent, rounded half up.")]
     [Min(0)] public int cashbackCardPercent = 15;
     [Tooltip("Loyalty Card: Gear and Trick prices in percent, rounded half up.")]
-    [Min(0)] public int loyaltyCardPricePercent = 80;
+    [Min(0)] public int loyaltyCardPricePercent = 90;
     [Tooltip("Loyalty Gift: paid Gear or Trick purchases per Trick reward.")]
     [Min(1)] public int loyaltyGiftPurchasesPerReward = 3;
 
     [Header("Rewards")]
     [Tooltip("Supply Crate: combat wins per Trick reward.")]
-    [Min(1)] public int supplyCrateWinsPerReward = 3;
+    [Min(1)] public int supplyCrateWinsPerReward = 1;
     [Tooltip("Mod Case: Mod Tricks offered at each District start.")]
     [Min(1)] public int modCaseChoices = 3;
     [Tooltip("Mod Bench: completed nodes between Mod rewards.")]

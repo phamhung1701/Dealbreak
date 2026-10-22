@@ -16,20 +16,8 @@ MonoBehaviour:
   displayName: Diamond Driver
   icon: "\u2666+"
   iconSprite: {fileID: 21300000, guid: bfc81a4522093314fb3e335575ff16be, type: 3}
-  description: 'Trigger: On Card Played
-
-    Condition: Suit = Diamonds; every third
-    manually played Diamond
-
-    Effect: Keep Rare draw 2; every third manually played
-    Diamond choose a card from the draw pile to draw.
-
-    Value: Choose 1 physical
-    draw pile card to put into hand
-
-    Limit: Every third manually played Diamond;
-    strict hand capacity; empty draw pile/full hand skips with log; cancel skips
-    draw'
+  description: Playing a Diamond card draws 2 cards. Every third Diamond played also
+    lets you take a card of your choice from the draw pile.
   price: 30
   capacityCategory: 0
   canonicalId: rel_108

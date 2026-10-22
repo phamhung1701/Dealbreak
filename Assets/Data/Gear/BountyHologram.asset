@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Bounty Hologram
   icon: "\xA4"
   iconSprite: {fileID: 21300000, guid: ed77a6bda2822494f8075b7d7ce1545f, type: 3}
-  description: 'Trigger: On Victory
-
-    Condition: Enforcer or Headliner defeated
-
-    Effect:
-    Enforcer victories +50% base Credits; Headliner victories +25% base Credits.
-
-    Value:
-    +50% / +25%
-
-    Limit: Rounding TBD; provisional'
-  price: 20
+  description: Defeating an Enforcer or Headliner pays 25% more Credits.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_126
   rarity: Common

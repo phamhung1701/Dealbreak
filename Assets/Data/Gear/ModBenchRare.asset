@@ -16,21 +16,9 @@ MonoBehaviour:
   displayName: Mod Bench
   icon: HAMMER
   iconSprite: {fileID: 21300000, guid: 9b4bd53bb3e45af4cb2494d70bbae8ee, type: 3}
-  description: 'Trigger: After Every 3 Nodes
-
-    Condition: Choose 1 of 3 Common
-    Mods; eligible target card available
-
-    Effect: Every 3 nodes, choose 1 of
-    3 Common Mods and apply it to a chosen eligible card instead of enhancing a random
-    card.
-
-    Value: Choose 1 of 3 cached Common Mods and 1 eligible card
-
-    Limit:
-    Every 3 completed nodes after acquisition; Retry/Decline if no eligible card;
-    one Mod per card'
-  price: 30
+  description: Every 3 nodes, choose 1 of 3 Common Mods and the card to apply it
+    to.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_140
   rarity: Rare

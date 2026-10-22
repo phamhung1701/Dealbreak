@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Modder's Kit
   icon: ENH
   iconSprite: {fileID: 21300000, guid: 3764744857b236342a6e1d07cefe06b1, type: 3}
-  description: Enhanced cards deal +3 damage
-  price: 25
+  description: Modded cards deal 3 more DMG.
+  price: 10
   capacityCategory: 0
   canonicalId: 
   rarity: Common

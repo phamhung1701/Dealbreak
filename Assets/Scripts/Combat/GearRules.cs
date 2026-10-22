@@ -158,7 +158,7 @@ public static partial class GearRules
                     int previous = state.GetCounter(GearCounterKeys.BalancersScalePreviousGroup);
                     int bonus = state.GetCounter(GearCounterKeys.BalancersScaleBonus);
                     if (group == previous) bonus = 0;
-                    else if (previous != 0) bonus++;
+                    else if (previous != 0) bonus = ClampToInt((long)bonus + Tuning.flipSwitchAttackBonus);
                     state.SetCounter(GearCounterKeys.BalancersScalePreviousGroup, group);
                     state.SetCounter(GearCounterKeys.BalancersScaleBonus, bonus);
                 }
@@ -181,18 +181,40 @@ public static partial class GearRules
             instance.PendingDwarfSourceCard = null;
     }
 
-    /// <summary>Hunter's Ledger and Trophy Rack bonuses for the opening attack of an encounter.</summary>
-    public static int OpeningAttackBonus(CardManager cards, bool headlinerEncounter)
+    /// <summary>Notched Pistol (Hunter's Ledger): the opening attack of an encounter gains its kills.</summary>
+    public static int OpeningAttackBonus(CardManager cards)
     {
         int bonus = 0;
         foreach (var (gear, instance) in Owned(cards))
-        {
             if (gear.specialRule == GearSpecialRule.HuntersLedger)
                 bonus += instance.State.GetCounter(GearCounterKeys.HuntersLedgerEliteKills);
-            else if (gear.specialRule == GearSpecialRule.TrophyRack && headlinerEncounter)
-                bonus += instance.State.GetCounter(GearCounterKeys.TrophyRackEliteKills);
-        }
         return bonus;
+    }
+
+    /// <summary>Headhunter Rifle (Trophy Rack): every attack in an Enforcer or Headliner encounter
+    /// gains its per-kill damage for each Enforcer or Headliner defeated.</summary>
+    public static int HeadhunterAttackBonus(CardManager cards, bool eliteOrHeadlinerEncounter)
+    {
+        if (!eliteOrHeadlinerEncounter) return 0;
+        long bonus = 0;
+        foreach (var (gear, instance) in Owned(cards))
+            if (gear.specialRule == GearSpecialRule.TrophyRack)
+                bonus += (long)instance.State.GetCounter(GearCounterKeys.TrophyRackEliteKills) * Tuning.headhunterRifleAttackPerKill;
+        return ClampToInt(bonus);
+    }
+
+    /// <summary>Counterpunch Gloves Epic: every defeated enemy permanently grows its counterattack.</summary>
+    public static void OnEnemyDefeated(CardManager cards, Action<string> log)
+    {
+        foreach (var (gear, instance) in Owned(cards))
+        {
+            if (gear.specialRule != GearSpecialRule.RetaliationEpic) continue;
+            int gained = Tuning.counterpunchGlovesEpicGrowth;
+            if (gained <= 0) continue;
+            instance.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth,
+                ClampToInt((long)instance.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) + gained));
+            log?.Invoke($"{gear.displayName}: permanently gained +{gained} counterattack damage.");
+        }
     }
 
     /// <summary>Dwarf Epic: a prepared low card permanently gains attack when a higher card kills.</summary>
@@ -208,6 +230,8 @@ public static partial class GearRules
             int growth = Tuning.lowballEpicPermanentAttack;
             source.GainPermanentAttackBonus(growth);
             cards.NotifyCardInstanceChanged(source);
+            instance.State.SetCounter(GearCounterKeys.DwarfEpicPermanentGained,
+                ClampToInt((long)instance.State.GetCounter(GearCounterKeys.DwarfEpicPermanentGained) + growth));
             instance.PendingDwarfSourceCard = null;
             log?.Invoke($"{gear.displayName}: prepared {source.DisplayName} permanently gained +{growth} attack.");
         }
@@ -231,7 +255,7 @@ public static partial class GearRules
         }
     }
 
-    /// <summary>Bounty Hologram scales defeated-enemy Credits (×1.5 Enforcer, ×1.25 Headliner).</summary>
+    /// <summary>Bounty Hologram scales won Enforcer and Headliner Credits (GameBalance percents).</summary>
     public static int ScaleVictoryCredits(CardManager cards, int credits, bool headlinerEncounter,
         bool eliteOrHeadlinerEncounter)
     {

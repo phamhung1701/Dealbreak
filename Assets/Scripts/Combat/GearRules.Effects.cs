@@ -51,7 +51,8 @@ public static partial class GearRules
                 case GearSpecialRule.GlassRare:
                     resolved = ClampToInt((long)resolved * Tuning.glassShardRareAttackMultiplier);
                     break;
-                case GearSpecialRule.GlassEpic when combat?.player?.currentHealth == Tuning.glassShardEpicAtHealth:
+                case GearSpecialRule.GlassEpic when combat?.player != null &&
+                    combat.player.currentHealth <= Tuning.glassShardEpicAtOrBelowHealth:
                     resolved = ClampToInt((long)resolved * Tuning.glassShardEpicAttackMultiplier);
                     break;
             }
@@ -68,7 +69,7 @@ public static partial class GearRules
                 GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic or
                 GearSpecialRule.BalancersScale or GearSpecialRule.SpadeEpic or GearSpecialRule.HeartEpic);
 
-    /// <summary>Gold Pistol: the opening attack gains 1 damage per 10 Credits held.</summary>
+    /// <summary>Gold Pistol: every attack gains 1 damage per 10 Credits held.</summary>
     public static int GoldPistolBonus(CardManager cards) =>
         cards != null && cards.HasGearSpecialRule(GearSpecialRule.GildedBlade)
             ? Math.Max(0, cards.credits / Tuning.goldPistolCreditsPerDamage) : 0;
@@ -84,6 +85,40 @@ public static partial class GearRules
         cards != null && cards.HasGearSpecialRule(GearSpecialRule.AceEpic) &&
         committedCards.Any(card => card?.Rank == CardData.Rank.Ace) &&
         committedCards.Any(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King);
+
+    /// <summary>The live state an owned Gear shows under its description ("Currently +3."), or empty.</summary>
+    public static string LiveStatus(CardManager cards, GearData gear, GearRuntimeInstance instance)
+    {
+        if (cards == null || gear == null || instance == null) return string.Empty;
+        var state = instance.State;
+        switch (gear.specialRule)
+        {
+            case GearSpecialRule.RetaliationEpic:
+                return $"Currently +{state.GetCounter(GearCounterKeys.RetaliationEpicGrowth)}.";
+            case GearSpecialRule.DwarfEpic:
+                return $"Currently +{state.GetCounter(GearCounterKeys.DwarfEpicPermanentGained)}.";
+            case GearSpecialRule.ArsenalEpic:
+            {
+                int faces = cards.hand.Count(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King);
+                int bonus = HandCapacityBonus(cards, gear);
+                int next = faces + 1;
+                double harmonic = 0d;
+                for (int faceIndex = 1; faceIndex <= next; faceIndex++) harmonic += 1d / faceIndex;
+                while (Math.Floor(harmonic) <= bonus) harmonic += 1d / ++next;
+                return $"Currently +{bonus} hand size; next at {next} face cards.";
+            }
+            default:
+                return string.Empty;
+        }
+    }
+
+    /// <summary>An owned Gear's description with its live state.</summary>
+    public static string OwnedDescription(CardManager cards, GearData gear, long instanceId)
+    {
+        if (gear == null) return string.Empty;
+        string live = LiveStatus(cards, gear, cards?.GetGearInstanceById(instanceId));
+        return string.IsNullOrEmpty(live) ? gear.description : $"{gear.description}\n{live}";
+    }
 
     /// <summary>Royal Family Heirloom enables the five-card Royal Family action.</summary>
     public static bool EnablesRoyalFamily(CardManager cards) => cards != null &&
@@ -188,46 +223,47 @@ public static partial class GearRules
                 () => context.Cards.DrawToHand(Tuning.diamondDriverDraw));
     }
 
-    /// <summary>Spade Gear draws on a full Spade block (Epic banks over-block); Retaliation Gear
-    /// counterattacks the blocked enemy (Epic grows on a lethal counter).</summary>
+    /// <summary>Spade Shield Rare and Epic: a Spade that blocks more than its attack still counts as
+    /// a Perfect Block.</summary>
+    public static bool SpadeOverblockCountsAsPerfect(CardManager cards, CardInstance blockingCard) =>
+        blockingCard != null && blockingCard.MatchesSuit(CardData.Suit.Spades) && cards != null &&
+        (cards.HasGearSpecialRule(GearSpecialRule.SpadeRare) || cards.HasGearSpecialRule(GearSpecialRule.SpadeEpic));
+
+    /// <summary>A blocking card that exactly covers its attack is a Perfect Block, and so is a Spade
+    /// over-block with Spade Shield Rare or Epic.</summary>
+    public static bool IsPerfectCardBlock(CardManager cards, CardInstance blockingCard, int block, int attack) =>
+        attack > 0 && (block == attack || block > attack && SpadeOverblockCountsAsPerfect(cards, blockingCard));
+
+    /// <summary>Spade Shield Epic banks the over-blocked damage for the next attack; Counterpunch
+    /// Rare and Epic counterattack the blocked enemy for the blocked damage, more on a Perfect Block
+    /// (Epic adds its growth).</summary>
     public static void EnqueueAttackBlockedRules(GameplayEffectSource source, AttackBlockedEffectContext context,
         CombatReactionQueue queue, int sourceOrder)
     {
         var rule = source.Gear?.Definition.specialRule;
-        if (rule is GearSpecialRule.SpadeRare or GearSpecialRule.SpadeEpic &&
-            context.BlockingCard.MatchesSuit(CardData.Suit.Spades))
+        if (rule == GearSpecialRule.SpadeEpic && context.BlockingCard.MatchesSuit(CardData.Suit.Spades))
         {
             int block = context.Combat.CalculateCardDefense(context.BlockingCard);
             int attack = Math.Max(0, context.BlockedAttackDamage);
-            if (block >= attack && attack > 0)
-                queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
-                    CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue - 1,
-                    () => context.Cards.DrawToHand(Tuning.spadeShieldDraw));
-            if (rule == GearSpecialRule.SpadeEpic && block > attack)
-                source.State.SetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks,
-                    source.State.GetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks) + 1);
+            if (attack > 0 && block > attack)
+                source.State.SetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks, ClampToInt(
+                    (long)source.State.GetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks) + block - attack));
         }
         if (rule is GearSpecialRule.RareRetaliation or GearSpecialRule.RetaliationEpic)
         {
             int block = context.Combat.CalculateCardDefense(context.BlockingCard);
-            int attack = context.BlockedAttackDamage;
-            int growth = rule == GearSpecialRule.RetaliationEpic
-                ? source.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) : 0;
-            int retaliation = GameplayEffectResolver.CalculateRetaliationDamage(block, attack) + growth;
+            int attack = Math.Max(0, context.BlockedAttackDamage);
+            bool perfect = IsPerfectCardBlock(context.Cards, context.BlockingCard, block, attack);
+            int perfectPercent = rule == GearSpecialRule.RetaliationEpic
+                ? Tuning.counterpunchGlovesEpicPerfectPercent : Tuning.counterpunchGlovesRarePerfectPercent;
+            int retaliation = GameplayEffectResolver.CalculateRetaliationDamage(block, attack, perfect ? perfectPercent : 100);
+            if (retaliation > 0 && rule == GearSpecialRule.RetaliationEpic)
+                retaliation = ClampToInt((long)retaliation + source.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth));
             if (retaliation > 0)
                 queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
                     CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue,
                     () => context.Combat.QueueReactiveDamage(context.Combat.player, context.AttackedEnemy,
-                        retaliation, sourceOrder, int.MaxValue, sourceCategory: source.Category,
-                        onResolved: rule == GearSpecialRule.RetaliationEpic
-                            ? result =>
-                            {
-                                if (!result.WasLethal) return;
-                                int gained = Tuning.counterpunchGlovesEpicGrowth;
-                                source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, growth + gained);
-                                context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +{gained} counter damage.");
-                            }
-                            : null));
+                        retaliation, sourceOrder, int.MaxValue, sourceCategory: source.Category));
         }
     }
 }

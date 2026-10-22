@@ -16,15 +16,8 @@ MonoBehaviour:
   displayName: Field Tablet
   icon: TOME
   iconSprite: {fileID: 21300000, guid: 6184997257577a9469c719c05fb28601, type: 3}
-  description: 'Trigger: On Combat Start
-
-    Condition: Enough free hand space
-
-    Effect:
-    Draw cards.
-
-    Value: 1'
-  price: 18
+  description: Draw 1 card at the start of each combat.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_007
   rarity: Common

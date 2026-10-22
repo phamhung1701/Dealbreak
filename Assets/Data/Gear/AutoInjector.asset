@@ -16,12 +16,8 @@ MonoBehaviour:
   displayName: Auto-Injector
   icon: HEAL
   iconSprite: {fileID: 21300000, guid: d118c64849394124583bb372f761d883, type: 3}
-  description: 'Trigger: On New Turn
-
-    Effect: Heal HP.
-
-    Value: +2 HP'
-  price: 18
+  description: Heal 2 HP at the start of each turn.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_010
   rarity: Common

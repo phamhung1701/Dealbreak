@@ -16,20 +16,9 @@ MonoBehaviour:
   displayName: Survivor's Badge
   icon: CROWN
   iconSprite: {fileID: 21300000, guid: 9482ce96d1550e04687378f52af5f996, type: 3}
-  description: 'Trigger: Headliner Defeated
-
-    Condition: Headliner defeated
-
-    Effect:
-    Headliner kill permanently increases max HP; additional if encounter has zero-HP
-    loss.
-
-    Value: +3 Max HP; +3 additional on zero actual HP lost
-
-    Limit:
-    Once per Headliner kill; shield/block do not count as HP loss; max-HP gain does
-    not heal'
-  price: 20
+  description: Defeating a Headliner increases max HP by 3, or by 6 if you took no
+    DMG in that combat.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_139
   rarity: Common

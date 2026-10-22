@@ -16,19 +16,9 @@ MonoBehaviour:
   displayName: Notched Pistol
   icon: HUNT
   iconSprite: {fileID: 21300000, guid: 5d58f1736bea9aa4691033d3dd5700c0, type: 3}
-  description: 'Trigger: On Enforcer Kill
-
-    Condition: Enforcer defeated
-
-    Effect:
-    Enforcer kill permanently strengthens first attack each encounter.
-
-    Value:
-    +1 opening-attack damage
-
-    Limit: Each actual Enforcer kill; applies to first
-    attack action of each encounter; run-local'
-  price: 20
+  description: Each Enforcer defeated permanently adds 1 DMG to your first attack
+    in each combat.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_119
   rarity: Common

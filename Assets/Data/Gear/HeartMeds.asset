@@ -16,15 +16,8 @@ MonoBehaviour:
   displayName: Heart Meds
   icon: "\u2665"
   iconSprite: {fileID: 21300000, guid: 3c764977673816b478b0cd37ff1e7494, type: 3}
-  description: 'Trigger: On Card Played
-
-    Condition: Suit = Hearts
-
-    Effect:
-    Heal HP.
-
-    Value: +1 HP'
-  price: 20
+  description: Playing a Heart card heals 1 HP.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_002
   rarity: Common

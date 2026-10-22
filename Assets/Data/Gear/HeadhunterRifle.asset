@@ -16,22 +16,12 @@ MonoBehaviour:
   displayName: Headhunter Rifle
   icon: TROPHY
   iconSprite: {fileID: 21300000, guid: 5d16ce42a359ba04597b51c388cce1fb, type: 3}
-  description: 'Trigger: On Enforcer Kill
-
-    Condition: Enforcer defeated
-
-    Effect:
-    Enforcer kill permanently strengthens opening attack vs Headliner.
-
-    Value:
-    +1 opening-attack damage versus Headliner
-
-    Limit: Each actual Enforcer kill;
-    run-local; applies to first attack action of each Headliner encounter'
+  description: Each Enforcer or Headliner defeated permanently adds 3 DMG to your
+    attacks against Enforcers and Headliners.
   price: 20
   capacityCategory: 0
   canonicalId: rel_137
-  rarity: Common
+  rarity: Rare
   tier: 1
   upgradeFromId: 
   effects: []

@@ -16,19 +16,9 @@ MonoBehaviour:
   displayName: Ace Protocol
   icon: ACE+
   iconSprite: {fileID: 21300000, guid: fabf9978af02ad0498d9d93e484c029a, type: 3}
-  description: 'Trigger: On Ace Pair Critical
-
-    Condition: Ace pair critically
-    strikes
-
-    Effect: Keep Common crit chance; critical Ace-pair returns Ace to
-    hand once per encounter.
-
-    Value: Return 1 physical Ace to hand
-
-    Limit:
-    Once per encounter after a critical Ace pair; skip if hand is at capacity'
-  price: 30
+  description: Increase Ace critical chance to 50%. Once per combat, a critical Ace
+    returns to your hand.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_114
   rarity: Rare

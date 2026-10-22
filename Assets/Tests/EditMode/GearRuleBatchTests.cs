@@ -113,7 +113,7 @@ public sealed class GearRuleBatchTests
         Assert.That(cheaterRare.ruleModifiers[0].extraTurn.cannotTriggerFromBonusAction, Is.True);
         Assert.That(hands.ruleModifiers[0].kind, Is.EqualTo(GameplayRuleModifierKind.SameRankMultiCard));
         Assert.That(hands.ruleModifiers[0].sameRankMultiCard.maximumCards, Is.EqualTo(3));
-        Assert.That(hands.effects.Single(e=>e.kind==GameplayEffectKind.ActionDamageCap).amount, Is.EqualTo(10));
+        Assert.That(hands.effects.Single(e=>e.kind==GameplayEffectKind.ActionDamageCap).amount, Is.EqualTo(12));
         Assert.That(hands.effects.Single(e=>e.kind==GameplayEffectKind.ActionDamageCap).conditions.Single().kind,
             Is.EqualTo(GameplayConditionKind.HandsMultiCardAction));
         Assert.That(dwarf.ruleModifiers[0].extraTurn.trigger,
@@ -781,10 +781,11 @@ public sealed class GearRuleBatchTests
         Assert.That(club.specialRule, Is.EqualTo(GearSpecialRule.ClubEpic));
         Assert.That(overflow.upgradeFromId, Is.EqualTo("rel_021"));
         Assert.That(overflow.specialRule, Is.EqualTo(GearSpecialRule.OverflowEpic));
-        Assert.That(crest.rarity, Is.EqualTo("Common"));
+        Assert.That(crest.rarity, Is.EqualTo("Rare"));
         Assert.That(bounty.rarity, Is.EqualTo("Common"));
         Assert.That(gilded.rarity, Is.EqualTo("Common"));
-        Assert.That(new[] { crest.price, bounty.price, gilded.price }, Is.All.EqualTo(20));
+        Assert.That(crest.price, Is.EqualTo(20), "Gear prices follow rarity: Common 10, Rare 20, Epic 30.");
+        Assert.That(new[] { bounty.price, gilded.price }, Is.All.EqualTo(10));
     }
 
     [Test]
@@ -802,21 +803,21 @@ public sealed class GearRuleBatchTests
     }
 
     [Test]
-    public void ChallengerCrest_GrantsOneShieldOnlyForEliteOrHeadlinerCombat()
+    public void ChallengerCrest_GrantsTwoShieldOnlyForEliteOrHeadlinerCombat()
     {
         _cards.ownedGear.Add(AssetDatabaseGear("rel_136"));
         _combat.StartEncounter(new[] { new EnemyRuntime(Type("Crest Test", 100, 1)) }, MapNodeType.Combat);
         Assert.That(_combat.player.ShieldCharges, Is.Zero);
         _combat.Reset();
         _combat.StartEncounter(new[] { new EnemyRuntime(Type("Elite Crest Test", 100, 1)) }, MapNodeType.Elite);
-        Assert.That(_combat.player.ShieldCharges, Is.EqualTo(1));
+        Assert.That(_combat.player.ShieldCharges, Is.EqualTo(2));
         _combat.Reset();
         _combat.StartEncounter(new[] { new EnemyRuntime(Type("Boss Crest Test", 100, 1)) }, MapNodeType.Headliner);
-        Assert.That(_combat.player.ShieldCharges, Is.EqualTo(1));
+        Assert.That(_combat.player.ShieldCharges, Is.EqualTo(2));
     }
 
     [Test]
-    public void GildedBlade_UsesOpeningCreditsSnapshotAndOnlyAddsItsBonusOncePerAttack()
+    public void GildedBlade_AddsItsCreditsBonusToEveryAttack()
     {
         _cards.ownedGear.Add(AssetDatabaseGear("rel_128"));
         _cards.credits = 29;
@@ -827,8 +828,8 @@ public sealed class GearRuleBatchTests
         Assert.That(_combat.TryPlayCards(new[] { first }, target), Is.True);
         _combat.TakeRemainingDamage();
         var next = FindView(_ => true);
-        Assert.That(_combat.CalculateCardAttackDamage(next.data), Is.EqualTo(next.data.BaseAttackValue),
-            "The bonus does not repeat after the opening attack.");
+        Assert.That(_combat.CalculateCardAttackDamage(next.data), Is.EqualTo(next.data.BaseAttackValue + 2),
+            "The bonus applies to every attack, not only the opening one.");
     }
 
     [Test]
@@ -851,7 +852,7 @@ public sealed class GearRuleBatchTests
         Assert.That(_combat.CalculateCardAttackDamage(ordinary), Is.EqualTo(ordinary.BaseAttackValue));
     }
 
-    [TestCase(MapNodeType.Elite, 3, 5)]
+    [TestCase(MapNodeType.Elite, 4, 5)]
     [TestCase(MapNodeType.Headliner, 5, 6)]
     public void BountyLedger_ModifiesOnlyBaseRewardWithSingleHalfUpRounding(MapNodeType kind, int baseCredits, int expected)
     {

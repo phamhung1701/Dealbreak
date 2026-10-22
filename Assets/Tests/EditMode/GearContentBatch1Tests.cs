@@ -221,14 +221,14 @@ public sealed class GearContentBatch1Tests
         var clubFour = Card(CardData.Suit.Clubs, CardData.Rank.Four);
         var clubFive = Card(CardData.Suit.Clubs, CardData.Rank.Five);
         Assert.That(_combat.CalculateCardAttackDamage(eight), Is.EqualTo(8));
-        Assert.That(_combat.CalculateCardAttackDamage(nine), Is.EqualTo(19));
+        Assert.That(_combat.CalculateCardAttackDamage(nine), Is.EqualTo(15));
         Assert.That(_cards.ApplyEnhancement(_cards.ownedCards.First(c => c.Rank == CardData.Rank.Eight).Id,
             _sharpened), Is.True);
         var enhancedEight = _cards.ownedCards.First(c => c.Rank == CardData.Rank.Eight && c.Enhancement != null);
-        Assert.That(_combat.CalculateCardAttackDamage(enhancedEight), Is.EqualTo(21));
+        Assert.That(_combat.CalculateCardAttackDamage(enhancedEight), Is.EqualTo(17));
         Assert.That(_cards.BuyGear(_club, 0), Is.True);
         Assert.That(_combat.CalculateCardAttackDamage(clubFour), Is.EqualTo(8));
-        Assert.That(_combat.CalculateCardAttackDamage(clubFive), Is.EqualTo(20));
+        Assert.That(_combat.CalculateCardAttackDamage(clubFive), Is.EqualTo(16));
         Assert.That(_combat.CalculateCardDefense(clubFive), Is.EqualTo(5));
     }
 
@@ -242,9 +242,9 @@ public sealed class GearContentBatch1Tests
         _combat.StartEnemy(enemy);
         _combat.CriticalChancePercent = 0f;
         Assert.That(_combat.CalculateCardAttackDamage(ace.data), Is.EqualTo(1));
-        Assert.That(_combat.CalculateCardAttackDamage(nine.data), Is.EqualTo(19));
+        Assert.That(_combat.CalculateCardAttackDamage(nine.data), Is.EqualTo(15));
         Assert.That(_combat.TryPlayCards(new[] { ace, nine }, enemy), Is.True);
-        Assert.That(enemy.currentHp, Is.EqualTo(80));
+        Assert.That(enemy.currentHp, Is.EqualTo(84));
     }
 
     [Test]
@@ -257,9 +257,9 @@ public sealed class GearContentBatch1Tests
         var enemy = Target(100, 0);
         _combat.StartEnemy(enemy);
         _combat.CriticalChancePercent = 0f;
-        Assert.That(_combat.CalculateCardAttackDamage(club.data), Is.EqualTo(20));
+        Assert.That(_combat.CalculateCardAttackDamage(club.data), Is.EqualTo(16));
         Assert.That(_combat.TryPlayCards(new[] { ace, club }, enemy), Is.True);
-        Assert.That(enemy.currentHp, Is.EqualTo(90), "1 + (5×2 + 10), then +3, capped once at 10.");
+        Assert.That(enemy.currentHp, Is.EqualTo(90), "1 + (5×2 + 6), then +3, capped once at 10.");
         _combat.Reset();
         _cards.Reset();
         _cards.ConfigureRandom(new DeterministicRandom(41));
@@ -268,7 +268,7 @@ public sealed class GearContentBatch1Tests
         foreach (var gear in new[] { _club, _dagger, _sword })
             Assert.That(_cards.BuyGear(gear, 0), Is.True);
         var replacementClub = Card(CardData.Suit.Clubs, CardData.Rank.Five);
-        Assert.That(_combat.CalculateCardAttackDamage(replacementClub), Is.EqualTo(20));
+        Assert.That(_combat.CalculateCardAttackDamage(replacementClub), Is.EqualTo(16));
         Assert.That(_cards.GearSlotsUsed, Is.EqualTo(3));
     }
 

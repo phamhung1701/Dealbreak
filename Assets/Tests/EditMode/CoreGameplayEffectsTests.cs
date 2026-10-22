@@ -132,7 +132,7 @@ public sealed class CoreGameplayEffectsTests
     }
 
     [Test]
-    public void Diamond_DrawsFixedTwoRegardlessOfRankAndRespectsHandLimit()
+    public void Diamond_DrawsFixedOneRegardlessOfRankAndRespectsHandLimit()
     {
         Assert.That(_cards.BuyGear(_diamond, 0), Is.True);
         var highDiamond = FindCard(c => c.Suit == CardData.Suit.Diamonds && c.Rank >= CardData.Rank.Eight);
@@ -142,7 +142,7 @@ public sealed class CoreGameplayEffectsTests
             Assert.That(_cards.TryDiscard(Views().First(v => v != highDiamond)), Is.True);
         int before = _cards.HandCount;
         Assert.That(_combat.TryPlayCards(new[] { highDiamond }, target), Is.True);
-        Assert.That(_cards.HandCount, Is.EqualTo(before - 1 + 2));
+        Assert.That(_cards.HandCount, Is.EqualTo(before - 1 + 1));
         var nextDiamond = FindCard(c => c.Suit == CardData.Suit.Diamonds);
         _cards.RefillHand();
         Assert.That(_cards.HandCount, Is.EqualTo(CardManager.HAND_SIZE));

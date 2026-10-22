@@ -16,9 +16,8 @@ MonoBehaviour:
   displayName: Club Amplifier
   icon: "\u2663"
   iconSprite: {fileID: 21300000, guid: 30564c088a78e8d44b513efee63b6d18, type: 3}
-  description: "Trigger: On Card Played\nCondition: Suit = Clubs\nEffect: Multiply
-    this card's damage.\nValue: \xD72"
-  price: 15
+  description: Club cards deal double DMG.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_001
   rarity: Common

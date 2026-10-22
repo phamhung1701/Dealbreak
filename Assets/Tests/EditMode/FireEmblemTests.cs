@@ -69,8 +69,11 @@ public sealed class FireEmblemTests
         int secondId = secondBlock.data.Id;
         Assert.That(_combat.TryPlayCards(new[] { attackCard }, enemies[0]), Is.True);
         Assert.That(_combat.PendingAttackCount, Is.EqualTo(2));
+        int handBefore = _cards.HandCount;
 
         Assert.That(_combat.TryDefendWithCards(new[] { firstBlock }), Is.True);
+
+        Assert.That(_cards.HandCount, Is.EqualTo(handBefore), "The destroyed block card is replaced by Lighter's draw.");
 
         Assert.That(_cards.FindOwnedCard(firstId), Is.Null, "The first blocked card is destroyed, not discarded.");
         Assert.That(_cards.discardPile.Any(card => card.Id == firstId), Is.False);
@@ -94,6 +97,7 @@ public sealed class FireEmblemTests
         Assert.That(_fireEmblem.effects, Has.Length.EqualTo(1));
         Assert.That(_fireEmblem.effects[0].kind, Is.EqualTo(GameplayEffectKind.DestroyBlockingCard));
         Assert.That(_fireEmblem.effects[0].trigger, Is.EqualTo(GameplayEffectTrigger.AttackBlocked));
+        Assert.That(_fireEmblem.effects[0].amount, Is.EqualTo(1), "Cards drawn after the destroy.");
     }
 
     CardView[] HandViews() => _field.cardsHolder.GetComponentsInChildren<CardView>()

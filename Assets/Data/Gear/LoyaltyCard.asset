@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Loyalty Card
   icon: SALE
   iconSprite: {fileID: 21300000, guid: a728aa17e6b9ee646bbed4f343ca5edf, type: 3}
-  description: 'Trigger: On Purchase
-
-    Condition: Eligible item purchase
-
-    Effect:
-    20% purchase discount.
-
-    Value: 20%
-
-    Limit: Discount before cashback;
-    provisional'
-  price: 20
+  description: 10% discount on purchases.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_124
   rarity: Common

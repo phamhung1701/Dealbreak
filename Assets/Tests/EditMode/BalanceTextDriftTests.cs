@@ -39,69 +39,106 @@ public sealed class BalanceTextDriftTests
     static string EnemyAbility(string asset) =>
         AssetDatabase.LoadAssetAtPath<EnemyAbility>($"Assets/Data/Enemies/Abilities/{asset}.asset").description;
 
+    static int GearAmount(string asset, GameplayEffectKind kind) =>
+        AssetDatabase.LoadAssetAtPath<GearData>($"Assets/Data/Gear/{asset}.asset").effects.First(e => e.kind == kind).amount;
+
+    static int GearConditionValue(string asset, GameplayEffectKind kind, GameplayConditionKind condition) =>
+        AssetDatabase.LoadAssetAtPath<GearData>($"Assets/Data/Gear/{asset}.asset").effects
+            .First(e => e.kind == kind).conditions.First(c => c.kind == condition).value;
+
     [Test]
     public void GearDescriptions_QuoteTheirGearBalanceNumbers()
     {
         var g = Balance.gear;
-        AssertQuotes(Gear("BountyHologram"), "Bounty Hologram",
-            $"+{g.bountyHologramEnforcerPercent - 100}% base Credits", $"+{g.bountyHologramHeadlinerPercent - 100}% base Credits");
-        AssertQuotes(Gear("CargoCase"), "Cargo Case",
-            $"({CardManager.BASE_BACKPACK_CAPACITY} to {g.cargoCaseBackpackSlots})", $"up to {g.cargoCaseRareTricksPerSlot} identical");
+        Assert.That(g.bountyHologramEnforcerPercent, Is.EqualTo(g.bountyHologramHeadlinerPercent),
+            "Bounty Hologram's text gives Enforcers and Headliners one bonus.");
+        AssertQuotes(Gear("BountyHologram"), "Bounty Hologram", $"pays {g.bountyHologramHeadlinerPercent - 100}% more Credits");
+        AssertQuotes(Gear("CargoCase"), "Cargo Case", $"Gain {g.cargoCaseBackpackSlots - CardManager.BASE_BACKPACK_CAPACITY} Trick slots");
         AssertQuotes(Gear("CargoCaseRare"), "Cargo Case Rare",
-            $"Retain {g.cargoCaseBackpackSlots} slots", $"up to {g.cargoCaseRareTricksPerSlot} identical tricks per slot");
-        AssertQuotes(Gear("CashbackCard"), "Cashback Card", $"Refund {g.cashbackCardPercent}% actual Credits spent");
+            $"Gain {g.cargoCaseBackpackSlots - CardManager.BASE_BACKPACK_CAPACITY} Trick slots", $"up to {g.cargoCaseRareTricksPerSlot} per slot");
+        AssertQuotes(Gear("CashbackCard"), "Cashback Card", $"Refund {g.cashbackCardPercent}% of the Credits");
         AssertQuotes(Gear("CityBoots"), "City Boots",
-            $"{g.cityBootsNodeTypes} different node types", $"Heal {g.cityBootsHeal} HP and gain {g.cityBootsCredits} Credits");
-        AssertQuotes(Gear("ClubAmplifierRare"), "Club Amplifier Rare", $"×{g.clubAmplifierRareMultiplier}");
+            $"{g.cityBootsNodeTypes} different node types", $"heal {g.cityBootsHeal} HP and gain {g.cityBootsCredits} Credits");
+        Assert.That(g.clubAmplifierRareMultiplier, Is.EqualTo(2), "Club Amplifier Rare's text says double DMG.");
         AssertQuotes(Gear("ClubAmplifierEpic"), "Club Amplifier Epic",
-            $"×{Ratio(g.clubAmplifierEpicNumerator, g.clubAmplifierEpicDenominator)} each");
+            $"×{Ratio(g.clubAmplifierEpicNumerator, g.clubAmplifierEpicDenominator)} DMG for each other Club");
+        AssertQuotes(Gear("CounterpunchGlovesRare"), "Counterpunch Gloves Rare",
+            $"×{Ratio(g.counterpunchGlovesRarePerfectPercent, 100)} on a Perfect Block");
         AssertQuotes(Gear("CounterpunchGlovesEpic"), "Counterpunch Gloves Epic",
-            $"+{g.counterpunchGlovesEpicGrowth} counterattack damage");
+            $"×{Ratio(g.counterpunchGlovesEpicPerfectPercent, 100)} on a Perfect Block",
+            $"permanently gain +{g.counterpunchGlovesEpicGrowth} DMG for each enemy defeated");
         AssertQuotes(Gear("DiamondDriverRare"), "Diamond Driver Rare", $"draws {g.diamondDriverDraw} cards");
-        AssertQuotes(Gear("DiamondDriverEpic"), "Diamond Driver Epic", $"Keep Rare draw {g.diamondDriverDraw}",
-            $"every {Ordinal(g.diamondDriverEpicDiamondsPerChoice)} manually played Diamond");
-        AssertQuotes(Gear("FirstAidKit"), "First-Aid Kit", $"{g.firstAidKitHeal} HP");
+        AssertQuotes(Gear("DiamondDriverEpic"), "Diamond Driver Epic", $"draws {g.diamondDriverDraw} cards",
+            $"Every {Ordinal(g.diamondDriverEpicDiamondsPerChoice)} Diamond");
+        AssertQuotes(Gear("FirstAidKit"), "First-Aid Kit", $"heals {g.firstAidKitHeal} HP");
         AssertQuotes(Gear("GlassShard"), "Glass Shard",
-            $"Card attacks deal +{g.glassShardAttackBonus} damage", $"incoming attacks deal +{g.glassShardIncomingBonus} damage");
-        AssertQuotes(Gear("GlassShardRare"), "Glass Shard Rare",
-            $"Card attacks and incoming attacks deal {g.glassShardRareAttackMultiplier}× damage");
-        Assert.That(g.glassShardRareIncomingMultiplier, Is.EqualTo(g.glassShardRareAttackMultiplier),
-            "Glass Shard Rare's text gives attacks and incoming attacks one multiplier.");
-        AssertQuotes(Gear("GlassShardEpic"), "Glass Shard Epic",
-            $"At exactly {g.glassShardEpicAtHealth} HP, card attacks deal {g.glassShardEpicAttackMultiplier}× damage");
-        AssertQuotes(Gear("GoldPistol"), "Gold Pistol", $"+1 damage per {g.goldPistolCreditsPerDamage} Credits held");
-        AssertQuotes(Gear("NuclearOption"), "Nuclear Option", $"2 to {g.nuclearOptionMaxCards} cards",
-            $"up to {g.nuclearOptionMaxCards} cards", $"{g.nuclearOptionMaxCards} cards maximum");
-        AssertQuotes(Gear("GrapplingHook"), "Grappling Hook", $"draws {g.grapplingHookDraw}");
-        AssertQuotes(Gear("GuardDrone"), "Guard Drone", $"+{g.guardDroneBlockPerTrickType} Block/type");
+            $"Deal {g.glassShardAttackBonus} more DMG", $"take {g.glassShardIncomingBonus} more DMG");
+        Assert.That((g.glassShardRareAttackMultiplier, g.glassShardRareIncomingMultiplier), Is.EqualTo((2, 2)),
+            "Glass Shard Rare's text says double DMG both ways.");
+        Assert.That(g.glassShardEpicAttackMultiplier, Is.EqualTo(3), "Glass Shard Epic's text says triple DMG.");
+        AssertQuotes(Gear("GlassShardEpic"), "Glass Shard Epic", $"at {g.glassShardEpicAtOrBelowHealth} HP or less");
+        AssertQuotes(Gear("GoldPistol"), "Gold Pistol", $"1 more DMG per {g.goldPistolCreditsPerDamage} Credits held");
+        AssertQuotes(Gear("NuclearOption"), "Nuclear Option", $"up to {g.nuclearOptionMaxCards} cards");
+        AssertQuotes(Gear("GrapplingHook"), "Grappling Hook", $"draws {g.grapplingHookDraw} card");
+        AssertQuotes(Gear("GuardDrone"), "Guard Drone", $"{g.guardDroneBlockPerTrickType} Block for each different Trick");
+        AssertQuotes(Gear("HeadhunterRifle"), "Headhunter Rifle", $"adds {g.headhunterRifleAttackPerKill} DMG");
         AssertQuotes(Gear("HeartMedsRare"), "Heart Meds Rare",
             $"heals {g.heartMedsHeal} HP", $"gain {g.heartMedsLowHealthCredits} Credits");
         AssertQuotes(Gear("HeartMedsEpic"), "Heart Meds Epic",
-            $"Rare Heal {g.heartMedsHeal} and conditional Credits {g.heartMedsLowHealthCredits}");
-        AssertQuotes(Gear("LowballRare"), "Lowball Rare",
-            $"+{g.lowballAttackBonus} damage to next attack", $"below {g.lowballBelowRank}");
-        AssertQuotes(Gear("LowballEpic"), "Lowball Epic", $"+{g.lowballEpicPermanentAttack} permanent attack");
-        AssertQuotes(Gear("LoyaltyCard"), "Loyalty Card", $"{100 - g.loyaltyCardPricePercent}% purchase discount");
-        AssertQuotes(Gear("LoyaltyGift"), "Loyalty Gift", $"Every {g.loyaltyGiftPurchasesPerReward} item purchases");
+            $"heals {g.heartMedsHeal} HP", $"gain {g.heartMedsLowHealthCredits} Credits", $"up to {g.heartMedsEpicOverhealCap}");
+        Assert.That(g.lowballBelowRank, Is.EqualTo(CardData.Rank.Five), "Lowball's text says below 5.");
+        AssertQuotes(Gear("LowballRare"), "Lowball Rare", $"adds {g.lowballAttackBonus} DMG to your next attack");
+        AssertQuotes(Gear("LowballEpic"), "Lowball Epic",
+            $"adds {g.lowballAttackBonus} DMG to your next attack", $"permanently gains {g.lowballEpicPermanentAttack} DMG");
+        AssertQuotes(Gear("FlipSwitch"), "Flip Switch", $"adds {g.flipSwitchAttackBonus} DMG to your next attack");
+        AssertQuotes(Gear("LoyaltyCard"), "Loyalty Card", $"{100 - g.loyaltyCardPricePercent}% discount");
+        AssertQuotes(Gear("LoyaltyGift"), "Loyalty Gift", $"every {g.loyaltyGiftPurchasesPerReward} purchases");
         AssertQuotes(Gear("MemoryCardRare"), "Memory Card Rare",
-            $"Gain {g.memoryCardRareHandBonus} hand slots", $"take {Ratio(g.memoryCardRareIncomingPercent, 100)}× incoming");
+            $"by {g.memoryCardRareHandBonus} and take ×{Ratio(g.memoryCardRareIncomingPercent, 100)} DMG");
         AssertQuotes(Gear("ModBenchRare"), "Mod Bench Rare",
             $"Every {g.modBenchNodesPerReward} nodes, choose 1 of {g.modBenchChoices} Common Mods");
-        AssertQuotes(Gear("ModCase"), "Mod Case", $"choose 1 of {g.modCaseChoices} random mod tricks");
-        AssertQuotes(Gear("OverflowCanister"), "Overflow Canister", $"Up to {g.overflowCanisterCapacity} per root");
-        AssertQuotes(Gear("OverflowCanisterRare"), "Overflow Canister Rare", $"Up to {g.overflowCanisterRareCapacity} per root");
-        AssertQuotes(Gear("OverflowCanisterEpic"), "Overflow Canister Epic", $"Up to {g.overflowCanisterRareCapacity} per root");
-        AssertQuotes(Gear("RiotHelmet"), "Riot Helmet", $"with {g.riotHelmetShield} Shield");
-        AssertQuotes(Gear("SavingsSafe"), "Savings Safe", $"grants {g.savingsSafeInterestPercent}% of unspent Credits");
-        AssertQuotes(Gear("SpadeShieldRare"), "Spade Shield Rare", $"Draw {g.spadeShieldDraw} card");
+        AssertQuotes(Gear("ModCase"), "Mod Case", $"choose 1 of {g.modCaseChoices} random Mod Tricks");
+        AssertQuotes(Gear("OverflowCanister"), "Overflow Canister", $"up to {g.overflowCanisterCapacity} per action");
+        AssertQuotes(Gear("OverflowCanisterRare"), "Overflow Canister Rare", $"up to {g.overflowCanisterRareCapacity} per action");
+        AssertQuotes(Gear("OverflowCanisterEpic"), "Overflow Canister Epic", $"up to {g.overflowCanisterRareCapacity} per action");
+        AssertQuotes(Gear("RiotHelmet"), "Riot Helmet", $"Gain {g.riotHelmetShield} Shield");
+        AssertQuotes(Gear("SavingsSafe"), "Savings Safe", $"Gain {g.savingsSafeInterestPercent}% of your current Credits");
         AssertQuotes(Gear("SpotterEye"), "Spotter Eye",
-            $"play {g.spotterEyeDistinctRanks} different ranks", $"+{g.spotterEyeAttackBonus} damage to next attack");
-        AssertQuotes(Gear("SupplyCrate"), "Supply Crate", $"Every {g.supplyCrateWinsPerReward} combat wins");
+            $"play {g.spotterEyeDistinctRanks} different ranks", $"add {g.spotterEyeAttackBonus} DMG to your next attack");
+        Assert.That(g.supplyCrateWinsPerReward, Is.EqualTo(1), "Supply Crate's text says after each combat won.");
         AssertQuotes(Gear("SurvivorsBadge"), "Survivor's Badge",
-            $"+{g.survivorsBadgeMaxHealth} Max HP; +{g.survivorsBadgeFlawlessBonus} additional");
+            $"max HP by {g.survivorsBadgeMaxHealth}, or by {g.survivorsBadgeMaxHealth + g.survivorsBadgeFlawlessBonus}");
         AssertQuotes(Gear("VarsityJacket"), "Varsity Jacket",
-            $"+{g.varsityJacketBlockPerWin} encounter Block per consecutive",
-            $"Cap {g.varsityJacketBlockPerWin * g.varsityJacketMaxStreak}");
+            $"{g.varsityJacketBlockPerWin} Block per combat won in a row", $"up to {g.varsityJacketBlockPerWin * g.varsityJacketMaxStreak}");
+    }
+
+    // Typed Gear effects keep their numbers on the Gear asset itself.
+    [Test]
+    public void GearDescriptions_QuoteTheirTypedEffectAmounts()
+    {
+        AssertQuotes(Gear("CounterpunchGloves"), "Counterpunch Gloves",
+            $"counter-attack for {GearAmount("CounterpunchGloves", GameplayEffectKind.CounterDamage)} DMG");
+        AssertQuotes(Gear("StreetJacket"), "Street Jacket",
+            $"by {GearAmount("StreetJacket", GameplayEffectKind.IncomingCombatDamageReduction)}");
+        AssertQuotes(Gear("TacticalPlating"), "Tactical Plating",
+            $"by {GearAmount("TacticalPlating", GameplayEffectKind.IncomingCombatDamageReduction)}",
+            $"{GearConditionValue("TacticalPlating", GameplayEffectKind.IncomingCombatDamageReduction, GameplayConditionKind.AttackerHealthAtLeast)} or more HP");
+        AssertQuotes(Gear("PowerBaton"), "Power Baton",
+            $"more than {GearConditionValue("PowerBaton", GameplayEffectKind.FlatAttack, GameplayConditionKind.AttackValueGreaterThan)} DMG",
+            $"deal {GearAmount("PowerBaton", GameplayEffectKind.FlatAttack)} more DMG");
+        AssertQuotes(Gear("Scalpel"), "Scalpel", $"{GearAmount("Scalpel", GameplayEffectKind.FlatActionDamage)} more DMG",
+            $"up to {GearAmount("Scalpel", GameplayEffectKind.ActionDamageCap)} DMG");
+        AssertQuotes(Gear("MatchedCells"), "Matched Cells", $"at most {GearAmount("MatchedCells", GameplayEffectKind.ActionDamageCap)} DMG");
+        AssertQuotes(Gear("Lighter"), "Lighter", $"draw {GearAmount("Lighter", GameplayEffectKind.DestroyBlockingCard)} card");
+        AssertQuotes(Gear("DiamondDriver"), "Diamond Driver", $"draws {GearAmount("DiamondDriver", GameplayEffectKind.Draw)} card");
+        AssertQuotes(Gear("RecoveryPills"), "Recovery Pills", $"Heal {GearAmount("RecoveryPills", GameplayEffectKind.Heal)} HP");
+        AssertQuotes(Gear("AutoInjector"), "Auto-Injector", $"Heal {GearAmount("AutoInjector", GameplayEffectKind.Heal)} HP");
+        AssertQuotes(Gear("FieldTablet"), "Field Tablet", $"Draw {GearAmount("FieldTablet", GameplayEffectKind.Draw)} card");
+        AssertQuotes(Gear("PayoutTracker"), "Payout Tracker", $"Gain {GearAmount("PayoutTracker", GameplayEffectKind.BonusCredits)} Credits");
+        AssertQuotes(Gear("AceProtocol"), "Ace Protocol",
+            $"{GearAmount("AceProtocol", GameplayEffectKind.CriticalChanceOverride)}%");
+        AssertQuotes(Gear("CarbonSleeves"), "Carbon Sleeves", $"block {GearAmount("CarbonSleeves", GameplayEffectKind.FlatBlock)} more DMG");
+        AssertQuotes(Gear("ModdersKit"), "Modder's Kit", $"deal {GearAmount("ModdersKit", GameplayEffectKind.FlatAttack)} more DMG");
     }
 
     [Test]

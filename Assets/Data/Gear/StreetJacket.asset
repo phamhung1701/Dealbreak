@@ -16,13 +16,8 @@ MonoBehaviour:
   displayName: Street Jacket
   icon: ARMOR
   iconSprite: {fileID: 21300000, guid: 0f75bb08f2b28ff4c97245699feea380, type: 3}
-  description: 'Trigger: On Taking Damage
-
-    Effect: Reduce incoming damage.
-
-    Value:
-    -3 damage'
-  price: 15
+  description: Reduce DMG taken by 3.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_005
   rarity: Common

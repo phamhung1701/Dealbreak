@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Memory Card
   icon: ARSENAL+
   iconSprite: {fileID: 21300000, guid: d0ba74696ae551241a45fffb27d5f3fe, type: 3}
-  description: 'Trigger: Passive
-
-    Condition: Face Cards in hand
-
-    Effect:
-    Increase hand size based on the number of Face Cards in hand, with diminishing
+  description: Increase hand size based on the face cards in hand, with diminishing
     returns.
-
-    Value: Hand capacity += floor(1 + 1/2 + ... + 1/n)
-
-    Limit:
-    n is Face cards in hand; no inherited lower-tier effects; no forced discard'
   price: 30
   capacityCategory: 0
   canonicalId: rel_030

@@ -54,17 +54,17 @@ public sealed class Phase6GearTests
     {
         var expected = new Dictionary<string, (string rarity, int price, int tier, string upgradeFrom)>
         {
-            ["rel_120"] = ("Common", 20, 1, ""),
-            ["rel_121"] = ("Rare", 30, 2, "rel_120"),
-            ["rel_123"] = ("Common", 20, 1, ""),
-            ["rel_117"] = ("Common", 20, 1, ""),
-            ["rel_129"] = ("Rare", 30, 1, ""),
-            ["rel_125"] = ("Common", 20, 1, ""),
-            ["rel_127"] = ("Rare", 30, 1, ""),
-            ["rel_124"] = ("Common", 20, 1, ""),
-            ["rel_131"] = ("Rare", 30, 1, ""),
-            ["rel_130"] = ("Rare", 30, 1, ""),
-            ["rel_122"] = ("Common", 20, 1, "")
+            ["rel_120"] = ("Common", 10, 1, ""),
+            ["rel_121"] = ("Rare", 20, 2, "rel_120"),
+            ["rel_123"] = ("Common", 10, 1, ""),
+            ["rel_117"] = ("Common", 10, 1, ""),
+            ["rel_129"] = ("Rare", 20, 1, ""),
+            ["rel_125"] = ("Common", 10, 1, ""),
+            ["rel_127"] = ("Rare", 20, 1, ""),
+            ["rel_124"] = ("Common", 10, 1, ""),
+            ["rel_131"] = ("Rare", 20, 1, ""),
+            ["rel_130"] = ("Rare", 20, 1, ""),
+            ["rel_122"] = ("Common", 10, 1, "")
         };
         var assets = AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Gear" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<GearData>(AssetDatabase.GUIDToAssetPath(guid)))
@@ -190,7 +190,7 @@ public sealed class Phase6GearTests
         var badge = Gear("rel_124", GearSpecialRule.MerchantsBadge, "Common", 1, price: 20);
         var cashback = Gear("rel_125", GearSpecialRule.CashbackToken, "Common", 1, price: 20);
         var other = Gear("test_other", GearSpecialRule.None, "Common", 1, price: 20);
-        var tie = Gear("test_tie", GearSpecialRule.None, "Common", 1, price: 13);
+        var tie = Gear("test_tie", GearSpecialRule.None, "Common", 1, price: 15);
         ConfigureGear(badge, cashback, other, tie);
         PrepareShop(cashback, badge, other, tie);
         var offers = (List<ShopOffer>)typeof(RunManager).GetField("_activeShopOffers",
@@ -204,13 +204,13 @@ public sealed class Phase6GearTests
         var otherOffer = _run.GetCurrentShopOffers().Single(value => value.gear == other);
         var tieOffer = _run.GetCurrentShopOffers().Single(value => value.gear == tie);
         var investment = _run.GetCurrentShopOffers().Single(value => value.kind == ShopOfferKind.Investment);
-        Assert.That(otherOffer.price, Is.EqualTo(16), "Cached offer reprices in place without rerolling.");
-        Assert.That(tieOffer.price, Is.EqualTo(10), "Badge rounds the displayed effective price nearest/ties up.");
+        Assert.That(otherOffer.price, Is.EqualTo(18), "Cached offer reprices in place without rerolling.");
+        Assert.That(tieOffer.price, Is.EqualTo(14), "Badge rounds the displayed effective price nearest/ties up (13.5).");
         Assert.That(investment.price, Is.EqualTo(5), "Services are not Badge-eligible.");
         Assert.That(_run.PurchaseShopOffer(otherOffer.StableId), Is.True);
-        Assert.That(_cards.credits, Is.EqualTo(49), "16 spent then 2 refunded.");
+        Assert.That(_cards.credits, Is.EqualTo(48), "18 spent then 3 refunded (2.7).");
         Assert.That(_run.PurchaseShopOffer(tieOffer.StableId), Is.True);
-        Assert.That(_cards.credits, Is.EqualTo(41), "10 spent then 2 refunded from the 1.5 Gold cashback tie.");
+        Assert.That(_cards.credits, Is.EqualTo(36), "14 spent then 2 refunded (2.1).");
     }
 
     [Test]
@@ -327,8 +327,8 @@ public sealed class Phase6GearTests
             .SetValue(_combat, false);
         typeof(CombatManager).GetMethod("ResolveEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
             .Invoke(_combat, new object[] { EncounterResult.Victory });
-        Assert.That(_cards.credits, Is.EqualTo(138),
-            "100 Boss Gold becomes 125 through Bounty, then Vault grants 13 from the settled snapshot.");
+        Assert.That(_cards.credits, Is.EqualTo(163),
+            "100 Boss Gold becomes 125 through Bounty, then Vault grants 38 (37.5) from the settled snapshot.");
     }
 
     void ConfigureGear(params GearData[] gearItems)

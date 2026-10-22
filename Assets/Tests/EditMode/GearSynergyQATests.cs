@@ -99,8 +99,8 @@ public sealed class GearSynergyQATests
     [TestCase(new[] { "GlassShard", "ClubAmplifierRare" }, 32, TestName = "Rule_ClubRare_DoublesAfterGlassFlat_BoughtSecond")]
     [TestCase(new[] { "ClubAmplifierRare", "GlassShardRare" }, 44, TestName = "Rule_ClubRare_AndGlassRare_Stack")]
     [TestCase(new[] { "GlassShard" }, 16, TestName = "Rule_GlassCommon_AddsFive")]
-    [TestCase(new[] { "PowerBaton" }, 21, TestName = "Rule_PowerBaton_AddsTenAboveEight")]
-    [TestCase(new[] { "ClubAmplifier", "PowerBaton" }, 32, TestName = "Rule_PowerBaton_ChecksTheMultipliedValue")]
+    [TestCase(new[] { "PowerBaton" }, 17, TestName = "Rule_PowerBaton_AddsSixAboveEight")]
+    [TestCase(new[] { "ClubAmplifier", "PowerBaton" }, 28, TestName = "Rule_PowerBaton_ChecksTheMultipliedValue")]
     [TestCase(new[] { "EchoDriver" }, 14, TestName = "Rule_EchoDriver_RepeatsBackup")]
     [TestCase(new[] { "Scalpel" }, 10, TestName = "Rule_Scalpel_CapsTotalAtTen")]
     public void ClubEight_WithBackupHeld_DealsTheWrittenRule(string[] gear, int expected)

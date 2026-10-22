@@ -61,7 +61,6 @@ MonoBehaviour:
     heartMedsEpicOverhealCap: 10
     diamondDriverDraw: 2
     diamondDriverEpicDiamondsPerChoice: 3
-    spadeShieldDraw: 1
     clubAmplifierRareMultiplier: 2
     clubAmplifierEpicNumerator: 5
     clubAmplifierEpicDenominator: 4
@@ -70,7 +69,7 @@ MonoBehaviour:
     glassShardRareAttackMultiplier: 2
     glassShardRareIncomingMultiplier: 2
     glassShardEpicAttackMultiplier: 3
-    glassShardEpicAtHealth: 1
+    glassShardEpicAtOrBelowHealth: 5
     memoryCardRareHandBonus: 3
     memoryCardRareIncomingPercent: 150
     overflowCanisterCapacity: 2
@@ -80,27 +79,31 @@ MonoBehaviour:
     guardDroneBlockPerTrickType: 2
     varsityJacketBlockPerWin: 2
     varsityJacketMaxStreak: 3
-    riotHelmetShield: 1
+    riotHelmetShield: 2
     spotterEyeDistinctRanks: 3
-    spotterEyeAttackBonus: 1
+    spotterEyeAttackBonus: 8
     lowballBelowRank: 4
-    lowballAttackBonus: 1
+    lowballAttackBonus: 5
     lowballEpicPermanentAttack: 1
+    flipSwitchAttackBonus: 5
+    counterpunchGlovesRarePerfectPercent: 150
+    counterpunchGlovesEpicPerfectPercent: 200
     counterpunchGlovesEpicGrowth: 1
-    bountyHologramEnforcerPercent: 150
+    headhunterRifleAttackPerKill: 3
+    bountyHologramEnforcerPercent: 125
     bountyHologramHeadlinerPercent: 125
     goldPistolCreditsPerDamage: 10
     nuclearOptionMaxCards: 5
     survivorsBadgeMaxHealth: 3
     survivorsBadgeFlawlessBonus: 3
-    savingsSafeInterestPercent: 10
+    savingsSafeInterestPercent: 30
     cityBootsNodeTypes: 3
     cityBootsHeal: 3
-    cityBootsCredits: 3
+    cityBootsCredits: 6
     cashbackCardPercent: 15
-    loyaltyCardPricePercent: 80
+    loyaltyCardPricePercent: 90
     loyaltyGiftPurchasesPerReward: 3
-    supplyCrateWinsPerReward: 3
+    supplyCrateWinsPerReward: 1
     modCaseChoices: 3
     modBenchNodesPerReward: 3
     modBenchChoices: 3

@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Payout Tracker
   icon: GOLD
   iconSprite: {fileID: 21300000, guid: 30093a65de9be9a48832c280e65f43d5, type: 3}
-  description: Gain +4 Credits after each victory
-  price: 20
+  description: Gain 4 Credits after each combat.
+  price: 10
   capacityCategory: 0
   canonicalId: 
   rarity: Common

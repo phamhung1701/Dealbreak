@@ -135,7 +135,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         else if (source.TryGetComponent<GearIconSlotUI>(out var slot))
         {
             if (!slot.Gear) return false;
-            Show(slot.Gear.displayName, slot.Gear.description);
+            Show(slot.Gear.displayName, GearRules.OwnedDescription(CardManager.Instance, slot.Gear, slot.InstanceId));
         }
         else if (source.TryGetComponent<DrawDeckStackUI>(out _))
         {

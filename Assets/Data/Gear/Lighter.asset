@@ -16,13 +16,8 @@ MonoBehaviour:
   displayName: Lighter
   icon: FIRE
   iconSprite: {fileID: 21300000, guid: 1ecb3c83cd81cc543a72905d55a58a60, type: 3}
-  description: 'Trigger: On Block
-
-    Effect: Destroy the first card used to block.
-
-    Limit:
-    Once per combat'
-  price: 25
+  description: Once per combat, destroy the first card used to block and draw 1 card.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_018
   rarity: Rare

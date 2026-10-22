@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Cargo Case
   icon: PACK
   iconSprite: {fileID: 21300000, guid: 869ae49b0e9293b459d93f1c28964d8b, type: 3}
-  description: 'Trigger: Passive
-
-    Condition: Backpack capacity
-
-    Effect: Add
-    2 backpack slots (3 to 5).
-
-    Value: +2 slots
-
-    Limit: Tricks remain non-stacking
-    at Common tier; Rare enables stacks of up to 3 identical items.'
-  price: 20
+  description: Gain 2 Trick slots.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_120
   rarity: Common

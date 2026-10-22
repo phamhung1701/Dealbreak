@@ -67,7 +67,7 @@ public sealed class AceEmblemTests
         Assert.That(_aceEmblem.rarity, Is.EqualTo("Common"));
         Assert.That(_aceEmblem.tier, Is.EqualTo(1));
         Assert.That(_aceEmblem.capacityCategory, Is.EqualTo(GearCapacityCategory.Persistent));
-        Assert.That(_aceEmblem.price, Is.EqualTo(20), "Temporary prototype price; workbook price is blank.");
+        Assert.That(_aceEmblem.price, Is.EqualTo(10), "Gear prices follow rarity: Common 10, Rare 20, Epic 30.");
         Assert.That(_aceEmblem.effects, Has.Length.EqualTo(1));
         var effect = _aceEmblem.effects[0];
         Assert.That(effect.kind, Is.EqualTo(GameplayEffectKind.CriticalChanceOverride));

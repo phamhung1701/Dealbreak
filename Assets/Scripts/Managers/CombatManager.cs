@@ -28,6 +28,7 @@ public partial class CombatManager : Singleton<CombatManager>
     long _parryEffectiveBlock;
     bool _parryResolved;
     bool _parryDamageLeaked;
+    bool _parrySpadeOverblockAllowed;
     readonly HashSet<int> _parryDrawCandidates = new();
     readonly Queue<CardInstance> _overflowAutoPlays = new();
     int _overflowBudgetRemaining;
@@ -1045,6 +1046,7 @@ public partial class CombatManager : Singleton<CombatManager>
             var attackSources = _pendingAttackSources.ToArray();
             var reductions = new int[incomingAttacks.Length];
             var effectiveBlocks = new int[incomingAttacks.Length];
+            var spadeOverblockAllowed = new bool[incomingAttacks.Length];
             int blockOrder = 0;
             foreach (var assignment in assignments)
             {
@@ -1053,6 +1055,11 @@ public partial class CombatManager : Singleton<CombatManager>
                 blockedDamage += assignment.BlockedDamage;
                 reductions[attackIndex] += assignment.BlockedDamage;
                 effectiveBlocks[attackIndex] += assignment.EffectiveBlock;
+                if (GearRules.SpadeOverblockCountsAsPerfect(cardManager, assignment.BlockingCard))
+                {
+                    spadeOverblockAllowed[attackIndex] = true;
+                    _parrySpadeOverblockAllowed = true;
+                }
                 if (assignment.IsCarryOver) continue;
                 GameplayEffectResolver.EnqueueAttackBlocked(
                     new AttackBlockedEffectContext(_activeAction, assignment.BlockingCard, attacker,
@@ -1079,7 +1086,8 @@ public partial class CombatManager : Singleton<CombatManager>
                 int remainingDamage = Mathf.Max(0, incomingAttacks[i] - reductions[i]);
                 GameplayBalanceTelemetry.Record("block", "", reductions[i], effectiveBlocks[i]);
                 OnDefenseAttackResolved?.Invoke(new DefenseAttackResult(
-                    attackSources[i], i, incomingAttacks[i], effectiveBlocks[i], reductions[i], remainingDamage));
+                    attackSources[i], i, incomingAttacks[i], effectiveBlocks[i], reductions[i], remainingDamage,
+                    spadeOverblockAllowed[i]));
             }
             Log($"Defended with {string.Join(", ", names)}: blocked {blockedDamage} damage and fully covered {blockedAttacks} attack(s). Remaining: {pendingDamage}");
 
@@ -1278,6 +1286,7 @@ public partial class CombatManager : Singleton<CombatManager>
         _parryEffectiveBlock = 0;
         _parryResolved = false;
         _parryDamageLeaked = false;
+        _parrySpadeOverblockAllowed = false;
         _parryDrawCandidates.Clear();
         var cards = CardManager.Instance;
         if (cards != null)
@@ -1305,7 +1314,10 @@ public partial class CombatManager : Singleton<CombatManager>
     {
         if (_parryResolved) return;
         _parryResolved = true;
-        if (_parryDamageLeaked || _parryIncomingDamage <= 0 || _parryEffectiveBlock != _parryIncomingDamage) return;
+        // Spade Shield Rare/Epic: blocking more than the attack with a Spade still counts.
+        bool covered = _parryEffectiveBlock == _parryIncomingDamage ||
+            _parrySpadeOverblockAllowed && _parryEffectiveBlock > _parryIncomingDamage;
+        if (_parryDamageLeaked || _parryIncomingDamage <= 0 || !covered) return;
         int drawn = CardManager.Instance != null
             ? CardManager.Instance.DrawExistingToHand(1, _parryDrawCandidates) : 0;
         Log(drawn > 0 ? "Perfect Block! Drew 1 card." : "Perfect Block! No eligible card could be drawn.");
@@ -1351,6 +1363,7 @@ public partial class CombatManager : Singleton<CombatManager>
         if (enemy == null || !_enemies.Contains(enemy) || !_processedEnemyDeaths.Add(enemy)) return;
         _earnedCreditsReward += Mathf.Max(0, enemy.CreditsReward);
         if (_isEliteEncounter) _eliteKillCount++;
+        GearRules.OnEnemyDefeated(CardManager.Instance, Log);
         int returnedCredits = enemy.ClaimStolenCredits();
         if (returnedCredits > 0) CardManager.Instance.AddCredits(returnedCredits);
         RemoveEnemy(enemy);
@@ -1895,12 +1908,14 @@ public partial class CombatManager : Singleton<CombatManager>
         var cards = CardManager.Instance;
         int overflowHeld = _executingOverflowAutoPlay && cards != null
             ? Math.Max(0, cards.HandCount - 1) : -1;
-        int gilded = includeOpeningAttackBonus && IsOpeningPlayerAttack && _playerTurnNumber == 1 &&
-            !_executingOverflowAutoPlay ? GearRules.GoldPistolBonus(cards) : 0;
+        // Once per action, on its first card: Gold Pistol and Headhunter Rifle on every attack,
+        // prepared Gear bonuses, then Notched Pistol on the opening attack.
+        int gilded = 0;
         if (includeOpeningAttackBonus)
-            gilded += actionBonuses.Total;
+            gilded += GearRules.GoldPistolBonus(cards) + actionBonuses.Total +
+                GearRules.HeadhunterAttackBonus(cards, _isEliteOrHeadlinerEncounter);
         if (includeOpeningAttackBonus && IsOpeningPlayerAttack && cards != null)
-            gilded += GearRules.OpeningAttackBonus(cards, _isHeadlinerEncounter);
+            gilded += GearRules.OpeningAttackBonus(cards);
         return GameplayEffectResolver.CalculateAttack(card, cards, playedCards, overflowHeld, gilded);
     }
 

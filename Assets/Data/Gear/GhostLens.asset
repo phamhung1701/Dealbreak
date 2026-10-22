@@ -16,12 +16,7 @@ MonoBehaviour:
   displayName: Ghost Lens
   icon: LENS
   iconSprite: {fileID: 21300000, guid: 6c1b937c50b959541931187dfccffa97, type: 3}
-  description: 'Trigger: On District
-
-    Condition: District start
-
-    Effect:
-    Reveal all nodes, contents included.'
+  description: Reveal all map nodes.
   price: 30
   capacityCategory: 0
   canonicalId: rel_035

@@ -16,9 +16,8 @@ MonoBehaviour:
   displayName: Spade Shield
   icon: "\u2660"
   iconSprite: {fileID: 21300000, guid: a6d38eb264b8da54fab02cabdf5d360d, type: 3}
-  description: "Trigger: On Card Played\nCondition: Suit = Spades\nEffect: Multiply
-    this card's block value.\nValue: \xD72"
-  price: 15
+  description: Spade cards block double DMG.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_004
   rarity: Common

@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: Carbon Sleeves
   icon: BLOCK
   iconSprite: {fileID: 21300000, guid: db48e05d3a422d8429e9a2f6592368be, type: 3}
-  description: Enhanced cards block +3 damage
-  price: 22
+  description: Modded cards block 3 more DMG.
+  price: 10
   capacityCategory: 0
   canonicalId: 
   rarity: Common

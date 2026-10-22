@@ -6,17 +6,18 @@ public static partial class GearRules
 {
     // ---- Encounter victory ----------------------------------------------------------------
 
-    /// <summary>Victory Gear growth: Hunter's Ledger/Trophy Rack count Enforcer kills; Crown of
-    /// Endurance grows max HP and Golden Vault pays interest after a Headliner.</summary>
+    /// <summary>Victory Gear growth: Hunter's Ledger counts Enforcer kills and Trophy Rack counts
+    /// Enforcer and Headliner kills; Crown of Endurance grows max HP and Golden Vault pays interest
+    /// after a Headliner.</summary>
     public static void OnEncounterWon(CardManager cards, CombatManager combat, bool wasElite, bool wasHeadliner)
     {
         if (cards == null) return;
-        if (wasElite)
+        if (wasElite || wasHeadliner)
         {
             foreach (var (gear, instance) in Owned(cards))
             {
                 var state = instance.State;
-                if (gear.specialRule == GearSpecialRule.HuntersLedger)
+                if (wasElite && gear.specialRule == GearSpecialRule.HuntersLedger)
                     state.SetCounter(GearCounterKeys.HuntersLedgerEliteKills,
                         state.GetCounter(GearCounterKeys.HuntersLedgerEliteKills) + 1);
                 if (gear.specialRule == GearSpecialRule.TrophyRack)
@@ -41,7 +42,7 @@ public static partial class GearRules
         }
     }
 
-    /// <summary>Supply Crate: every third combat win queues a Trick reward.</summary>
+    /// <summary>Supply Crate: every supplyCrateWinsPerReward-th combat win queues a Trick reward.</summary>
     public static bool CountsWinsForSatchelRewards(CardManager cards) =>
         cards != null && cards.HasGearSpecialRule(GearSpecialRule.ScavengersSatchel);
 

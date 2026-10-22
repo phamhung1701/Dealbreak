@@ -63,11 +63,14 @@ public sealed class ChainArmorTests
         Assert.That(_chainArmor.rarity, Is.EqualTo("Rare"));
         Assert.That(_chainArmor.tier, Is.EqualTo(1));
         Assert.That(_chainArmor.capacityCategory, Is.EqualTo(GearCapacityCategory.Persistent));
-        Assert.That(_chainArmor.price, Is.EqualTo(25), "Prototype price only; workbook price is blank.");
+        Assert.That(_chainArmor.price, Is.EqualTo(20), "Gear prices follow rarity: Common 10, Rare 20, Epic 30.");
         Assert.That(_chainArmor.effects, Has.Length.EqualTo(1));
         Assert.That(_chainArmor.effects[0].kind, Is.EqualTo(GameplayEffectKind.IncomingCombatDamageReduction));
         Assert.That(_chainArmor.effects[0].trigger, Is.EqualTo(GameplayEffectTrigger.IncomingDamageCalculated));
-        Assert.That(_chainArmor.effects[0].amount, Is.EqualTo(8));
+        Assert.That(_chainArmor.effects[0].amount, Is.EqualTo(6));
+        Assert.That(_chainArmor.effects[0].conditions, Has.Length.EqualTo(1));
+        Assert.That(_chainArmor.effects[0].conditions[0].kind, Is.EqualTo(GameplayConditionKind.AttackerHealthAtLeast));
+        Assert.That(_chainArmor.effects[0].conditions[0].value, Is.EqualTo(10));
 
         string before = JsonUtility.ToJson(_chainArmor);
         Assert.That(_cards.BuyGear(_chainArmor, 0), Is.True);
@@ -76,7 +79,7 @@ public sealed class ChainArmorTests
     }
 
     [Test]
-    public void ReducesEachIncomingCombatHitByEight_FloorsAtZero_BeforeShield()
+    public void ReducesEachIncomingCombatHitBySix_FloorsAtZero_BeforeShield()
     {
         Assert.That(_cards.BuyGear(_chainArmor, 0), Is.True);
         var first = ResolveHit(0, 6);
@@ -86,14 +89,23 @@ public sealed class ChainArmorTests
 
         _combat.GrantPlayerShield(1);
         var shielded = ResolveHit(1, 12);
-        Assert.That(shielded.ModifiedDamage, Is.EqualTo(4));
+        Assert.That(shielded.ModifiedDamage, Is.EqualTo(6));
         Assert.That(shielded.ShieldConsumed, Is.True);
         Assert.That(shielded.ActualHpLost, Is.Zero);
 
         var nextIndependentHit = ResolveHit(2, 12);
-        Assert.That(nextIndependentHit.ModifiedDamage, Is.EqualTo(4));
-        Assert.That(nextIndependentHit.ActualHpLost, Is.EqualTo(4));
-        Assert.That(_combat.player.currentHealth, Is.EqualTo(26));
+        Assert.That(nextIndependentHit.ModifiedDamage, Is.EqualTo(6));
+        Assert.That(nextIndependentHit.ActualHpLost, Is.EqualTo(6));
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(24));
+    }
+
+    [Test]
+    public void AppliesOnlyWhileTheAttackerHasTenOrMoreHp()
+    {
+        Assert.That(_cards.BuyGear(_chainArmor, 0), Is.True);
+        Assert.That(ResolveHit(0, 12, attackerHp: 10).ModifiedDamage, Is.EqualTo(6));
+        Assert.That(ResolveHit(1, 12, attackerHp: 9).ModifiedDamage, Is.EqualTo(12),
+            "An attacker below 10 HP is not reduced.");
     }
 
     [Test]
@@ -102,17 +114,17 @@ public sealed class ChainArmorTests
         Assert.That(_cards.BuyGear(_leatherArmor, 0), Is.True);
         Assert.That(_cards.BuyGear(_chainArmor, 0), Is.True);
         var hit = ResolveHit(0, 15);
-        Assert.That(hit.ModifiedDamage, Is.EqualTo(4), "Leather (-3) and Chain Armor (-8) apply before Shield.");
-        var clamped = ResolveHit(1, 10);
+        Assert.That(hit.ModifiedDamage, Is.EqualTo(6), "Leather (-3) and Chain Armor (-6) apply before Shield.");
+        var clamped = ResolveHit(1, 9);
         Assert.That(clamped.ModifiedDamage, Is.Zero);
 
         Assert.That(_combat.TakeRunDamage(10), Is.EqualTo(10));
-        Assert.That(_combat.player.currentHealth, Is.EqualTo(16), "Direct non-combat/run HP cost bypasses incoming combat modifiers.");
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(14), "Direct non-combat/run HP cost bypasses incoming combat modifiers.");
     }
 
-    DamageResult ResolveHit(int hitIndex, int rawDamage)
+    DamageResult ResolveHit(int hitIndex, int rawDamage, int attackerHp = 100)
     {
-        var targetDefinition = EnemyTypeData.Create("Chain Armor Test Enemy", 100, 1, 0);
+        var targetDefinition = EnemyTypeData.Create("Chain Armor Test Enemy", attackerHp, 1, 0);
         _objects.Add(targetDefinition);
         var enemy = new EnemyRuntime(targetDefinition);
         var action = new CombatActionContext(1, CombatActionOrigin.EnemyRetaliation, sourceEnemy: enemy);

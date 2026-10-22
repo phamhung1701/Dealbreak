@@ -16,13 +16,8 @@ MonoBehaviour:
   displayName: Second Wind
   icon: TURN
   iconSprite: {fileID: 21300000, guid: f6d83128726fef44689d64080570faae, type: 3}
-  description: 'Trigger: After First Turn
-
-    Effect: Gain an additional turn.
-
-    Value:
-    1'
-  price: 20
+  description: Gain an additional turn after your first attack in each combat.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_011
   rarity: Common

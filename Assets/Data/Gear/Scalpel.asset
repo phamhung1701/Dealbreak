@@ -16,15 +16,8 @@ MonoBehaviour:
   displayName: Scalpel
   icon: DAGGER
   iconSprite: {fileID: 21300000, guid: 717136d1e621d01409cac57f4b636b32, type: 3}
-  description: 'Trigger: On Card Played
-
-    Effect: Add flat damage.
-
-    Value:
-    +3 damage
-
-    Limit: Total damage cannot exceed 10.'
-  price: 15
+  description: Attacks deal 3 more DMG, up to 10 DMG in total.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_006
   rarity: Common

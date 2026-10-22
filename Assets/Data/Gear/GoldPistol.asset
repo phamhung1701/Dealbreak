@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Gold Pistol
   icon: "\u2694"
   iconSprite: {fileID: 21300000, guid: e695b85bf2f250f4cb7a8e0413ffa865, type: 3}
-  description: 'Trigger: Opening Attack
-
-    Condition: Credits held
-
-    Effect:
-    Opening attack gains +1 damage per 10 Credits held (whole tens only).
-
-    Value:
-    +1/10 Credits
-
-    Limit: Rounding TBD; provisional'
-  price: 20
+  description: Attacks deal 1 more DMG per 10 Credits held.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_128
   rarity: Common

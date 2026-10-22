@@ -16,15 +16,8 @@ MonoBehaviour:
   displayName: Ace Protocol
   icon: ACE
   iconSprite: {fileID: 21300000, guid: fabf9978af02ad0498d9d93e484c029a, type: 3}
-  description: 'Trigger: On Ace Played
-
-    Condition: Ace
-
-    Effect: Set Ace critical
-    chance to 50%.
-
-    Value: 50%'
-  price: 20
+  description: Increase Ace critical chance to 50%.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_014
   rarity: Common

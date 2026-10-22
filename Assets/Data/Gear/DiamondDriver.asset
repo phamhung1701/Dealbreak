@@ -16,17 +16,8 @@ MonoBehaviour:
   displayName: Diamond Driver
   icon: "\u2666"
   iconSprite: {fileID: 21300000, guid: bfc81a4522093314fb3e335575ff16be, type: 3}
-  description: 'Trigger: On Card Played
-
-    Condition: Suit = Diamonds
-
-    Effect:
-    Draw cards.
-
-    Value: 2
-
-    Limit: 1 card'
-  price: 20
+  description: Playing a Diamond card draws 1 card.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_003
   rarity: Common
@@ -35,7 +26,7 @@ MonoBehaviour:
   effects:
   - kind: 5
     trigger: 2
-    amount: 2
+    amount: 1
     conditions:
     - kind: 0
       suit: 1

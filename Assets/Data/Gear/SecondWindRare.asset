@@ -16,19 +16,8 @@ MonoBehaviour:
   displayName: Second Wind
   icon: TURN+
   iconSprite: {fileID: 21300000, guid: f6d83128726fef44689d64080570faae, type: 3}
-  description: 'Trigger: After each normal player card action
-
-    Condition: Action
-    is not itself a bonus action
-
-    Effect: Gain exactly one bonus action before
-    the enemy response; the bonus action cannot generate another bonus action.
-
-    Value:
-    1
-
-    Limit: One bonus action per normal action'
-  price: 30
+  description: Gain an additional turn after each attack.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_024
   rarity: Rare

@@ -36,8 +36,9 @@ public sealed class BuildInventoryUI : MonoBehaviour
         for(int i=0;i<cards.ownedGear.Count;i++)
         {
             var gear=cards.ownedGear[i];if(!gear)continue;
-            var row=Row(gearRows,gear.displayName,gear.description,new ContextualInfo("Gear",gear.displayName,gear.description));
             long id=cards.GetGearInstanceAt(i)?.Id??0;
+            string text=GearRules.OwnedDescription(cards,gear,id);
+            var row=Row(gearRows,gear.displayName,text,new ContextualInfo("Gear",gear.displayName,text));
             row.onClick.AddListener(()=>{
                 Close();var rail=Object.FindFirstObjectByType<GearRailUI>();
                 var slots=rail?rail.GetComponentsInChildren<GearIconSlotUI>():null;

@@ -160,7 +160,7 @@ public sealed class GearUpgradeIntegrationTests
     }
 
     [Test]
-    public void GlassTiersReplaceRatherThanStackAndEpicOnlyTriplesAtExactlyOneHp()
+    public void GlassTiersReplaceRatherThanStackAndEpicTriplesAtFiveHpOrLess()
     {
         var common = Load("rel_031");
         var rare = Load("rel_032");
@@ -175,7 +175,10 @@ public sealed class GearUpgradeIntegrationTests
         Assert.That(_combat.player.currentHealth, Is.EqualTo(1));
         Assert.That(_cards.BuyGear(epic, 0), Is.True);
         Assert.That(GameplayEffectResolver.CalculateAttack(card, _cards), Is.EqualTo(baseDamage * 3));
-        _combat.player.TakeDamage(1);
+        _combat.player.Heal(4);
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(5));
+        Assert.That(GameplayEffectResolver.CalculateAttack(card, _cards), Is.EqualTo(baseDamage * 3));
+        _combat.player.Heal(1);
         Assert.That(GameplayEffectResolver.CalculateAttack(card, _cards), Is.EqualTo(baseDamage));
     }
 
@@ -220,14 +223,17 @@ public sealed class GearUpgradeIntegrationTests
         Assert.That(_cards.HandCount, Is.EqualTo(before + 2));
     }
 
-    [TestCase(2, 3, 2)]
-    [TestCase(3, 2, 2)]
-    [TestCase(4, 2, 4)]
-    [TestCase(0, 3, 0)]
-    [TestCase(8, 0, 0)]
-    public void RareRetaliationUsesActuallyBlockedDamageAndStrict150PercentThreshold(int block, int attack, int expected)
+    [TestCase(2, 3, 100, 2)]
+    [TestCase(3, 2, 100, 2)]
+    [TestCase(4, 2, 100, 2)]
+    [TestCase(0, 3, 100, 0)]
+    [TestCase(8, 0, 100, 0)]
+    [TestCase(4, 4, 150, 6)]
+    [TestCase(5, 5, 150, 7)]
+    [TestCase(3, 3, 200, 6)]
+    public void RetaliationUsesActuallyBlockedDamage_ScaledAndRoundedDown(int block, int attack, int percent, int expected)
     {
-        Assert.That(GameplayEffectResolver.CalculateRetaliationDamage(block, attack), Is.EqualTo(expected));
+        Assert.That(GameplayEffectResolver.CalculateRetaliationDamage(block, attack, percent), Is.EqualTo(expected));
     }
 
     [Test]

@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Overflow Canister
   icon: "\u2197"
   iconSprite: {fileID: 21300000, guid: 587bc8c2ce46dae48ae364d7e1b3b31e, type: 3}
-  description: 'Trigger: On combat draw beyond full hand
-
-    Condition: Combat active
-
-    Effect:
-    Keep Rare; auto-play overflow cards for bonus damage equal to the current unplayed
-    hand count.
-
-    Value: Hand count
-
-    Limit: Up to 3 per root player action;
-    nested draws share budget'
+  description: When your hand is full, cards you would draw are played automatically
+    instead, up to 3 per action, each dealing 1 more DMG per card in hand.
   price: 30
   capacityCategory: 0
   canonicalId: rel_110

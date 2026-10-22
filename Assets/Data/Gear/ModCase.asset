@@ -16,18 +16,8 @@ MonoBehaviour:
   displayName: Mod Case
   icon: ALCH
   iconSprite: {fileID: 21300000, guid: e5601d2f904de07459882d73610c9a1a, type: 3}
-  description: 'Trigger: New District
-
-    Condition: District start
-
-    Effect:
-    New district: choose 1 of 3 random mod tricks.
-
-    Value: 1 of 3
-
-    Limit:
-    Full tray replace/decline; not enemy drops'
-  price: 30
+  description: At the start of each District, choose 1 of 3 random Mod Tricks.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_130
   rarity: Rare

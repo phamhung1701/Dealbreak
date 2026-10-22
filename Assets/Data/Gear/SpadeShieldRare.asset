@@ -16,19 +16,9 @@ MonoBehaviour:
   displayName: Spade Shield
   icon: "\u2660+"
   iconSprite: {fileID: 21300000, guid: a6d38eb264b8da54fab02cabdf5d360d, type: 3}
-  description: 'Trigger: On Card Played
-
-    Condition: Suit = Spades; one Spade
-    fully blocks the attack
-
-    Effect: Keep doubled block, over-block still count
-    as Perfect Parry
-
-    Value: Draw 1 card
-
-    Limit: One Spade must fully block
-    one attack; retains doubled Block'
-  price: 30
+  description: Spade cards block double DMG. Over-blocking with a Spade still counts
+    as a Perfect Block.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_106
   rarity: Rare

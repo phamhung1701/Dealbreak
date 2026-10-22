@@ -16,19 +16,8 @@ MonoBehaviour:
   displayName: Cashback Card
   icon: 15%
   iconSprite: {fileID: 21300000, guid: 568f4fdcff1de3f4abe750a5af28b3bd, type: 3}
-  description: 'Trigger: On Purchase
-
-    Condition: Actual Credits spent
-
-    Effect:
-    Refund 15% actual Credits spent; free purchases no cashback, refund never exceeds
-    cost, no retroactive benefit.
-
-    Value: 15%
-
-    Limit: Actual spend only;
-    provisional'
-  price: 20
+  description: Refund 15% of the Credits you spend.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_125
   rarity: Common

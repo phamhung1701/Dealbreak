@@ -16,19 +16,9 @@ MonoBehaviour:
   displayName: City Boots
   icon: BOOTS
   iconSprite: {fileID: 21300000, guid: ca12943b4549b43409cf048371beaf14, type: 3}
-  description: 'Trigger: Node Visit
-
-    Condition: 3 different node types visited
-    this district
-
-    Effect: Visit 3 different node types in district: heal and
-    gain Credits once/district.
-
-    Value: Heal 3 HP and gain 3 Credits
-
-    Limit:
-    Once per district after 3 distinct node types visited'
-  price: 20
+  description: Once per District, after visiting 3 different node types, heal 3 HP
+    and gain 6 Credits.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_133
   rarity: Common

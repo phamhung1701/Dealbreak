@@ -74,7 +74,7 @@ public sealed class GearContentBatch2Tests
     {
         var assets = new[] { _lantern, _hammer, _light };
         var ids = new[] { "rel_008", "rel_009", "rel_010" };
-        var prices = new[] { 18, 20, 18 };
+        var prices = new[] { 10, 10, 10 };
         var kinds = new[] { GameplayEffectKind.RevealMapNode,
             GameplayEffectKind.GrantRandomCommonEnhancement, GameplayEffectKind.Heal };
         var triggers = new[] { GameplayEffectTrigger.MapReady,

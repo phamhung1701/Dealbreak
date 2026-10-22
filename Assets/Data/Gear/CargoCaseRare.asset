@@ -16,19 +16,8 @@ MonoBehaviour:
   displayName: Cargo Case
   icon: PACK+
   iconSprite: {fileID: 21300000, guid: 869ae49b0e9293b459d93f1c28964d8b, type: 3}
-  description: 'Trigger: Passive
-
-    Condition: Tricks in backpack
-
-    Effect:
-    Retain 5 slots; up to 3 identical tricks per slot; track charges per item, use
-    partially-used first, separate rune suits; capacity loss withdraw-only, never
-    delete.
-
-    Value: 3 per slot
-
-    Limit: Withdraw-only on capacity loss'
-  price: 30
+  description: Gain 2 Trick slots. Identical Tricks stack, up to 3 per slot.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_121
   rarity: Rare

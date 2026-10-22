@@ -16,16 +16,9 @@ MonoBehaviour:
   displayName: Matched Cells
   icon: RANK
   iconSprite: {fileID: 21300000, guid: 16b3ced853621324f9d38d1b7fdac484, type: 3}
-  description: 'Trigger: On Attack Selection
-
-    Condition: Matching rank
-
-    Effect:
-    Allow multiple same-rank cards to be played together.
-
-    Limit: Up to 3 cards;
-    total damage cannot exceed 10.'
-  price: 20
+  description: Play 2 or 3 cards of the same rank together. That attack deals at
+    most 12 DMG.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_012
   rarity: Common
@@ -34,7 +27,7 @@ MonoBehaviour:
   effects:
   - kind: 11
     trigger: 5
-    amount: 10
+    amount: 12
     conditions:
     - kind: 4
       suit: 0

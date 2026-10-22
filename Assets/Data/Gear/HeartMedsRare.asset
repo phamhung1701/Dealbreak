@@ -16,16 +16,8 @@ MonoBehaviour:
   displayName: Heart Meds
   icon: "\u2665"
   iconSprite: {fileID: 21300000, guid: 3c764977673816b478b0cd37ff1e7494, type: 3}
-  description: 'Trigger: On Card Played
-
-    Condition: Suit = Hearts
-
-    Effect:
-    Playing a Heart heals 3 HP. If HP was below 50% immediately before the heal,
-    gain 3 Credits.
-
-    Value: +3 HP; +3 Credits below 50%'
-  price: 30
+  description: Playing a Heart card heals 3 HP. Below 50% HP, also gain 3 Credits.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_026
   rarity: Rare

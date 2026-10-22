@@ -16,17 +16,8 @@ MonoBehaviour:
   displayName: Lowball
   icon: LOW
   iconSprite: {fileID: 21300000, guid: 149a80a936b83ee4a871d8bffec8dd99, type: 3}
-  description: 'Trigger: After a Played Turn
-
-    Condition: Played rank < 5
-
-    Effect:
-    Gain an additional turn.
-
-    Value: 1
-
-    Limit: Once per turn'
-  price: 18
+  description: Gain an additional turn if every played card is below 5.
+  price: 10
   capacityCategory: 0
   canonicalId: rel_013
   rarity: Common

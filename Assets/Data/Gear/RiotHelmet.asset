@@ -16,21 +16,11 @@ MonoBehaviour:
   displayName: Riot Helmet
   icon: "\u76FE"
   iconSprite: {fileID: 21300000, guid: 39e35d22d4e8d2145af5f92ee542dff8, type: 3}
-  description: 'Trigger: Combat Start
-
-    Condition: Enforcer or Headliner combat
-
-    Effect:
-    Start Enforcer and Headliner combats with 1 Shield.
-
-    Value: 1 Shield
-
-    Limit:
-    TBD'
+  description: Gain 2 Shield at the start of Enforcer and Headliner combats.
   price: 20
   capacityCategory: 0
   canonicalId: rel_136
-  rarity: Common
+  rarity: Rare
   tier: 1
   upgradeFromId: 
   effects: []

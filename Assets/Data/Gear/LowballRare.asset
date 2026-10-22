@@ -16,19 +16,9 @@ MonoBehaviour:
   displayName: Lowball
   icon: LOW+
   iconSprite: {fileID: 21300000, guid: 149a80a936b83ee4a871d8bffec8dd99, type: 3}
-  description: 'Trigger: After a Played Turn
-
-    Condition: Played rank < 5
-
-    Effect:
-    Keep Common bonus action; rank <5 played strengthens next higher-rank attack.
-
-    Value:
-    +1 damage to next attack with rank higher than prepared source
-
-    Limit: After
-    manually played rank below Five; retains Common bonus action'
-  price: 30
+  description: Gain an additional turn if every played card is below 5. Playing a
+    card below 5 adds 5 DMG to your next attack with a higher card.
+  price: 20
   capacityCategory: 0
   canonicalId: rel_112
   rarity: Rare
