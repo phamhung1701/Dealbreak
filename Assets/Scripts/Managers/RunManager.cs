@@ -69,7 +69,7 @@ public partial class RunManager : Singleton<RunManager>
     public int HeadlinerTotal => headlinerDeck.Count;
     public bool IsInfiniteMode { get; private set; }
     public bool IsRunCompleted { get; private set; }
-    public bool CanContinueInfiniteMode => IsRunCompleted && !IsInfiniteMode && headlinerDeck.Count == 12 && headlinerIndex == 12;
+    public bool CanContinueInfiniteMode => IsRunCompleted && !IsInfiniteMode && headlinerDeck.Count == RunLength.Districts && headlinerIndex == RunLength.Districts;
     public string RunSeed => runSeed;
     public int CurrentMapIndex => headlinerIndex;
     public int CompletedNodeCount => _completedNodeCount;
@@ -451,17 +451,22 @@ public partial class RunManager : Singleton<RunManager>
             ? FirstMapHeadlinerHp : source.maxHp;
         var stats = ScaleEncounterStats(baseHp, source.baseAttack, node.mapIndex);
         return node.kind == MapNodeType.Elite && authoredElite == null
-            ? (Mathf.CeilToInt(stats.hp * 1.5f), stats.attack + 2)
+            ? ApplyGenericEnforcerBonus(stats)
             : stats;
     }
+
+    // Generic Enforcers: one formula for the generated type, previews and spawns.
+    static (int hp, int attack) ApplyGenericEnforcerBonus((int hp, int attack) stats) =>
+        (Mathf.CeilToInt(stats.hp * 1.5f), stats.attack + 2);
 
     EnemyTypeData CreateEliteType(EnemyTypeData source)
     {
         if (source == null) return null;
+        var stats = ApplyGenericEnforcerBonus((source.maxHp, source.baseAttack));
         var elite = EnemyTypeData.Create(
             $"Enforcer {source.enemyName}",
-            Mathf.CeilToInt(source.maxHp * 1.5f),
-            source.baseAttack + 2,
+            stats.hp,
+            stats.attack,
             source.creditsReward * 2);
         var ability = contentCatalog != null ? contentCatalog.eliteAbility : null;
         elite.abilities = ability != null ? new[] { ability } : Array.Empty<EnemyAbility>();
