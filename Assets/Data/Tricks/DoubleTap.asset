@@ -17,8 +17,8 @@ MonoBehaviour:
   displayName: Double Tap
   icon: "2\xD7"
   iconSprite: {fileID: 21300000, guid: be89f2a693f333145a1f1392298d4f21, type: 3}
-  description: 'Target: Card Timing: Anytime Effect: Apply Double Strike to a card.
-    Uses: 1'
+  description: 'Give a hand card Double Strike: it hits twice, for full DMG each
+    hit.'
   price: 20
   uses: 1
   effectType: 2

@@ -129,6 +129,39 @@ public sealed class BalanceTextDriftTests
         AssertQuotes(EnemyAbility("SuitCallout"), "Suit Callout", $"deals {e.suitCallDamagePercent}% damage");
     }
 
+    // Trick numbers live on the Trick asset itself, or on the Mod a Mod Trick applies.
+    [Test]
+    public void TrickDescriptions_QuoteTheirTrickAndModNumbers()
+    {
+        AssertQuotes(Trick("EnergyBar").description, "Energy Bar", $"Heal {Trick("EnergyBar").healAmount} HP");
+        AssertQuotes(Trick("ThrowingStar").description, "Throwing Star", $"Deal {Trick("ThrowingStar").damageAmount} DMG");
+        AssertQuotes(Trick("CloneVial").description, "Clone Vial", $"Add {Trick("CloneVial").copies} copies");
+        AssertModTrick("BoosterShot", amount => $"+{amount} DMG");
+        AssertModTrick("AlloyPlate", amount => $"blocks {amount} more DMG");
+        AssertModTrick("Bandage", amount => $"heal {amount} HP at the start of each turn");
+        AssertModTrick("QuickMarker", amount => $"draw {amount} card");
+        AssertModTrick("LaserScope", amount => $"{amount}% chance");
+        AssertModTrick("PokerChip", amount => $"gain {amount} Credits");
+        AssertModTrick("BackupDrone", amount => $"played cards deal +{amount} DMG");
+        AssertModTrick("BloodBag", amount => $"costs {amount} HP and deals +{amount} DMG");
+        AssertModTrick("Firecracker", null);
+        AssertModTrick("FeralCapsule", null);
+        AssertModTrick("PrismCube", null);
+        AssertModTrick("DoubleTap", null);
+    }
+
+    static ConsumableData Trick(string asset) =>
+        AssetDatabase.LoadAssetAtPath<ConsumableData>($"Assets/Data/Tricks/{asset}.asset");
+
+    static void AssertModTrick(string asset, System.Func<int, string> quote)
+    {
+        var trick = Trick(asset);
+        var mod = trick.enhancementToApply;
+        Assert.That(mod, Is.Not.Null, asset);
+        AssertQuotes(trick.description, asset, $"Give a hand card {mod.displayName}:");
+        if (quote != null) AssertQuotes(trick.description, asset, quote(mod.effects[0].amount));
+    }
+
     [Test]
     public void RedlineDealChoices_QuoteTheirCostsAndRarities()
     {

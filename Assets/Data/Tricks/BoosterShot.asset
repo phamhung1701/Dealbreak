@@ -17,14 +17,7 @@ MonoBehaviour:
   displayName: Booster Shot
   icon: ATK
   iconSprite: {fileID: 21300000, guid: 98946735408162848bb2796ee2491ac2, type: 3}
-  description: 'Target: Card
-
-    Timing: Anytime
-
-    Effect: Apply Boosted to a
-    card.
-
-    Uses: 1'
+  description: 'Give a hand card Boosted: it deals +3 DMG.'
   price: 5
   uses: 1
   effectType: 2

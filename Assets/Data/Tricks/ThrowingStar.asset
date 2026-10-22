@@ -17,16 +17,7 @@ MonoBehaviour:
   displayName: Throwing Star
   icon: DMG
   iconSprite: {fileID: 21300000, guid: 8680fc0d08644f64498f3cbb987453f0, type: 3}
-  description: 'Target: Enemy
-
-    Timing: Combat
-
-    Effect: Deal direct damage.
-
-    Value:
-    5
-
-    Uses: 1'
+  description: Deal 5 DMG to an enemy.
   price: 5
   uses: 1
   effectType: 1

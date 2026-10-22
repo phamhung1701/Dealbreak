@@ -17,14 +17,7 @@ MonoBehaviour:
   displayName: Quick Marker
   icon: DRAW
   iconSprite: {fileID: 21300000, guid: 057f357a27f655a47871703c0e15b316, type: 3}
-  description: 'Target: Card
-
-    Timing: Anytime
-
-    Effect: Apply Quickload to
-    a card.
-
-    Uses: 1'
+  description: 'Give a hand card Quickload: draw 1 card when it is played.'
   price: 5
   uses: 1
   effectType: 2

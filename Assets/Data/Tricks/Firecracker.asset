@@ -17,14 +17,8 @@ MonoBehaviour:
   displayName: Firecracker
   icon: AOE
   iconSprite: {fileID: 21300000, guid: 3aeea4125250fb942af337d66f7922a6, type: 3}
-  description: 'Target: Card
-
-    Timing: Anytime
-
-    Effect: Apply Volatile to
-    a card.
-
-    Uses: 1'
+  description: 'Give a hand card Volatile: its attack also hits every other enemy
+    for the same DMG.'
   price: 5
   uses: 1
   effectType: 2

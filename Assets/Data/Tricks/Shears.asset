@@ -17,14 +17,7 @@ MonoBehaviour:
   displayName: Shears
   icon: TORCH
   iconSprite: {fileID: 21300000, guid: dd8253f08cee6024e8f66d7d7219b0fe, type: 3}
-  description: 'Target: Card
-
-    Timing: Anytime
-
-    Effect: Permanently destroy
-    one card in your hand; at least one deck card must survive.
-
-    Uses: 2'
+  description: Permanently destroy a hand card.
   price: 5
   uses: 2
   effectType: 4

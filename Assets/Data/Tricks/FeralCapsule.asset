@@ -17,14 +17,8 @@ MonoBehaviour:
   displayName: Feral Capsule
   icon: ATK
   iconSprite: {fileID: 21300000, guid: edf19d8972c41104b9f997559db16639, type: 3}
-  description: 'Target: Card
-
-    Timing: Anytime
-
-    Effect: Apply Predatory to
-    a card.
-
-    Uses: 1'
+  description: 'Give a hand card Predatory: it permanently gains +1 DMG each time
+    it defeats an enemy.'
   price: 5
   uses: 1
   effectType: 2

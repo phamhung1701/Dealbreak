@@ -17,15 +17,8 @@ MonoBehaviour:
   displayName: Clone Vial
   icon: MIRROR
   iconSprite: {fileID: 21300000, guid: c9446c547ba36384cb1b4697638ed800, type: 3}
-  description: 'Target: Card
-
-    Timing: Anytime
-
-    Effect: Create 2 copies of
-    one hand card, with its effective suit, rank, Mod and permanent attack bonus.
-    The copies go into your hand.
-
-    Uses: 1'
+  description: Add 2 copies of a hand card to your hand. Copies keep its suit, rank,
+    Mod and bonus DMG, and stay in your deck.
   price: 5
   uses: 1
   effectType: 3
