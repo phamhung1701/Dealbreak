@@ -64,11 +64,19 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     public bool DismissPinned()
     {
         var card=CardManager.Instance?.selectedCard?.GetComponent<CombatInspectUI>();
-        var gear=Object.FindFirstObjectByType<GearRailUI>()?.GetComponentsInChildren<GearIconSlotUI>().FirstOrDefault(g=>g.IsDetailSelected)?.GetComponent<CombatInspectUI>();
+        var gear=SelectedGearInspect();
         MonoBehaviour selected=_pinned?_pinned:card?card:gear;
         if(!selected||selected==_dismissed)return false;
         _dismissed=selected;
         _source=_pinned=null;Hide();return true;
+    }
+    // Runs every frame while nothing is inspected, so the rail is found once, not searched for each frame.
+    GearRailUI _gearRail;
+    CombatInspectUI SelectedGearInspect()
+    {
+        if(!_gearRail)_gearRail=Object.FindFirstObjectByType<GearRailUI>();
+        if(!_gearRail)return null;
+        return _gearRail.GetComponentsInChildren<GearIconSlotUI>().FirstOrDefault(g=>g.IsDetailSelected)?.GetComponent<CombatInspectUI>();
     }
     void Hide(){if(panel){panel.SetActive(false);var group=panel.GetComponent<CanvasGroup>();if(group)group.alpha=0;}_lastHeading=_lastBody=null;}
     void LateUpdate()
@@ -82,9 +90,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         MonoBehaviour candidate=_source&&(inspected||Time.unscaledTime<_leaveUntil||overPanel)?_source:_pinned;
         if(!candidate&&CardManager.Instance?.selectedCard!=null)
             candidate=CardManager.Instance.selectedCard.GetComponent<CombatInspectUI>();
-        if(!candidate)
-            candidate=Object.FindFirstObjectByType<GearRailUI>()?.GetComponentsInChildren<GearIconSlotUI>()
-                .FirstOrDefault(g=>g.IsDetailSelected)?.GetComponent<CombatInspectUI>();
+        if(!candidate)candidate=SelectedGearInspect();
         if(candidate==_dismissed||!Visible(candidate)||!TryDescribe(candidate,out var info)){Hide();return;}
         if(Mouse.current!=null&&Mouse.current.leftButton.wasPressedThisFrame&&!overPanel&&_pinned&&
             !RectTransformUtility.RectangleContainsScreenPoint((RectTransform)_pinned.transform,Mouse.current.position.ReadValue(),null))
