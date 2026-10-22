@@ -43,6 +43,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(playerState&&actions&&actions.TryGetComponent<RunStatusUI>(out var status))CreditsHudUI.Install(playerState,status.creditsLabel);
         var canvas=actions?actions.GetComponentInParent<Canvas>():GetComponentInParent<Canvas>();
         if(canvas){ScreenShakeUI.Install(canvas.rootCanvas);EnemyDropUI.Install(canvas.rootCanvas);}
+        // One trigger presenter, on the game HUD (the frontend overlay has no hand or HP panel).
+        if(canvas&&actions)EffectTriggerPresenterUI.Install(canvas.rootCanvas);
     }
     void PositionSortControls()
     {

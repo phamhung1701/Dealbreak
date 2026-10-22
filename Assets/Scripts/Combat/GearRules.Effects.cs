@@ -14,24 +14,28 @@ public static partial class GearRules
     /// Club Rare doubles "after flat bonuses", so every flat lands before any multiplier whatever the
     /// order the Gear was acquired in.
     /// </summary>
+    /// <param name="trace">Execution only: collects the Gear that changed the value.</param>
     public static int ApplyFinalAttackRules(CardManager cards, CardInstance card, int resolved,
-        int unplayedClubCount, int overflowHandCount)
+        int unplayedClubCount, int overflowHandCount, EffectTriggerTrace trace = null)
     {
         var combat = CombatManager.Instance;
-        foreach (var (gear, _) in Owned(cards))
+        foreach (var (gear, instance) in Owned(cards))
         {
             switch (gear.specialRule)
             {
                 case GearSpecialRule.OverflowEpic when combat?.IsResolvingOverflowAttack == true:
                     resolved = ClampToInt((long)resolved + Math.Max(0, overflowHandCount));
+                    if (overflowHandCount > 0) trace?.Add(instance, EffectCue.AttackBonus, overflowHandCount);
                     break;
                 case GearSpecialRule.GlassCommon:
                     resolved = ClampToInt((long)resolved + Tuning.glassShardAttackBonus);
+                    trace?.Add(instance, EffectCue.AttackBonus, Tuning.glassShardAttackBonus);
                     break;
             }
         }
-        foreach (var (gear, _) in Owned(cards))
+        foreach (var (gear, instance) in Owned(cards))
         {
+            int before = resolved;
             switch (gear.specialRule)
             {
                 case GearSpecialRule.ClubEpic when card.MatchesSuit(CardData.Suit.Clubs):
@@ -43,17 +47,21 @@ public static partial class GearRules
                         denominator *= Tuning.clubAmplifierEpicDenominator;
                     }
                     resolved = ClampToInt((long)resolved * numerator / denominator);
+                    if (resolved > before) trace?.Add(instance, EffectCue.AttackBonus, resolved - before);
                     break;
                 }
                 case GearSpecialRule.RareClub when card.MatchesSuit(CardData.Suit.Clubs):
                     resolved = ClampToInt((long)resolved * Tuning.clubAmplifierRareMultiplier);
+                    trace?.Add(instance, EffectCue.AttackMultiplier, Tuning.clubAmplifierRareMultiplier);
                     break;
                 case GearSpecialRule.GlassRare:
                     resolved = ClampToInt((long)resolved * Tuning.glassShardRareAttackMultiplier);
+                    trace?.Add(instance, EffectCue.AttackMultiplier, Tuning.glassShardRareAttackMultiplier);
                     break;
                 case GearSpecialRule.GlassEpic when combat?.player != null &&
                     combat.player.currentHealth <= Tuning.glassShardEpicAtOrBelowHealth:
                     resolved = ClampToInt((long)resolved * Tuning.glassShardEpicAttackMultiplier);
+                    trace?.Add(instance, EffectCue.AttackMultiplier, Tuning.glassShardEpicAttackMultiplier);
                     break;
             }
         }
@@ -158,6 +166,7 @@ public static partial class GearRules
             if (!cards.DestroyOwnedCard(destroyed)) return false;
             instance.State.SetEncounterCounter(GearCounterKeys.DealbreakerUsed, 1);
             log?.Invoke($"{gear.displayName}: destroyed {destroyed.DisplayName} to negate a lethal hit.");
+            EffectTriggerFeed.Report(instance, EffectCue.Save);
             return true;
         }
         return false;
@@ -207,7 +216,12 @@ public static partial class GearRules
                     int before = context.Combat.player.currentHealth;
                     int heal = Tuning.heartMedsHeal;
                     int healed = context.Combat.HealPlayer(heal);
-                    if (before * 2 < context.Combat.player.maxHealth) context.Cards.AddCredits(Tuning.heartMedsLowHealthCredits);
+                    if (healed > 0) EffectTriggerFeed.Report(gearInstance, EffectCue.Heal, healed);
+                    if (before * 2 < context.Combat.player.maxHealth)
+                    {
+                        EffectTriggerFeed.Report(gearInstance, EffectCue.Credits, Tuning.heartMedsLowHealthCredits);
+                        context.Cards.AddCredits(Tuning.heartMedsLowHealthCredits);
+                    }
                     if (gear.specialRule == GearSpecialRule.HeartEpic && context.Combat.CanPlayerHeal())
                     {
                         var state = gearInstance.State;
@@ -220,7 +234,11 @@ public static partial class GearRules
             context.Card.MatchesSuit(CardData.Suit.Diamonds))
             queue.Enqueue(context.Action.ActionId, context.HitIndex, CombatReactionPhase.CardCommitted,
                 CombatReactionSourceCategory.Gear, sourceOrder, int.MaxValue,
-                () => context.Cards.DrawToHand(Tuning.diamondDriverDraw));
+                () =>
+                {
+                    int drawn = context.Cards.DrawToHand(Tuning.diamondDriverDraw);
+                    if (drawn > 0) EffectTriggerFeed.Report(gearInstance, EffectCue.Draw, drawn);
+                });
     }
 
     /// <summary>Spade Shield Rare and Epic: a Spade that blocks more than its attack still counts as
@@ -246,8 +264,11 @@ public static partial class GearRules
             int block = context.Combat.CalculateCardDefense(context.BlockingCard);
             int attack = Math.Max(0, context.BlockedAttackDamage);
             if (attack > 0 && block > attack)
+            {
                 source.State.SetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks, ClampToInt(
                     (long)source.State.GetEncounterCounter(GearCounterKeys.SpadeEpicOverblocks) + block - attack));
+                EffectTriggerFeed.Report(source, EffectCue.Growth, block - attack);
+            }
         }
         if (rule is GearSpecialRule.RareRetaliation or GearSpecialRule.RetaliationEpic)
         {
@@ -262,18 +283,23 @@ public static partial class GearRules
             if (retaliation > 0)
                 queue.Enqueue(context.Action.ActionId, int.MinValue + context.BlockOrder,
                     CombatReactionPhase.AttackBlocked, source.Category, sourceOrder, int.MaxValue,
-                    () => context.Combat.QueueReactiveDamage(context.Combat.player, context.AttackedEnemy,
-                        retaliation, sourceOrder, int.MaxValue, sourceCategory: source.Category,
-                        onResolved: rule == GearSpecialRule.RetaliationEpic
-                            ? result =>
-                            {
-                                int gained = Tuning.counterpunchGlovesEpicGrowth;
-                                if (!result.WasLethal || gained <= 0) return;
-                                source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, ClampToInt(
-                                    (long)source.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) + gained));
-                                context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +{gained} counter damage.");
-                            }
-                            : null));
+                    () =>
+                    {
+                        if (context.Combat.QueueReactiveDamage(context.Combat.player, context.AttackedEnemy,
+                            retaliation, sourceOrder, int.MaxValue, sourceCategory: source.Category,
+                            onResolved: rule == GearSpecialRule.RetaliationEpic
+                                ? result =>
+                                {
+                                    int gained = Tuning.counterpunchGlovesEpicGrowth;
+                                    if (!result.WasLethal || gained <= 0) return;
+                                    source.State.SetCounter(GearCounterKeys.RetaliationEpicGrowth, ClampToInt(
+                                        (long)source.State.GetCounter(GearCounterKeys.RetaliationEpicGrowth) + gained));
+                                    context.Combat.LogEffect($"{source.DisplayName}: counterattack kill permanently gained +{gained} counter damage.");
+                                    EffectTriggerFeed.Report(source, EffectCue.Growth, gained);
+                                }
+                                : null))
+                            EffectTriggerFeed.Report(source, EffectCue.Counter, retaliation);
+                    });
         }
     }
 }

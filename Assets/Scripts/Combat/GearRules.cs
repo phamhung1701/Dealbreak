@@ -36,13 +36,36 @@ public static partial class GearRules
     {
         if (cards == null) return;
         if (cards.HasGearSpecialRule(GearSpecialRule.PreparationManual))
-            player.GainEncounterBlock(cards.DistinctConsumableTypeCount * Tuning.guardDroneBlockPerTrickType);
+        {
+            int block = cards.DistinctConsumableTypeCount * Tuning.guardDroneBlockPerTrickType;
+            player.GainEncounterBlock(block);
+            if (block > 0) ReportFirst(cards, GearSpecialRule.PreparationManual, EffectCue.Block, block);
+        }
         foreach (var (gear, instance) in Owned(cards))
             if (gear.specialRule == GearSpecialRule.WarpathBanner)
-                player.GainEncounterBlock(Math.Min(Tuning.varsityJacketMaxStreak,
-                    instance.State.GetCounter(GearCounterKeys.WarpathBannerWinStreak)) * Tuning.varsityJacketBlockPerWin);
+            {
+                int block = Math.Min(Tuning.varsityJacketMaxStreak,
+                    instance.State.GetCounter(GearCounterKeys.WarpathBannerWinStreak)) * Tuning.varsityJacketBlockPerWin;
+                player.GainEncounterBlock(block);
+                if (block > 0) EffectTriggerFeed.Report(instance, EffectCue.Block, block);
+            }
         if (eliteOrHeadliner && cards.HasGearSpecialRule(GearSpecialRule.ChallengerCrest))
-            player.GainShield(Tuning.riotHelmetShield);
+        {
+            int gained = player.GainShield(Tuning.riotHelmetShield);
+            if (gained > 0) ReportFirst(cards, GearSpecialRule.ChallengerCrest, EffectCue.Shield, gained);
+        }
+    }
+
+    /// <summary>Reports the first owned Gear with <paramref name="rule"/>: for rules that apply once
+    /// however many copies are owned.</summary>
+    static void ReportFirst(CardManager cards, GearSpecialRule rule, EffectCue cue, int amount)
+    {
+        foreach (var (gear, instance) in Owned(cards))
+            if (gear.specialRule == rule)
+            {
+                EffectTriggerFeed.Report(instance, cue, amount);
+                return;
+            }
     }
 
     // ---- Player attack actions ------------------------------------------------------------
@@ -181,6 +204,33 @@ public static partial class GearRules
             instance.PendingDwarfSourceCard = null;
     }
 
+    /// <summary>Reports the Gear behind an action's once-per-action attack bonuses (prepared bonuses,
+    /// Gold Pistol, Headhunter Rifle and, on the opening attack, Notched Pistol).</summary>
+    public static void TraceActionBonuses(CardManager cards, ActionBonuses bonuses, bool eliteOrHeadlinerEncounter,
+        bool openingAttack, EffectTriggerTrace trace)
+    {
+        if (trace == null) return;
+        foreach (var (gear, instance) in Owned(cards))
+        {
+            int amount = gear.specialRule switch
+            {
+                GearSpecialRule.KingslayersMark => bonuses.Kingslayer,
+                GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic when bonuses.DwarfSource != null &&
+                    instance.PreparedDwarfSourceCard == bonuses.DwarfSource => bonuses.Dwarf,
+                GearSpecialRule.BalancersScale => bonuses.Balancer,
+                GearSpecialRule.SpadeEpic => bonuses.Spade,
+                GearSpecialRule.HeartEpic => bonuses.Heart,
+                GearSpecialRule.GildedBlade => GoldPistolBonus(cards),
+                GearSpecialRule.TrophyRack when eliteOrHeadlinerEncounter => ClampToInt(
+                    (long)instance.State.GetCounter(GearCounterKeys.TrophyRackEliteKills) * Tuning.headhunterRifleAttackPerKill),
+                GearSpecialRule.HuntersLedger when openingAttack =>
+                    instance.State.GetCounter(GearCounterKeys.HuntersLedgerEliteKills),
+                _ => 0
+            };
+            if (amount > 0) trace.Add(instance, EffectCue.AttackBonus, amount);
+        }
+    }
+
     /// <summary>Notched Pistol (Hunter's Ledger): the opening attack of an encounter gains its kills.</summary>
     public static int OpeningAttackBonus(CardManager cards)
     {
@@ -220,6 +270,7 @@ public static partial class GearRules
                 ClampToInt((long)instance.State.GetCounter(GearCounterKeys.DwarfEpicPermanentGained) + growth));
             instance.PendingDwarfSourceCard = null;
             log?.Invoke($"{gear.displayName}: prepared {source.DisplayName} permanently gained +{growth} attack.");
+            EffectTriggerFeed.Report(instance, EffectCue.Growth, growth);
         }
     }
 
@@ -237,6 +288,7 @@ public static partial class GearRules
             if (ace == null || !cards.TryTakeCardToHand(ace)) continue;
             state.SetEncounterCounter(GearCounterKeys.AceReturnUsed, 1);
             log?.Invoke($"{gear.displayName}: returned the physical Ace to hand.");
+            EffectTriggerFeed.Report(instance, EffectCue.ReturnToHand, 1);
             return;
         }
     }
@@ -249,5 +301,12 @@ public static partial class GearRules
         int numerator = headlinerEncounter ? Tuning.bountyHologramHeadlinerPercent
             : eliteOrHeadlinerEncounter ? Tuning.bountyHologramEnforcerPercent : 100;
         return (int)Math.Min(int.MaxValue, ((long)credits * numerator + 50) / 100);
+    }
+
+    /// <summary>Reports Bounty Hologram's share of a won encounter's Credits.</summary>
+    public static void ReportVictoryCreditsScaling(CardManager cards, int baseCredits, int scaledCredits)
+    {
+        if (scaledCredits > baseCredits) ReportFirst(cards, GearSpecialRule.BountyLedger, EffectCue.Credits,
+            scaledCredits - baseCredits);
     }
 }

@@ -29,6 +29,8 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     const float FlipHalfTime = 0.07f;
     const float ReturnTime = 0.26f;
     const float HitNumberTime = 0.8f;
+    const float LeadInLift = 70f;
+    const float LeadInLiftTime = 0.14f;
 
     readonly List<RectTransform> _activeCards = new();
     readonly List<GameObject> _flashes = new();
@@ -41,8 +43,11 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
 
     public int ActiveVisualCount => _activeCards.Count;
     public int ActiveHitNumberCount => _hitNumbers.Count;
-    public bool IsBusy => _pendingCommits > 0 || _activeCards.Count > 0 || _hitNumbers.Count > 0 ||
+    public bool IsBusy => IsBoardBusy || EffectTriggerPresenterUI.CombatBusy;
+    /// <summary>Cards, hit numbers, reward cards or a defeat still playing, not counting Mod and Gear triggers.</summary>
+    public bool IsBoardBusy => _pendingCommits > 0 || _activeCards.Count > 0 || _hitNumbers.Count > 0 ||
         _rewardFlights.Count > 0 || enemyGroup != null && enemyGroup.IsDefeatPresentationBusy;
+    float _commitLeadIn;
     readonly List<GameObject> _rewardFlights = new();
     /// <summary>The draw pile a Headliner reward card is flying into, while it flies; otherwise null.</summary>
     public RectTransform RewardDeckTarget => _rewardFlights.Count > 0 ? deckTarget : null;
@@ -123,7 +128,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         if (!TryCaptureVisuals(cards, canvasRect, false, draggedCard, out var staged, out var origins, out var draggedFlags))
             return combat.TryPlayCards(cards, target);
         return CommitAndAnimate(staged, origins, draggedFlags, targetPoint, deckPoint,
-            () => combat.TryPlayCards(cards, target), isBlock: false);
+            () => combat.TryPlayCards(cards, target), isBlock: false, Instances(cards));
     }
 
     /// <summary>Captures the selected defense cards, commits defense once, then animates snapshots only.</summary>
@@ -148,9 +153,16 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             impacts[i] = attackers != null && attackers[i] != null &&
                 TryGetEnemyPoint(attackers[i], out _, out var attackerPoint) ? attackerPoint : blockPoint;
         bool committed = CommitAndAnimate(staged, origins, draggedFlags, impacts, deckPoint,
-            () => combat.TryDefendWithCards(cards, target), isBlock: true);
+            () => combat.TryDefendWithCards(cards, target), isBlock: true, instances);
         if (committed && attackers != null) PlayBlockedReactions(attackers);
         return committed;
+    }
+
+    static CardInstance[] Instances(CardView[] cards)
+    {
+        var instances = new CardInstance[cards.Length];
+        for (int i = 0; i < cards.Length; i++) instances[i] = cards[i] != null ? cards[i].data : null;
+        return instances;
     }
 
     void PlayBlockedReactions(EnemyRuntime[] attackers)
@@ -162,7 +174,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             if (attackers[i] == null || !reacted.Add(attackers[i])) continue;
             foreach (var view in enemyGroup.ActiveViews)
                 if (view != null && ReferenceEquals(view.DisplayedEnemy, attackers[i]))
-                    view.PlayHitCue(true, BlockTravelTime + i * BlockStagger);
+                    view.PlayHitCue(true, _commitLeadIn + BlockTravelTime + i * BlockStagger);
         }
     }
 
@@ -200,20 +212,25 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     }
 
     bool CommitAndAnimate(List<RectTransform> staged, List<Vector2> origins, List<bool> draggedFlags,
-        Vector2 targetPoint, Vector2 deckPoint, System.Func<bool> commit, bool isBlock)
+        Vector2 targetPoint, Vector2 deckPoint, System.Func<bool> commit, bool isBlock, CardInstance[] instances)
     {
         var impacts = new Vector2[staged.Count];
         for (int i = 0; i < impacts.Length; i++) impacts[i] = targetPoint;
-        return CommitAndAnimate(staged, origins, draggedFlags, impacts, deckPoint, commit, isBlock);
+        return CommitAndAnimate(staged, origins, draggedFlags, impacts, deckPoint, commit, isBlock, instances);
     }
 
+    // Mod and Gear triggers reported before the first hit play first (Overclocked's HP flies into its
+    // card, Boosted hops), and the committed cards wait for them: their lead-in.
     bool CommitAndAnimate(List<RectTransform> staged, List<Vector2> origins, List<bool> draggedFlags,
-        IReadOnlyList<Vector2> targetPoints, Vector2 deckPoint, System.Func<bool> commit, bool isBlock)
+        IReadOnlyList<Vector2> targetPoints, Vector2 deckPoint, System.Func<bool> commit, bool isBlock,
+        CardInstance[] instances)
     {
         _pendingCommits++;
         _commitImpactDelay = isBlock ? BlockTravelTime
             : draggedFlags.Contains(true) ? WindupTime + DraggedTravelTime : AttackTravelTime;
         _wasBusy = true;
+        var triggers = EffectTriggerPresenterUI.Instance;
+        if (triggers) triggers.BeginCommit(instances, staged);
         bool committed;
         try
         {
@@ -222,10 +239,12 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         catch
         {
             _pendingCommits--;
+            if (triggers) triggers.EndCommit(_commitImpactDelay);
             DestroyStaged(staged);
             NotifyIfIdle(cancelled: true);
             throw;
         }
+        _commitLeadIn = triggers ? triggers.EndCommit(_commitImpactDelay) : 0f;
         _pendingCommits--;
         if (!committed)
         {
@@ -240,7 +259,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             var clone = staged[i];
             _activeCards.Add(clone);
             StartCoroutine(AnimateCard(clone, origins[i], targetPoints[i], deckPoint,
-                isBlock ? false : draggedFlags[i], i * stagger, isBlock));
+                isBlock ? false : draggedFlags[i], _commitLeadIn + i * stagger, isBlock));
         }
         NotifyIfIdle();
         return true;
@@ -252,6 +271,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
         StopAllCoroutines();
         _pendingCommits = 0;
         _commitImpactDelay = 0f;
+        _commitLeadIn = 0f;
         for (int i = 0; i < _hitNumbers.Count; i++)
             if (_hitNumbers[i] != null) DestroyVisual(_hitNumbers[i]);
         _hitNumbers.Clear();
@@ -308,7 +328,17 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     /// presented commit (Tricks, enemy reactions), so those reactions play at once.
     /// </summary>
     public float ImpactDelay(int hitIndex) =>
-        _pendingCommits > 0 ? _commitImpactDelay + Mathf.Min(hitIndex, 7) * HitSpacing : 0f;
+        _pendingCommits > 0 ? CommitLeadIn() + _commitImpactDelay + Mathf.Min(hitIndex, 7) * HitSpacing : 0f;
+
+    // The first timed hit fixes the wait for the triggers reported before it.
+    float CommitLeadIn() => EffectTriggerPresenterUI.Instance
+        ? EffectTriggerPresenterUI.Instance.FreezeLeadIn(_commitImpactDelay) : 0f;
+
+    /// <summary>A Mod or Gear trigger started playing during combat: the board stays busy for it.</summary>
+    public void MarkExternalBusy() => _wasBusy = true;
+
+    /// <summary>The last combat trigger finished: reports completion if nothing else is playing.</summary>
+    public void NotifyExternalIdle() => NotifyIfIdle();
 
     public static string FormatHitNumber(DamageResult result)
     {
@@ -453,6 +483,15 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
     IEnumerator AnimateCard(RectTransform card, Vector2 origin, Vector2 impact, Vector2 deck,
         bool dragged, float delay, bool isBlock)
     {
+        // While its Mod and Gear triggers play, the card stands lifted out of the hand.
+        if (_commitLeadIn > 0f)
+        {
+            float lift = Mathf.Min(LeadInLiftTime, delay);
+            Vector2 lifted = origin + Vector2.up * LeadInLift;
+            yield return Move(card, origin, lifted, lift, Ease.InOut);
+            origin = lifted;
+            delay -= lift;
+        }
         if (delay > 0f) yield return Wait(delay);
         if (!isBlock && dragged)
         {

@@ -255,7 +255,11 @@ public partial class RunManager
         if (actualCreditsSpent <= 0) return;
         var cards = CardManager.Instance;
         int refund = GearRules.CashbackRefund(modifiers, actualCreditsSpent);
-        if (refund > 0 && cards != null) cards.AddCredits(refund);
+        if (refund > 0 && cards != null)
+        {
+            GearRules.ReportCashback(cards, refund);
+            cards.AddCredits(refund);
+        }
         if (!modifiers.MerchantsGift) return;
         _paidItemPurchaseCount = IncrementToMaximum(_paidItemPurchaseCount);
         if (!GearRules.LoyaltyGiftRewardDue(_paidItemPurchaseCount)) return;

@@ -58,8 +58,10 @@ public sealed class PlayerRuntime : ICombatDamageTarget
                 CombatDamageOrigin.Card or CombatDamageOrigin.EnemyAggregate or
                 CombatDamageOrigin.Recovery or CombatDamageOrigin.Reactive))
             return Math.Max(0, damage);
+        var trace = new EffectTriggerTrace();
         int modified = GameplayEffectResolver.ModifyIncomingCombatDamage(
-            new IncomingDamageEffectContext(request, context, CardManager.Instance, damage));
+            new IncomingDamageEffectContext(request, context, CardManager.Instance, damage), trace);
+        trace.Publish();
         int damageTaken = request.Origin is CombatDamageOrigin.EnemyAggregate or CombatDamageOrigin.Recovery
             ? ConsumeEncounterBlock(modified) : modified;
         return context.TryNegateLethalHit(request, damageTaken) ? 0 : damageTaken;

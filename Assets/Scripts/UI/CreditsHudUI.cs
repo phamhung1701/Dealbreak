@@ -17,10 +17,11 @@ public sealed class CreditsHudUI : MonoBehaviour
 
     /// <summary>
     /// True while Credits shown on the HUD should wait: an attack or defeat is still playing out, or
-    /// Credits are still flying to the coin.
+    /// Credits are still flying to the coin (from a defeat, or from a Mod or Gear trigger).
     /// </summary>
-    public static bool HoldsCredits => DealbreakUIRuntime.BoardPresentationBusy ||
-        Instance && Time.unscaledTime < Instance._holdUntil;
+    public static bool HoldsCredits =>
+        AttackCardPresentationUI.Instance && AttackCardPresentationUI.Instance.IsBoardBusy ||
+        EffectTriggerPresenterUI.HoldsCredits || Instance && Time.unscaledTime < Instance._holdUntil;
 
     /// <summary>Builds the chip above <paramref name="healthPanel"/> and moves the Credits label into it.</summary>
     public static CreditsHudUI Install(RectTransform healthPanel, TMP_Text creditsLabel)

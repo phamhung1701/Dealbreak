@@ -29,6 +29,7 @@ public class ActionButtonsUI : MonoBehaviour
 
     TMP_Text _primaryActionLabel;
     readonly DisplayedNumber _shownHealth = new();
+    bool _healthHeld;
     Color _healthLabelColor;
     bool _healthLabelColorCaptured;
     HealthBarBacking _healthBar;
@@ -133,7 +134,8 @@ public class ActionButtonsUI : MonoBehaviour
             RefreshEnemyTargetPresentation();
         }
         RefreshBoardGuidance();
-        if (_shownHealth.Tick(Time.unscaledDeltaTime)) RefreshPlayerHealthLabel(CombatManager.Instance);
+        if (_shownHealth.Tick(Time.unscaledDeltaTime) || _healthHeld && !EffectTriggerPresenterUI.HoldsHealth)
+            RefreshPlayerHealthLabel(CombatManager.Instance);
     }
 
     void LateUpdate()
@@ -234,7 +236,10 @@ public class ActionButtonsUI : MonoBehaviour
             _healthLabelColor = theme ? theme.paper : Color.white;
             _healthLabelColorCaptured = true;
         }
-        _shownHealth.SetTarget(combat.player.currentHealth, Application.isPlaying && isActiveAndEnabled);
+        // Healing from a Mod or Gear shows once its chips reach the bar.
+        bool animate = Application.isPlaying && isActiveAndEnabled;
+        _healthHeld = animate && EffectTriggerPresenterUI.HoldsHealth;
+        if (!_healthHeld) _shownHealth.SetTarget(combat.player.currentHealth, animate);
         playerHealthLabel.text = combat.HasInfiniteHealthForDev
             ? "HP  ∞"
             : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}";

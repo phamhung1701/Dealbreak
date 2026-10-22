@@ -670,6 +670,11 @@ public partial class CombatManager : Singleton<CombatManager>
             }
             aggregatedDamage = (int)Math.Min(rawCardDamageTotal, int.MaxValue);
         }
+        // The same per-card calculation again, only to record which Mods and Gear changed it. It is
+        // published once the action commits, so their trigger animations play.
+        var triggers = new EffectTriggerTrace();
+        for (int i = 0; i < cards.Count; i++)
+            CalculateCardAttackDamage(cardInstances[i], cardInstances, i == 0, _activeGearBonuses, triggers);
         int vampiricCost = GameplayEffectResolver.GetVampiricHealthCost(cardInstances);
         bool isExplosive = GameplayEffectResolver.HasExplosiveEffect(cardInstances);
         bool hasLethal = cardInstances.Any(GameplayEffectResolver.IsLethalEnchantment);
@@ -705,12 +710,17 @@ public partial class CombatManager : Singleton<CombatManager>
         int damagePerHit = GameplayEffectResolver.CalculateActionDamage(
             new ActionDamageEffectContext(_activeAction, cardInstances, target, cm, aggregatedDamage,
                 handsGroup),
-            out int actionDamageCap);
+            out int actionDamageCap, triggers);
         _nextReactiveHitIndex = Math.Max(hitCount, hitsPerCard ? cards.Count : hitCount);
 
         try
         {
             if (!cm.TryReturnToDrawPile(cardInstances)) return false;
+            for (int i = 0; i < cardInstances.Length; i++)
+                if (GameplayEffectResolver.HasEnhancementEffect(cardInstances[i], GameplayEffectKind.DoubleStrike) &&
+                    !hitsPerCard)
+                    triggers.Add(cardInstances[i], EffectCue.DoubleStrike, 2);
+            triggers.Publish();
             _playerAttackActionCount++;
             GameplayBalanceTelemetry.Record("attack_action", "", cards.Count);
             _pendingDiamondDrawChoices += GearRules.AdvanceActionState(cm, cardInstances, _activeGearBonuses,
@@ -730,6 +740,8 @@ public partial class CombatManager : Singleton<CombatManager>
                 else if (actionCriticalChance > 0f && _criticalRandom != null)
                     critical = _criticalRandom.NextFloat() * 100f < actionCriticalChance;
             }
+            if (critical && hasCriticalChanceOverride)
+                GameplayEffectResolver.ReportCriticalSources(cardInstances, cm);
             if (critical) damagePerHit = (int)Math.Min((long)damagePerHit * 2, int.MaxValue);
             int remainingActionDamage = actionDamageCap < 0 ? -1 :
                 (int)Math.Min((long)actionDamageCap * (critical ? 2 : 1), int.MaxValue);
@@ -1032,8 +1044,11 @@ public partial class CombatManager : Singleton<CombatManager>
         {
             var cardManager = CardManager.Instance;
             long effectiveBlock = 0;
-            foreach (var card in cards) effectiveBlock += CalculateCardDefense(card);
+            var triggers = new EffectTriggerTrace();
+            foreach (var card in cards)
+                effectiveBlock += GameplayEffectResolver.CalculateBlock(card, cardManager, triggers);
             if (cardManager == null || !cardManager.TryReturnToDrawPile(cards)) return false;
+            triggers.Publish();
             _parryEffectiveBlock += effectiveBlock;
 
             assignments.Sort((left, right) =>
@@ -1382,6 +1397,7 @@ public partial class CombatManager : Singleton<CombatManager>
             card.GainPermanentAttackBonus(growth);
             CardManager.Instance.NotifyCardInstanceChanged(card);
             Log($"{card.Enhancement.displayName}: permanently gained +{growth} attack.");
+            EffectTriggerFeed.Report(card, EffectCue.Growth, growth);
         }
     }
 
@@ -1389,6 +1405,10 @@ public partial class CombatManager : Singleton<CombatManager>
     {
         if (damage <= 0) return;
         var targets = new List<EnemyRuntime>(_enemies);
+        if (targets.Any(target => target != null && !ReferenceEquals(target, primaryTarget) && !target.IsDefeated))
+            for (int i = 0; i < committedCards.Count; i++)
+                if (GameplayEffectResolver.HasEnhancementEffect(committedCards[i], GameplayEffectKind.ExplosiveAreaDamage))
+                    EffectTriggerFeed.Report(committedCards[i], EffectCue.AreaDamage, damage);
         for (int i = 0; i < targets.Count; i++)
         {
             var target = targets[i];
@@ -1782,6 +1802,7 @@ public partial class CombatManager : Singleton<CombatManager>
             var cards = CardManager.Instance;
             int reward = GearRules.ScaleVictoryCredits(cards, _earnedCreditsReward, _isHeadlinerEncounter,
                 _isEliteOrHeadlinerEncounter);
+            GearRules.ReportVictoryCreditsScaling(cards, _earnedCreditsReward, reward);
             var (bonusCredits, victoryHeal) = GameplayEffectResolver.EncounterWon(cards);
             reward = (int)Math.Min(int.MaxValue, (long)reward + bonusCredits);
 
@@ -1902,7 +1923,7 @@ public partial class CombatManager : Singleton<CombatManager>
     }
 
     int CalculateCardAttackDamage(CardInstance card, IReadOnlyList<CardInstance> playedCards,
-        bool includeOpeningAttackBonus, GearRules.ActionBonuses actionBonuses)
+        bool includeOpeningAttackBonus, GearRules.ActionBonuses actionBonuses, EffectTriggerTrace trace = null)
     {
         var cards = CardManager.Instance;
         int overflowHeld = _executingOverflowAutoPlay && cards != null
@@ -1915,7 +1936,11 @@ public partial class CombatManager : Singleton<CombatManager>
                 GearRules.HeadhunterAttackBonus(cards, _isEliteOrHeadlinerEncounter);
         if (includeOpeningAttackBonus && IsOpeningPlayerAttack && cards != null)
             gilded += GearRules.OpeningAttackBonus(cards);
-        return GameplayEffectResolver.CalculateAttack(card, cards, playedCards, overflowHeld, gilded);
+        int damage = GameplayEffectResolver.CalculateAttack(card, cards, playedCards, overflowHeld, gilded, trace);
+        if (trace != null && includeOpeningAttackBonus && gilded > 0 && GearRules.GrantsOpeningAttackBonus(cards))
+            GearRules.TraceActionBonuses(cards, actionBonuses, _isEliteOrHeadlinerEncounter,
+                IsOpeningPlayerAttack, trace);
+        return damage;
     }
 
     public int CalculateCardDefense(CardInstance card) =>

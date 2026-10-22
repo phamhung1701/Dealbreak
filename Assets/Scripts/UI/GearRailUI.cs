@@ -302,6 +302,15 @@ public sealed class GearRailUI : MonoBehaviour
         _hasLastDetailParentSize = true;
     }
 
+    /// <summary>The visible slot showing the Gear instance, or null.</summary>
+    public GearIconSlotUI SlotFor(long instanceId)
+    {
+        if (instanceId == 0) return null;
+        foreach (var slot in _slots)
+            if (slot && slot.isActiveAndEnabled && slot.InstanceId == instanceId) return slot;
+        return null;
+    }
+
     public void ClearObjectSelection()
     {
         CloseDetail();

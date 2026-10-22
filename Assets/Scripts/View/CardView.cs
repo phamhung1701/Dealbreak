@@ -313,12 +313,31 @@ public class CardView : MonoBehaviour,
         _presentFanOffset = Vector2.SmoothDamp(_presentFanOffset,
             _isDragging ? Vector2.zero : _fanOffset, ref _fanVelocity,
             layoutSmoothTime, Mathf.Infinity, deltaTime);
-        visualRoot.anchoredPosition = _layoutOffset + _stateOffset + _presentFanOffset;
-        visualRoot.localRotation = Quaternion.Euler(0f, 0f, _visualRotation);
-        visualRoot.localScale = Vector3.one * _visualScale;
+        // A Mod trigger hops the artwork up and back with a small wiggle, on top of its other state.
+        Vector2 pulseOffset = Vector2.zero;
+        float pulseScale = 1f, pulseAngle = 0f;
+        if (_triggerPulse >= 0f)
+        {
+            _triggerPulse += deltaTime;
+            float t = Mathf.Clamp01(_triggerPulse / TriggerPulseTime);
+            float hop = Mathf.Sin(t * Mathf.PI);
+            pulseOffset = new Vector2(0f, hop * 34f);
+            pulseScale = 1f + hop * .14f;
+            pulseAngle = Mathf.Sin(t * Mathf.PI * 3f) * 7f * (1f - t);
+            if (t >= 1f) _triggerPulse = -1f;
+        }
+        visualRoot.anchoredPosition = _layoutOffset + _stateOffset + _presentFanOffset + pulseOffset;
+        visualRoot.localRotation = Quaternion.Euler(0f, 0f, _visualRotation + pulseAngle);
+        visualRoot.localScale = Vector3.one * (_visualScale * pulseScale);
         // Keep the grabbed artwork point locked even while rotation/lift/scale settle.
         if (_isDragging) AlignGrabPoint();
     }
+
+    public const float TriggerPulseTime = .42f;
+    float _triggerPulse = -1f;
+
+    /// <summary>Presentation only: the card hops once, as one of its Mods triggers.</summary>
+    public void PlayTriggerPulse() => _triggerPulse = 0f;
 
     public void SetLayoutTarget(Vector3 position, Vector2 fanOffset, float rotation, float scale)
     {

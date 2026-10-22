@@ -518,17 +518,18 @@ public static class GameplayEffectResolver
         return flat;
     }
 
+    /// <param name="trace">Execution only: collects the Mods and Gear that changed the value.</param>
     public static int CalculateAttack(CardInstance card, CardManager cards, IReadOnlyList<CardInstance> playedCards = null,
-        int overflowHandCount = -1, int openingAttackBonus = 0)
+        int overflowHandCount = -1, int openingAttackBonus = 0, EffectTriggerTrace trace = null)
     {
         if (card == null) return 0;
         int localFlat = 0, localMultiplier = 1, gearFlat = 0, gearMultiplier = 1;
         if (card.Enhancement != null)
             Accumulate(new GameplayEffectSource(card), card, GameplayEffectTrigger.AttackCalculated,
                 GameplayEffectKind.FlatAttack, GameplayEffectKind.AttackMultiplier,
-                ref localFlat, ref localMultiplier, includeThresholdEffects: false);
-        localFlat += SumInHandAttackBonuses(card, cards);
-        localFlat += SumMimickedInHandAttackBonuses(card, cards);
+                ref localFlat, ref localMultiplier, includeThresholdEffects: false, trace: trace);
+        localFlat += SumInHandAttackBonuses(card, cards, trace: trace);
+        localFlat += SumMimickedInHandAttackBonuses(card, cards, trace);
         int unplayedClubCount = 0;
         if (cards != null)
             for (int i = 0; i < cards.hand.Count; i++)
@@ -548,7 +549,7 @@ public static class GameplayEffectResolver
                 Accumulate(new GameplayEffectSource(cards.GetGearInstanceAt(i)), card,
                     GameplayEffectTrigger.AttackCalculated, GameplayEffectKind.FlatAttack,
                     GameplayEffectKind.AttackMultiplier, ref gearFlat, ref gearMultiplier,
-                    includeThresholdEffects: false);
+                    includeThresholdEffects: false, trace: trace);
             }
 
         int qualifyingValue = ClampToInt(((long)card.BaseAttackValue + card.PermanentAttackBonus + localFlat) *
@@ -558,7 +559,7 @@ public static class GameplayEffectResolver
             Accumulate(new GameplayEffectSource(card), card, GameplayEffectTrigger.AttackCalculated,
                 GameplayEffectKind.FlatAttack, GameplayEffectKind.AttackMultiplier,
                 ref conditionalFlat, ref conditionalMultiplier, includeThresholdEffects: true,
-                attackValue: qualifyingValue);
+                attackValue: qualifyingValue, trace: trace);
         if (cards != null)
             for (int i = 0; i < cards.ownedGear.Count; i++)
             {
@@ -567,16 +568,16 @@ public static class GameplayEffectResolver
                 Accumulate(new GameplayEffectSource(cards.GetGearInstanceAt(i)), card,
                     GameplayEffectTrigger.AttackCalculated, GameplayEffectKind.FlatAttack,
                     GameplayEffectKind.AttackMultiplier, ref conditionalFlat, ref conditionalMultiplier,
-                    includeThresholdEffects: true, attackValue: qualifyingValue);
+                    includeThresholdEffects: true, attackValue: qualifyingValue, trace: trace);
             }
         int resolved = ClampToInt((long)qualifyingValue * conditionalMultiplier + conditionalFlat);
-        resolved = GearRules.ApplyFinalAttackRules(cards, card, resolved, unplayedClubCount, overflowHandCount);
+        resolved = GearRules.ApplyFinalAttackRules(cards, card, resolved, unplayedClubCount, overflowHandCount, trace);
         if (openingAttackBonus > 0 && GearRules.GrantsOpeningAttackBonus(cards))
             resolved = ClampToInt((long)resolved + openingAttackBonus);
         return resolved;
     }
 
-    static int SumMimickedInHandAttackBonuses(CardInstance target, CardManager cards)
+    static int SumMimickedInHandAttackBonuses(CardInstance target, CardManager cards, EffectTriggerTrace trace = null)
     {
         if (target == null || cards == null || HeldCardEffectsSuppressed(CombatManager.Instance)) return 0;
         int repetitions = 0;
@@ -594,13 +595,17 @@ public static class GameplayEffectResolver
                 repetitions += Mathf.Max(1, effect.amount);
                 if (GearRules.IsMimicEpic(gear))
                     epicExtraRepetitions += Mathf.Max(1, effect.amount);
+                if (trace != null && SumInHandAttackBonuses(target, cards) > 0)
+                    trace.Add(source, EffectCue.Retrigger, 0);
             }
         }
-        return repetitions * SumInHandAttackBonuses(target, cards) +
-            epicExtraRepetitions * SumInHandAttackBonuses(target, cards, requireMatchingRank: true);
+        return repetitions * SumInHandAttackBonuses(target, cards, trace: repetitions > 0 ? trace : null) +
+            epicExtraRepetitions * SumInHandAttackBonuses(target, cards, requireMatchingRank: true,
+                trace: epicExtraRepetitions > 0 ? trace : null);
     }
 
-    static int SumInHandAttackBonuses(CardInstance target, CardManager cards, bool requireMatchingRank = false)
+    static int SumInHandAttackBonuses(CardInstance target, CardManager cards, bool requireMatchingRank = false,
+        EffectTriggerTrace trace = null)
     {
         if (target == null || cards == null || HeldCardEffectsSuppressed(CombatManager.Instance)) return 0;
         int total = 0;
@@ -612,25 +617,28 @@ public static class GameplayEffectResolver
             for (int effectIndex = 0; effectIndex < EffectCount(source); effectIndex++)
             {
                 var effect = EffectAt(source, effectIndex);
-                if (effect.kind == GameplayEffectKind.FlatAttack &&
-                    effect.trigger == GameplayEffectTrigger.InHandAttackCalculated &&
-                    effect.Matches(target)) total += effect.amount;
+                if (effect.kind != GameplayEffectKind.FlatAttack ||
+                    effect.trigger != GameplayEffectTrigger.InHandAttackCalculated ||
+                    !effect.Matches(target)) continue;
+                total += effect.amount;
+                trace?.Add(source, EffectCue.AttackBonus, effect.amount);
             }
         }
         return total;
     }
 
-    public static int CalculateBlock(CardInstance card, CardManager cards) =>
-        CalculateBlockValue(card, cards);
+    /// <param name="trace">Execution only: collects the Mods and Gear that changed the value.</param>
+    public static int CalculateBlock(CardInstance card, CardManager cards, EffectTriggerTrace trace = null) =>
+        CalculateBlockValue(card, cards, trace);
 
-    static int CalculateBlockValue(CardInstance card, CardManager cards)
+    static int CalculateBlockValue(CardInstance card, CardManager cards, EffectTriggerTrace trace)
     {
         if (card == null) return 0;
         int localFlat = 0, localMultiplier = 1, gearFlat = 0, gearMultiplier = 1;
         if (card.Enhancement != null)
             Accumulate(new GameplayEffectSource(card), card, GameplayEffectTrigger.DefenseCalculated,
                 GameplayEffectKind.FlatBlock, GameplayEffectKind.BlockMultiplier,
-                ref localFlat, ref localMultiplier, includeThresholdEffects: false);
+                ref localFlat, ref localMultiplier, includeThresholdEffects: false, trace: trace);
         if (cards != null)
             for (int i = 0; i < cards.ownedGear.Count; i++)
             {
@@ -639,7 +647,7 @@ public static class GameplayEffectResolver
                 Accumulate(new GameplayEffectSource(cards.GetGearInstanceAt(i)), card,
                     GameplayEffectTrigger.DefenseCalculated, GameplayEffectKind.FlatBlock,
                     GameplayEffectKind.BlockMultiplier, ref gearFlat, ref gearMultiplier,
-                    includeThresholdEffects: false);
+                    includeThresholdEffects: false, trace: trace);
             }
         return ClampToInt(((long)card.BaseAttackValue + localFlat) *
             localMultiplier * gearMultiplier + gearFlat);
@@ -649,16 +657,27 @@ public static class GameplayEffectResolver
 
     static void Accumulate(GameplayEffectSource source, CardInstance card,
         GameplayEffectTrigger trigger, GameplayEffectKind flatKind, GameplayEffectKind multiplierKind,
-        ref int flat, ref int multiplier, bool includeThresholdEffects, int attackValue = 0)
+        ref int flat, ref int multiplier, bool includeThresholdEffects, int attackValue = 0,
+        EffectTriggerTrace trace = null)
     {
+        bool defense = trigger == GameplayEffectTrigger.DefenseCalculated;
         for (int i = 0; i < EffectCount(source); i++)
         {
             var effect = EffectAt(source, i);
             if (HasAttackThreshold(effect) != includeThresholdEffects ||
                 !Applies(source, effect, trigger, card, attackValue)) continue;
-            if (effect.kind == flatKind) flat += effect.amount;
+            if (effect.kind == flatKind)
+            {
+                flat += effect.amount;
+                if (effect.amount != 0)
+                    trace?.Add(source, defense ? EffectCue.BlockBonus : EffectCue.AttackBonus, effect.amount);
+            }
             else if (effect.kind == multiplierKind)
+            {
                 multiplier = Mathf.Max(1, multiplier * Mathf.Max(1, effect.amount));
+                if (effect.amount > 1)
+                    trace?.Add(source, defense ? EffectCue.BlockMultiplier : EffectCue.AttackMultiplier, effect.amount);
+            }
         }
     }
 
@@ -681,11 +700,14 @@ public static class GameplayEffectResolver
         return ClampToInt((long)qualifyingValue * conditionalMultiplier + conditionalFlat);
     }
 
-    public static int CalculateActionDamage(ActionDamageEffectContext context, out int actionDamageCap)
+    /// <param name="trace">Execution only: collects the Mods and Gear that added damage (Overclocked
+    /// reports its HP cost, which buys that damage).</param>
+    public static int CalculateActionDamage(ActionDamageEffectContext context, out int actionDamageCap,
+        EffectTriggerTrace trace = null)
     {
         long damage = Math.Max(0, context.AggregatedDamage);
-        damage += SumActionEffect(context, GameplayEffectKind.FlatActionDamage);
-        damage += SumActionEffect(context, GameplayEffectKind.VampiricActionDamage);
+        damage += SumActionEffect(context, GameplayEffectKind.FlatActionDamage, trace, EffectCue.AttackBonus);
+        damage += SumActionEffect(context, GameplayEffectKind.VampiricActionDamage, trace, EffectCue.HealthCost);
         actionDamageCap = SmallestActionCap(context);
         // The cap is a budget over the complete action, not one cap per card or hit.
         // CombatManager applies the budget before critical multiplication and apportions it to hits.
@@ -722,6 +744,34 @@ public static class GameplayEffectResolver
             return true;
         }
         return found;
+    }
+
+    /// <summary>Reports the Gear and Mods that made a landed critical possible.</summary>
+    public static void ReportCriticalSources(IReadOnlyList<CardInstance> committedCards, CardManager manager)
+    {
+        if (committedCards == null || committedCards.Count == 0) return;
+        if (manager != null)
+            for (int i = 0; i < manager.ownedGear.Count; i++)
+            {
+                var gear = manager.ownedGear[i];
+                if (gear == null) continue;
+                var source = new GameplayEffectSource(manager.GetGearInstanceAt(i));
+                float chance = 0f;
+                bool found = false;
+                ApplyCriticalChanceOverrides(source, committedCards, ref chance, ref found);
+                if (found || gear.specialRule == GearSpecialRule.AceEpic &&
+                    GearRules.GuaranteesCritical(manager, committedCards))
+                    EffectTriggerFeed.Report(source, EffectCue.Critical);
+            }
+        for (int i = 0; i < committedCards.Count; i++)
+        {
+            var card = committedCards[i];
+            if (card?.Enhancement == null) continue;
+            float chance = 0f;
+            bool found = false;
+            ApplyCriticalChanceOverrides(new GameplayEffectSource(card), committedCards, ref chance, ref found);
+            if (found) EffectTriggerFeed.Report(card, EffectCue.Critical);
+        }
     }
 
     static void ApplyCriticalChanceOverrides(GameplayEffectSource source,
@@ -810,7 +860,8 @@ public static class GameplayEffectResolver
     public static bool IsLethalEnchantment(CardInstance card) =>
         HasEnhancementEffect(card, GameplayEffectKind.CriticalChanceOverride);
 
-    static int SumActionEffect(ActionDamageEffectContext context, GameplayEffectKind kind)
+    static int SumActionEffect(ActionDamageEffectContext context, GameplayEffectKind kind,
+        EffectTriggerTrace trace = null, EffectCue cue = EffectCue.AttackBonus)
     {
         int total = 0;
         var manager = context.CardManager;
@@ -819,18 +870,22 @@ public static class GameplayEffectResolver
             {
                 var gear = manager.ownedGear[i];
                 if (gear == null) continue;
-                total += SumSourceEffects(new GameplayEffectSource(manager.GetGearInstanceAt(i)),
-                    GameplayEffectTrigger.ActionDamageCalculated, kind, null,
+                var source = new GameplayEffectSource(manager.GetGearInstanceAt(i));
+                int amount = SumSourceEffects(source, GameplayEffectTrigger.ActionDamageCalculated, kind, null,
                     context.Cards?.Count ?? 0, handsMultiCardAction: context.IsHandsMultiCardAction);
+                if (amount != 0) trace?.Add(source, cue, amount);
+                total += amount;
             }
         if (context.Cards != null)
             for (int i = 0; i < context.Cards.Count; i++)
             {
                 var card = context.Cards[i];
                 if (card?.Enhancement == null) continue;
-                total += SumSourceEffects(new GameplayEffectSource(card),
-                    GameplayEffectTrigger.ActionDamageCalculated, kind, card, context.Cards.Count,
-                    context.IsHandsMultiCardAction);
+                var source = new GameplayEffectSource(card);
+                int amount = SumSourceEffects(source, GameplayEffectTrigger.ActionDamageCalculated, kind, card,
+                    context.Cards.Count, context.IsHandsMultiCardAction);
+                if (amount != 0) trace?.Add(source, cue, amount);
+                total += amount;
             }
         return total;
     }
@@ -908,7 +963,8 @@ public static class GameplayEffectResolver
         return Math.Max(0, capacity);
     }
 
-    public static int ModifyIncomingCombatDamage(IncomingDamageEffectContext context)
+    /// <param name="trace">Execution only: collects the Gear that reduced the hit.</param>
+    public static int ModifyIncomingCombatDamage(IncomingDamageEffectContext context, EffectTriggerTrace trace = null)
     {
         int damage = Math.Max(0, context.RawDamage);
         var cards = context.Cards;
@@ -923,10 +979,11 @@ public static class GameplayEffectResolver
             for (int j = 0; j < EffectCount(source); j++)
             {
                 var effect = EffectAt(source, j);
-                if (effect.kind == GameplayEffectKind.IncomingCombatDamageReduction &&
-                    Applies(source, effect, GameplayEffectTrigger.IncomingDamageCalculated, null,
-                        attackerHealth: attackerHealth))
-                    reductions += Math.Max(0, effect.amount);
+                if (effect.kind != GameplayEffectKind.IncomingCombatDamageReduction ||
+                    !Applies(source, effect, GameplayEffectTrigger.IncomingDamageCalculated, null,
+                        attackerHealth: attackerHealth)) continue;
+                reductions += Math.Max(0, effect.amount);
+                if (damage > 0 && effect.amount > 0) trace?.Add(source, EffectCue.DamageReduction, effect.amount);
             }
         }
         damage = ClampToInt(Math.Max(0L, damage - reductions));
@@ -1278,9 +1335,10 @@ public static class GameplayEffectResolver
             {
                 if (!Applies(source, effect, GameplayEffectTrigger.CardCommitted, context.Card)) continue;
                 int mimicEffectIndex = i;
+                var mimic = source;
                 queue.Enqueue(context.Action.ActionId, context.HitIndex,
                     CombatReactionPhase.CardCommitted, source.Category, sourceOrder, mimicEffectIndex,
-                    () => EnqueueMimickedInHandEffects(context, queue, sourceOrder));
+                    () => EnqueueMimickedInHandEffects(context, queue, sourceOrder, mimic));
                 continue;
             }
             if (!Applies(source, effect, GameplayEffectTrigger.CardCommitted, context.Card)) continue;
@@ -1292,10 +1350,11 @@ public static class GameplayEffectResolver
     }
 
     static void EnqueueMimickedInHandEffects(CardCommittedEffectContext context,
-        CombatReactionQueue queue, int mimicSourceOrder)
+        CombatReactionQueue queue, int mimicSourceOrder, GameplayEffectSource mimic)
     {
         if (HeldCardEffectsSuppressed(context.Combat)) return;
         var cards = context.Cards;
+        bool retriggered = false;
         for (int handIndex = 0; handIndex < cards.hand.Count; handIndex++)
         {
             var card = cards.hand[handIndex];
@@ -1310,6 +1369,11 @@ public static class GameplayEffectResolver
                 int repeats = epicExtra ? 2 : 1;
                 int capturedIndex = effectIndex;
                 int sourceOrder = cards.ownedGear.Count + handIndex + mimicSourceOrder;
+                if (!retriggered)
+                {
+                    EffectTriggerFeed.Report(mimic, EffectCue.Retrigger);
+                    retriggered = true;
+                }
                 for (int repeat = 0; repeat < repeats; repeat++)
                     queue.Enqueue(context.Action.ActionId, context.HitIndex,
                         CombatReactionPhase.CardCommitted, CombatReactionSourceCategory.Enhancement,
@@ -1472,6 +1536,8 @@ public static class GameplayEffectResolver
                 if (effect.trigger != GameplayEffectTrigger.EncounterWon || !effect.Matches(null)) continue;
                 if (effect.kind == GameplayEffectKind.BonusCredits) credits += effect.amount;
                 else if (effect.kind == GameplayEffectKind.Heal) heal += effect.amount;
+                if (effect.amount > 0 && effect.kind == GameplayEffectKind.BonusCredits)
+                    EffectTriggerFeed.Report(source, EffectCue.Credits, effect.amount);
             }
         }
         return (credits, heal);
@@ -1488,42 +1554,54 @@ public static class GameplayEffectResolver
             case GameplayEffectKind.Heal:
                 int healed = combat.HealPlayer(amount);
                 if (healed > 0) combat.LogEffect($"{source.DisplayName}: Healed {healed} HP.");
+                if (healed > 0) EffectTriggerFeed.Report(source, EffectCue.Heal, healed);
                 break;
             case GameplayEffectKind.Draw:
                 int drawn = cards.DrawToHand(amount);
                 if (drawn > 0) combat.LogEffect($"{source.DisplayName}: Drew {drawn} card(s).");
+                if (drawn > 0) EffectTriggerFeed.Report(source, EffectCue.Draw, drawn);
                 break;
             case GameplayEffectKind.BonusCredits:
+                // Reported first, so the Credits display waits for the coins it is about to send.
+                if (amount > 0) EffectTriggerFeed.Report(source, EffectCue.Credits, amount);
                 cards.AddCredits(amount);
                 break;
             case GameplayEffectKind.ReduceAttackByCardValue:
                 if (target == null || card == null) break;
                 target.ReduceAttack(card.BaseAttackValue);
                 combat.LogEffect($"{source.DisplayName}: Enemy ATK reduced by {card.BaseAttackValue} to {target.currentAttack}!");
+                EffectTriggerFeed.Report(source, EffectCue.Weaken, card.BaseAttackValue);
                 break;
             case GameplayEffectKind.RecycleDiscardByCardValue:
                 if (card == null) break;
                 int returned = cards.ReturnRandomDiscardToDeck(card.BaseAttackValue);
                 if (returned > 0) combat.LogEffect($"{source.DisplayName}: {returned} cards returned to deck!");
+                if (returned > 0) EffectTriggerFeed.Report(source, EffectCue.Recycle, returned);
                 break;
             case GameplayEffectKind.DrawByCardValue:
                 if (card == null) break;
                 int drawnByValue = cards.DrawToHand(card.BaseAttackValue);
                 if (drawnByValue > 0) combat.LogEffect($"{source.DisplayName}: Drew {drawnByValue} cards!");
+                if (drawnByValue > 0) EffectTriggerFeed.Report(source, EffectCue.Draw, drawnByValue);
                 break;
             case GameplayEffectKind.CounterDamage:
                 if (target == null) break;
                 if (combat.QueueReactiveDamage(combat.player, target, amount, sourceOrder,
                     handlerOrder, sourceCategory: source.Category))
+                {
                     combat.LogEffect($"{source.DisplayName}: Counterattacked {target.DisplayName} for {amount} damage.");
+                    EffectTriggerFeed.Report(source, EffectCue.Counter, amount);
+                }
                 break;
             case GameplayEffectKind.DestroyBlockingCard:
                 if (card == null || cards == null) break;
                 string destroyedName = card.DisplayName;
                 if (!cards.DestroyOwnedCard(card)) break;
                 combat.LogEffect($"{source.DisplayName}: destroyed {destroyedName} after blocking.");
+                EffectTriggerFeed.Report(source, EffectCue.Destroy);
                 int drew = amount > 0 ? cards.DrawToHand(amount) : 0;
                 if (drew > 0) combat.LogEffect($"{source.DisplayName}: Drew {drew} card(s).");
+                if (drew > 0) EffectTriggerFeed.Report(source, EffectCue.Draw, drew);
                 break;
         }
     }

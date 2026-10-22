@@ -29,12 +29,18 @@ public static partial class GearRules
     /// <summary>The first Trick used in an encounter: Grappling Hook draws, First-Aid Kit heals.</summary>
     public static void OnFirstConsumableUsedInEncounter(CardManager cards, CombatManager combat)
     {
-        foreach (var (gear, _) in Owned(cards))
+        foreach (var (gear, instance) in Owned(cards))
         {
             if (gear.specialRule == GearSpecialRule.ScavengersPouch)
-                cards.DrawToHand(Tuning.grapplingHookDraw);
+            {
+                int drawn = cards.DrawToHand(Tuning.grapplingHookDraw);
+                if (drawn > 0) EffectTriggerFeed.Report(instance, EffectCue.Draw, drawn);
+            }
             else if (gear.specialRule == GearSpecialRule.FieldMedicsKit)
-                combat?.HealPlayer(Tuning.firstAidKitHeal);
+            {
+                int healed = combat != null ? combat.HealPlayer(Tuning.firstAidKitHeal) : 0;
+                if (healed > 0) EffectTriggerFeed.Report(instance, EffectCue.Heal, healed);
+            }
         }
     }
 

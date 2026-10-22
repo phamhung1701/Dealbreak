@@ -18,26 +18,34 @@ public static partial class GearRules
             {
                 var state = instance.State;
                 if (wasElite && gear.specialRule == GearSpecialRule.HuntersLedger)
+                {
                     state.SetCounter(GearCounterKeys.HuntersLedgerEliteKills,
                         state.GetCounter(GearCounterKeys.HuntersLedgerEliteKills) + 1);
+                    EffectTriggerFeed.Report(instance, EffectCue.Growth, 1);
+                }
                 if (gear.specialRule == GearSpecialRule.TrophyRack)
+                {
                     state.SetCounter(GearCounterKeys.TrophyRackEliteKills,
                         state.GetCounter(GearCounterKeys.TrophyRackEliteKills) + 1);
+                    EffectTriggerFeed.Report(instance, EffectCue.Growth, Tuning.headhunterRifleAttackPerKill);
+                }
             }
         }
         if (wasHeadliner)
         {
-            foreach (var (gear, _) in Owned(cards))
+            foreach (var (gear, instance) in Owned(cards))
             {
                 if (gear.specialRule != GearSpecialRule.CrownOfEndurance) continue;
                 int growth = Tuning.survivorsBadgeMaxHealth +
                     ((combat?.EncounterActualHpLost ?? 0) == 0 ? Tuning.survivorsBadgeFlawlessBonus : 0);
                 combat?.IncreasePlayerMaxHealth(growth, healIncrease: false);
+                if (combat != null && growth > 0) EffectTriggerFeed.Report(instance, EffectCue.MaxHealth, growth);
             }
         }
         if (wasHeadliner && cards.HasGearSpecialRule(GearSpecialRule.GoldenVault))
         {
             int payout = RoundPercentage(cards.credits, Tuning.savingsSafeInterestPercent);
+            if (payout > 0) ReportFirst(cards, GearSpecialRule.GoldenVault, EffectCue.Credits, payout);
             if (payout > 0) cards.AddCredits(payout);
         }
     }
@@ -73,7 +81,9 @@ public static partial class GearRules
                 state.GetCounter(GearCounterKeys.WanderersBootsRewardedMap) != node.mapIndex + 1)
             {
                 state.SetCounter(GearCounterKeys.WanderersBootsRewardedMap, node.mapIndex + 1);
-                combat?.HealPlayer(Tuning.cityBootsHeal);
+                int healed = combat != null ? combat.HealPlayer(Tuning.cityBootsHeal) : 0;
+                if (healed > 0) EffectTriggerFeed.Report(instance, EffectCue.Heal, healed);
+                EffectTriggerFeed.Report(instance, EffectCue.Credits, Tuning.cityBootsCredits);
                 cards.AddCredits(Tuning.cityBootsCredits);
             }
             if (gear.specialRule == GearSpecialRule.WarpathBanner)
@@ -121,6 +131,9 @@ public static partial class GearRules
     /// <summary>Cashback Token refunds 15% of the Credits actually spent on a paid item.</summary>
     public static int CashbackRefund(PurchaseModifiers modifiers, int actualCreditsSpent) =>
         modifiers.Cashback ? Math.Min(actualCreditsSpent, RoundPercentage(actualCreditsSpent, Tuning.cashbackCardPercent)) : 0;
+
+    public static void ReportCashback(CardManager cards, int refund) =>
+        ReportFirst(cards, GearSpecialRule.CashbackToken, EffectCue.Credits, refund);
 
     /// <summary>Merchant's Badge discounts eligible paid items (Gear, Mods, Tricks) to 80%.</summary>
     public static int DiscountedItemPrice(CardManager cards, int basePrice) =>
