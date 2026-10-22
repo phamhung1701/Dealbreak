@@ -1865,7 +1865,7 @@ public partial class CombatManager : Singleton<CombatManager>
         int overflowHeld = _executingOverflowAutoPlay && cards != null
             ? Math.Max(0, cards.HandCount - 1) : -1;
         int gilded = includeOpeningAttackBonus && IsOpeningPlayerAttack && _playerTurnNumber == 1 &&
-            !_executingOverflowAutoPlay && cards != null ? Math.Max(0, cards.credits / 10) : 0;
+            !_executingOverflowAutoPlay ? GearRules.GoldPistolBonus(cards) : 0;
         if (includeOpeningAttackBonus)
             gilded += actionBonuses.Total;
         if (includeOpeningAttackBonus && IsOpeningPlayerAttack && cards != null)

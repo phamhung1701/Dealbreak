@@ -68,6 +68,10 @@ public static partial class GearRules
                 GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic or
                 GearSpecialRule.BalancersScale or GearSpecialRule.SpadeEpic or GearSpecialRule.HeartEpic);
 
+    /// <summary>Gold Pistol: the opening attack gains 1 damage per 10 Credits held.</summary>
+    public static int GoldPistolBonus(CardManager cards) =>
+        cards != null && cards.HasGearSpecialRule(GearSpecialRule.GildedBlade) ? Math.Max(0, cards.credits / 10) : 0;
+
     /// <summary>Mimic Epic also repeats in-hand effects of cards matching the committed rank.</summary>
     public static bool IsMimicEpic(GearData gear) => gear != null && gear.specialRule == GearSpecialRule.MimicEpic;
 

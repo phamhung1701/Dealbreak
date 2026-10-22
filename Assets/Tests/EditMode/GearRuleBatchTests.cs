@@ -747,6 +747,17 @@ public sealed class GearRuleBatchTests
     }
 
     [Test]
+    public void GoldPistolCreditsBonus_NeedsGoldPistol_NotAnotherOpeningAttackGear()
+    {
+        // Notched Pistol also grants an opening-attack bonus, from Enforcer kills (none yet).
+        _cards.ownedGear.Add(AssetDatabaseGear("rel_119"));
+        _cards.credits = 29;
+        StartTarget(500, 1);
+        var first = FindView(_ => true);
+        Assert.That(_combat.CalculateCardAttackDamage(first.data), Is.EqualTo(first.data.BaseAttackValue));
+    }
+
+    [Test]
     public void OverflowEpic_UsesRareBudgetAndKeepsEpicEffectOutOfOrdinaryAttacks()
     {
         _cards.ownedGear.Add(AssetDatabaseGear("rel_110"));
