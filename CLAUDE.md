@@ -91,7 +91,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Driving Unity (Locus MCP)
 
-- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-21): **EditMode 1772 passed + 1 skipped (1773 cases, the per-Gear matrices included), PlayMode 10/10 plus the 12-District soak**.
+- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-22): **EditMode 1787 passed + 1 skipped (1788 cases, the per-Gear matrices included), PlayMode 10/10 plus the 12-District soak**.
 - Tool calls are capped at about 5 minutes.
   - The full EditMode run (and some batches) blocks the main thread long enough that `unity_test_run` aborts with `native_main_thread_unresponsive` while the run goes on. Start it from `unity_execute` instead: `UnityTestApi.Start(new Locus.UnityTestRunOptions { Mode = Locus.UnityTestMode.Edit, Assemblies = new[]{"Dealbreak.EditModeTests"}, ResultDetail = Locus.UnityTestResultDetail.Failures })`, then poll `UnityTestApi.Status(runId)` in later calls. PlayMode and the soak work the same way (`Mode = Play`, `Groups`).
   - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap).
