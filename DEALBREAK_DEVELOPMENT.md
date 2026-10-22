@@ -675,6 +675,15 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - No hover detail on the ATTACK/BLOCK buttons or on unscouted route nodes.
 - Black Market Goods: every slot rolls Gear 75% / Trick 25% (`shop-goods-kind`), Gear rarity 6:3:1 Common/Rare/Epic (`shop-gear-rarity`), no Legendary. Shop Gear is bought standalone (`CardManager.BuyStandaloneGear`); the old tier-upgrade preference and "Already owned" refusal are gone. The persisted `midShopGoods`/`preHeadlinerShopGoods` vectors now only give the Goods count (their sum).
 
+## Balance Data and Hardcoding Review — October 22, 2026
+
+- Balance numbers moved out of managers into `Resources/GameBalance` (sections: `districtScaling`, `enforcers`, `blackMarket`, `contracts`, `redlineDeal`, `gear`, `enemyAbilities`, `route`), holding the previous values. Seeded rolls keep their streams and ranges; 20 seeds × 14 Districts of maps fingerprint the same before and after.
+- Gear and enemy-ability numbers are per rule/effect in that asset, not per asset, because tests and generated Headliner abilities build definitions from the rule/effect alone.
+- One effect path: the legacy Gear/Mod hook fields and their converter are gone; the four Gear that used them author typed effects. `GameDataGenerator` (stale, overwrote authored Gear) was deleted.
+- The route layout is data; the pre-Headliner Black Market is the checkpoint that leads to the Headliner, not column 4.5.
+- Text that quotes balance numbers stays authored; `BalanceTextDriftTests` pins Gear, enemy-ability, Redline Deal and `Resources/QuestContract` text to the balance.
+- Fixes found on the way: Gold Pistol's Credits bonus applied with any opening-attack Gear; reward pop-ups and the Mod Bench used old Gear names; "g"/"gold"/"maps" copy.
+
 ## 10. Instructions for Future Locus Sessions
 
 1. Read `DEALBREAK_DEVELOPMENT.md` before beginning substantial project work.

@@ -44,7 +44,8 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Combat resolution: `DamageRequest`/`DamageResult`/`CombatResolver`, per-hit Shield, multi-hit, and a FIFO `CombatReactionQueue`. Recover is one aggregate hit that may consume one Shield charge.
 - Every combat command ends through `CombatManager.TryResolveTerminalOutcome`. Encounter results publish after the outermost command unwinds. A reaction runaway ends as `EncounterResult.Aborted` (save kept), never as Defeat.
 - UI attack and block go through `CombatCommands`.
-- Gear special rules live only in `GearRules*.cs`, keyed by `GearSpecialRule`. Their persisted counters are `GearCounterKeys`, which are save data; never renumber them. Prefer typed `GameplayEffectDefinition` data.
+- Gear special rules live only in `GearRules*.cs`, keyed by `GearSpecialRule`. Their persisted counters are `GearCounterKeys`, which are save data; never renumber them. Prefer typed `GameplayEffectDefinition` data; it is the only effect path for Gear and Mods (the legacy hook fields are gone).
+- Balance numbers live in `Resources/GameBalance` (`GameBalance.Current`): District scaling, Enforcers, Black Market, Contracts, Redline Deal, Gear rules (`gear`), enemy abilities (`enemyAbilities`) and the route layout (`route`). Rules read them; don't add literals. Player-facing text that quotes a number stays authored, and `BalanceTextDriftTests` pins it to the balance, so change both together. Contract choice text is `Resources/QuestContract`.
 - Enemy rules key on authored data (`minMapIndex`, `eligibleAsEliteBase`, `allies`), never on `enemyName`. Spawns and previews both use `EncounterComposer`.
 - Events dispatch on `RunEventDefinition.flow`. Headliner content lives in `Resources/HeadlinerCatalog`; its pool order is seeded.
 - `Resources/RunSaveContent` is the single content registry for play and saves (`ContentRegistryTests`). A schema change bumps `RunSaveValidation.Version` and adds a `RunSaveMigrations` step.
@@ -91,7 +92,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Driving Unity (Locus MCP)
 
-- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-22): **EditMode 1788 passed + 1 skipped (1789 cases, the per-Gear matrices included), PlayMode 10/10 plus the 12-District soak**.
+- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-22): **EditMode 1793 passed + 1 skipped (1794 cases, the per-Gear matrices and balance drift tests included), PlayMode 10/10 plus the 12-District soak**.
 - Tool calls are capped at about 5 minutes.
   - The full EditMode run (and some batches) blocks the main thread long enough that `unity_test_run` aborts with `native_main_thread_unresponsive` while the run goes on. Start it from `unity_execute` instead: `UnityTestApi.Start(new Locus.UnityTestRunOptions { Mode = Locus.UnityTestMode.Edit, Assemblies = new[]{"Dealbreak.EditModeTests"}, ResultDetail = Locus.UnityTestResultDetail.Failures })`, then poll `UnityTestApi.Status(runId)` in later calls. PlayMode and the soak work the same way (`Mode = Play`, `Groups`).
   - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap). Never poll it with `unity_execute` and `request_editor_status: "editing"`: that leaves Play mode and aborts the soak; wait on `TestResults.xml` instead.
