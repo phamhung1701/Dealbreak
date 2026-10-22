@@ -1262,7 +1262,7 @@ public partial class CombatManager : Singleton<CombatManager>
 
         SetState(GameState.EnemyAttacking);
         string breakdown = string.Join(" + ", _enemies.ConvertAll(enemy =>
-            $"{enemy.DisplayName} {enemy.PreparedResponseBudget}{(enemy.HasDoubleStrike ? " (2 hits at 60%)" : enemy.CurrentResponseIsCharged ? " (charged)" : "")}"));
+            $"{enemy.DisplayName} {enemy.PreparedResponseBudget}{(enemy.HasDoubleStrike ? $" (2 hits at {GameBalance.Current.enemyAbilities.doubleStrikeHitPercent}%)" : enemy.CurrentResponseIsCharged ? " (charged)" : "")}"));
         Log($"Surviving enemies attack for {pendingDamage} ({breakdown})! Discard to defend or take the remaining damage.");
     }
 

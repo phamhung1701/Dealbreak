@@ -105,3 +105,21 @@ MonoBehaviour:
     modBenchChoices: 3
     grapplingHookDraw: 1
     firstAidKitHeal: 3
+  enemyAbilities:
+    chargedAttackPercent: 200
+    heavySwingPercent: 150
+    royalGuardShield: 1
+    desperationBelowHealthPercent: 50
+    desperationAttackPercent: 125
+    doubleStrikeHitPercent: 60
+    oppressionFreeCards: 3
+    oppressionAttackPerCard: 2
+    warDrumAttackPerTurn: 1
+    warDrumMaxBonus: 3
+    regenerationHealPercent: 5
+    regenerationMaxActivations: 3
+    guardedDamagePercent: 50
+    suitCallDamagePercent: 50
+    silenceAboveHealthPercent: 50
+    witheringAboveHealthPercent: 50
+    captaincyAttackBonus: 1

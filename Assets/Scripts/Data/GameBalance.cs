@@ -15,6 +15,7 @@ public sealed class GameBalance : ScriptableObject
     public ContractBalance contracts = new();
     public RedlineDealBalance redlineDeal = new();
     public GearBalance gear = new();
+    public EnemyAbilityBalance enemyAbilities = new();
 
     static GameBalance _current;
 
@@ -255,4 +256,58 @@ public sealed class GearBalance
     [Min(0)] public int grapplingHookDraw = 1;
     [Tooltip("First-Aid Kit: HP healed.")]
     [Min(0)] public int firstAidKitHeal = 3;
+}
+
+/// <summary>Numbers for enemy abilities, keyed by effect. Authored abilities still carry their own
+/// <see cref="EnemyAbility.amount"/> where the effect uses it.</summary>
+[Serializable]
+public sealed class EnemyAbilityBalance
+{
+    [Header("Charged attacks (Wind-Up, Defense Cycle, Heavy Swing)")]
+    [Tooltip("A charged hit, in percent of attack.")]
+    [Min(100)] public int chargedAttackPercent = 200;
+    [Tooltip("Heavy Swing's charged hit, in percent of attack.")]
+    [Min(100)] public int heavySwingPercent = 150;
+    [Tooltip("Royal Guard: Shield gained before each uncharged attack.")]
+    [Min(0)] public int royalGuardShield = 1;
+
+    [Header("Desperation")]
+    [Tooltip("Active below this percent of max HP.")]
+    [Range(0, 100)] public int desperationBelowHealthPercent = 50;
+    [Min(100)] public int desperationAttackPercent = 125;
+
+    [Header("Double Strike")]
+    [Tooltip("Each of the two hits, in percent of the attack.")]
+    [Range(0, 100)] public int doubleStrikeHitPercent = 60;
+
+    [Header("Oppression")]
+    [Tooltip("Held cards above this count add attack.")]
+    [Min(0)] public int oppressionFreeCards = 3;
+    [Min(0)] public int oppressionAttackPerCard = 2;
+
+    [Header("War Drum (Hype Loop)")]
+    [Tooltip("Attack each ally gains per enemy turn.")]
+    [Min(0)] public int warDrumAttackPerTurn = 1;
+    [Tooltip("Most attack War Drum adds to one ally per encounter.")]
+    [Min(0)] public int warDrumMaxBonus = 3;
+
+    [Header("Regeneration")]
+    [Tooltip("Heal per enemy turn, in percent of max HP, rounded half up.")]
+    [Range(0, 100)] public int regenerationHealPercent = 5;
+    [Min(0)] public int regenerationMaxActivations = 3;
+
+    [Header("Damage reduction")]
+    [Tooltip("Guarded: the first hit each turn, in percent.")]
+    [Range(0, 100)] public int guardedDamagePercent = 50;
+    [Tooltip("Suit Call: the first hit of the called suit, in percent.")]
+    [Range(0, 100)] public int suitCallDamagePercent = 50;
+
+    [Header("Silence and Withering")]
+    [Tooltip("Active while above this percent of max HP.")]
+    [Range(0, 100)] public int silenceAboveHealthPercent = 50;
+    [Range(0, 100)] public int witheringAboveHealthPercent = 50;
+
+    [Header("Captaincy (Crew Aura)")]
+    [Tooltip("Attack each ally gains while its captain stands.")]
+    [Min(0)] public int captaincyAttackBonus = 1;
 }

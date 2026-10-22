@@ -29,8 +29,10 @@ public class EnemyRuntime : ICombatDamageTarget
     public bool HasCaptaincy { get; }
     public bool HasRoyalGuard { get; }
     public bool HasDoubleStrike => HasAbility(EnemyAbilityEffect.DoubleStrike);
-    public bool HasSilence => HasAbility(EnemyAbilityEffect.Silence) && (long)currentHp * 2L > maxHp;
-    public bool HasWithering => HasAbility(EnemyAbilityEffect.Withering) && (long)currentHp * 2L > maxHp;
+    public bool HasSilence => HasAbility(EnemyAbilityEffect.Silence) &&
+        HealthAbovePercent(Tuning.silenceAboveHealthPercent);
+    public bool HasWithering => HasAbility(EnemyAbilityEffect.Withering) &&
+        HealthAbovePercent(Tuning.witheringAboveHealthPercent);
     public bool HasOppression => HasAbility(EnemyAbilityEffect.Oppression);
     public bool HasSuitCall => HasAbility(EnemyAbilityEffect.SuitCall);
     public bool HasWarDrum => HasAbility(EnemyAbilityEffect.WarDrum);
@@ -40,7 +42,7 @@ public class EnemyRuntime : ICombatDamageTarget
     public CardData.Suit AnnouncedSuit => _announcedSuit;
     public bool DuelistCallConsumed => _duelistCallConsumed;
     public int PreparedResponseBudget { get; private set; }
-    public int CaptainAttackBonus => _captain != null && !_captain.IsDefeated ? 1 : 0;
+    public int CaptainAttackBonus => _captain != null && !_captain.IsDefeated ? Tuning.captaincyAttackBonus : 0;
     public int EffectiveAttack => (int)Math.Min(int.MaxValue,
         Math.Max(0L, (long)currentAttack + CaptainAttackBonus));
     public int GetWarDrumBonus(EnemyRuntime ally) =>
@@ -143,13 +145,21 @@ public class EnemyRuntime : ICombatDamageTarget
         get
         {
             float multiplier = 1f;
-            if (HasAbility(EnemyAbilityEffect.Desperation) && (long)currentHp * 2L < maxHp)
-                multiplier *= 1.25f;
+            if (IsDesperate)
+                multiplier *= Tuning.desperationAttackPercent / 100f;
             if (_currentResponseIsCharged)
-                multiplier *= HasAbility(EnemyAbilityEffect.HeavySwing) ? 1.5f : 2f;
+                multiplier *= (HasAbility(EnemyAbilityEffect.HeavySwing)
+                    ? Tuning.heavySwingPercent : Tuning.chargedAttackPercent) / 100f;
             return RoundHalfUp(EffectiveAttack * multiplier);
         }
     }
+
+    static EnemyAbilityBalance Tuning => GameBalance.Current.enemyAbilities;
+
+    bool IsDesperate => HasAbility(EnemyAbilityEffect.Desperation) &&
+        (long)currentHp * 100L < (long)maxHp * Tuning.desperationBelowHealthPercent;
+
+    bool HealthAbovePercent(int percent) => (long)currentHp * 100L > (long)maxHp * percent;
 
     static int RoundHalfUp(float value)
     {
@@ -162,20 +172,21 @@ public class EnemyRuntime : ICombatDamageTarget
     {
         _currentResponseIsCharged = NextAttackIsCharged;
         PreparedCaptainAttackBonus = CaptainAttackBonus;
-        if (HasRoyalGuard && !_currentResponseIsCharged && GainShield(1) > 0)
+        if (HasRoyalGuard && !_currentResponseIsCharged && GainShield(Tuning.royalGuardShield) > 0)
             NotifyAbilityTriggered(EnemyAbilityEffect.RoyalGuard);
         _responsesPrepared++;
         if (_currentResponseIsCharged)
             NotifyAbilityTriggered(HasAbility(EnemyAbilityEffect.HeavySwing) ? EnemyAbilityEffect.HeavySwing
                 : HasRoyalGuard ? EnemyAbilityEffect.RoyalGuard : EnemyAbilityEffect.AlternateChargedAttack);
-        if (HasAbility(EnemyAbilityEffect.Desperation) && (long)currentHp * 2L < maxHp)
+        if (IsDesperate)
             NotifyAbilityTriggered(EnemyAbilityEffect.Desperation);
         int budget = ResponseAttack;
         if (HasOppression)
         {
-            long oppressed = (long)budget + (long)Mathf.Max(0, heldCardCount - 3) * 2L;
+            long oppressed = (long)budget +
+                (long)Mathf.Max(0, heldCardCount - Tuning.oppressionFreeCards) * Tuning.oppressionAttackPerCard;
             budget = (int)Math.Min(int.MaxValue, oppressed);
-            if (heldCardCount > 3) NotifyAbilityTriggered(EnemyAbilityEffect.Oppression);
+            if (heldCardCount > Tuning.oppressionFreeCards) NotifyAbilityTriggered(EnemyAbilityEffect.Oppression);
         }
         PreparedResponseBudget = budget;
         return budget;
@@ -186,7 +197,7 @@ public class EnemyRuntime : ICombatDamageTarget
         int budget = PrepareResponseAttack(heldCardCount);
         if (!HasDoubleStrike) return new[] { budget };
         NotifyAbilityTriggered(EnemyAbilityEffect.DoubleStrike);
-        int hitDamage = RoundHalfUp(budget * 0.6f);
+        int hitDamage = RoundHalfUp(budget * (Tuning.doubleStrikeHitPercent / 100f));
         return new[] { hitDamage, hitDamage };
     }
 
@@ -220,15 +231,17 @@ public class EnemyRuntime : ICombatDamageTarget
                 var ally = enemies[i];
                 if (ally == null || ally.IsDefeated || ReferenceEquals(ally, this)) continue;
                 int currentBonus = GetWarDrumBonus(ally);
-                if (currentBonus >= 3) continue;
-                ally.IncreaseAttack(1);
-                _warDrumBonuses[ally] = currentBonus + 1;
+                int gain = Math.Min(Tuning.warDrumAttackPerTurn, Tuning.warDrumMaxBonus - currentBonus);
+                if (gain <= 0) continue;
+                ally.IncreaseAttack(gain);
+                _warDrumBonuses[ally] = currentBonus + gain;
                 drummed = true;
             }
             if (drummed) NotifyAbilityTriggered(EnemyAbilityEffect.WarDrum);
         }
-        if (!HasAbility(EnemyAbilityEffect.Regeneration) || _regenerationActivations >= 3) return;
-        int heal = RoundHalfUp(maxHp * 0.05f);
+        if (!HasAbility(EnemyAbilityEffect.Regeneration) ||
+            _regenerationActivations >= Tuning.regenerationMaxActivations) return;
+        int heal = RoundHalfUp(maxHp * (Tuning.regenerationHealPercent / 100f));
         if (heal <= 0 || currentHp >= maxHp) return;
         Heal(heal);
         _regenerationActivations++;
@@ -285,14 +298,14 @@ public class EnemyRuntime : ICombatDamageTarget
         if (request.Origin == CombatDamageOrigin.Card && HasSuitCall && !_duelistCallConsumed &&
             hitSuit.HasValue && hitSuit.Value == _announcedSuit)
         {
-            resolvedDamage = RoundHalfUp(resolvedDamage * 0.5f);
+            resolvedDamage = RoundHalfUp(resolvedDamage * (Tuning.suitCallDamagePercent / 100f));
             _duelistCallConsumed = true;
             NotifyAbilityTriggered(EnemyAbilityEffect.SuitCall);
         }
 
         if (_guardedReady && !_guardedHitConsumed && resolvedDamage > 0)
         {
-            resolvedDamage = RoundHalfUp(resolvedDamage * 0.5f);
+            resolvedDamage = RoundHalfUp(resolvedDamage * (Tuning.guardedDamagePercent / 100f));
             _guardedHitConsumed = true;
             _guardedReady = false;
             NotifyAbilityTriggered(EnemyAbilityEffect.Guarded);
