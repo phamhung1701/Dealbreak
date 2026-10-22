@@ -32,6 +32,7 @@ public class ActionButtonsUI : MonoBehaviour
     Color _healthLabelColor;
     bool _healthLabelColorCaptured;
     HealthBarBacking _healthBar;
+    TMP_Text _defenseLine;
     UnityAction[] _backpackSlotListeners;
     // A slot's authored glyph alignment; a Trick sprite moves the stack/charge count to the top-right corner.
     readonly Dictionary<TMP_Text, TextAlignmentOptions> _backpackLabelAlignment = new();
@@ -234,19 +235,42 @@ public class ActionButtonsUI : MonoBehaviour
             _healthLabelColorCaptured = true;
         }
         _shownHealth.SetTarget(combat.player.currentHealth, Application.isPlaying && isActiveAndEnabled);
-        string block = combat.player.EncounterBlock > 0 ? $"  •  BLOCK {combat.player.EncounterBlock}" : string.Empty;
-        string shield = combat.player.ShieldCharges > 0 ? $"  •  SHIELD {combat.player.ShieldCharges}" : string.Empty;
         playerHealthLabel.text = combat.HasInfiniteHealthForDev
-            ? $"HP  ∞{block}{shield}"
-            : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}{block}{shield}";
+            ? "HP  ∞"
+            : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}";
         playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
-        if (_healthBar == null) _healthBar = HealthBarBacking.Attach(playerHealthLabel, true, HealthBarBacking.Look.Underline);
+        if (_healthBar == null) _healthBar = HealthBarBacking.Attach(playerHealthLabel, true, HealthBarBacking.Look.Meter);
         if (_healthBar != null)
             _healthBar.SetFraction(combat.HasInfiniteHealthForDev || combat.player.maxHealth <= 0 ? 1f
                 : _shownHealth.Value / combat.player.maxHealth);
+        // Block and Shield sit on a small line above the bar, so the bar only carries HP.
+        var parts = new List<string>(2);
+        if (combat.player.EncounterBlock > 0) parts.Add($"BLOCK {combat.player.EncounterBlock}");
+        if (combat.player.ShieldCharges > 0) parts.Add($"SHIELD {combat.player.ShieldCharges}");
+        var line = EnsureDefenseLine();
+        if (line) line.text = string.Join("  •  ", parts);
     }
 
-    /// <summary>The player's HP panel, the drop target for healing Tricks (the bar itself is a thin underline).</summary>
+    TMP_Text EnsureDefenseLine()
+    {
+        if (_defenseLine || _healthBar == null || !_healthBar.Bar) return _defenseLine;
+        var lineObject = new GameObject("Player Defense Line", typeof(RectTransform), typeof(TextMeshProUGUI));
+        var rect = (RectTransform)lineObject.transform;
+        rect.SetParent(_healthBar.Bar, false);
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(.5f, 0f);
+        rect.sizeDelta = new Vector2(0f, 26f);
+        rect.anchoredPosition = new Vector2(0f, 4f);
+        _defenseLine = lineObject.GetComponent<TMP_Text>();
+        var theme = DealbreakUIStyle.Theme;
+        DealbreakUIStyle.Label(_defenseLine, 18f, theme ? theme.paper : Color.white);
+        _defenseLine.alignment = TextAlignmentOptions.BottomRight;
+        _defenseLine.raycastTarget = false;
+        return _defenseLine;
+    }
+
+    /// <summary>The player's HP panel, the drop target for healing Tricks.</summary>
     public RectTransform PlayerHealthArea => playerHealthLabel ? (RectTransform)playerHealthLabel.transform.parent : null;
 
     void RefreshAll()

@@ -3,19 +3,22 @@ using UnityEngine;
 
 /// <summary>
 /// A flat shape that follows a label's rendered text every frame, because the HP panel and enemy
-/// views change shape between turns. It sits as the label's previous sibling. Three looks:
-/// a bar behind the text that the text sits on, a thin bar under the text (Underline), and a solid
-/// label block behind the text (Block, used for name tags). Presentation only: callers pass the
-/// shown fraction.
+/// views change shape between turns. It sits as the label's previous sibling. Four looks:
+/// a bar behind the text that the text sits on, a thin bar under the text (Underline), a solid
+/// label block behind the text (Block, used for name tags), and a full-width meter with a hairline
+/// track and an inset fill that the text sits on (Meter, the player's HP bar). Presentation only:
+/// callers pass the shown fraction.
 /// </summary>
 public sealed class HealthBarBacking : MonoBehaviour
 {
-    public enum Look { Behind, Underline, Block }
+    public enum Look { Behind, Underline, Block, Meter }
 
     const float HorizontalPadding = 10f;
     const float VerticalPadding = 7f;
     const float UnderlineGap = 4f;
     const float UnderlineHeight = 6f;
+    const float MeterPadding = 10f;
+    const float MeterInset = 3f;
 
     TMP_Text _label;
     RectTransform _bar;
@@ -65,13 +68,23 @@ public sealed class HealthBarBacking : MonoBehaviour
         _bar.anchorMin = _bar.anchorMax = _bar.pivot = new Vector2(.5f, .5f);
         var trackColor = theme ? theme.slate : new Color(.23f, .23f, .25f, 1f);
         if (_look == Look.Behind && theme) trackColor = new Color(theme.ink.r, theme.ink.g, theme.ink.b, .88f);
+        if (_look == Look.Meter && theme) trackColor = theme.ink;
         _track = bar.GetComponent<EditorialFrame>();
         Strip(_track, trackColor);
+        if (_look == Look.Meter)
+        {
+            // The empty part of the meter stays visible: a hairline track around an inset fill.
+            _track.border = 1f;
+            _track.rim = theme ? theme.slate : new Color(.23f, .23f, .25f, 1f);
+            _track.Refresh();
+        }
         var fill = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(EditorialFrame));
         _fill = (RectTransform)fill.transform;
         _fill.SetParent(_bar, false);
         _fill.anchorMin = Vector2.zero;
-        _fill.offsetMin = _fill.offsetMax = Vector2.zero;
+        float inset = _look == Look.Meter ? MeterInset : 0f;
+        _fill.offsetMin = new Vector2(inset, inset);
+        _fill.offsetMax = new Vector2(-inset, -inset);
         Strip(fill.GetComponent<EditorialFrame>(), theme ? theme.brick : new Color(.91f, .2f, .17f, 1f));
         SetFraction(_fraction);
     }
@@ -104,6 +117,7 @@ public sealed class HealthBarBacking : MonoBehaviour
         float yMin = hasText ? text.min.y - VerticalPadding : area.yMin;
         float yMax = hasText ? text.max.y + VerticalPadding : area.yMax;
         if (_look == Look.Block && hasText) { yMin = text.min.y - 4f; yMax = text.max.y + 4f; }
+        if (_look == Look.Meter && hasText) { yMin = text.min.y - MeterPadding; yMax = text.max.y + MeterPadding; }
         if (_look == Look.Underline)
         {
             yMax = (hasText ? text.min.y : area.yMin) - UnderlineGap;
