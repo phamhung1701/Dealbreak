@@ -79,9 +79,9 @@ public sealed class Phase2EliteRouteTests
     {
         var catalog = ScriptableObject.CreateInstance<RunContentCatalog>();
         _assets.Add(catalog);
-        var captain = CreateEnemy("GoblinCaptain");
-        var knight = CreateEnemy("RoyalKnight");
-        var goblin = CreateEnemy("Goblin");
+        var captain = CreateEnemy("CrewLeader");
+        var knight = CreateEnemy("RiotCaptain");
+        var goblin = CreateEnemy("Scrapper");
         catalog.normalEnemies = new[] { goblin };
         catalog.eliteEnemies = new[] { captain, knight };
         for (int mapIndex = 0; mapIndex < 12; mapIndex++)

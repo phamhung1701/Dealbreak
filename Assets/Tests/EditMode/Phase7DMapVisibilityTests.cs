@@ -34,8 +34,8 @@ public sealed class Phase7DMapVisibilityTests
         try
         {
             var run = gameObject.AddComponent<RunManager>();
-            var combat = new PathNode { kind = MapNodeType.Combat, contentId = "Goblin" };
-            var elite = new PathNode { kind = MapNodeType.Elite, contentId = "Knight" };
+            var combat = new PathNode { kind = MapNodeType.Combat, contentId = "Scrapper" };
+            var elite = new PathNode { kind = MapNodeType.Elite, contentId = "SecurityGuard" };
 
             Assert.That(run.GetNodeLabel(combat), Is.EqualTo("Street Fight"));
             Assert.That(run.GetNodeLabel(elite), Is.EqualTo("Enforcer Fight"));

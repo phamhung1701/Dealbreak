@@ -17,8 +17,8 @@ public sealed class AceEmblemTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _aceEmblem = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/AceEmblem.asset");
-        _hands = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/HandsEmblem.asset");
+        _aceEmblem = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/AceProtocol.asset");
+        _hands = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/MatchedCells.asset");
         Assert.That(_aceEmblem, Is.Not.Null);
         Assert.That(_hands, Is.Not.Null);
 

@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc333c80492e32a4981ae457376add7e, type: 3}
+  m_Name: HeartMedsRare
+  m_EditorClassIdentifier: Dealbreak.Runtime::GearData
+  id: rel_026
+  displayName: Heart Meds
+  icon: "\u2665"
+  iconSprite: {fileID: 21300000, guid: 3c764977673816b478b0cd37ff1e7494, type: 3}
+  description: 'Trigger: On Card Played
+
+    Condition: Suit = Hearts
+
+    Effect:
+    Playing a Heart heals 3 HP. If HP was below 50% immediately before the heal,
+    gain 3 Credits.
+
+    Value: +3 HP; +3 Credits below 50%'
+  price: 30
+  capacityCategory: 0
+  canonicalId: rel_026
+  rarity: Rare
+  tier: 2
+  upgradeFromId: rel_002
+  effects: []
+  ruleModifiers: []
+  specialRule: 2
+  restrictToSuit: 0
+  affectedSuit: 0
+  requiresEnhancedCard: 0
+  damageMultiplier: 1
+  flatDamageBonus: 0
+  defenseBonus: 0
+  reduceEnemyAttackByCardValue: 0
+  recycleDiscardByCardValue: 0
+  drawByCardValue: 0
+  healAfterVictory: 0
+  bonusCredits: 0

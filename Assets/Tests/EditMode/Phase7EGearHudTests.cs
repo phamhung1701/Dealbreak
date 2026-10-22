@@ -26,9 +26,9 @@ public sealed class Phase7EGearHudTests
         var combat = Make<CombatManager>("CombatManager");
         combat.ConfigurePlayer(30);
         _run = Make<RunManager>("RunManager");
-        _run.thiefType = Enemy("Thief");
-        _run.goblinType = Enemy("Goblin");
-        _run.knightType = Enemy("Knight");
+        _run.thiefType = Enemy("Pickpocket");
+        _run.goblinType = Enemy("Scrapper");
+        _run.knightType = Enemy("SecurityGuard");
 
         var host = new GameObject("RunStatusUI fixture");
         host.SetActive(false);

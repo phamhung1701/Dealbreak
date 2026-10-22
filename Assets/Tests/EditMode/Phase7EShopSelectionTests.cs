@@ -22,15 +22,15 @@ public sealed class Phase7EShopSelectionTests
         var gearB = CreateGear("second", 12);
         _enhancement = ScriptableObject.CreateInstance<CardEnhancementData>();
         _enhancement.id = "sharp";
-        _enhancement.displayName = "Sharpened";
+        _enhancement.displayName = "Boosted";
         _enhancement.description = "Attack bonus";
         _enhancement.price = 8;
         _assets.Add(_enhancement);
         _enhancementPatch = ScriptableObject.CreateInstance<ConsumableData>();
         _enhancementPatch.id = "sharp_patch";
         _enhancementPatch.canonicalId = "phase7e_patch";
-        _enhancementPatch.displayName = "Sharpened Patch";
-        _enhancementPatch.description = "Target: Card. Effect: Apply Sharpened.";
+        _enhancementPatch.displayName = "Boosted Patch";
+        _enhancementPatch.description = "Target: Card. Effect: Apply Boosted.";
         _enhancementPatch.price = _enhancement.price;
         _enhancementPatch.effectType = ConsumableEffectType.ApplyEnhancement;
         _enhancementPatch.enhancementToApply = _enhancement;
@@ -42,9 +42,9 @@ public sealed class Phase7EShopSelectionTests
         var combat = Make<CombatManager>("Combat");
         combat.ConfigurePlayer(30);
         _run = Make<RunManager>("Run");
-        _run.thiefType = CreateEnemy("Thief");
-        _run.goblinType = CreateEnemy("Goblin");
-        _run.knightType = CreateEnemy("Knight");
+        _run.thiefType = CreateEnemy("Pickpocket");
+        _run.goblinType = CreateEnemy("Scrapper");
+        _run.knightType = CreateEnemy("SecurityGuard");
 
         var uiObject = new GameObject("Shop UI");
         _objects.Add(uiObject);

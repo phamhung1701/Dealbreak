@@ -18,14 +18,14 @@ public sealed class CoreGameplayEffectsTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _club = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/ClubPower.asset");
-        _heart = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/HeartPower.asset");
-        _diamond = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/DiamondPower.asset");
-        _spade = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/SpadePower.asset");
-        _sharpened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Sharpened.asset");
-        _hardened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Reinforced.asset");
-        _mending = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Mending.asset");
-        _quickdraw = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Quickdraw.asset");
+        _club = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/ClubAmplifier.asset");
+        _heart = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/HeartMeds.asset");
+        _diamond = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/DiamondDriver.asset");
+        _spade = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/SpadeShield.asset");
+        _sharpened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Boosted.asset");
+        _hardened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Plated.asset");
+        _mending = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Regenerative.asset");
+        _quickdraw = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Quickload.asset");
         Assert.That(new UnityEngine.Object[] { _club, _heart, _diamond, _spade, _sharpened, _hardened, _mending, _quickdraw },
             Has.All.Not.Null);
 

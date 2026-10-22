@@ -96,7 +96,7 @@ public sealed class Phase7B5CombatPlayModeTests
         prefab.face = prefabObject.GetComponent<Image>();
         prefab.canvasGroup = prefabObject.GetComponent<CanvasGroup>();
         var overflow = ScriptableObject.CreateInstance<GearData>();
-        overflow.id = "rel_015"; overflow.canonicalId = "rel_015"; overflow.displayName = "Overflow";
+        overflow.id = "rel_015"; overflow.canonicalId = "rel_015"; overflow.displayName = "OverflowCanister";
         overflow.rarity = "Common"; overflow.specialRule = GearSpecialRule.OverflowCommon;
         var cardsObject = new GameObject("Overflow PlayMode CardManager");
         objects.Add(cardsObject);

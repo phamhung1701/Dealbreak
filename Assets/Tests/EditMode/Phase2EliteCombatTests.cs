@@ -42,7 +42,7 @@ public sealed class Phase2EliteCombatTests
     [TestCase(12, 51, 5)]
     public void GoblinCaptainElite_UsesAuthoredStatsAndMapScaling(int mapNumber, int expectedHp, int expectedAttack)
     {
-        var captain = LoadEnemy("GoblinCaptain");
+        var captain = LoadEnemy("CrewLeader");
         Assert.That(captain, Is.Not.Null);
         Assert.That((captain.maxHp, captain.baseAttack, captain.creditsReward), Is.EqualTo((16, 3, 0)));
         var run = CreateComponent<RunManager>("Phase2 Elite RunManager");
@@ -60,7 +60,7 @@ public sealed class Phase2EliteCombatTests
         var allyStats = EnemyMapScaling.Scale(3, 2, mapNumber - 1);
         foreach (var goblin in _combat.Enemies.Skip(1))
         {
-            Assert.That(goblin.type, Is.SameAs(LoadEnemy("Goblin")), "Allies are the authored Scrapper asset.");
+            Assert.That(goblin.type, Is.SameAs(LoadEnemy("Scrapper")), "Allies are the authored Scrapper asset.");
             Assert.That((goblin.maxHp, goblin.currentAttack, goblin.EffectiveAttack),
                 Is.EqualTo((allyStats.hp, allyStats.attack, allyStats.attack + 1)));
         }
@@ -72,7 +72,7 @@ public sealed class Phase2EliteCombatTests
     public void Captaincy_IsFixedBonusOnGoblinAndRemovedWhenCaptainDies()
     {
         var captain = CreateEnemy("Captain", 16, 3, EnemyAbilityEffect.Captaincy);
-        var goblinType = CreateEnemyType("Goblin", 3, 2);
+        var goblinType = CreateEnemyType("Scrapper", 3, 2);
         captain.allies = new[] { new EncounterAllySpec { type = goblinType, count = 2 } };
         var captainRuntime = new EnemyRuntime(captain);
         var goblin = new EnemyRuntime(goblinType);
@@ -96,7 +96,7 @@ public sealed class Phase2EliteCombatTests
     [Test]
     public void RoyalGuard_GainsShieldOnNormalResponsesAndAlternatesHeavyResponses()
     {
-        var knight = LoadEnemy("RoyalKnight");
+        var knight = LoadEnemy("RiotCaptain");
         Assert.That(knight, Is.Not.Null);
         Assert.That((knight.maxHp, knight.baseAttack, knight.creditsReward), Is.EqualTo((32, 5, 0)));
         var runtime = new EnemyRuntime(knight);
@@ -122,14 +122,14 @@ public sealed class Phase2EliteCombatTests
     [Test]
     public void EliteAssetsAndCatalog_KeepAuthoredIdentityAndIndependentRuntimeInstances()
     {
-        var captain = LoadEnemy("GoblinCaptain");
-        var knight = LoadEnemy("RoyalKnight");
+        var captain = LoadEnemy("CrewLeader");
+        var knight = LoadEnemy("RiotCaptain");
         var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/Data/Run/PrototypeRunContent.asset");
         Assert.That(catalog, Is.Not.Null);
         Assert.That(catalog.eliteEnemies, Does.Contain(captain));
         Assert.That(catalog.eliteEnemies, Does.Contain(knight));
         Assert.That(captain.encounterCount, Is.EqualTo(1));
-        var goblin = LoadEnemy("Goblin");
+        var goblin = LoadEnemy("Scrapper");
         Assert.That(goblin.encounterCount, Is.EqualTo(3), "Captain encounters must not change the regular Goblin group size.");
 
         var first = new EnemyRuntime(captain);
@@ -146,11 +146,11 @@ public sealed class Phase2EliteCombatTests
     public void CaptainKilledByRetaliation_RemovesBonusFromUnblockedPendingAttacks()
     {
         var captainType = CreateEnemy("Captain", 100, 3, EnemyAbilityEffect.Captaincy);
-        var goblinType = CreateEnemyType("Goblin", 100, 2);
+        var goblinType = CreateEnemyType("Scrapper", 100, 2);
         captainType.allies = new[] { new EncounterAllySpec { type = goblinType, count = 2 } };
         var captain = new EnemyRuntime(captainType);
         var goblins = new[] { new EnemyRuntime(goblinType), new EnemyRuntime(goblinType) };
-        var retaliation = UnityEditor.AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/RetaliationEmblem.asset");
+        var retaliation = UnityEditor.AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/CounterpunchGloves.asset");
         Assert.That(_cards.BuyGear(retaliation, 0), Is.True);
         _combat.StartEncounter(new[] { captain, goblins[0], goblins[1] });
         var attack = _field.cardsHolder.GetComponentsInChildren<CardView>()
@@ -175,20 +175,20 @@ public sealed class Phase2EliteCombatTests
     {
         var run = CreateComponent<RunManager>("Royal Knight Run");
         run.contentCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/Data/Run/PrototypeRunContent.asset");
-        var node = new PathNode { id = 2, kind = MapNodeType.Elite, contentId = "RoyalKnight",
+        var node = new PathNode { id = 2, kind = MapNodeType.Elite, contentId = "RiotCaptain",
             mapIndex = mapIndex, accessible = true, revealed = true, scouted = true };
         run.currentPath.Add(node);
         Assert.That(run.GetEncounterStats(node), Is.EqualTo((hp, attack)));
         run.OnPathChosen(node.id);
         Assert.That(_combat.Enemies.Count, Is.EqualTo(1));
         Assert.That((_combat.Enemies[0].maxHp, _combat.Enemies[0].EffectiveAttack), Is.EqualTo((hp, attack)));
-        Assert.That(_combat.Enemies[0].type, Is.SameAs(LoadEnemy("RoyalKnight")));
+        Assert.That(_combat.Enemies[0].type, Is.SameAs(LoadEnemy("RiotCaptain")));
     }
 
     [Test]
     public void RoyalKnightCombat_ShieldAndHeavyTelegraphMatchPendingResponse()
     {
-        var knight = new EnemyRuntime(LoadEnemy("RoyalKnight"));
+        var knight = new EnemyRuntime(LoadEnemy("RiotCaptain"));
         _combat.StartEnemy(knight);
         var display = CreateComponent<EnemyDisplayUI>("Royal Intent View");
         var status = CreateGameObject("Royal Intent Text", typeof(RectTransform)).AddComponent<TMPro.TextMeshProUGUI>();

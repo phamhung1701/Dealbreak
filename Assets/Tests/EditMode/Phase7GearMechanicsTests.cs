@@ -43,16 +43,16 @@ public sealed class Phase7GearMechanicsTests
     [Test]
     public void UpgradeAssets_RetainOnlyWorkbookRequiredPredecessorData()
     {
-        var aceRare = Asset("AceRare");
-        var aceEpic = Asset("AceEpic");
-        var mimic = Asset("MimicEpic");
-        var dwarfRare = Asset("DwarfRare");
-        var dwarfEpic = Asset("DwarfEpic");
-        var hands = Asset("HandsEpic");
-        var spadeRare = Asset("SpadeRare");
-        var spadeEpic = Asset("SpadeEpic");
-        var hammerCommon = Asset("Hammer");
-        var hammerRare = Asset("HammerRare");
+        var aceRare = Asset("AceProtocolRare");
+        var aceEpic = Asset("AceProtocolEpic");
+        var mimic = Asset("EchoDriverEpic");
+        var dwarfRare = Asset("LowballRare");
+        var dwarfEpic = Asset("LowballEpic");
+        var hands = Asset("MatchedCellsEpic");
+        var spadeRare = Asset("SpadeShieldRare");
+        var spadeEpic = Asset("SpadeShieldEpic");
+        var hammerCommon = Asset("ModBench");
+        var hammerRare = Asset("ModBenchRare");
         Assert.That(aceRare.effects.Length, Is.EqualTo(1));
         Assert.That(aceEpic.effects.Length, Is.EqualTo(1));
         Assert.That(mimic.effects.Any(effect => effect.kind == GameplayEffectKind.MimicInHandEffects), Is.True);
@@ -66,9 +66,9 @@ public sealed class Phase7GearMechanicsTests
         Assert.That(hammerRare.canonicalId, Is.EqualTo("rel_140"));
         Assert.That(hammerRare.upgradeFromId, Is.EqualTo("rel_009"));
         Assert.That(hammerRare.specialRule, Is.EqualTo(GearSpecialRule.Hammer));
-        Assert.That(AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/SurveyorMap.asset"), Is.Null,
+        Assert.That(AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/SurveyorMap.asset"), Is.Null,
             "Surveyor’s Map is deliberately deferred as redundant.");
-        var thief = AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/MasterThief.asset");
+        var thief = AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Ghost.asset");
         Assert.That(thief, Is.Not.Null);
         Assert.That((thief.maxHp, thief.baseAttack, thief.creditsReward, thief.fleeAfterPlayerTurns),
             Is.EqualTo((24, 4, 20, 4)));
@@ -151,15 +151,15 @@ public sealed class Phase7GearMechanicsTests
     [Test]
     public void HammerRare_CachesThreeCommonChoicesAndGrantsTheChosenModAsATrick()
     {
-        var common = Asset("Hammer");
-        var rare = Asset("HammerRare");
+        var common = Asset("ModBench");
+        var rare = Asset("ModBenchRare");
         _cards.gearCatalog.AddRange(new[] { common, rare });
         Assert.That(_cards.BuyGear(common, 0), Is.True);
         Assert.That(_cards.BuyGear(rare, 0), Is.True);
-        foreach (var name in new[] { "Sharpened", "Reinforced", "Mending", "Quickdraw" })
+        foreach (var name in new[] { "Boosted", "Plated", "Regenerative", "Quickload" })
             _cards.enhancementCatalog.Add(AssetDatabase.LoadAssetAtPath<CardEnhancementData>(
-                $"Assets/Data/Enhancements/{name}.asset"));
-        _cards.consumableCatalog.AddRange(AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+                $"Assets/Data/Mods/{name}.asset"));
+        _cards.consumableCatalog.AddRange(AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(asset => asset != null).ToArray());
         var card = Card(CardData.Suit.Clubs, CardData.Rank.Seven, 910);
@@ -185,15 +185,15 @@ public sealed class Phase7GearMechanicsTests
     [Test]
     public void HammerRare_FullTrickSlotsOfferRetryOrDeclineWithoutSilentLoss()
     {
-        var common = Asset("Hammer");
-        var rare = Asset("HammerRare");
+        var common = Asset("ModBench");
+        var rare = Asset("ModBenchRare");
         _cards.gearCatalog.AddRange(new[] { common, rare });
         Assert.That(_cards.BuyGear(common, 0), Is.True);
         Assert.That(_cards.BuyGear(rare, 0), Is.True);
-        foreach (var name in new[] { "Sharpened", "Reinforced", "Mending", "Quickdraw" })
+        foreach (var name in new[] { "Boosted", "Plated", "Regenerative", "Quickload" })
             _cards.enhancementCatalog.Add(AssetDatabase.LoadAssetAtPath<CardEnhancementData>(
-                $"Assets/Data/Enhancements/{name}.asset"));
-        _cards.consumableCatalog.AddRange(AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+                $"Assets/Data/Mods/{name}.asset"));
+        _cards.consumableCatalog.AddRange(AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(asset => asset != null).ToArray());
         var filler = _cards.consumableCatalog.First(value => value.effectType == ConsumableEffectType.Heal);
@@ -497,7 +497,7 @@ public sealed class Phase7GearMechanicsTests
         return value;
     }
 
-    GearData Asset(string file) => AssetDatabase.LoadAssetAtPath<GearData>($"Assets/Data/Relics/{file}.asset");
+    GearData Asset(string file) => AssetDatabase.LoadAssetAtPath<GearData>($"Assets/Data/Gear/{file}.asset");
 
     GearData Gear(string id, GearSpecialRule rule)
     {

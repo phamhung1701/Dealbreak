@@ -473,6 +473,24 @@ public sealed class PersistentRunSaveTests
     }
 
     [Test]
+    public void MigrationFromVersion4_PointsFightNodesAtTheRenamedEnemyAssets()
+    {
+        var v4 = JsonClone(run.CaptureSave()); v4.version = 4;
+        var fights = v4.nodes.Where(node => node.kind is (int)MapNodeType.Combat or (int)MapNodeType.Elite).ToList();
+        Assume.That(fights.Count, Is.GreaterThanOrEqualTo(2));
+        fights[0].contentId = "Knight";
+        fights[1].contentId = "MasterThief";
+        var incident = v4.nodes.FirstOrDefault(node => node.kind == (int)MapNodeType.Event);
+        string incidentId = incident?.contentId;
+
+        Assert.That(RunSaveMigrations.TryUpgrade(v4, out var error), Is.True, error);
+
+        Assert.That((fights[0].contentId, fights[1].contentId), Is.EqualTo(("SecurityGuard", "Ghost")));
+        if (incident != null) Assert.That(incident.contentId, Is.EqualTo(incidentId), "Incidents are saved by id, not asset name.");
+        Assert.That(RunSaveValidation.Validate(v4, catalog, out error), Is.True, error);
+    }
+
+    [Test]
     public void MigrationFromVersion3_MovesTheDiscardPileUnderTheDrawPile()
     {
         var v3 = JsonClone(run.CaptureSave()); v3.version = 3;

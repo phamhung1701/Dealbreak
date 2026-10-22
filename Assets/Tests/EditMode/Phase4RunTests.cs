@@ -85,9 +85,9 @@ public sealed class Phase4DeterminismTests
 
     EnemyTypeData[] CreateEnemies() => new[]
     {
-        CreateEnemy("Thief", 10, 4, 5),
-        CreateEnemy("Goblin", 15, 6, 7),
-        CreateEnemy("Knight", 25, 8, 10)
+        CreateEnemy("Pickpocket", 10, 4, 5),
+        CreateEnemy("Scrapper", 15, 6, 7),
+        CreateEnemy("SecurityGuard", 25, 8, 10)
     };
 
     EnemyTypeData CreateEnemy(string name, int hp, int attack, int credits)
@@ -141,9 +141,9 @@ public sealed class Phase4RunIntegrationTests
         _combat.ConfigurePlayer(30);
         _runObject = new GameObject("Phase4 RunManager");
         _run = _runObject.AddComponent<RunManager>();
-        _run.thiefType = CreateEnemy("Thief", 10, 4, 5);
-        _run.goblinType = CreateEnemy("Goblin", 15, 6, 7);
-        _run.knightType = CreateEnemy("Knight", 25, 8, 10);
+        _run.thiefType = CreateEnemy("Pickpocket", 10, 4, 5);
+        _run.goblinType = CreateEnemy("Scrapper", 15, 6, 7);
+        _run.knightType = CreateEnemy("SecurityGuard", 25, 8, 10);
     }
 
     [TearDown]

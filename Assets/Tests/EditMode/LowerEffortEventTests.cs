@@ -18,11 +18,11 @@ public sealed class LowerEffortEventTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _blacksmith = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/Blacksmith.asset");
-        _stranger = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/MysteriousStranger.asset");
-        _ambush = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/Ambush.asset");
-        _swamp = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/Swamp.asset");
-        _enhancements = AssetDatabase.FindAssets("t:CardEnhancementData", new[] { "Assets/Data/Enhancements" })
+        _blacksmith = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/StreetMechanic.asset");
+        _stranger = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/AnonymousContact.asset");
+        _ambush = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/BackAlleyTrap.asset");
+        _swamp = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/ToxicRunoff.asset");
+        _enhancements = AssetDatabase.FindAssets("t:CardEnhancementData", new[] { "Assets/Data/Mods" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<CardEnhancementData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(asset => asset != null).ToArray();
         Assert.That(_blacksmith, Is.Not.Null);
@@ -47,7 +47,7 @@ public sealed class LowerEffortEventTests
         prefab.canvasGroup = prefabObject.GetComponent<CanvasGroup>();
         _cards = Make<CardManager>("Event Test Cards");
         _cards.Configure(field, drag, prefab, System.Array.Empty<GearData>(), _enhancements,
-            AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+            AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(asset => asset != null).ToArray());
         _cards.ConfigureRandom(new DeterministicRandom(803));
@@ -194,7 +194,7 @@ public sealed class LowerEffortEventTests
     [Test]
     public void Swamp_CrossingCostsFiveHealthAndMakesTheSeededGearEnhancementOrNothingRoll()
     {
-        var gear = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/AceEmblem.asset");
+        var gear = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/AceProtocol.asset");
         Assert.That(gear, Is.Not.Null);
         _cards.gearCatalog.Add(gear);
         _combat.TakeRunDamage(5);

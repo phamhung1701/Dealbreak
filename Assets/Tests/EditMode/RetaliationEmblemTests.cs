@@ -17,7 +17,7 @@ public sealed class RetaliationEmblemTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _retaliation = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/RetaliationEmblem.asset");
+        _retaliation = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/CounterpunchGloves.asset");
         Assert.That(_retaliation, Is.Not.Null);
 
         var canvas = CreateComponent<Canvas>("Retaliation Hand Canvas");

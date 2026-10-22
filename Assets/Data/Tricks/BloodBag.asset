@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed72689996f2666428bae8ae88656bf6, type: 3}
+  m_Name: BloodBag
+  m_EditorClassIdentifier: Dealbreak.Runtime::ConsumableData
+  id: blood_vial
+  canonicalId: con_014
+  displayName: Blood Bag
+  icon: HP
+  iconSprite: {fileID: 21300000, guid: cde7cabc94e9ba64bb2c3acfbef11fa8, type: 3}
+  description: 'Target: Card
+
+    Timing: Anytime
+
+    Effect: Apply Overclocked
+    to a card.
+
+    Uses: 1'
+  price: 5
+  uses: 1
+  effectType: 2
+  healAmount: 0
+  damageAmount: 0
+  enhancementToApply: {fileID: 11400000, guid: dbf29c99350534b4abe5fdf2d8dcd931, type: 2}
+  copies: 1
+  targetSuit: 0
+  shopAvailable: 1
+  dropAvailable: 0
+  eventAvailable: 1
+  dropChance: 0

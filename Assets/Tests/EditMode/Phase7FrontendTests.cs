@@ -123,9 +123,9 @@ public sealed class Phase7FrontendTests
         var combat = CreateComponent<CombatManager>("Seed CombatManager");
         combat.ConfigurePlayer(30);
         var run = CreateComponent<RunManager>("Seed RunManager");
-        run.thiefType = CreateEnemy("Thief", 10, 4, 5);
-        run.goblinType = CreateEnemy("Goblin", 15, 6, 7);
-        run.knightType = CreateEnemy("Knight", 25, 8, 10);
+        run.thiefType = CreateEnemy("Pickpocket", 10, 4, 5);
+        run.goblinType = CreateEnemy("Scrapper", 15, 6, 7);
+        run.knightType = CreateEnemy("SecurityGuard", 25, 8, 10);
         run.StartRunWithSeed(handoff);
         Assert.That(run.RunSeed, Is.EqualTo(custom));
         string firstMap = string.Join(",", run.currentPath.Select(node => $"{node.kind}:{node.row}:{node.col}"));
@@ -217,9 +217,9 @@ public sealed class Phase7FrontendTests
         var combat = CreateComponent<CombatManager>("Phase7 CombatManager");
         combat.ConfigurePlayer(30);
         var run = CreateComponent<RunManager>("Phase7 RunManager");
-        run.thiefType = CreateEnemy("Thief", 10, 4, 5);
-        run.goblinType = CreateEnemy("Goblin", 15, 6, 7);
-        run.knightType = CreateEnemy("Knight", 25, 8, 10);
+        run.thiefType = CreateEnemy("Pickpocket", 10, 4, 5);
+        run.goblinType = CreateEnemy("Scrapper", 15, 6, 7);
+        run.knightType = CreateEnemy("SecurityGuard", 25, 8, 10);
         run.StartRunWithSeed("PHASE7-GATE");
         var node = run.currentPath.First(value => value.accessible);
 
@@ -241,9 +241,9 @@ public sealed class Phase7FrontendTests
         var combat = CreateComponent<CombatManager>("Phase7 Result CombatManager");
         combat.ConfigurePlayer(30);
         var run = CreateComponent<RunManager>("Phase7 Result RunManager");
-        run.thiefType = CreateEnemy("Thief", 10, 4, 5);
-        run.goblinType = CreateEnemy("Goblin", 15, 6, 7);
-        run.knightType = CreateEnemy("Knight", 25, 8, 10);
+        run.thiefType = CreateEnemy("Pickpocket", 10, 4, 5);
+        run.goblinType = CreateEnemy("Scrapper", 15, 6, 7);
+        run.knightType = CreateEnemy("SecurityGuard", 25, 8, 10);
         string generatedSeed = RunSetupUI.ResolveStartSeed("");
         run.StartRunWithSeed(generatedSeed);
         Assert.That(run.RunSeed, Is.EqualTo(generatedSeed));

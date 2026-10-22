@@ -6,7 +6,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 - A run is 12 Districts: four J (Runner) Headliners, then four Q (Operator), then four K (Kingpin). Beating a Headliner awards that exact face card. The starting deck is exactly 40 cards (A–10 in four suits, no face cards). Cards have runtime identity and authoritative deck, hand and discard zones.
 - Combat: persistent player HP, blocking by discarding cards, empty-hand Recover, multiple enemies with exact targeting, kill draws, secured rewards, Thief fleeing. Runs use seeded random streams.
-- `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` is authoritative for player-facing names and terms. Use Credits, Gear, Mod, Trick, Black Market, Incident, District, Enforcer, Headliner and Perfect Block. Keep legacy class, field, serialized-ID, asset-path and save identifiers. A workbook Draft status is not approval to implement.
+- `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` is authoritative for player-facing names and terms. Use Credits, Gear, Mod, Trick, Black Market, Incident, District, Enforcer, Headliner and Perfect Block. Keep legacy class, field, serialized-ID and save identifiers. Content asset files and folders use the Dealbreak names (`Assets/Data/Gear`, `Mods`, `Tricks`, `Enemies`, `Run/Incidents`; `Scanner.asset`, higher Gear tiers add the rarity: `ClubAmplifierRare`); name new assets the same way. A fight node's saved `contentId` is its enemy's asset name, so renaming an enemy asset needs a `RunSaveMigrations` step (v5 did this). A workbook Draft status is not approval to implement.
 
 ## Branches
 
@@ -91,10 +91,10 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Driving Unity (Locus MCP)
 
-- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-22): **EditMode 1787 passed + 1 skipped (1788 cases, the per-Gear matrices included), PlayMode 10/10 plus the 12-District soak**.
+- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-22): **EditMode 1788 passed + 1 skipped (1789 cases, the per-Gear matrices included), PlayMode 10/10 plus the 12-District soak**.
 - Tool calls are capped at about 5 minutes.
   - The full EditMode run (and some batches) blocks the main thread long enough that `unity_test_run` aborts with `native_main_thread_unresponsive` while the run goes on. Start it from `unity_execute` instead: `UnityTestApi.Start(new Locus.UnityTestRunOptions { Mode = Locus.UnityTestMode.Edit, Assemblies = new[]{"Dealbreak.EditModeTests"}, ResultDetail = Locus.UnityTestResultDetail.Failures })`, then poll `UnityTestApi.Status(runId)` in later calls. PlayMode and the soak work the same way (`Mode = Play`, `Groups`).
-  - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap).
+  - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap). Never poll it with `unity_execute` and `request_editor_status: "editing"`: that leaves Play mode and aborts the soak; wait on `TestResults.xml` instead.
   - After the soak, wait until `Application.isPlaying` is false, then read `C:\Users\Admin\AppData\LocalLow\hwng\Dealbreak\TestResults.xml` and check its timestamp.
 - **Never enter Play mode with `Game.unity` open: it continues the owner's real save.**
   - Open `MainMenu.unity` (only if it has no unsaved changes), enter Play, then call `GameFlowService.Instance.StartDevRun(seed, false, false, false)`.

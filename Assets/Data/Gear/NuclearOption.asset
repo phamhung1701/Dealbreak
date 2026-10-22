@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc333c80492e32a4981ae457376add7e, type: 3}
+  m_Name: NuclearOption
+  m_EditorClassIdentifier: Dealbreak.Runtime::GearData
+  id: rel_100
+  displayName: Nuclear Option
+  icon: ROYAL
+  iconSprite: {fileID: 21300000, guid: a1db90126f2168a419db674ffd93e86d, type: 3}
+  description: 'Trigger: On Attack Selection
+
+    Condition: Royal Flush: 10/J/Q/K/A
+    of one effective suit
+
+    Effect: Allow to play up to 5 cards. Play exactly
+    10, J, Q, K and A of the same effective suit together.
+
+    Value: Instantly
+    defeat the selected enemy
+
+    Limit: Exactly 5 distinct cards: 10/J/Q/K/A; same
+    effective suit'
+  price: 50
+  capacityCategory: 0
+  canonicalId: rel_100
+  rarity: Legendary
+  tier: 1
+  upgradeFromId: 
+  effects: []
+  ruleModifiers: []
+  specialRule: 10
+  restrictToSuit: 0
+  affectedSuit: 0
+  requiresEnhancedCard: 0
+  damageMultiplier: 1
+  flatDamageBonus: 0
+  defenseBonus: 0
+  reduceEnemyAttackByCardValue: 0
+  recycleDiscardByCardValue: 0
+  drawByCardValue: 0
+  healAfterVictory: 0
+  bonusCredits: 0

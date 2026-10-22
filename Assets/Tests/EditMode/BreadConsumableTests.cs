@@ -17,7 +17,7 @@ public sealed class BreadConsumableTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _bread = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Bread.asset");
+        _bread = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/EnergyBar.asset");
         Assert.That(_bread, Is.Not.Null);
         _breadUses = _bread.uses;
         _cards = Make<CardManager>("Bread Test Cards");
@@ -26,9 +26,9 @@ public sealed class BreadConsumableTests
         _combat = Make<CombatManager>("Bread Test Combat");
         _combat.ConfigurePlayer(30);
         _run = Make<RunManager>("Bread Test Run");
-        _run.thiefType = Enemy("Thief");
-        _run.goblinType = Enemy("Goblin");
-        _run.knightType = Enemy("Knight");
+        _run.thiefType = Enemy("Pickpocket");
+        _run.goblinType = Enemy("Scrapper");
+        _run.knightType = Enemy("SecurityGuard");
         _run.StartRunWithSeed("BREAD-CONSUMABLE-TEST");
     }
 

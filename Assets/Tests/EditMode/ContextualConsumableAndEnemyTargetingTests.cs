@@ -26,7 +26,7 @@ public sealed class ContextualConsumableAndEnemyTargetingTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _knife = UnityEditor.AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/ThrowingKnife.asset");
+        _knife = UnityEditor.AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/ThrowingStar.asset");
         Assert.That(_knife, Is.Not.Null);
         _heal = ScriptableObject.CreateInstance<ConsumableData>();
         _created.Add(_heal);

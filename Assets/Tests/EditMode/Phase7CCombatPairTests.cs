@@ -137,7 +137,7 @@ public sealed class Phase7CCombatPairTests
         var views = HandViews();
         var pair = new[] { views.First(view => view.data.Rank == CardData.Rank.Ace),
             views.First(view => view.data.Rank != CardData.Rank.Ace) };
-        var explosive = UnityEditor.AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Explosive.asset");
+        var explosive = UnityEditor.AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Volatile.asset");
         Assert.That(explosive, Is.Not.Null);
         Assert.That(_cards.ApplyEnhancement(pair[1].data.Id, explosive), Is.True);
         _combat.CriticalChancePercent = 100f;

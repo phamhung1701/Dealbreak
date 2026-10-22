@@ -16,8 +16,8 @@ public sealed class ChainArmorTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _chainArmor = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/ChainArmor.asset");
-        _leatherArmor = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/LeatherArmor.asset");
+        _chainArmor = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/TacticalPlating.asset");
+        _leatherArmor = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/StreetJacket.asset");
         Assert.That(_chainArmor, Is.Not.Null);
         Assert.That(_leatherArmor, Is.Not.Null);
 

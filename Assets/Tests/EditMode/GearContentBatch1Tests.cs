@@ -18,12 +18,12 @@ public sealed class GearContentBatch1Tests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _leather = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/LeatherArmor.asset");
-        _dagger = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Dagger.asset");
-        _tome = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Tome.asset");
-        _sword = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Sword.asset");
-        _club = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/ClubPower.asset");
-        _sharpened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Sharpened.asset");
+        _leather = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/StreetJacket.asset");
+        _dagger = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/Scalpel.asset");
+        _tome = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/FieldTablet.asset");
+        _sword = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/PowerBaton.asset");
+        _club = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/ClubAmplifier.asset");
+        _sharpened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Boosted.asset");
         Assert.That(new UnityEngine.Object[] { _leather, _dagger, _tome, _sword, _club, _sharpened }, Has.All.Not.Null);
 
         var canvas = Make<Canvas>("Batch Canvas");
@@ -276,9 +276,9 @@ public sealed class GearContentBatch1Tests
     public void CachedShopPurchaseAndRestartRetainCapacityAndResetEffectState()
     {
         var run = Make<RunManager>("Batch Run");
-        run.thiefType = Type("Thief", 10, 1);
-        run.goblinType = Type("Goblin", 10, 2);
-        run.knightType = Type("Knight", 10, 3);
+        run.thiefType = Type("Pickpocket", 10, 1);
+        run.goblinType = Type("Scrapper", 10, 2);
+        run.knightType = Type("SecurityGuard", 10, 3);
         run.StartRunWithSeed("BATCH-FOUR");
         var shop = run.currentPath.First(n => n.kind == MapNodeType.Shop);
         shop.accessible = true;

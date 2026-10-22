@@ -19,10 +19,10 @@ public sealed class ShopEnhancementConsumableCatalogTests
     [Test]
     public void EveryEnhancementHasExactlyOneShopAvailableMappedConsumable()
     {
-        var enhancements = AssetDatabase.FindAssets("t:CardEnhancementData", new[] { "Assets/Data/Enhancements" })
+        var enhancements = AssetDatabase.FindAssets("t:CardEnhancementData", new[] { "Assets/Data/Mods" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<CardEnhancementData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(asset => asset != null).ToArray();
-        var consumables = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+        var consumables = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(asset => asset != null && asset.shopAvailable && asset.effectType == ConsumableEffectType.ApplyEnhancement)
             .ToArray();

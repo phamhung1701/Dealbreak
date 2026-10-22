@@ -20,9 +20,9 @@ public sealed class DirectHandTargetingUITests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _mirror = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Mirror.asset");
-        _torch = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Torch.asset");
-        _spade = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/SpadeRune.asset");
+        _mirror = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/CloneVial.asset");
+        _torch = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/Shears.asset");
+        _spade = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/SpadeCrystal.asset");
         Assert.That(new Object[] { _mirror, _torch, _spade }, Has.All.Not.Null);
 
         var handObject = Make("Direct target hand", typeof(RectTransform), typeof(Field));
@@ -112,7 +112,7 @@ public sealed class DirectHandTargetingUITests
     [Test]
     public void ModTrickDroppedOnHandCard_AppliesItsModToThatCardOnly()
     {
-        var whetstone = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Whetstone.asset");
+        var whetstone = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/BoosterShot.asset");
         Assert.That(whetstone, Is.Not.Null);
         _cards.consumableCatalog.Add(whetstone);
         Assert.That(_cards.AddConsumable(whetstone), Is.True);

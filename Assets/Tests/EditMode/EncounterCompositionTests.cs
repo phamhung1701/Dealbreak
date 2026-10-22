@@ -67,7 +67,7 @@ public sealed class EncounterCompositionTests
     [Test]
     public void KnightAlly_UsesTheExistingSeededStreamFromMapFourOnly()
     {
-        var knight = _catalog.normalEnemies.Single(enemy => enemy.name == "Knight");
+        var knight = _catalog.normalEnemies.Single(enemy => enemy.name == "SecurityGuard");
         var random = new RunRandomContext(null);
         for (int nodeId = 0; nodeId < 12; nodeId++)
         {
@@ -82,7 +82,7 @@ public sealed class EncounterCompositionTests
     [Test]
     public void GenericEnforcerAndHeadliner_NeverBringAllies()
     {
-        var drummer = _catalog.normalEnemies.Single(enemy => enemy.name == "WarDrummer");
+        var drummer = _catalog.normalEnemies.Single(enemy => enemy.name == "HypeMan");
         Assert.That(EncounterComposer.Compose(drummer, (8, 1), MapNodeType.Elite, false, 4, 1, null).Count, Is.EqualTo(1));
         Assert.That(EncounterComposer.Compose(drummer, (8, 1), MapNodeType.Headliner, false, 4, 1, null).Count, Is.EqualTo(1));
         Assert.That(EncounterComposer.Compose(drummer, (8, 1), MapNodeType.Combat, false, 4, 1, null).Count, Is.EqualTo(3));

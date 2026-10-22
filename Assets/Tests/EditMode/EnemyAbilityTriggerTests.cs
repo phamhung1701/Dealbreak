@@ -36,7 +36,7 @@ public sealed class EnemyAbilityTriggerTests
     public void SuitCall_AnnouncesTheCallAndResistsOnlyTheCalledSuit()
     {
         var call = Ability(EnemyAbilityEffect.SuitCall);
-        var enemy = new EnemyRuntime(Type("Duelist", 30, call));
+        var enemy = new EnemyRuntime(Type("Challenger", 30, call));
         var triggered = new List<EnemyAbility>();
         enemy.OnAbilityTriggered += triggered.Add;
 

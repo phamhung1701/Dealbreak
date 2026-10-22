@@ -165,14 +165,14 @@ public sealed class Phase4EnemyMechanicsTests
     [Test]
     public void AuthoredNormalCompositionsKeepDuelistSoloAndSpawnWarDrummerAllies()
     {
-        var brute = EnemyType("Brute", 18, 3);
-        var goblin = EnemyType("Goblin", 3, 2);
-        var duelist = EnemyType("Duelist", 14, 4, EnemyAbilityEffect.SuitCall);
-        var drummer = EnemyType("War Drummer", 8, 1, EnemyAbilityEffect.WarDrum);
+        var brute = EnemyType("Heavy", 18, 3);
+        var goblin = EnemyType("Scrapper", 3, 2);
+        var duelist = EnemyType("Challenger", 14, 4, EnemyAbilityEffect.SuitCall);
+        var drummer = EnemyType("Hype Man", 8, 1, EnemyAbilityEffect.WarDrum);
         drummer.allies = new[] { new EncounterAllySpec { type = goblin, count = 2 } };
-        var captain = EnemyType("Goblin Captain", 16, 3, EnemyAbilityEffect.Captaincy);
+        var captain = EnemyType("Crew Leader", 16, 3, EnemyAbilityEffect.Captaincy);
         captain.allies = new[] { new EncounterAllySpec { type = goblin, count = 2 } };
-        var royalKnight = EnemyType("Royal Knight", 32, 5, EnemyAbilityEffect.RoyalGuard);
+        var royalKnight = EnemyType("Riot Captain", 32, 5, EnemyAbilityEffect.RoyalGuard);
         var catalog = ScriptableObject.CreateInstance<RunContentCatalog>();
         _created.Add(catalog);
         catalog.normalEnemies = new[] { brute, goblin, duelist, drummer };
@@ -181,16 +181,17 @@ public sealed class Phase4EnemyMechanicsTests
         _run = _runObject.AddComponent<RunManager>();
         _run.contentCatalog = catalog;
         typeof(RunManager).GetMethod("TryStartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
-            .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "Duelist", mapIndex = 0 } });
-        Assert.That(_combat.Enemies.Select(enemy => enemy.type.enemyName), Is.EqualTo(new[] { "Duelist" }));
-        var duelistNode = new PathNode { kind = MapNodeType.Combat, contentId = "Duelist", mapIndex = 0, accessible = true, revealed = true };
-        Assert.That(_run.GetNodeDesc(duelistNode), Does.Not.Contain("Brute"));
+            .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "Challenger", mapIndex = 0 } });
+        Assert.That(_combat.Enemies.Select(enemy => enemy.type), Is.EqualTo(new[] { duelist }));
+        var duelistNode = new PathNode { kind = MapNodeType.Combat, contentId = "Challenger", mapIndex = 0, accessible = true, revealed = true };
+        Assert.That(_run.GetNodeDesc(duelistNode), Does.Not.Contain(brute.enemyName));
 
         _combat.Reset();
         typeof(RunManager).GetMethod("TryStartEncounter", BindingFlags.Instance | BindingFlags.NonPublic)
-            .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "WarDrummer", mapIndex = 0 } });
-        Assert.That(_combat.Enemies.Select(enemy => enemy.type.enemyName), Is.EqualTo(new[] { "War Drummer", "Goblin", "Goblin" }));
-        Assert.That(catalog.normalEnemies.Any(enemy => enemy.enemyName is "Goblin Captain" or "Royal Knight"), Is.False,
+            .Invoke(_run, new object[] { new PathNode { kind = MapNodeType.Combat, contentId = "HypeMan", mapIndex = 0 } });
+        Assert.That(_combat.Enemies.Select(enemy => enemy.type), Is.EqualTo(new[] { drummer, goblin, goblin }),
+            "The leader spawns first, then its authored allies.");
+        Assert.That(catalog.normalEnemies.Intersect(catalog.eliteEnemies), Is.Empty,
             "Elite variants remain outside the normal encounter pool.");
     }
 

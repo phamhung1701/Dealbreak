@@ -15,9 +15,9 @@ public sealed class DeckMutationTests
     public void Setup()
     {
         GameplayInputGate.Clear();
-        _mirror = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Mirror.asset");
-        _torch = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Torch.asset");
-        _spade = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/SpadeRune.asset");
+        _mirror = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/CloneVial.asset");
+        _torch = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/Shears.asset");
+        _spade = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/SpadeCrystal.asset");
         Assert.That(new Object[] { _mirror, _torch, _spade }, Has.All.Not.Null);
         var cardsObject = new GameObject("Mutation cards"); _created.Add(cardsObject);
         _cards = cardsObject.AddComponent<CardManager>();
@@ -205,7 +205,7 @@ public sealed class DeckMutationTests
     public void CatalogDefinitions_AreAvailableFromShopDropsAndEvents()
     {
         var expected = new[] { "con_004", "con_005", "con_016", "con_017", "con_018", "con_019" };
-        var items = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+        var items = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(id => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(id)))
             .Where(item => item != null && expected.Contains(item.canonicalId)).ToArray();
         CollectionAssert.AreEquivalent(expected, items.Select(item => item.canonicalId));

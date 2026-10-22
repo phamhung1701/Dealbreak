@@ -73,9 +73,9 @@ public sealed class GearRuleBatchTests
         _combat.ConfigurePlayer(30);
         _combat.ConfigureCriticalRandom(new CountingRandom());
         _run = Make<RunManager>("Rule Batch Run");
-        _run.thiefType = Enemy("Thief", 50, 3);
-        _run.goblinType = Enemy("Goblin", 50, 3);
-        _run.knightType = Enemy("Knight", 50, 3);
+        _run.thiefType = Enemy("Pickpocket", 50, 3);
+        _run.goblinType = Enemy("Scrapper", 50, 3);
+        _run.knightType = Enemy("SecurityGuard", 50, 3);
         _run.StartRunWithSeed("RULE-BATCH-SEED");
         _handsRare = AssetDatabaseGear("rel_020");
         _royal = AssetDatabaseGear("rel_100");
@@ -798,12 +798,12 @@ public sealed class GearRuleBatchTests
     }
 
     GearData AssetDatabaseGear(string canonicalId) => AssetDatabase.FindAssets("t:GearData",
-            new[] { "Assets/Data/Relics" })
+            new[] { "Assets/Data/Gear" })
         .Select(guid => AssetDatabase.LoadAssetAtPath<GearData>(AssetDatabase.GUIDToAssetPath(guid)))
         .Single(asset => asset.canonicalId == canonicalId);
 
     CardEnhancementData AssetDatabaseEnhancement(string canonicalId) => AssetDatabase.FindAssets("t:CardEnhancementData",
-            new[] { "Assets/Data/Enhancements" })
+            new[] { "Assets/Data/Mods" })
         .Select(guid => AssetDatabase.LoadAssetAtPath<CardEnhancementData>(AssetDatabase.GUIDToAssetPath(guid)))
         .Single(asset => asset.canonicalId == canonicalId);
 

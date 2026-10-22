@@ -17,11 +17,11 @@ public sealed class LowerEffortEnhancementTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _devouring = Load("Devouring");
-        _lethal = Load("Lethal");
-        _explosive = Load("Explosive");
-        _vampiric = Load("Vampiric");
-        _shifting = Load("Shifting");
+        _devouring = Load("Predatory");
+        _lethal = Load("Deadeye");
+        _explosive = Load("Volatile");
+        _vampiric = Load("Overclocked");
+        _shifting = Load("Wildcard");
         Assert.That(new[] { _devouring, _lethal, _explosive, _vampiric, _shifting }, Has.All.Not.Null);
 
         var canvas = Make<Canvas>("Enhancement Test Canvas");
@@ -163,7 +163,7 @@ public sealed class LowerEffortEnhancementTests
     }
 
     CardEnhancementData Load(string file) =>
-        AssetDatabase.LoadAssetAtPath<CardEnhancementData>($"Assets/Data/Enhancements/{file}.asset");
+        AssetDatabase.LoadAssetAtPath<CardEnhancementData>($"Assets/Data/Mods/{file}.asset");
 
     EnemyRuntime Target(string name, int hp, int attack)
     {

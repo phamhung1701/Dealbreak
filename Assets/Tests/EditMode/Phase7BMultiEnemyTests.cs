@@ -42,7 +42,7 @@ public sealed class Phase7BMultiEnemyTests
     [Test]
     public void GoblinGroup_TargetedKillsDrawCards_SurvivorsAttack_AndVictoryAwardsNineCredits()
     {
-        var type = CreateEnemyType("Goblin", 3, 2, 3, encounterCount: 3);
+        var type = CreateEnemyType("Scrapper", 3, 2, 3, encounterCount: 3);
         var goblins = new[]
         {
             new EnemyRuntime(type, 1, 3),
@@ -53,7 +53,7 @@ public sealed class Phase7BMultiEnemyTests
 
         Assert.That(_combat.Enemies.Count, Is.EqualTo(3));
         Assert.That(_combat.TotalEnemyAttack, Is.EqualTo(6));
-        Assert.That(goblins.Select(enemy => enemy.DisplayName), Is.EqualTo(new[] { "Goblin 1", "Goblin 2", "Goblin 3" }));
+        Assert.That(goblins.Select(enemy => enemy.DisplayName), Is.EqualTo(new[] { "Scrapper 1", "Scrapper 2", "Scrapper 3" }));
 
         KillTarget(goblins[2]);
         Assert.That(_combat.Enemies.Contains(goblins[2]), Is.False);
@@ -77,7 +77,7 @@ public sealed class Phase7BMultiEnemyTests
     [Test]
     public void Thief_FleesAfterSecondCompletedPlayerTurn_WithoutCreditsOrKillDraw()
     {
-        var type = CreateEnemyType("Thief", 12, 1, 15, fleeAfterPlayerTurns: 2);
+        var type = CreateEnemyType("Pickpocket", 12, 1, 15, fleeAfterPlayerTurns: 2);
         var thief = new EnemyRuntime(type);
         _combat.StartEnemy(thief);
         int initialHand = _cards.hand.Count;
@@ -101,8 +101,8 @@ public sealed class Phase7BMultiEnemyTests
     public void AuthoredPhase7BEnemyAssets_HaveApprovedStatsAndIdentityRules()
     {
 #if UNITY_EDITOR
-        var thief = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Thief.asset");
-        var goblin = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Goblin.asset");
+        var thief = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Pickpocket.asset");
+        var goblin = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Scrapper.asset");
 
         Assert.That((thief.maxHp, thief.baseAttack, thief.creditsReward, thief.encounterCount, thief.fleeAfterPlayerTurns),
             Is.EqualTo((12, 1, 15, 1, 2)));
@@ -115,7 +115,7 @@ public sealed class Phase7BMultiEnemyTests
     public void KnightAsset_UsesApprovedBaseStats_WithoutChangingExistingReward()
     {
 #if UNITY_EDITOR
-        var knight = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Knight.asset");
+        var knight = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/SecurityGuard.asset");
         Assert.That(knight, Is.Not.Null);
         Assert.That((knight.maxHp, knight.baseAttack, knight.creditsReward, knight.encounterCount),
             Is.EqualTo((16, 4, 10, 1)));
@@ -128,12 +128,12 @@ public sealed class Phase7BMultiEnemyTests
     public void KnightCombat_PreviewAndSpawnShareScaledStats_WithoutMutatingSource(
         int mapIndex, int expectedHp, int expectedAttack)
     {
-        var knight = CreateEnemyType("Knight", 16, 4, 10);
+        var knight = CreateEnemyType("SecurityGuard", 16, 4, 10);
         var run = CreateComponent<RunManager>("Phase1 RunManager");
         run.knightType = knight;
         var node = new PathNode
         {
-            id = 7, kind = MapNodeType.Combat, contentId = "Knight",
+            id = 7, kind = MapNodeType.Combat, contentId = "SecurityGuard",
             mapIndex = mapIndex, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
@@ -152,12 +152,12 @@ public sealed class Phase7BMultiEnemyTests
     [Test]
     public void EliteEncounter_ScalesBaseBeforeFixedModifier_AndKeepsAssetUnchanged()
     {
-        var knight = CreateEnemyType("Knight", 16, 4, 10);
+        var knight = CreateEnemyType("SecurityGuard", 16, 4, 10);
         var run = CreateComponent<RunManager>("Phase1 Elite RunManager");
         run.knightType = knight;
         var node = new PathNode
         {
-            id = 8, kind = MapNodeType.Elite, contentId = "Knight",
+            id = 8, kind = MapNodeType.Elite, contentId = "SecurityGuard",
             mapIndex = 11, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
@@ -196,13 +196,13 @@ public sealed class Phase7BMultiEnemyTests
     [Test]
     public void ShieldbearerCombat_PairsWithOneGoblin_AndStartsWithOneShield()
     {
-        var shield = CreateEnemyType("Shieldbearer", 10, 3, 0);
+        var shield = CreateEnemyType("RiotGuard", 10, 3, 0);
         var shieldAbility = ScriptableObject.CreateInstance<EnemyAbility>();
         _created.Add(shieldAbility);
         shieldAbility.effect = EnemyAbilityEffect.StartWithShield;
         shieldAbility.amount = 1;
         shield.abilities = new[] { shieldAbility };
-        var goblin = CreateEnemyType("Goblin", 3, 2, 3, encounterCount: 3);
+        var goblin = CreateEnemyType("Scrapper", 3, 2, 3, encounterCount: 3);
         shield.allies = new[] { new EncounterAllySpec { type = goblin, count = 1 } };
         var catalog = ScriptableObject.CreateInstance<RunContentCatalog>();
         _created.Add(catalog);
@@ -211,7 +211,7 @@ public sealed class Phase7BMultiEnemyTests
         run.contentCatalog = catalog;
         var node = new PathNode
         {
-            id = 19, kind = MapNodeType.Combat, contentId = "Shieldbearer",
+            id = 19, kind = MapNodeType.Combat, contentId = "RiotGuard",
             mapIndex = 1, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
@@ -219,7 +219,7 @@ public sealed class Phase7BMultiEnemyTests
         _combat.Reset();
         run.OnPathChosen(node.id);
         Assert.That(_combat.Enemies.Select(enemy => enemy.type.enemyName),
-            Is.EqualTo(new[] { "Shieldbearer", "Goblin" }));
+            Is.EqualTo(new[] { "RiotGuard", "Scrapper" }));
         Assert.That((_combat.Enemies[0].maxHp, _combat.Enemies[0].currentAttack), Is.EqualTo((12, 3)));
         Assert.That((_combat.Enemies[1].maxHp, _combat.Enemies[1].currentAttack), Is.EqualTo((4, 2)));
         var shieldRuntime = _combat.Enemies[0];
@@ -236,14 +236,14 @@ public sealed class Phase7BMultiEnemyTests
     [Test]
     public void KnightMapThreeEncounter_IsSolo()
     {
-        var knight = CreateEnemyType("Knight", 16, 4, 10);
-        var goblin = CreateEnemyType("Goblin", 3, 2, 3);
+        var knight = CreateEnemyType("SecurityGuard", 16, 4, 10);
+        var goblin = CreateEnemyType("Scrapper", 3, 2, 3);
         var run = CreateComponent<RunManager>("Phase1 Knight Solo RunManager");
         run.knightType = knight;
         run.goblinType = goblin;
         var node = new PathNode
         {
-            id = 20, kind = MapNodeType.Combat, contentId = "Knight",
+            id = 20, kind = MapNodeType.Combat, contentId = "SecurityGuard",
             mapIndex = 2, accessible = true, revealed = true, scouted = true
         };
         run.currentPath.Add(node);
@@ -256,7 +256,7 @@ public sealed class Phase7BMultiEnemyTests
     [Test]
     public void BruteCombat_AlternatesResponseDamage_AndTelegraphsTheChargedTurn()
     {
-        var brute = CreateEnemyType("Brute", 18, 3, 0);
+        var brute = CreateEnemyType("Heavy", 18, 3, 0);
         var ability = ScriptableObject.CreateInstance<EnemyAbility>();
         _created.Add(ability);
         ability.effect = EnemyAbilityEffect.AlternateChargedAttack;
@@ -288,9 +288,9 @@ public sealed class Phase7BMultiEnemyTests
     [Test]
     public void RunManager_NormalGoblinNodeStartsThreeRuntimeEnemies()
     {
-        var thief = CreateEnemyType("Thief", 12, 1, 15, fleeAfterPlayerTurns: 2);
-        var goblin = CreateEnemyType("Goblin", 3, 2, 3, encounterCount: 3);
-        var knight = CreateEnemyType("Knight", 25, 8, 10);
+        var thief = CreateEnemyType("Pickpocket", 12, 1, 15, fleeAfterPlayerTurns: 2);
+        var goblin = CreateEnemyType("Scrapper", 3, 2, 3, encounterCount: 3);
+        var knight = CreateEnemyType("SecurityGuard", 25, 8, 10);
         var run = CreateComponent<RunManager>("Phase7B RunManager");
         run.thiefType = thief;
         run.goblinType = goblin;
@@ -299,7 +299,7 @@ public sealed class Phase7BMultiEnemyTests
         {
             id = 7,
             kind = MapNodeType.Combat,
-            contentId = "Goblin",
+            contentId = "Scrapper",
             accessible = true,
             revealed = true
         });
@@ -310,13 +310,13 @@ public sealed class Phase7BMultiEnemyTests
         Assert.That(_combat.Enemies.Count, Is.EqualTo(3));
         Assert.That(_combat.Enemies.All(enemy => object.ReferenceEquals(enemy.type, goblin)), Is.True);
         Assert.That(_combat.Enemies.Select(enemy => enemy.DisplayName),
-            Is.EqualTo(new[] { "Goblin 1", "Goblin 2", "Goblin 3" }));
+            Is.EqualTo(new[] { "Scrapper 1", "Scrapper 2", "Scrapper 3" }));
     }
 
     [Test]
     public void EnemyGroupUI_BindsOnePresentationPerActiveEnemy()
     {
-        var type = CreateEnemyType("Goblin", 3, 2, 3, encounterCount: 3);
+        var type = CreateEnemyType("Scrapper", 3, 2, 3, encounterCount: 3);
         var enemies = new[]
         {
             new EnemyRuntime(type, 1, 3),

@@ -24,9 +24,9 @@ public sealed class Phase6RegressionTests
         _combat = CreateObject<CombatManager>("Phase6 CombatManager");
         _combat.ConfigurePlayer(30);
         _run = CreateObject<RunManager>("Phase6 RunManager");
-        _run.thiefType = CreateEnemy("Thief", 10, 4, 5);
-        _run.goblinType = CreateEnemy("Goblin", 15, 6, 7);
-        _run.knightType = CreateEnemy("Knight", 25, 8, 10);
+        _run.thiefType = CreateEnemy("Pickpocket", 10, 4, 5);
+        _run.goblinType = CreateEnemy("Scrapper", 15, 6, 7);
+        _run.knightType = CreateEnemy("SecurityGuard", 25, 8, 10);
     }
 
     [TearDown]

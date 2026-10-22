@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56ede82db3e0bdd49bbf245bd4ba24ac, type: 3}
+  m_Name: RedlineDeal
+  m_EditorClassIdentifier: Dealbreak.Runtime::RunEventDefinition
+  id: evt_100
+  category: 5
+  flow: 1
+  title: Redline Deal
+  description: A black-market broker offers an extreme upgrade with an equally extreme
+    price; appears on a 1-in-20 eligible Risk roll.
+  choices:
+  - label: Go All In
+    description: Set max HP to 5; clamp current HP without healing; gain an eligible
+      Legendary Gear. If slots are full, choose replacement or cancel before the
+      effect.
+    effects: []
+    interaction: 0
+    requiredDiscardValue: 0
+  - label: Take the Big Cut
+    description: Pay 15 current HP (must remain alive); gain an eligible Epic Gear.
+      Replacement/cancel is resolved before payment.
+    effects: []
+    interaction: 0
+    requiredDiscardValue: 0
+  - label: Take the Small Cut
+    description: Pay 5 current HP (must remain alive); upgrade a random owned Gear
+      by exactly one tier.
+    effects: []
+    interaction: 0
+    requiredDiscardValue: 0

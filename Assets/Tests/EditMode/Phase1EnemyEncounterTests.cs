@@ -18,8 +18,8 @@ public sealed class Phase1EnemyEncounterTests
     public void AuthoredShieldbearerAndBrute_HaveApprovedStatsAndAbilities()
     {
 #if UNITY_EDITOR
-        var shieldbearer = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Shieldbearer.asset");
-        var brute = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Brute.asset");
+        var shieldbearer = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/RiotGuard.asset");
+        var brute = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Heavy.asset");
         Assert.That(shieldbearer, Is.Not.Null);
         Assert.That(brute, Is.Not.Null);
         Assert.That((shieldbearer.maxHp, shieldbearer.baseAttack, shieldbearer.creditsReward), Is.EqualTo((10, 3, 0)));
@@ -33,8 +33,8 @@ public sealed class Phase1EnemyEncounterTests
     public void ShieldbearerStartsEncounterWithOneShield_AndBruteAlternatesTelegraphedResponses()
     {
 #if UNITY_EDITOR
-        var shieldType = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Shieldbearer.asset");
-        var bruteType = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Brute.asset");
+        var shieldType = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/RiotGuard.asset");
+        var bruteType = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>("Assets/Data/Enemies/Heavy.asset");
         Assert.That(shieldType, Is.Not.Null);
         Assert.That(bruteType, Is.Not.Null);
 
@@ -61,10 +61,10 @@ public sealed class Phase1EnemyEncounterTests
     [Test]
     public void MapGeneration_ExcludesKnightBeforeMapThree_AndNewEnemiesOnlyFromNormalEncounters()
     {
-        var goblin = CreateEnemy("Goblin", 3, 2, 3);
-        var knight = CreateEnemy("Knight", 16, 4, 10);
-        var shieldbearer = CreateEnemy("Shieldbearer", 10, 3, 0);
-        var brute = CreateEnemy("Brute", 18, 3, 0);
+        var goblin = CreateEnemy("Scrapper", 3, 2, 3);
+        var knight = CreateEnemy("SecurityGuard", 16, 4, 10);
+        var shieldbearer = CreateEnemy("RiotGuard", 10, 3, 0);
+        var brute = CreateEnemy("Heavy", 18, 3, 0);
         knight.minMapIndex = 2;
         shieldbearer.eligibleAsEliteBase = false;
         brute.eligibleAsEliteBase = false;
@@ -98,12 +98,12 @@ public sealed class Phase1EnemyEncounterTests
     public void AuthoredEnemyAssets_CarryCompositionRulesAsData()
     {
         EnemyTypeData Load(string name) => UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyTypeData>($"Assets/Data/Enemies/{name}.asset");
-        var goblin = Load("Goblin");
-        var knight = Load("Knight");
-        var shieldbearer = Load("Shieldbearer");
-        var brute = Load("Brute");
-        var drummer = Load("WarDrummer");
-        var captain = Load("GoblinCaptain");
+        var goblin = Load("Scrapper");
+        var knight = Load("SecurityGuard");
+        var shieldbearer = Load("RiotGuard");
+        var brute = Load("Heavy");
+        var drummer = Load("HypeMan");
+        var captain = Load("CrewLeader");
 
         Assert.That(knight.minMapIndex, Is.EqualTo(2));
         Assert.That((shieldbearer.eligibleAsEliteBase, brute.eligibleAsEliteBase), Is.EqualTo((false, false)));
@@ -121,8 +121,8 @@ public sealed class Phase1EnemyEncounterTests
     [Test]
     public void MapGeneration_IsDeterministicForSameSeedAndMapIndex()
     {
-        var enemies = new[] { CreateEnemy("Goblin", 3, 2, 3), CreateEnemy("Knight", 16, 4, 10),
-            CreateEnemy("Shieldbearer", 10, 3, 0), CreateEnemy("Brute", 18, 3, 0) };
+        var enemies = new[] { CreateEnemy("Scrapper", 3, 2, 3), CreateEnemy("SecurityGuard", 16, 4, 10),
+            CreateEnemy("RiotGuard", 10, 3, 0), CreateEnemy("Heavy", 18, 3, 0) };
         var first = RunMapGenerator.Generate(new RunRandomContext("phase1-deterministic"), 2, null, enemies);
         var second = RunMapGenerator.Generate(new RunRandomContext("phase1-deterministic"), 2, null, enemies);
         CollectionAssert.AreEqual(first.Select(Signature), second.Select(Signature));

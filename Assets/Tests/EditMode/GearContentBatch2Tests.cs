@@ -20,11 +20,11 @@ public sealed class GearContentBatch2Tests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _lantern = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Lantern.asset");
-        _hammer = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Hammer.asset");
-        _light = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/HealingLight.asset");
-        _ghostLens = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/GhostLens.asset");
-        _mending = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Mending.asset");
+        _lantern = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/Scanner.asset");
+        _hammer = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/ModBench.asset");
+        _light = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/AutoInjector.asset");
+        _ghostLens = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/GhostLens.asset");
+        _mending = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Regenerative.asset");
         Assert.That(new UnityEngine.Object[] { _lantern, _hammer, _light, _ghostLens, _mending }, Has.All.Not.Null);
         var canvas = Make<Canvas>("Batch2 Canvas");
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -43,19 +43,19 @@ public sealed class GearContentBatch2Tests
         view.canvasGroup = prefab.GetComponent<CanvasGroup>();
         _cards = Make<CardManager>("Batch2 Cards");
         _cards.Configure(field, drag, view, new[] { _lantern, _hammer, _light, _ghostLens,
-            AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/ClubPower.asset"),
-            AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/SpadePower.asset"),
-            AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/Tome.asset") },
+            AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/ClubAmplifier.asset"),
+            AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/SpadeShield.asset"),
+            AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/FieldTablet.asset") },
             new[] { _mending,
-                AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Sharpened.asset"),
-                AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Quickdraw.asset"),
-                AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Reinforced.asset") });
+                AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Boosted.asset"),
+                AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Quickload.asset"),
+                AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Plated.asset") });
         _combat = Make<CombatManager>("Batch2 Combat");
         _combat.ConfigurePlayer(30);
         _run = Make<RunManager>("Batch2 Run");
-        _run.thiefType = Enemy("Thief", 20, 1);
-        _run.goblinType = Enemy("Goblin", 20, 2);
-        _run.knightType = Enemy("Knight", 20, 3);
+        _run.thiefType = Enemy("Pickpocket", 20, 1);
+        _run.goblinType = Enemy("Scrapper", 20, 2);
+        _run.knightType = Enemy("SecurityGuard", 20, 3);
         _run.contentCatalog = AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/Data/Run/PrototypeRunContent.asset");
         _run.StartRunWithSeed("LANTERN-HAMMER-LIGHT");
     }

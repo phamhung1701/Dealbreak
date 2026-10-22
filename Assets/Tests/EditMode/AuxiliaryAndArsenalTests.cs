@@ -18,8 +18,8 @@ public sealed class AuxiliaryAndArsenalTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _arsenal = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/ArsenalEmblem.asset");
-        _auxiliary = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Auxiliary.asset");
+        _arsenal = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/MemoryCard.asset");
+        _auxiliary = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Backup.asset");
         Assert.That(new Object[] { _arsenal, _auxiliary }, Has.All.Not.Null);
 
         var canvas = CreateComponent<Canvas>("Auxiliary Arsenal Canvas");
@@ -39,8 +39,8 @@ public sealed class AuxiliaryAndArsenalTests
         _cards.Configure(_field, dragCanvas, prefab, new[] { _arsenal }, new[]
         {
             _auxiliary,
-            AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Golden.asset"),
-            AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Quickdraw.asset")
+            AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Profitable.asset"),
+            AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Quickload.asset")
         });
         _cards.ConfigureRandom(new DeterministicRandom(903));
         _cards.BuildDeck();

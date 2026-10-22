@@ -133,7 +133,7 @@ public sealed class Phase7GrowthTests
         _created.Add(type);
         var ability = ScriptableObject.CreateInstance<EnemyAbility>();
         ability.effect = EnemyAbilityEffect.MasterThief;
-        ability.amount = AssetDatabase.LoadAssetAtPath<EnemyAbility>("Assets/Data/Enemies/Abilities/MasterThief.asset").amount;
+        ability.amount = AssetDatabase.LoadAssetAtPath<EnemyAbility>("Assets/Data/Enemies/Abilities/PickpocketGetaway.asset").amount;
         Assert.That(ability.amount, Is.EqualTo(8), "The steal limit is authored on the Master Thief ability.");
         type.abilities = new[] { ability };
         _created.Add(ability);

@@ -17,9 +17,9 @@ public sealed class GearSynergyQATests
     CombatManager _combat;
     Field _field;
 
-    static GearData Gear(string file) => AssetDatabase.LoadAssetAtPath<GearData>($"Assets/Data/Relics/{file}.asset");
+    static GearData Gear(string file) => AssetDatabase.LoadAssetAtPath<GearData>($"Assets/Data/Gear/{file}.asset");
     static CardEnhancementData Mod(string file) =>
-        AssetDatabase.LoadAssetAtPath<CardEnhancementData>($"Assets/Data/Enhancements/{file}.asset");
+        AssetDatabase.LoadAssetAtPath<CardEnhancementData>($"Assets/Data/Mods/{file}.asset");
 
     StackTraceLogType _logStackTrace;
 
@@ -52,8 +52,8 @@ public sealed class GearSynergyQATests
         prefab.face = prefabObject.GetComponent<Image>();
         prefab.canvasGroup = prefabObject.GetComponent<CanvasGroup>();
         _cards = CreateComponent<CardManager>("QA Cards");
-        _cards.Configure(_field, dragCanvas, prefab, All<GearData>("Relics"), All<CardEnhancementData>("Enhancements"),
-            All<ConsumableData>("Consumables"));
+        _cards.Configure(_field, dragCanvas, prefab, All<GearData>("Gear"), All<CardEnhancementData>("Mods"),
+            All<ConsumableData>("Tricks"));
         _cards.ConfigureRandom(new DeterministicRandom(4242));
         _cards.BuildDeck();
         _cards.DealHand();
@@ -74,10 +74,10 @@ public sealed class GearSynergyQATests
     [Test]
     public void MatchedCells_PairWithBackupOnAPlayedCard_DealsItsPreviewUnderClubAmplifierRare()
     {
-        Own("HandsRare", "ClubRare");
+        Own("MatchedCellsRare", "ClubAmplifierRare");
         var club = Hold(card => card.MatchesSuit(CardData.Suit.Clubs) && card.Rank != CardData.Rank.Ace);
         var partner = Hold(card => card.Rank == club.data.Rank, club.data);
-        Assert.That(_cards.ApplyEnhancement(partner.data.Id, Mod("Auxiliary")), Is.True);
+        Assert.That(_cards.ApplyEnhancement(partner.data.Id, Mod("Backup")), Is.True);
         var target = StartTarget();
         var played = new[] { club.data, partner.data };
         int preview = _combat.PreviewActionDamage(played, target);
@@ -93,22 +93,22 @@ public sealed class GearSynergyQATests
     // ---- written rules: exact numbers -------------------------------------------------------
 
     // 8 of Clubs played alone while another hand card carries Backup (+3 in hand).
-    [TestCase(new[] { "ClubPower" }, 22, TestName = "Rule_ClubCommon_DoublesBackup")]
-    [TestCase(new[] { "ClubRare" }, 22, TestName = "Rule_ClubRare_DoublesBackup")]
-    [TestCase(new[] { "ClubRare", "GlassCommon" }, 32, TestName = "Rule_ClubRare_DoublesAfterGlassFlat_BoughtFirst")]
-    [TestCase(new[] { "GlassCommon", "ClubRare" }, 32, TestName = "Rule_ClubRare_DoublesAfterGlassFlat_BoughtSecond")]
-    [TestCase(new[] { "ClubRare", "GlassRare" }, 44, TestName = "Rule_ClubRare_AndGlassRare_Stack")]
-    [TestCase(new[] { "GlassCommon" }, 16, TestName = "Rule_GlassCommon_AddsFive")]
-    [TestCase(new[] { "Sword" }, 21, TestName = "Rule_PowerBaton_AddsTenAboveEight")]
-    [TestCase(new[] { "ClubPower", "Sword" }, 32, TestName = "Rule_PowerBaton_ChecksTheMultipliedValue")]
-    [TestCase(new[] { "MimicEmblem" }, 14, TestName = "Rule_EchoDriver_RepeatsBackup")]
-    [TestCase(new[] { "Dagger" }, 10, TestName = "Rule_Scalpel_CapsTotalAtTen")]
+    [TestCase(new[] { "ClubAmplifier" }, 22, TestName = "Rule_ClubCommon_DoublesBackup")]
+    [TestCase(new[] { "ClubAmplifierRare" }, 22, TestName = "Rule_ClubRare_DoublesBackup")]
+    [TestCase(new[] { "ClubAmplifierRare", "GlassShard" }, 32, TestName = "Rule_ClubRare_DoublesAfterGlassFlat_BoughtFirst")]
+    [TestCase(new[] { "GlassShard", "ClubAmplifierRare" }, 32, TestName = "Rule_ClubRare_DoublesAfterGlassFlat_BoughtSecond")]
+    [TestCase(new[] { "ClubAmplifierRare", "GlassShardRare" }, 44, TestName = "Rule_ClubRare_AndGlassRare_Stack")]
+    [TestCase(new[] { "GlassShard" }, 16, TestName = "Rule_GlassCommon_AddsFive")]
+    [TestCase(new[] { "PowerBaton" }, 21, TestName = "Rule_PowerBaton_AddsTenAboveEight")]
+    [TestCase(new[] { "ClubAmplifier", "PowerBaton" }, 32, TestName = "Rule_PowerBaton_ChecksTheMultipliedValue")]
+    [TestCase(new[] { "EchoDriver" }, 14, TestName = "Rule_EchoDriver_RepeatsBackup")]
+    [TestCase(new[] { "Scalpel" }, 10, TestName = "Rule_Scalpel_CapsTotalAtTen")]
     public void ClubEight_WithBackupHeld_DealsTheWrittenRule(string[] gear, int expected)
     {
         Own(gear);
         var club = Hold(card => card.Suit == CardData.Suit.Clubs && card.Rank == CardData.Rank.Eight);
         var holder = Hold(card => card.Suit != CardData.Suit.Clubs, club.data);
-        Assert.That(_cards.ApplyEnhancement(holder.data.Id, Mod("Auxiliary")), Is.True);
+        Assert.That(_cards.ApplyEnhancement(holder.data.Id, Mod("Backup")), Is.True);
         var target = StartTarget();
 
         Assert.That(_combat.PreviewActionDamage(new[] { club.data }, target), Is.EqualTo(expected), "preview");
@@ -119,9 +119,9 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_ClubCrystal_MakesAHeartCountForClubAmplifierRare()
     {
-        Own("ClubRare");
+        Own("ClubAmplifierRare");
         var heart = Hold(card => card.Suit == CardData.Suit.Hearts && card.Rank == CardData.Rank.Eight);
-        Assert.That(_cards.AddConsumable(Trick("ClubRune")), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("ClubCrystal")), Is.True);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { heart.data.Id }), Is.True);
         var target = StartTarget();
 
@@ -132,9 +132,9 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_Wildcard_CountsAsAClubForClubAmplifier()
     {
-        Own("ClubPower");
+        Own("ClubAmplifier");
         var diamond = Hold(card => card.Suit == CardData.Suit.Diamonds && card.Rank == CardData.Rank.Eight);
-        Assert.That(_cards.ApplyEnhancement(diamond.data.Id, Mod("Shifting")), Is.True);
+        Assert.That(_cards.ApplyEnhancement(diamond.data.Id, Mod("Wildcard")), Is.True);
         var target = StartTarget();
 
         Assert.That(_combat.TryPlayCards(new[] { diamond }, target), Is.True);
@@ -144,9 +144,9 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_BoosterShot_ThenModdersKit_AddsBothBonuses()
     {
-        Own("ArtisanTools");
+        Own("ModdersKit");
         var club = Hold(card => card.Suit == CardData.Suit.Clubs && card.Rank == CardData.Rank.Eight);
-        Assert.That(_cards.AddConsumable(Trick("Whetstone")), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("BoosterShot")), Is.True);
         Assert.That(_cards.UseEnhancementConsumableAtSlot(0, club.data.Id), Is.True);
         var target = StartTarget();
 
@@ -157,9 +157,9 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_ThrowingStar_IsFlatFiveEvenWithGlassRare()
     {
-        Own("GlassRare");
+        Own("GlassShardRare");
         var target = StartTarget();
-        Assert.That(_cards.AddConsumable(Trick("ThrowingKnife")), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("ThrowingStar")), Is.True);
         Assert.That(_cards.UseConsumableAtSlot(0, _combat, target), Is.True);
         Assert.That(1000 - target.currentHp, Is.EqualTo(5));
     }
@@ -167,10 +167,10 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_FirstAidKit_AddsThreeToTheFirstTrickOnly()
     {
-        Own("FieldMedicsKit");
+        Own("FirstAidKit");
         StartTarget();
         _combat.player.RestorePersistentState(30, 10, 0, 0);
-        Assert.That(_cards.AddConsumable(Trick("Bread"), 2), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("EnergyBar"), 2), Is.True);
         Assert.That(_cards.UseConsumableAtSlot(0, _combat), Is.True);
         Assert.That(_combat.player.currentHealth, Is.EqualTo(10 + 5 + 3));
         Assert.That(_cards.UseConsumableAtSlot(0, _combat), Is.True);
@@ -178,7 +178,7 @@ public sealed class GearSynergyQATests
     }
 
     static IEnumerable<TestCaseData> ModTricks() =>
-        All<ConsumableData>("Consumables").Where(trick => trick.effectType == ConsumableEffectType.ApplyEnhancement)
+        All<ConsumableData>("Tricks").Where(trick => trick.effectType == ConsumableEffectType.ApplyEnhancement)
             .Select(trick => new TestCaseData(trick.name).SetName($"Rule_ModTrick_{trick.name}_AppliesItsMod"));
 
     [TestCaseSource(nameof(ModTricks))]
@@ -197,12 +197,12 @@ public sealed class GearSynergyQATests
     {
         var club = Hold(card => card.Suit == CardData.Suit.Clubs && card.Rank == CardData.Rank.Eight);
         var holder = Hold(card => card.Suit != CardData.Suit.Clubs, club.data);
-        Assert.That(_cards.ApplyEnhancement(holder.data.Id, Mod("Auxiliary")), Is.True);
+        Assert.That(_cards.ApplyEnhancement(holder.data.Id, Mod("Backup")), Is.True);
         foreach (var spare in HandViews().Where(view => view != club && view != holder).Take(2).ToArray())
             Assert.That(_cards.TryDiscard(spare), Is.True);
-        Assert.That(_cards.AddConsumable(Trick("Mirror")), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("CloneVial")), Is.True);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { holder.data.Id }), Is.True);
-        Assert.That(_cards.hand.Count(card => card.Enhancement == Mod("Auxiliary")), Is.EqualTo(3));
+        Assert.That(_cards.hand.Count(card => card.Enhancement == Mod("Backup")), Is.EqualTo(3));
         var target = StartTarget();
 
         Assert.That(_combat.TryPlayCards(new[] { club }, target), Is.True);
@@ -212,9 +212,9 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_SpadeCrystal_MakesAHeartBlockDoubleWithSpadeShield()
     {
-        Own("SpadePower");
+        Own("SpadeShield");
         var heart = Hold(card => card.Suit == CardData.Suit.Hearts && card.Rank == CardData.Rank.Eight);
-        Assert.That(_cards.AddConsumable(Trick("SpadeRune")), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("SpadeCrystal")), Is.True);
         Assert.That(_cards.UseDeckMutationConsumableAtSlot(0, new[] { heart.data.Id }), Is.True);
         Assert.That(_combat.CalculateCardDefense(heart.data), Is.EqualTo(16));
     }
@@ -222,12 +222,12 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_GrapplingHook_FirstTrickDrawsOne_SecondDoesNot()
     {
-        Own("ScavengersPouch");
+        Own("GrapplingHook");
         var target = StartTarget();
         Assert.That(_cards.TryDiscard(HandViews()[0]), Is.True);
         Assert.That(_cards.TryDiscard(HandViews()[0]), Is.True);
         int hand = _cards.HandCount;
-        Assert.That(_cards.AddConsumable(Trick("ThrowingKnife"), 2), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("ThrowingStar"), 2), Is.True);
         Assert.That(_cards.UseConsumableAtSlot(0, _combat, target), Is.True);
         Assert.That(_cards.HandCount, Is.EqualTo(hand + 1));
         Assert.That(_cards.UseConsumableAtSlot(0, _combat, target), Is.True);
@@ -237,9 +237,9 @@ public sealed class GearSynergyQATests
     [Test]
     public void Rule_GuardDrone_StartsCombatWithTwoBlockPerDistinctTrick()
     {
-        Own("PreparationManual");
-        Assert.That(_cards.AddConsumable(Trick("Bread")), Is.True);
-        Assert.That(_cards.AddConsumable(Trick("ThrowingKnife")), Is.True);
+        Own("GuardDrone");
+        Assert.That(_cards.AddConsumable(Trick("EnergyBar")), Is.True);
+        Assert.That(_cards.AddConsumable(Trick("ThrowingStar")), Is.True);
         StartTarget();
         Assert.That(_combat.player.EncounterBlock, Is.EqualTo(4));
     }
@@ -250,7 +250,7 @@ public sealed class GearSynergyQATests
 
     static IEnumerable<TestCaseData> GearBlocks()
     {
-        foreach (var path in AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Relics" })
+        foreach (var path in AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Gear" })
                      .Select(AssetDatabase.GUIDToAssetPath).OrderBy(p => p))
         {
             string file = System.IO.Path.GetFileNameWithoutExtension(path);
@@ -266,7 +266,7 @@ public sealed class GearSynergyQATests
         var spade = Hold(Plain(CardData.Suit.Spades));
         var blockers = new List<CardView> { spade };
         if (shape == BlockShape.PlatedSpade)
-            Assert.That(_cards.ApplyEnhancement(spade.data.Id, Mod("Reinforced")), Is.True);
+            Assert.That(_cards.ApplyEnhancement(spade.data.Id, Mod("Plated")), Is.True);
         if (shape == BlockShape.SpadeAndHeart) blockers.Add(Hold(Plain(CardData.Suit.Hearts), spade.data));
         var target = StartTarget(attack: 20);
 
@@ -284,7 +284,7 @@ public sealed class GearSynergyQATests
         if (_combat.currentState == GameState.EnemyAttacking) _combat.TakeRemainingDamage();
 
         // Auto-Injector heals 2 as the next player turn begins, after the damage lands.
-        int turnHeal = gearFile == "HealingLight" && remaining > 0 ? 2 : 0;
+        int turnHeal = gearFile == "AutoInjector" && remaining > 0 ? 2 : 0;
         Assert.That(before - _combat.player.currentHealth, Is.EqualTo(System.Math.Min(before, remaining) - turnHeal),
             $"{gearFile} {shape}: preview left {remaining} damage");
     }
@@ -300,7 +300,7 @@ public sealed class GearSynergyQATests
 
     static IEnumerable<TestCaseData> GearShapes()
     {
-        foreach (var path in AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Relics" })
+        foreach (var path in AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Gear" })
                      .Select(AssetDatabase.GUIDToAssetPath).OrderBy(p => p))
         {
             string file = System.IO.Path.GetFileNameWithoutExtension(path);
@@ -315,9 +315,9 @@ public sealed class GearSynergyQATests
         var gear = Gear(gearFile);
         bool group = shape is Shape.SameRankBackupOnPartner or Shape.SameRankThreeBackupHeld;
         Own(gearFile);
-        if (group && !gear.name.StartsWith("Hands")) Own("HandsRare");
+        if (group && !gear.name.StartsWith("MatchedCells")) Own("MatchedCellsRare");
 
-        var backup = Mod("Auxiliary");
+        var backup = Mod("Backup");
         var played = new List<CardView>();
         CardView holder = null;
         switch (shape)
@@ -332,7 +332,7 @@ public sealed class GearSynergyQATests
                 break;
             case Shape.ClubBoostedBackupHeld:
                 played.Add(Hold(Plain(CardData.Suit.Clubs)));
-                Assert.That(_cards.ApplyEnhancement(played[0].data.Id, Mod("Sharpened")), Is.True);
+                Assert.That(_cards.ApplyEnhancement(played[0].data.Id, Mod("Boosted")), Is.True);
                 break;
             case Shape.ClubDoubleStrikeBackupHeld:
                 played.Add(Hold(Plain(CardData.Suit.Clubs)));
@@ -340,7 +340,7 @@ public sealed class GearSynergyQATests
                 break;
             case Shape.ClubOverclockedBackupHeld:
                 played.Add(Hold(Plain(CardData.Suit.Clubs)));
-                Assert.That(_cards.ApplyEnhancement(played[0].data.Id, Mod("Vampiric")), Is.True);
+                Assert.That(_cards.ApplyEnhancement(played[0].data.Id, Mod("Overclocked")), Is.True);
                 break;
             case Shape.SameRankBackupOnPartner:
                 played.Add(Hold(Plain(CardData.Suit.Clubs)));
@@ -372,7 +372,7 @@ public sealed class GearSynergyQATests
 
         int dealt = 1000 - target.currentHp;
         bool mayCrit = gear.specialRule is GearSpecialRule.AceRare or GearSpecialRule.AceEpic ||
-                       gear.name.StartsWith("Ace") && shape == Shape.AcePairBackupHeld;
+                       gear.name.StartsWith("AceProtocol") && shape == Shape.AcePairBackupHeld;
         if (mayCrit && dealt == preview * 2) dealt /= 2;
         Assert.That(dealt, Is.EqualTo(preview), $"{gearFile} {shape}: preview {preview} but dealt {1000 - target.currentHp}");
     }
@@ -394,7 +394,7 @@ public sealed class GearSynergyQATests
             .Select(AssetDatabase.GUIDToAssetPath).OrderBy(p => p).Select(AssetDatabase.LoadAssetAtPath<T>).ToArray();
 
     static ConsumableData Trick(string file) =>
-        AssetDatabase.LoadAssetAtPath<ConsumableData>($"Assets/Data/Consumables/{file}.asset");
+        AssetDatabase.LoadAssetAtPath<ConsumableData>($"Assets/Data/Tricks/{file}.asset");
 
     EnemyRuntime StartTarget(int hp = 1000, int attack = 0)
     {

@@ -33,9 +33,9 @@ public sealed class Phase7EGearCapacityTests
         var combat = Make<CombatManager>("Combat");
         combat.ConfigurePlayer(30);
         _run = Make<RunManager>("Run");
-        _run.thiefType = Enemy("Thief");
-        _run.goblinType = Enemy("Goblin");
-        _run.knightType = Enemy("Knight");
+        _run.thiefType = Enemy("Pickpocket");
+        _run.goblinType = Enemy("Scrapper");
+        _run.knightType = Enemy("SecurityGuard");
         _run.StartRunWithSeed("7E-CAPACITY");
     }
 

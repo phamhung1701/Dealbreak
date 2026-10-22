@@ -34,7 +34,7 @@ public sealed class NobleFamilyEventTests
     [Test]
     public void CanonicalEvent_IsRegisteredWithCorrectChoicesAndEffects()
     {
-        var definition = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/NobleFamily.asset");
+        var definition = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/VIPParty.asset");
         var catalog = AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/Data/Run/PrototypeRunContent.asset");
 
         Assert.That(definition, Is.Not.Null);
@@ -52,7 +52,7 @@ public sealed class NobleFamilyEventTests
     [Test]
     public void RefuseDoesNothing_AndAcceptGrantsTenCreditsThroughExistingResolver()
     {
-        var definition = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/NobleFamily.asset");
+        var definition = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/VIPParty.asset");
         Assert.That(RunEffectResolver.Apply(definition.choices[0], _cards, _combat), Is.True);
         Assert.That(_cards.credits, Is.Zero);
 

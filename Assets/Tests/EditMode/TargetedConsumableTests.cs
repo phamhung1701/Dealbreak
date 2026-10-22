@@ -18,12 +18,12 @@ public sealed class TargetedConsumableTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _knife = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/ThrowingKnife.asset");
-        _whetstone = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Whetstone.asset");
-        _bomb = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/Bomb.asset");
-        _heartRune = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Consumables/HeartRune.asset");
-        _sharpened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Sharpened.asset");
-        _blacksmith = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/Blacksmith.asset");
+        _knife = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/ThrowingStar.asset");
+        _whetstone = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/BoosterShot.asset");
+        _bomb = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/Firecracker.asset");
+        _heartRune = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/HeartCrystal.asset");
+        _sharpened = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Boosted.asset");
+        _blacksmith = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/StreetMechanic.asset");
         Assert.That(new UnityEngine.Object[] { _knife, _whetstone, _bomb, _heartRune, _sharpened, _blacksmith }, Has.All.Not.Null);
 
         _cards = Make<CardManager>("Targeted Consumable Cards");
@@ -284,7 +284,7 @@ public sealed class TargetedConsumableTests
     [Test]
     public void BlacksmithEvent_CanGrantWhetstoneAndRespectsBackpackCapacity()
     {
-        var choice = _blacksmith.choices.Single(value => value.label == "Take a Whetstone");
+        var choice = _blacksmith.choices.Single(value => value.label == "Take a Booster Shot");
         Assert.That(choice.effects.Single().type, Is.EqualTo(RunEffectType.GainConsumable));
         Assert.That(choice.effects.Single().consumableId, Is.EqualTo(_whetstone.id));
         Assert.That(RunEffectResolver.GetFailureReason(choice, _cards, _combat), Is.Empty);
@@ -299,7 +299,7 @@ public sealed class TargetedConsumableTests
     [Test]
     public void EnhancementConsumables_AreAvailableFromShopAndEventButNeverEnemyDrops()
     {
-        var all = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+        var all = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(item => item != null && item.effectType == ConsumableEffectType.ApplyEnhancement).ToArray();
         var expected = new[] { "con_003", "con_006", "con_007", "con_008", "con_009", "con_010", "con_011", "con_012", "con_013", "con_014", "con_015", "con_020" };
@@ -316,7 +316,7 @@ public sealed class TargetedConsumableTests
     [Test]
     public void ShopOffersMappedEnhancementAndGeneralConsumablesFromCatalogPerVisit()
     {
-        var all = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+        var all = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(item => item != null).ToArray();
         _cards.consumableCatalog.Clear();
@@ -364,7 +364,7 @@ public sealed class TargetedConsumableTests
         Assert.That(_whetstone.dropAvailable, Is.False);
         Assert.That(_bomb.canonicalId, Is.EqualTo("con_006"));
         Assert.That(_bomb.effectType, Is.EqualTo(ConsumableEffectType.ApplyEnhancement));
-        Assert.That(_bomb.enhancementToApply, Is.SameAs(AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Explosive.asset")));
+        Assert.That(_bomb.enhancementToApply, Is.SameAs(AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Volatile.asset")));
         Assert.That(_bomb.shopAvailable, Is.True);
         Assert.That(_bomb.dropAvailable, Is.False);
         Assert.That(_bomb.eventAvailable, Is.True);

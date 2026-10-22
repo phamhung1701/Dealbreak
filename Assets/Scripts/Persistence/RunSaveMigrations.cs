@@ -15,7 +15,26 @@ public static class RunSaveMigrations
         [1] = MarkScoutedNodes,
         [2] = RetireTrainingNodes,
         [3] = FoldDiscardIntoDrawPile,
+        [4] = RenameEnemyContentIds,
     };
+
+    // A fight node's contentId is its enemy's asset name, and the enemy assets took their workbook
+    // names in v5 (Knight became SecurityGuard, and so on).
+    internal static readonly IReadOnlyDictionary<string, string> RenamedEnemyAssets = new Dictionary<string, string>
+    {
+        ["Goblin"] = "Scrapper", ["Thief"] = "Pickpocket", ["Knight"] = "SecurityGuard", ["Brute"] = "Heavy",
+        ["Shieldbearer"] = "RiotGuard", ["WarDrummer"] = "HypeMan", ["Duelist"] = "Challenger",
+        ["GoblinCaptain"] = "CrewLeader", ["RoyalKnight"] = "RiotCaptain", ["MasterThief"] = "Ghost",
+    };
+
+    static void RenameEnemyContentIds(RunSaveData data)
+    {
+        if (data.nodes == null) return;
+        foreach (var node in data.nodes)
+            if (node.kind is (int)MapNodeType.Combat or (int)MapNodeType.Elite &&
+                node.contentId != null && RenamedEnemyAssets.TryGetValue(node.contentId, out var renamed))
+                node.contentId = renamed;
+    }
 
     // v3 sent attack cards to a discard pile that came back only when the draw pile ran out. Played
     // cards now return to the draw pile at once, so a saved discard pile joins the bottom of it

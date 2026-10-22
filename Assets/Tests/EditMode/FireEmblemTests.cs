@@ -17,7 +17,7 @@ public sealed class FireEmblemTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _fireEmblem = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/FireEmblem.asset");
+        _fireEmblem = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/Lighter.asset");
         Assert.That(_fireEmblem, Is.Not.Null);
 
         var canvas = Make<Canvas>("Fire Emblem Test Canvas");

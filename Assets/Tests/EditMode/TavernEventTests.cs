@@ -16,7 +16,7 @@ public sealed class TavernEventTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _tavern = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Events/Tavern.asset");
+        _tavern = AssetDatabase.LoadAssetAtPath<RunEventDefinition>("Assets/Data/Run/Incidents/LateNightDiner.asset");
         Assert.That(_tavern, Is.Not.Null);
 
         var cardObject = new GameObject("Tavern Test Cards");

@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc333c80492e32a4981ae457376add7e, type: 3}
+  m_Name: NotchedPistol
+  m_EditorClassIdentifier: Dealbreak.Runtime::GearData
+  id: rel_119
+  displayName: Notched Pistol
+  icon: HUNT
+  iconSprite: {fileID: 21300000, guid: 5d58f1736bea9aa4691033d3dd5700c0, type: 3}
+  description: 'Trigger: On Enforcer Kill
+
+    Condition: Enforcer defeated
+
+    Effect:
+    Enforcer kill permanently strengthens first attack each encounter.
+
+    Value:
+    +1 opening-attack damage
+
+    Limit: Each actual Enforcer kill; applies to first
+    attack action of each encounter; run-local'
+  price: 20
+  capacityCategory: 0
+  canonicalId: rel_119
+  rarity: Common
+  tier: 1
+  upgradeFromId: 
+  effects: []
+  ruleModifiers: []
+  specialRule: 31
+  restrictToSuit: 0
+  affectedSuit: 0
+  requiresEnhancedCard: 0
+  damageMultiplier: 1
+  flatDamageBonus: 0
+  defenseBonus: 0
+  reduceEnemyAttackByCardValue: 0
+  recycleDiscardByCardValue: 0
+  drawByCardValue: 0
+  healAfterVictory: 0
+  bonusCredits: 0

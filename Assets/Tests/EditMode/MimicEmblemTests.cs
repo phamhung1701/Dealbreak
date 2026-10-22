@@ -18,10 +18,10 @@ public sealed class MimicEmblemTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _mimic = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/MimicEmblem.asset");
-        _auxiliary = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Auxiliary.asset");
-        _golden = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Golden.asset");
-        _mending = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Mending.asset");
+        _mimic = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/EchoDriver.asset");
+        _auxiliary = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Backup.asset");
+        _golden = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Profitable.asset");
+        _mending = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Regenerative.asset");
         Assert.That(new UnityEngine.Object[] { _mimic, _auxiliary, _golden, _mending }, Has.All.Not.Null);
 
         var canvas = Make<Canvas>("Mimic Test Canvas");

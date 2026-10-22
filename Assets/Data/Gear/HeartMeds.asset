@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc333c80492e32a4981ae457376add7e, type: 3}
+  m_Name: HeartMeds
+  m_EditorClassIdentifier: Assembly-CSharp::RelicData
+  id: heart_power
+  displayName: Heart Meds
+  icon: "\u2665"
+  iconSprite: {fileID: 21300000, guid: 3c764977673816b478b0cd37ff1e7494, type: 3}
+  description: 'Trigger: On Card Played
+
+    Condition: Suit = Hearts
+
+    Effect:
+    Heal HP.
+
+    Value: +1 HP'
+  price: 20
+  capacityCategory: 0
+  canonicalId: rel_002
+  rarity: Common
+  tier: 1
+  upgradeFromId: 
+  effects:
+  - kind: 4
+    trigger: 2
+    amount: 1
+    conditions:
+    - kind: 0
+      suit: 0
+      rank: 0
+      expected: 0
+      value: 0
+  ruleModifiers: []
+  specialRule: 0
+  restrictToSuit: 1
+  affectedSuit: 0
+  requiresEnhancedCard: 0
+  damageMultiplier: 1
+  flatDamageBonus: 0
+  defenseBonus: 0
+  reduceEnemyAttackByCardValue: 0
+  recycleDiscardByCardValue: 0
+  drawByCardValue: 0
+  healAfterVictory: 0
+  bonusCredits: 0

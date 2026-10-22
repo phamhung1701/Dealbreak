@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a8520671e93fea439ddbf46323e52b2, type: 3}
+  m_Name: HypeMan
+  m_EditorClassIdentifier: Dealbreak.Runtime::EnemyTypeData
+  enemyName: Hype Man
+  maxHp: 8
+  baseAttack: 1
+  creditsReward: 0
+  encounterCount: 1
+  fleeAfterPlayerTurns: 0
+  sourceCard: {fileID: 0}
+  portraitSprite: {fileID: 0}
+  abilities:
+  - {fileID: 11400000, guid: 9fb78fa7148ea914ca036d0adeaf6f49, type: 2}
+  minMapIndex: 0
+  eligibleAsEliteBase: 1
+  allies:
+  - type: {fileID: 11400000, guid: d1bd1b5f338bb314187873c9dc5563c8, type: 2}
+    count: 2
+    minMapIndex: 0
+    oneInChance: 0
+    chanceStream: 

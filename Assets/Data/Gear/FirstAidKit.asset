@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc333c80492e32a4981ae457376add7e, type: 3}
+  m_Name: FirstAidKit
+  m_EditorClassIdentifier: Dealbreak.Runtime::GearData
+  id: rel_122
+  displayName: First-Aid Kit
+  icon: MEDIC
+  iconSprite: {fileID: 21300000, guid: becf1449c7f121a419a4a60affd4b4ce, type: 3}
+  description: 'Trigger: On Trick Use
+
+    Condition: First trick used this encounter
+
+    Effect:
+    First trick per encounter also heals.
+
+    Value: 3 HP
+
+    Limit: First successful
+    trick use per encounter'
+  price: 20
+  capacityCategory: 0
+  canonicalId: rel_122
+  rarity: Common
+  tier: 1
+  upgradeFromId: 
+  effects: []
+  ruleModifiers: []
+  specialRule: 28
+  restrictToSuit: 0
+  affectedSuit: 0
+  requiresEnhancedCard: 0
+  damageMultiplier: 1
+  flatDamageBonus: 0
+  defenseBonus: 0
+  reduceEnemyAttackByCardValue: 0
+  recycleDiscardByCardValue: 0
+  drawByCardValue: 0
+  healAfterVictory: 0
+  bonusCredits: 0

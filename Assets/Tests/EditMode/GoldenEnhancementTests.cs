@@ -17,7 +17,7 @@ public sealed class GoldenEnhancementTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _golden = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Golden.asset");
+        _golden = AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Profitable.asset");
         Assert.That(_golden, Is.Not.Null);
 
         var canvas = CreateComponent<Canvas>("Golden Test Canvas");
@@ -35,7 +35,7 @@ public sealed class GoldenEnhancementTests
         prefab.canvasGroup = prefabObject.GetComponent<CanvasGroup>();
         _cards = CreateComponent<CardManager>("Golden Test Cards");
         _cards.Configure(_field, dragCanvas, prefab, System.Array.Empty<GearData>(),
-            new[] { _golden, AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Enhancements/Quickdraw.asset") });
+            new[] { _golden, AssetDatabase.LoadAssetAtPath<CardEnhancementData>("Assets/Data/Mods/Quickload.asset") });
         _cards.ConfigureRandom(new DeterministicRandom(701));
         _cards.BuildDeck();
         _cards.DealHand();

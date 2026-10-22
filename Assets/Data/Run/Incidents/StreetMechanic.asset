@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56ede82db3e0bdd49bbf245bd4ba24ac, type: 3}
+  m_Name: StreetMechanic
+  m_EditorClassIdentifier: Dealbreak.Runtime::RunEventDefinition
+  id: evt_005
+  category: 3
+  flow: 0
+  title: Street Mechanic
+  description: You help a street mechanic get rid of a hostile debt collector.
+  choices:
+  - label: Accept a Free Mod
+    description: Gain 1 Mod as a Trick
+    effects: []
+    interaction: 1
+    requiredDiscardValue: 0
+  - label: Grab Supplies
+    description: Draw 2 cards
+    effects:
+    - type: 5
+      amount: 2
+      consumableId: 
+    interaction: 0
+    requiredDiscardValue: 0
+  - label: Take Credits
+    description: +10 Credits
+    effects:
+    - type: 0
+      amount: 10
+      consumableId: 
+    interaction: 0
+    requiredDiscardValue: 0
+  - label: Take a Booster Shot
+    description: Gain one Booster Shot Trick.
+    effects:
+    - type: 7
+      amount: 1
+      consumableId: whetstone
+    interaction: 0
+    requiredDiscardValue: 0

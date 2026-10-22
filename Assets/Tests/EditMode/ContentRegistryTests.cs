@@ -17,9 +17,9 @@ public sealed class ContentRegistryTests
     {
         var registry = SaveContentCatalog.Load();
         Assert.That(registry, Is.Not.Null);
-        CollectionAssert.AreEquivalent(Assets<GearData>("Assets/Data/Relics"), registry.gearItems);
-        CollectionAssert.AreEquivalent(Assets<CardEnhancementData>("Assets/Data/Enhancements"), registry.enhancements);
-        CollectionAssert.AreEquivalent(Assets<ConsumableData>("Assets/Data/Consumables"), registry.consumables);
+        CollectionAssert.AreEquivalent(Assets<GearData>("Assets/Data/Gear"), registry.gearItems);
+        CollectionAssert.AreEquivalent(Assets<CardEnhancementData>("Assets/Data/Mods"), registry.enhancements);
+        CollectionAssert.AreEquivalent(Assets<ConsumableData>("Assets/Data/Tricks"), registry.consumables);
         Assert.That(registry.gearItems.Select(item => item.id), Is.Unique);
         Assert.That(registry.enhancements.Select(item => item.id), Is.Unique);
         Assert.That(registry.consumables.Select(item => item.id), Is.Unique);
@@ -31,7 +31,7 @@ public sealed class ContentRegistryTests
         var run = SaveContentCatalog.Load().runContent;
         Assert.That(run, Is.Not.Null);
         var events = run.events.Concat(run.risks).Concat(run.upgrades).Where(value => value != null).ToArray();
-        CollectionAssert.AreEquivalent(Assets<RunEventDefinition>("Assets/Data/Run/Events"), events);
+        CollectionAssert.AreEquivalent(Assets<RunEventDefinition>("Assets/Data/Run/Incidents"), events);
         Assert.That(events.Select(value => value.id), Is.Unique);
 
         var enemies = run.normalEnemies.Concat(run.eliteEnemies).ToArray();

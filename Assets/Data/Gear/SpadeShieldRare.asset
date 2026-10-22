@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc333c80492e32a4981ae457376add7e, type: 3}
+  m_Name: SpadeShieldRare
+  m_EditorClassIdentifier: Dealbreak.Runtime::GearData
+  id: rel_106
+  displayName: Spade Shield
+  icon: "\u2660+"
+  iconSprite: {fileID: 21300000, guid: a6d38eb264b8da54fab02cabdf5d360d, type: 3}
+  description: 'Trigger: On Card Played
+
+    Condition: Suit = Spades; one Spade
+    fully blocks the attack
+
+    Effect: Keep doubled block, over-block still count
+    as Perfect Parry
+
+    Value: Draw 1 card
+
+    Limit: One Spade must fully block
+    one attack; retains doubled Block'
+  price: 30
+  capacityCategory: 0
+  canonicalId: rel_106
+  rarity: Rare
+  tier: 2
+  upgradeFromId: rel_004
+  effects:
+  - kind: 3
+    trigger: 1
+    amount: 2
+    conditions:
+    - kind: 0
+      suit: 3
+      rank: 0
+      expected: 0
+      value: 0
+  ruleModifiers: []
+  specialRule: 45
+  restrictToSuit: 1
+  affectedSuit: 3
+  requiresEnhancedCard: 0
+  damageMultiplier: 1
+  flatDamageBonus: 0
+  defenseBonus: 0
+  reduceEnemyAttackByCardValue: 0
+  recycleDiscardByCardValue: 0
+  drawByCardValue: 0
+  healAfterVictory: 0
+  bonusCredits: 0

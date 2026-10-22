@@ -21,11 +21,11 @@ public sealed class Phase6GearTests
     public void SetUp()
     {
         GameplayInputGate.Clear();
-        _bread = LoadConsumable("Assets/Data/Consumables/Bread.asset");
-        _knife = LoadConsumable("Assets/Data/Consumables/ThrowingKnife.asset");
-        _spadeRune = LoadConsumable("Assets/Data/Consumables/SpadeRune.asset");
-        _heartRune = LoadConsumable("Assets/Data/Consumables/HeartRune.asset");
-        var allConsumables = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Consumables" })
+        _bread = LoadConsumable("Assets/Data/Tricks/EnergyBar.asset");
+        _knife = LoadConsumable("Assets/Data/Tricks/ThrowingStar.asset");
+        _spadeRune = LoadConsumable("Assets/Data/Tricks/SpadeCrystal.asset");
+        _heartRune = LoadConsumable("Assets/Data/Tricks/HeartCrystal.asset");
+        var allConsumables = AssetDatabase.FindAssets("t:ConsumableData", new[] { "Assets/Data/Tricks" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<ConsumableData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(value => value != null).ToArray();
 
@@ -66,7 +66,7 @@ public sealed class Phase6GearTests
             ["rel_130"] = ("Rare", 30, 1, ""),
             ["rel_122"] = ("Common", 20, 1, "")
         };
-        var assets = AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Relics" })
+        var assets = AssetDatabase.FindAssets("t:GearData", new[] { "Assets/Data/Gear" })
             .Select(guid => AssetDatabase.LoadAssetAtPath<GearData>(AssetDatabase.GUIDToAssetPath(guid)))
             .Where(value => value != null && !string.IsNullOrEmpty(value.canonicalId) &&
                 expected.ContainsKey(value.canonicalId)).ToArray();
@@ -308,7 +308,7 @@ public sealed class Phase6GearTests
     [Test]
     public void GoldenVault_SnapshotsAfterHeadlinerBaseAndBountySettlement_ThenRoundsTiesUpOnce()
     {
-        var bounty = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Relics/BountyLedger.asset");
+        var bounty = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/BountyHologram.asset");
         var vault = Gear("rel_127", GearSpecialRule.GoldenVault, "Rare", 1);
         Assert.That(bounty, Is.Not.Null);
         ConfigureGear(bounty, vault);
