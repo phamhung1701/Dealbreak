@@ -772,6 +772,20 @@ public static class GameplayEffectResolver
         return false;
     }
 
+    /// <summary>The summed amount of a card's Mod effects of <paramref name="kind"/>, or 0.</summary>
+    public static int EnhancementEffectAmount(CardInstance card, GameplayEffectKind kind)
+    {
+        if (card?.Enhancement == null) return 0;
+        var source = new GameplayEffectSource(card);
+        long total = 0;
+        for (int i = 0; i < EffectCount(source); i++)
+        {
+            var effect = EffectAt(source, i);
+            if (effect.kind == kind) total += Math.Max(0, effect.amount);
+        }
+        return ClampToInt(total);
+    }
+
     public static bool HasDoubleStrikeEffect(IReadOnlyList<CardInstance> cards)
     {
         if (cards == null) return false;

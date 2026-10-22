@@ -1365,10 +1365,11 @@ public partial class CombatManager : Singleton<CombatManager>
         for (int i = 0; i < committedCards.Count; i++)
         {
             var card = committedCards[i];
-            if (!GameplayEffectResolver.HasEnhancementEffect(card, GameplayEffectKind.PermanentKillAttack)) continue;
-            card.GainPermanentAttackBonus(1);
+            int growth = GameplayEffectResolver.EnhancementEffectAmount(card, GameplayEffectKind.PermanentKillAttack);
+            if (growth <= 0) continue;
+            card.GainPermanentAttackBonus(growth);
             CardManager.Instance.NotifyCardInstanceChanged(card);
-            Log($"{card.Enhancement.displayName}: permanently gained +1 attack.");
+            Log($"{card.Enhancement.displayName}: permanently gained +{growth} attack.");
         }
     }
 

@@ -119,6 +119,23 @@ public sealed class LowerEffortEnhancementTests
     }
 
     [Test]
+    public void Devouring_GainsTheAmountAuthoredOnTheMod()
+    {
+        var tuned = UnityEngine.Object.Instantiate(_devouring);
+        _created.Add(tuned);
+        tuned.effects = new[] { new GameplayEffectDefinition
+            { kind = GameplayEffectKind.PermanentKillAttack, trigger = _devouring.effects[0].trigger, amount = 3 } };
+        var card = FindView(c => c.Rank != CardData.Rank.Ace);
+        Assert.That(_cards.ApplyEnhancement(card.data.Id, tuned), Is.True);
+        var target = Target("Tuned Devouring Target", 1, 0);
+        _combat.StartEnemy(target);
+
+        Assert.That(_combat.TryPlayCards(new[] { card }, target), Is.True);
+
+        Assert.That(card.data.PermanentAttackBonus, Is.EqualTo(3));
+    }
+
+    [Test]
     public void Vampiric_PaysFiveHpForFiveDamageAndRequiresSurvival()
     {
         var card = FindView(c => c.Rank != CardData.Rank.Ace);

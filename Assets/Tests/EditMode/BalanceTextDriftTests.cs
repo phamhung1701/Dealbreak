@@ -145,7 +145,7 @@ public sealed class BalanceTextDriftTests
         AssertModTrick("BackupDrone", amount => $"played cards deal +{amount} DMG");
         AssertModTrick("BloodBag", amount => $"costs {amount} HP and deals +{amount} DMG");
         AssertModTrick("Firecracker", null);
-        AssertModTrick("FeralCapsule", null);
+        AssertModTrick("FeralCapsule", amount => $"permanently gains +{amount} DMG");
         AssertModTrick("PrismCube", null);
         AssertModTrick("DoubleTap", null);
     }
