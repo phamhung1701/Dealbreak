@@ -69,7 +69,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Card Tricks only ever target cards in hand. Mods earned outside the Black Market (Incidents, Hammer) arrive as their Mod Trick; there is no select-a-card dialog and no Training (Upgrade) node.
 - Choosing a route has no map button. Inside a fight, Incident or Black Market a MAP button (top right) opens the route map view-only above the screen; CLOSE MAP returns to it.
 - CONTINUE TO MAP sits right of the Black Market menu. Each offer tile has a price button ("5 Credits") that buys at once; its rules text opens beside the tile on click. Supply and Stake have MIN/MAX.
-- Scouting (Black Market Intel, the Late-Night Diner tip, Lantern) reveals one seeded-random reachable node whose contents are unknown, of any kind. Fights show their enemies only once scouted (`PathNode.scouted`); Headliners are always known. Ghost Lens (Legendary Gear, `RevealAllMapNodes`) scouts every node ahead, on purchase and on each new District; like all Legendary Gear it is never sold.
+- Scouting (Black Market Intel, the Late-Night Diner tip, Lantern) reveals one seeded-random reachable node whose contents are unknown, of any kind. Fights show their enemies only once scouted (`PathNode.scouted`); Headliners are always known. Ghost Lens (`rel_035`, Legendary, `RevealAllMapNodes`) scouts every node ahead, on purchase and on each new District; like all Legendary Gear it is never sold.
 
 ## UI architecture (new look)
 

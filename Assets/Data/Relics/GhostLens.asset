@@ -12,19 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc333c80492e32a4981ae457376add7e, type: 3}
   m_Name: GhostLens
   m_EditorClassIdentifier: Dealbreak.Runtime::GearData
-  id: rel_141
+  id: rel_035
   displayName: Ghost Lens
   icon: LENS
   iconSprite: {fileID: 21300000, guid: 6c1b937c50b959541931187dfccffa97, type: 3}
   description: 'Trigger: On District
 
-    Effect: Reveal every node on the District
-    map, contents included.
+    Condition: District start
 
-    Value: All nodes'
-  price: 50
+    Effect:
+    Reveal all nodes, contents included.'
+  price: 30
   capacityCategory: 0
-  canonicalId: rel_141
+  canonicalId: rel_035
   rarity: Legendary
   tier: 1
   upgradeFromId: 
