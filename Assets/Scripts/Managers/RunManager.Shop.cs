@@ -45,8 +45,10 @@ public partial class RunManager
         if (instance == null || instance.Definition == null || instance.Definition.price < 0 ||
             instance.Definition.price != expectedAuthoredPrice) return false;
         int payout = SalePayout(expectedAuthoredPrice);
+        string gearId = instance.Definition.id;
         if (!cards.RemoveGearInstance(gearInstanceId)) return false;
         if (payout > 0) cards.AddCredits(payout);
+        GameplayBalanceTelemetry.Sold(GameplayBalanceTelemetry.GearKey(gearId), payout);
         SaveGameService.Checkpoint(this);
         return true;
     }
@@ -61,6 +63,7 @@ public partial class RunManager
         int payout = SalePayout(expectedAuthoredPrice);
         if (!cards.RemoveConsumableInstanceAtSlot(slotIndex, expectedInstance)) return false;
         if (payout > 0) cards.AddCredits(payout);
+        GameplayBalanceTelemetry.Sold(GameplayBalanceTelemetry.TrickKey(definition.id), payout);
         SaveGameService.Checkpoint(this);
         return true;
     }
@@ -158,7 +161,9 @@ public partial class RunManager
         _shopTransaction = true;
         try
         {
+            int paid = offer.kind == ShopOfferKind.Investment ? offer.investmentStake : offer.price;
             bool success = PurchaseShopOfferCore(offer);
+            if (success) GameplayBalanceTelemetry.Bought(StatsKey(offer), paid);
             if (success && offer.kind != ShopOfferKind.Contract) MarkShopPurchase(offer);
             return success;
         }
@@ -170,6 +175,19 @@ public partial class RunManager
         offer.purchased = true;
         if (!offer.IsService) _activeShopState?.PurchasedGoods.Add(GoodsIdentity(offer));
         if (_activeShopState != null) _activeShopState.MadePricedPurchase = _madeSuccessfulPurchaseInCurrentShop;
+    }
+
+    static string StatsKey(ShopOffer offer) => offer.kind switch
+    {
+        ShopOfferKind.Gear => GameplayBalanceTelemetry.GearKey(offer.gear?.id),
+        ShopOfferKind.Consumable => GameplayBalanceTelemetry.TrickKey(offer.consumable?.id),
+        _ => GameplayBalanceTelemetry.ServiceKey(offer.kind)
+    };
+
+    static void RecordShopOffers(IEnumerable<ShopOffer> offers)
+    {
+        foreach (var offer in offers)
+            if (offer != null) GameplayBalanceTelemetry.Offered(StatsKey(offer), offer.price);
     }
 
     static string GoodsIdentity(ShopOffer offer) => offer.kind switch
@@ -257,6 +275,7 @@ public partial class RunManager
             // CardManager commits zones and payment before publishing either notification.
             int drawn = CardManager.Instance.PurchaseExistingDraw(quantity, GameBalance.Current.blackMarket.supplyPricePerCard);
             if (drawn <= 0) return false;
+            GameplayBalanceTelemetry.Bought(StatsKey(offer), drawn * GameBalance.Current.blackMarket.supplyPricePerCard, drawn);
             _madeSuccessfulPurchaseInCurrentShop = true;
             // The offer stays available; the next quantity defaults to what is still affordable.
             offer.purchased = false;
@@ -380,6 +399,7 @@ public partial class RunManager
         int context = unchecked(_activeNode.mapIndex * 397 ^ _activeNode.id);
         if (maximumOffers > 0) _activeShopOffers.AddRange(GenerateShopGoods(0));
         AddSpecialShopOffers(context);
+        RecordShopOffers(_activeShopOffers);
     }
 
     // Each Goods slot is Gear or a Trick (GameBalance: 75% Gear). Gear rolls its rarity by weight
@@ -466,10 +486,13 @@ public partial class RunManager
         {
             int next = GoodsRefreshCount + 1;
             var replacement = GenerateShopGoods(next);
-            if (!CardManager.Instance.SpendCredits(GoodsRefreshPrice)) return false;
+            int price = GoodsRefreshPrice;
+            if (!CardManager.Instance.SpendCredits(price)) return false;
             _activeShopState.RefreshCount = next;
             _activeShopOffers.RemoveAll(offer => !offer.IsService);
             _activeShopOffers.InsertRange(0, replacement);
+            GameplayBalanceTelemetry.Rerolled(price);
+            RecordShopOffers(replacement);
             return true;
         }
         finally { _shopTransaction = false; OnShopOffersChanged?.Invoke(); SaveGameService.Checkpoint(this); }

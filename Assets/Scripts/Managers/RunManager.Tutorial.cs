@@ -32,6 +32,8 @@ public partial class RunManager
             return false;
         }
 
+        // The scripted tutorial is not recorded in the balance stats.
+        GameplayBalanceTelemetry.Finish("restarted");
         runSeed = RunRandomContext.NormalizeSeed(tutorial.seed);
         _randomContext = new RunRandomContext(runSeed);
 

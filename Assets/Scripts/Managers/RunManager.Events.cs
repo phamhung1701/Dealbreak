@@ -293,6 +293,7 @@ public partial class RunManager
             !IsActiveEventChoice(choiceIndex, RunEventChoiceInteraction.ChooseEnhancementTarget) ||
             !string.IsNullOrEmpty(GetEventModUnavailableReason(choiceIndex, mod))) return false;
         if (!CardManager.Instance.AddConsumable(CardManager.Instance.FindModTrick(mod))) return false;
+        RecordIncidentChoice(choiceIndex);
         if (IsHammerEvent()) CompleteHammerReward();
         else CompleteEventChoice();
         return true;
@@ -326,6 +327,7 @@ public partial class RunManager
             Debug.LogError("RunManager: random event enhancement could not be applied after validated discard.", this);
             return false;
         }
+        RecordIncidentChoice(choiceIndex);
         CompleteEventChoice();
         return true;
     }
@@ -373,6 +375,7 @@ public partial class RunManager
         if (GameplayInputGate.IsBlocked || cards == null ||
             !CanChooseEventDiscardForTotalValue(choiceIndex, cardIds) ||
             !cards.TryReturnToDrawPileByIds(cardIds)) return false;
+        RecordIncidentChoice(choiceIndex);
         CompleteEventChoice();
         return true;
     }
@@ -557,6 +560,7 @@ public partial class RunManager
     public bool LeaveBlockedEvent()
     {
         if (GameplayInputGate.IsBlocked || !CanLeaveBlockedEvent) return false;
+        RecordIncidentChoice(-1);
         CompleteEventChoice();
         return true;
     }
@@ -565,6 +569,15 @@ public partial class RunManager
     {
         if (GameplayInputGate.IsBlocked || !CanChooseEventOption(choiceIndex) ||
             _activeEvent.choices[choiceIndex].interaction != RunEventChoiceInteraction.Immediate) return false;
+        // Captured first: resolving a choice can close the Incident or open a follow-up.
+        var chosenEvent = _activeEvent;
+        bool chosen = ChooseImmediateEventOption(choiceIndex);
+        if (chosen) RecordIncidentChoice(chosenEvent, choiceIndex);
+        return chosen;
+    }
+
+    bool ChooseImmediateEventOption(int choiceIndex)
+    {
         switch (_activeEvent.flow)
         {
             case RunEventFlow.BloodRitual: return ResolveBloodRitualOption(choiceIndex);
@@ -577,5 +590,15 @@ public partial class RunManager
 
         CompleteEventChoice();
         return true;
+    }
+
+    void RecordIncidentChoice(int choiceIndex) => RecordIncidentChoice(_activeEvent, choiceIndex);
+
+    static void RecordIncidentChoice(RunEventDefinition incident, int choiceIndex)
+    {
+        if (incident == null) return;
+        string label = choiceIndex >= 0 && incident.choices != null && choiceIndex < incident.choices.Length
+            ? incident.choices[choiceIndex]?.label : "LEAVE";
+        GameplayBalanceTelemetry.IncidentChosen(string.IsNullOrEmpty(incident.id) ? incident.name : incident.id, choiceIndex, label);
     }
 }

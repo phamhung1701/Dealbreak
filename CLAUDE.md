@@ -52,6 +52,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 - Events dispatch on `RunEventDefinition.flow`. Headliner content lives in `Resources/HeadlinerCatalog`; its pool order is seeded.
 - `Resources/RunSaveContent` is the single content registry for play and saves (`ContentRegistryTests`). A schema change bumps `RunSaveValidation.Version` and adds a `RunSaveMigrations` step.
 - Input-gate reasons are owned: release only the reasons your code set.
+- Balance stats: `GameplayBalanceTelemetry` journals every non-tutorial run (on unless Tools/Dealbreak/Balance/Record New Runs is off) to `persistentDataPath/BalanceTelemetry`; at each run end `BalanceStats.cs` upserts a summary into `run-stats.json` and rewrites `Stats/*.csv`; Tools/Dealbreak/Balance/Stats shows them. A continued run reopens its journal cut back to the last save checkpoint. Test assemblies turn recording off (`BalanceTelemetryTestIsolation`). New purchase, gain or choice paths should report through it.
 - Where things live:
   - `RunManager` partials: `.Shop`, `.Rewards`, `.Events`, `.Contracts`, `.Headliners`, `.Persistence`
   - `CardManager.Hand`

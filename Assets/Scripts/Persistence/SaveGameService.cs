@@ -42,7 +42,14 @@ public static class SaveGameService
         var catalog = SaveContentCatalog.Load();
         if (!RunSaveValidation.Validate(data, catalog, out error)) return false;
         IsRestoring = true;
-        try { run.RestoreSave(data, catalog); run.PresentRestoredSave(); LastError = null; return true; }
+        try
+        {
+            run.RestoreSave(data, catalog);
+            GameplayBalanceTelemetry.Resume(run.RunSeed);
+            run.PresentRestoredSave();
+            LastError = null;
+            return true;
+        }
         catch (Exception e)
         {
             run?.GetComponent<RunSaveAutosave>()?.Suspend();
@@ -165,10 +172,10 @@ public sealed class RunSaveAutosave : MonoBehaviour
             snapshot.timing = null;
             string content = JsonUtility.ToJson(snapshot);
             snapshot.timing = timing;
-            if (!force && content == _lastContent) return true;
+            if (!force && content == _lastContent) { GameplayBalanceTelemetry.Checkpointed(); return true; }
             if (!SaveGameService.Store.Write(snapshot, SaveContentCatalog.Load(), out string error))
             { SaveGameService.ReportError(error); return false; }
-            _lastContent = content; SaveGameService.ClearError(); return true;
+            _lastContent = content; SaveGameService.ClearError(); GameplayBalanceTelemetry.Checkpointed(); return true;
         }
         catch (Exception e) { SaveGameService.ReportError("Run save failed: " + e.Message); return false; }
     }

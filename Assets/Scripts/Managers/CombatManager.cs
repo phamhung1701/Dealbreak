@@ -1962,7 +1962,7 @@ public partial class CombatManager : Singleton<CombatManager>
                 : "Player defeated! Game Over!");
         }
 
-        GameplayBalanceTelemetry.EncounterEnded(result);
+        GameplayBalanceTelemetry.EncounterEnded(result, _encounterActualHpLost);
         _unpublishedResult = result;
         if (_commandDepth == 0) PublishEncounterResult();
     }

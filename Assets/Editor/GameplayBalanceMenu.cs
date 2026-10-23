@@ -4,11 +4,13 @@ using UnityEngine;
 public static class GameplayBalanceMenu
 {
     const string EnableMenu = "Tools/Dealbreak/Balance/Record New Runs";
+    const string EnabledPref = "Dealbreak.Balance.RecordRuns";
 
     [MenuItem(EnableMenu)]
     static void Toggle()
     {
         GameplayBalanceTelemetry.Enabled = !GameplayBalanceTelemetry.Enabled;
+        EditorPrefs.SetBool(EnabledPref, GameplayBalanceTelemetry.Enabled);
         Debug.Log("Balance recording for new runs: " + GameplayBalanceTelemetry.Enabled);
     }
 
@@ -32,6 +34,8 @@ public static class GameplayBalanceMenu
     [InitializeOnLoadMethod]
     static void InstallLifecycle()
     {
+        // The choice survives domain reloads and Play mode; recording is on until it is turned off.
+        GameplayBalanceTelemetry.Enabled = EditorPrefs.GetBool(EnabledPref, true);
         EditorApplication.playModeStateChanged -= OnPlayModeChanged;
         EditorApplication.playModeStateChanged += OnPlayModeChanged;
     }

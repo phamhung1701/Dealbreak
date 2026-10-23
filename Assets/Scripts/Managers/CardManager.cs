@@ -187,6 +187,7 @@ public partial class CardManager : Singleton<CardManager>
     {
         if (!CanAddConsumable(consumable, count)) return false;
         for (int i = 0; i < count; i++) AddConsumableInstance(new ConsumableInstance(consumable));
+        GameplayBalanceTelemetry.TrickGained(consumable.id, count);
         OnConsumablesChanged?.Invoke();
         return true;
     }
@@ -203,6 +204,7 @@ public partial class CardManager : Singleton<CardManager>
             return false;
         }
         AddConsumableInstance(new ConsumableInstance(replacement));
+        GameplayBalanceTelemetry.TrickGained(replacement.id, 1);
         OnConsumablesChanged?.Invoke();
         return true;
     }
@@ -603,6 +605,7 @@ public partial class CardManager : Singleton<CardManager>
     void CompleteGearAcquisition(GearRuntimeInstance instance)
     {
         var run = RunManager.Instance;
+        GameplayBalanceTelemetry.GearGained(instance.Definition.id);
         int completedNodes = run != null ? run.CompletedNodeCount : 0;
         GameplayEffectResolver.InitializeNodeCounters(new GameplayEffectSource(instance), completedNodes);
         if (GearRules.OnAcquired(instance, completedNodes))
@@ -680,6 +683,7 @@ public partial class CardManager : Singleton<CardManager>
         EnsureGearInstances();
         int index = _orderedGearInstances.FindIndex(value => value != null && value.Id == instanceId);
         if (index < 0) return false;
+        GameplayBalanceTelemetry.GearLost(ownedGear[index]?.id);
         _orderedGearInstances.RemoveAt(index);
         ownedGear.RemoveAt(index);
         RebuildGearIds();
@@ -744,6 +748,7 @@ public partial class CardManager : Singleton<CardManager>
         _orderedGearInstances.RemoveAt(Math.Min(firstIndex, secondIndex));
         int mergedPosition = secondIndex > firstIndex ? secondIndex - 1 : secondIndex;
         var merged = new GearRuntimeInstance(next);
+        GameplayBalanceTelemetry.GearMerged(next.id);
         ownedGear.Insert(mergedPosition, next);
         _orderedGearInstances.Insert(mergedPosition, merged);
         RebuildGearIds();

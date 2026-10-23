@@ -355,6 +355,7 @@ public partial class RunManager : Singleton<RunManager>
         var columnNodes = currentPath.Where(other => Mathf.Approximately(other.col, node.col)).ToArray();
         var accessibleBefore = columnNodes.Select(other => other.accessible).ToArray();
         var revealedBefore = columnNodes.Select(other => other.revealed).ToArray();
+        GameplayBalanceTelemetry.NodeChosen(node, columnNodes.Where(other => other.accessible && !other.completed));
         node.accessible = false;
         node.revealed = true;
         foreach (var other in columnNodes)
