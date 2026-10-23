@@ -19,4 +19,26 @@ public sealed class CardEnhancementData : ScriptableObject
     [Header("Typed Gameplay Effects")]
     public GameplayEffectDefinition[] effects = System.Array.Empty<GameplayEffectDefinition>();
     public GameplayRuleModifierData[] ruleModifiers = System.Array.Empty<GameplayRuleModifierData>();
+
+    [Header("Presentation")]
+    [Tooltip("This Mod's own look on a card that carries it (CardModFxUI).")]
+    public CardModVisual visual;
+}
+
+/// <summary>A Mod's ambient look on a card that carries it. Serialized by value: append, never renumber.</summary>
+public enum CardModVisual
+{
+    None = 0,
+    EchoFrame = 1,
+    BoostChevrons = 2,
+    Reticle = 3,
+    TwinSlash = 4,
+    Overheat = 5,
+    ArmorPlates = 6,
+    ClawMarks = 7,
+    CreditChips = 8,
+    LoadBar = 9,
+    HealPulse = 10,
+    Shockwave = 11,
+    SuitCycle = 12,
 }

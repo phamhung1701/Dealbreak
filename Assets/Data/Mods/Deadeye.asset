@@ -28,3 +28,4 @@ MonoBehaviour:
     amount: 25
     conditions: []
   ruleModifiers: []
+  visual: 3

@@ -32,3 +32,4 @@ MonoBehaviour:
     amount: 3
     conditions: []
   ruleModifiers: []
+  visual: 1

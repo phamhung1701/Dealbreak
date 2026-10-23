@@ -126,7 +126,11 @@ public class CardView : MonoBehaviour,
     public void Setup(CardInstance cardData)
     {
         data = cardData;
-        if (Application.isPlaying) CardGlitchUI.Attach(this);
+        if (Application.isPlaying)
+        {
+            CardGlitchUI.Attach(this);
+            CardModFxUI.Attach(this);
+        }
         RefreshContent();
         RefreshState();
     }
@@ -337,7 +341,11 @@ public class CardView : MonoBehaviour,
     float _triggerPulse = -1f;
 
     /// <summary>Presentation only: the card hops once, as one of its Mods triggers.</summary>
-    public void PlayTriggerPulse() => _triggerPulse = 0f;
+    public void PlayTriggerPulse()
+    {
+        _triggerPulse = 0f;
+        if (TryGetComponent(out CardModFxUI modFx)) modFx.Burst();
+    }
 
     public void SetLayoutTarget(Vector3 position, Vector2 fanOffset, float rotation, float scale)
     {

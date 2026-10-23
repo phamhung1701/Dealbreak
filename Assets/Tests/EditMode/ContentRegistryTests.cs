@@ -26,6 +26,14 @@ public sealed class ContentRegistryTests
     }
 
     [Test]
+    public void EveryMod_HasItsOwnCardLook()
+    {
+        var mods = SaveContentCatalog.Load().enhancements;
+        Assert.That(mods.Select(mod => mod.visual), Has.None.EqualTo(CardModVisual.None));
+        Assert.That(mods.Select(mod => mod.visual), Is.Unique);
+    }
+
+    [Test]
     public void EveryAuthoredIncidentAndEnemy_IsReachableFromTheRunContent()
     {
         var run = SaveContentCatalog.Load().runContent;

@@ -30,3 +30,4 @@ MonoBehaviour:
     amount: 5
     conditions: []
   ruleModifiers: []
+  visual: 5
