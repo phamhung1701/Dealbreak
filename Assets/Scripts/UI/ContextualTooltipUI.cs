@@ -80,6 +80,19 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         if(!_gearRail)return null;
         return _gearRail.GetComponentsInChildren<GearIconSlotUI>().FirstOrDefault(g=>g.IsDetailSelected)?.GetComponent<CombatInspectUI>();
     }
+    static bool PointerOver(MonoBehaviour source,Vector2 screen)
+    {
+        if(RectTransformUtility.RectangleContainsScreenPoint((RectTransform)source.transform,screen,null))return true;
+        var view=source.GetComponent<CardView>();
+        return view&&view.visualRoot&&RectTransformUtility.RectangleContainsScreenPoint(view.visualRoot,screen,null);
+    }
+    // Hides this detail until something else is inspected; a Gear's lime selection clears with it.
+    void Dismiss(MonoBehaviour shown)
+    {
+        _dismissed=shown;_source=_pinned=null;
+        if(shown&&shown.GetComponent<GearIconSlotUI>()){if(!_gearRail)_gearRail=Object.FindFirstObjectByType<GearRailUI>();if(_gearRail)_gearRail.ClearObjectSelection();}
+        Hide();
+    }
     void Hide(){if(panel){panel.SetActive(false);var group=panel.GetComponent<CanvasGroup>();if(group)group.alpha=0;}_lastHeading=_lastBody=null;}
     void LateUpdate()
     {
@@ -94,9 +107,9 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             candidate=CardManager.Instance.selectedCard.GetComponent<CombatInspectUI>();
         if(!candidate)candidate=SelectedGearInspect();
         if(candidate==_dismissed||!Visible(candidate)||!TryDescribe(candidate,out var info)){Hide();return;}
-        if(Mouse.current!=null&&Mouse.current.leftButton.wasPressedThisFrame&&!overPanel&&_pinned&&
-            !RectTransformUtility.RectangleContainsScreenPoint((RectTransform)_pinned.transform,Mouse.current.position.ReadValue(),null))
-        {DismissPinned();return;}
+        // (owner, 2026-10-23) A click anywhere but the detail or what it describes closes it, whatever opened it.
+        if(Mouse.current!=null&&Mouse.current.leftButton.wasPressedThisFrame&&!overPanel&&!PointerOver(candidate,Mouse.current.position.ReadValue()))
+        {Dismiss(candidate);return;}
         Position(candidate,info);
         panel.SetActive(true);
         var fade=panel.GetComponent<CanvasGroup>();if(fade)fade.alpha=Mathf.MoveTowards(fade.alpha,1,Time.unscaledDeltaTime*16);
