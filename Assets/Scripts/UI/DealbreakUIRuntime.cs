@@ -45,6 +45,24 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(canvas){ScreenShakeUI.Install(canvas.rootCanvas);EnemyDropUI.Install(canvas.rootCanvas);}
         // One trigger presenter, on the game HUD (the frontend overlay has no hand or HP panel).
         if(canvas&&actions)EffectTriggerPresenterUI.Install(canvas.rootCanvas);
+        InstallInventoryPanels();
+    }
+    // (owner, 2026-10-23) Each header row sits on its own panel with a coloured heading block, so
+    // Gear (slate) and Tricks (signal red) read apart.
+    void InstallInventoryPanels()
+    {
+        var theme=DealbreakUIStyle.Theme;if(!actions||!theme)return;
+        var rail=GetComponentInChildren<GearRailUI>(true);
+        var gearHeading=rail?rail.transform.Find("GearHeader")?.GetComponent<TMP_Text>():null;
+        if(rail&&rail.slotsRoot)InventoryPanelUI.Install("Gear Panel",(RectTransform)rail.transform,
+            new[]{gearHeading?gearHeading.rectTransform:null,rail.capacityLabel?rail.capacityLabel.rectTransform:null,rail.slotsRoot},
+            new[]{gearHeading,rail.capacityLabel},theme.slate,theme.paper);
+        var slots=System.Array.FindAll(actions.backpackSlotButtons,b=>b);if(slots.Length==0)return;
+        var area=(RectTransform)slots[0].transform.parent;
+        var trickHeading=area.Find("TricksHeading")?.GetComponent<TMP_Text>();
+        var members=new System.Collections.Generic.List<RectTransform>{trickHeading?trickHeading.rectTransform:null,trickCapacity?trickCapacity.rectTransform:null};
+        foreach(var slot in slots)members.Add((RectTransform)slot.transform);
+        InventoryPanelUI.Install("Tricks Panel",area,members.ToArray(),new[]{trickHeading,trickCapacity},theme.brick,theme.paper);
     }
     void PositionSortControls()
     {
