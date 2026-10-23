@@ -274,7 +274,7 @@ public class ShopUI : MonoBehaviour
         cr.sizeDelta = Vector2.zero;
         var sl = serviceContent.GetComponent<VerticalLayoutGroup>();
         sl.childControlWidth = sl.childControlHeight = true;
-        sl.childForceExpandWidth = true; sl.childForceExpandHeight = false; sl.spacing = 10;
+        sl.childForceExpandWidth = true; sl.childForceExpandHeight = false; sl.spacing = 4;
         serviceContent.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         var scroll = serviceViewport.GetComponent<ScrollRect>();
         scroll.viewport = sr; scroll.content = cr; scroll.horizontal = false; scroll.vertical = true;
@@ -552,17 +552,25 @@ public class ShopUI : MonoBehaviour
         if (gap) Destroy(gap.gameObject);
     }
 
-    // (owner, 2026-10-23) CONTINUE TO MAP stands at the foot of the services column.
+    // (owner, 2026-10-23) CONTINUE TO MAP stands at the foot of the services column. It is pinned there,
+    // under the scrolling services list, so a tall list (Stake and Supply carry quantity rows) never
+    // pushes it out of sight.
+    const float ContinueHeight = 52f, ContinueGap = 10f;
+
     void PlaceContinueUnderServices()
     {
         if (!storeComposition || !continueButton || !_servicesContainer) return;
-        if (continueButton.transform is not RectTransform button) return;
-        if (button.parent != _servicesContainer) button.SetParent(_servicesContainer, false);
+        if (continueButton.transform is not RectTransform button ||
+            _servicesContainer.parent is not RectTransform viewport || viewport.parent is not RectTransform column) return;
+        if (button.parent != column) button.SetParent(column, false);
+        button.anchorMin = new Vector2(viewport.anchorMin.x, viewport.anchorMin.y);
+        button.anchorMax = new Vector2(viewport.anchorMax.x, viewport.anchorMin.y);
+        button.pivot = new Vector2(.5f, 0f);
+        button.offsetMin = Vector2.zero;
+        button.offsetMax = new Vector2(0f, ContinueHeight);
         button.SetAsLastSibling();
-        var layout = button.GetComponent<LayoutElement>();
-        if (!layout) layout = button.gameObject.AddComponent<LayoutElement>();
-        layout.minHeight = layout.preferredHeight = 52;
-        layout.flexibleWidth = 1;
+        if (button.TryGetComponent(out LayoutElement layout)) layout.ignoreLayout = true;
+        viewport.offsetMin = new Vector2(viewport.offsetMin.x, ContinueHeight + ContinueGap);
     }
 
     void AddSectionHeading(string title, Transform container)
@@ -576,7 +584,7 @@ public class ShopUI : MonoBehaviour
         text.fontStyle = FontStyles.Bold;
         text.raycastTarget = false;
         var layout = go.GetComponent<LayoutElement>();
-        layout.minHeight = layout.preferredHeight = 36;
+        layout.minHeight = layout.preferredHeight = 30;
     }
 
     // (owner, 2026-10-23) The reroll is a clear button in its own colour (acid lime, ink type), not

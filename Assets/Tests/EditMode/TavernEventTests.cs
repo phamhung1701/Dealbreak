@@ -115,6 +115,43 @@ public sealed class TavernEventTests
     }
 
     [Test]
+    public void WhenNoChoiceCanBeTaken_TheIncidentCanBeLeft_AndOnlyThen()
+    {
+        var entry = new PathNode
+        {
+            id = 1, mapIndex = 0, kind = MapNodeType.Event, contentId = "evt_006",
+            accessible = true, revealed = true, col = 0, row = 0
+        };
+        _run.currentPath.Add(entry);
+        _combat.TakeRunDamage(10);
+        _run.OnPathChosen(entry.id);
+
+        // Nothing to scout and no Credits for the break: the run would otherwise stall here.
+        Assert.That(_run.CanChooseEventOption(0) || _run.CanChooseEventOption(1), Is.False);
+        Assert.That(_run.CanLeaveBlockedEvent, Is.True);
+        Assert.That(_run.LeaveBlockedEvent(), Is.True);
+        Assert.That(entry.completed, Is.True);
+        Assert.That((_cards.credits, _combat.player.currentHealth), Is.EqualTo((0, 20)), "Leaving gains and costs nothing.");
+    }
+
+    [Test]
+    public void AnIncidentWithATakeableChoice_CannotBeLeftForFree()
+    {
+        var entry = new PathNode
+        {
+            id = 1, mapIndex = 0, kind = MapNodeType.Event, contentId = "evt_006",
+            accessible = true, revealed = true, col = 0, row = 0
+        };
+        _run.currentPath.Add(entry);
+        _cards.AddCredits(2);
+        _run.OnPathChosen(entry.id);
+
+        Assert.That(_run.CanLeaveBlockedEvent, Is.False);
+        Assert.That(_run.LeaveBlockedEvent(), Is.False);
+        Assert.That(entry.completed, Is.False);
+    }
+
+    [Test]
     public void TavernRest_UsesExistingOrderedCreditsAndHealEffects()
     {
         var entry = new PathNode

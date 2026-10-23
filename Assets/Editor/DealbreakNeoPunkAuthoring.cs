@@ -53,7 +53,8 @@ public static class DealbreakNeoPunkAuthoring
                 glyph.font = theme.headingFont;
                 glyph.color = new Color(Paper.r, Paper.g, Paper.b, .9f);
                 glyph.enableAutoSizing = true;
-                glyph.fontSizeMin = 34;
+                // Low enough that a long one-word name (PICKPOCKET) shrinks to the window instead of spilling.
+                glyph.fontSizeMin = 24;
                 glyph.fontSizeMax = 96;
                 glyph.lineSpacing = -18;
                 glyph.alignment = TMPro.TextAlignmentOptions.BottomLeft;
@@ -63,18 +64,23 @@ public static class DealbreakNeoPunkAuthoring
                 rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
                 rect.offsetMin = new Vector2(16, 14); rect.offsetMax = new Vector2(-16, -14);
             }
-            // (owner, 2026-10-23) A bigger HP meter: wider and in larger type, ATTACK beside it.
+            // (owner, 2026-10-23) A bigger HP meter: wider and in larger type, ATTACK beside it. The meter
+            // stops at .55 so "ATTACK  n" has room; ATTACK shrinks to fit (DealbreakUIStyle) rather than
+            // run under the meter.
             var display = enemy.GetComponent<EnemyDisplayUI>();
             if (display.hpText)
             {
-                DealbreakUIStyle.Place(display.hpText.transform, .05f, .10f, .58f, .19f);
+                DealbreakUIStyle.Place(display.hpText.transform, .05f, .10f, .55f, .19f);
                 display.hpText.fontSize = 24;
             }
             if (display.atkText)
             {
-                DealbreakUIStyle.Place(display.atkText.transform, .63f, .10f, .97f, .19f);
+                DealbreakUIStyle.Place(display.atkText.transform, .57f, .10f, .97f, .19f);
                 display.atkText.alignment = TMPro.TextAlignmentOptions.MidlineRight;
                 display.atkText.fontSize = 22;
+                display.atkText.enableAutoSizing = true;
+                display.atkText.fontSizeMin = 14;
+                display.atkText.fontSizeMax = 22;
             }
             PrefabUtility.SaveAsPrefabAsset(enemy, path);
         }

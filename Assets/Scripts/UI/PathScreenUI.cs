@@ -335,10 +335,14 @@ public class PathScreenUI : MonoBehaviour
                     predecessor.id, headlinerNode.id, Mathf.RoundToInt(predecessor.row), 1));
         }
 
-        // Keep same-lane trunks behind branches, then make genuine crossings read as overpasses.
-        foreach (var edge in routeEdges.OrderBy(value => value.IsDiagonal ? 1 : 0))
-            CreateConnection(edge, nodeSize);
-        DrawCrossingBridges(routeEdges, bounds, nodeSize);
+        // Keep same-lane trunks behind branches. Where two routes cross, the overpass breaks and hops
+        // over the other in the route colour; the hops draw last, above every line.
+        var hops = FindCrossingHops(routeEdges);
+        foreach (int index in Enumerable.Range(0, routeEdges.Count).OrderBy(i => routeEdges[i].IsDiagonal ? 1 : 0))
+            CreateConnection(routeEdges[index], hops.TryGetValue(index, out var crossings) ? crossings : null, nodeSize);
+        foreach (var pair in hops)
+            foreach (var crossing in pair.Value)
+                DrawHop(crossing, routeEdges[pair.Key], nodeSize);
 
         CreateStartEndpoint(startPosition, nodeSize);
         foreach (var node in run.currentPath)
@@ -428,17 +432,30 @@ public class PathScreenUI : MonoBehaviour
             fromNodeId, toNodeId, fromLane, toLane);
     }
 
-    void CreateConnection(RouteEdge edge, Vector2 nodeSize)
+    static readonly Color RouteColor = new(0.71f, 0.68f, 0.57f, 0.65f);
+    const float RouteWidth = 3.5f;
+
+    // The edge as straight runs, broken around each crossing it hops over.
+    void CreateConnection(RouteEdge edge, List<Vector2> hops, Vector2 nodeSize)
     {
-        CreateLineSegment(edge.from, edge.to, 3.5f,
-            new Color(0.71f, 0.68f, 0.57f, 0.65f), "RouteConnection");
+        Vector2 direction = (edge.to - edge.from).normalized;
+        float halfSpan = HopHalfSpan(nodeSize);
+        Vector2 runStart = edge.from;
+        if (hops != null)
+            foreach (var crossing in hops.OrderBy(point => Vector2.Dot(point - edge.from, direction)))
+            {
+                CreateLineSegment(runStart, crossing - direction * halfSpan, RouteWidth, RouteColor, "RouteConnection");
+                runStart = crossing + direction * halfSpan;
+            }
+        CreateLineSegment(runStart, edge.to, RouteWidth, RouteColor, "RouteConnection");
     }
 
-    void DrawCrossingBridges(IReadOnlyList<RouteEdge> edges, RectTransform bounds, Vector2 nodeSize)
-    {
-        var cardImage = bounds.parent != null ? bounds.parent.GetComponent<Image>() : null;
-        if (cardImage == null) return;
+    static float HopHalfSpan(Vector2 nodeSize) => nodeSize.x * 0.11f;
 
+    // Each genuine crossing, keyed by the index of the edge that hops over it.
+    static Dictionary<int, List<Vector2>> FindCrossingHops(IReadOnlyList<RouteEdge> edges)
+    {
+        var hops = new Dictionary<int, List<Vector2>>();
         var crossings = new List<Vector2>();
         for (int i = 0; i < edges.Count; i++)
         {
@@ -453,54 +470,41 @@ public class PathScreenUI : MonoBehaviour
                     continue;
 
                 crossings.Add(crossing);
-                RouteEdge overpass = SelectOverpass(first, second);
-                var gapObject = new GameObject("RouteCrossingGap", typeof(RectTransform), typeof(Image));
-                gapObject.layer = gameObject.layer;
-                gapObject.transform.SetParent(mapContainer, false);
-                var gapRect = gapObject.GetComponent<RectTransform>();
-                gapRect.anchorMin = gapRect.anchorMax = new Vector2(0.5f, 0.5f);
-                gapRect.anchoredPosition = crossing;
-                float gapSize = nodeSize.x * 0.20f;
-                gapRect.sizeDelta = new Vector2(gapSize, gapSize);
-                var gapImage = gapObject.GetComponent<Image>();
-                gapImage.sprite = cardImage.sprite;
-                gapImage.type = cardImage.type;
-                gapImage.pixelsPerUnitMultiplier = cardImage.pixelsPerUnitMultiplier;
-                // With an unframed map, crossings mask against the tabletop rather than a panel.
-                var boardImage = transform.Find("Background")?.GetComponent<Image>();
-                gapImage.color = boardImage != null ? boardImage.color : cardImage.color;
-                gapImage.raycastTarget = false;
-
-                DrawBridgeArc(crossing, overpass, nodeSize);
+                int overpass = FirstIsOverpass(first, second) ? i : j;
+                if (!hops.TryGetValue(overpass, out var list)) hops[overpass] = list = new List<Vector2>();
+                list.Add(crossing);
             }
         }
+        return hops;
     }
 
-    static RouteEdge SelectOverpass(RouteEdge first, RouteEdge second)
+    // The route from the upper lane goes over, then the one heading to the upper lane, then the earlier node.
+    static bool FirstIsOverpass(RouteEdge first, RouteEdge second)
     {
         int laneOrder = first.fromLane.CompareTo(second.fromLane);
-        if (laneOrder != 0) return laneOrder < 0 ? first : second;
+        if (laneOrder != 0) return laneOrder < 0;
         int targetOrder = first.toLane.CompareTo(second.toLane);
-        if (targetOrder != 0) return targetOrder < 0 ? first : second;
-        return first.fromNodeId <= second.fromNodeId ? first : second;
+        if (targetOrder != 0) return targetOrder < 0;
+        return first.fromNodeId <= second.fromNodeId;
     }
 
-    void DrawBridgeArc(Vector2 crossing, RouteEdge edge, Vector2 nodeSize)
+    // A low arc over the crossing, in the route colour, bridging the overpass's break.
+    void DrawHop(Vector2 crossing, RouteEdge edge, Vector2 nodeSize)
     {
         Vector2 direction = (edge.to - edge.from).normalized;
         Vector2 normal = new Vector2(-direction.y, direction.x);
-        float halfSpan = nodeSize.x * 0.14f;
+        if (normal.y < 0f) normal = -normal;
+        float halfSpan = HopHalfSpan(nodeSize);
         Vector2 start = crossing - direction * halfSpan;
         Vector2 end = crossing + direction * halfSpan;
-        Vector2 control = crossing + normal * (nodeSize.y * 0.28f);
+        Vector2 control = crossing + normal * (halfSpan * 1.6f);
         Vector2 previous = start;
-        Color lineColor = new Color(0.43f, 0.57f, 0.59f, 0.65f);
-        for (int i = 1; i <= 4; i++)
+        for (int i = 1; i <= 6; i++)
         {
-            float t = i / 4f;
+            float t = i / 6f;
             float inverse = 1f - t;
             Vector2 point = inverse * inverse * start + 2f * inverse * t * control + t * t * end;
-            CreateLineSegment(previous, point, 2.5f, lineColor, "RouteCrossingBridge");
+            CreateLineSegment(previous, point, RouteWidth, RouteColor, "RouteCrossingHop");
             previous = point;
         }
     }

@@ -15,10 +15,12 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
     // name the price button with any status to its right.
     const float IconSize = 76f;
     const float IconInset = 10f;
-    const float NameTop = 6f, NameHeight = 44f;
-    const float ButtonTop = 52f, ButtonHeight = 38f, ButtonWidth = 150f;
+    // Kept tight so the services column (two tiles with quantity rows) fits without scrolling. The
+    // name box keeps a full 44: TMP's ellipsis drops a line that overflows it vertically.
+    const float NameTop = 2f, NameHeight = 44f, BottomPadding = 8f;
+    const float ButtonTop = 46f, ButtonHeight = 38f, ButtonWidth = 150f;
     /// <summary>Height of the Supply/Stake quantity row, under the tile's main row.</summary>
-    public const float QuantityRowHeight = 48f;
+    public const float QuantityRowHeight = 44f;
     public static float QuantityRowBottom => 8f;
 
     bool _selected,_hover,_focus;
@@ -134,7 +136,7 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         float statusWidth=Mathf.Max(80,rowWidth-statusLeft-12);
         bool hasStatus=!string.IsNullOrEmpty(statusLabel.text);
         float statusHeight=hasStatus?statusLabel.GetPreferredValues(statusLabel.text,statusWidth,0).y+4:0;
-        float mainHeight=Mathf.Max(hasIcon?IconSize+IconInset*2:0,ButtonTop+Mathf.Max(ButtonHeight,statusHeight)+10);
+        float mainHeight=Mathf.Max(hasIcon?IconSize+IconInset*2:0,ButtonTop+Mathf.Max(ButtonHeight,statusHeight)+BottomPadding);
         float quantity=HasQuantityControls?QuantityRowHeight:0;
         var layout=GetComponent<LayoutElement>();if(!layout)layout=gameObject.AddComponent<LayoutElement>();layout.minHeight=layout.preferredHeight=mainHeight+quantity;
         // The title box must fit a full line: TMP's ellipsis drops a line that overflows vertically.

@@ -93,6 +93,22 @@ public class RunEventUI : MonoBehaviour
             }
         }
 
+        // No choice can be taken: LEAVE ends the Incident with nothing gained or lost.
+        if (RunManager.Instance.CanLeaveBlockedEvent)
+        {
+            var leaveObject = Instantiate(choiceButtonPrefab, choicesContainer);
+            leaveObject.name = "EventLeave";
+            if (editorialLayout && !leaveObject.TryGetComponent(out EditorialSurface _))
+                leaveObject.AddComponent<EditorialSurface>().treatment = EditorialSurface.Treatment.Paper;
+            var leaveLabel = leaveObject.GetComponentInChildren<TMP_Text>();
+            if (leaveLabel) leaveLabel.text = "<size=125%><b>Leave</b></size>";
+            if (leaveObject.TryGetComponent(out Button leave))
+            {
+                leave.interactable = true;
+                leave.onClick.AddListener(() => RunManager.Instance.LeaveBlockedEvent());
+            }
+        }
+
         BoardPanelTransition.Show(panel);
         DealbreakUIStyle.ApplyHierarchy(panel.transform);
         FinalizeChoiceList();

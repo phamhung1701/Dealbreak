@@ -539,6 +539,28 @@ public partial class RunManager
         ShowPathAfterNode();
     }
 
+    /// <summary>
+    /// No choice of an authored Incident can be taken (say, too few Credits and nothing left to scout):
+    /// it can then be left with nothing gained or lost, so the run never stalls.
+    /// </summary>
+    public bool CanLeaveBlockedEvent
+    {
+        get
+        {
+            if (_activeEvent?.choices == null || _activeEvent.flow != RunEventFlow.Authored || IsHammerEvent()) return false;
+            for (int i = 0; i < _activeEvent.choices.Length; i++)
+                if (CanChooseEventOption(i)) return false;
+            return true;
+        }
+    }
+
+    public bool LeaveBlockedEvent()
+    {
+        if (GameplayInputGate.IsBlocked || !CanLeaveBlockedEvent) return false;
+        CompleteEventChoice();
+        return true;
+    }
+
     public bool ChooseEventOption(int choiceIndex)
     {
         if (GameplayInputGate.IsBlocked || !CanChooseEventOption(choiceIndex) ||

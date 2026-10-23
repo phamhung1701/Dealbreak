@@ -158,6 +158,8 @@ public static class DealbreakUIStyle
                     // (owner, 2026-10-23) A bigger HP meter: HP 24 on the wider bar, ATTACK 22 beside it.
                     Text(text,Theme.numericFont,text==enemy.atkText?22:24,text==enemy.atkText?Theme.brick:Theme.paper);
                     text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Overflow;
+                    // ATTACK shrinks to its slot beside the meter instead of running under it.
+                    if(text==enemy.atkText){text.enableAutoSizing=true;text.fontSizeMin=14;text.fontSizeMax=22;}
                 }
                 else if(text==enemy.statusText)Text(text,Theme.bodyFont,15,Color.Lerp(Theme.paper,Theme.slate,.35f));
             }

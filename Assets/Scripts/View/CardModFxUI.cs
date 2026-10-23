@@ -142,7 +142,11 @@ public sealed class CardModFxUI : MonoBehaviour
         }
     }
 
-    // Boosted: red chevrons climb off the top edge like thrust.
+    // The top-right corner, clear of the rank corner and the Mod label. Effects stay inside the card,
+    // so they never cover HUD text sitting just above the hand (INCOMING).
+    float CornerX => hx - W * .11f;
+
+    // Boosted: red chevrons climb up the top-right corner like thrust.
     void BoostChevrons()
     {
         float speed = .9f + _burst * 2.5f;
@@ -150,9 +154,9 @@ public sealed class CardModFxUI : MonoBehaviour
         {
             float p = Mathf.Repeat(_clock * speed + i / 3f, 1f);
             var group = _groups[i];
-            group.anchoredPosition = new Vector2(0f, hy + W * .04f + p * W * .3f);
+            group.anchoredPosition = new Vector2(CornerX, hy - W * .2f + p * W * .19f);
             group.localScale = Vector3.one * (1f - p * .3f);
-            Chevron(i * 2, W * .15f * (1f + _burst * .4f), th * 1.5f, _red, Mathf.Sin(p * Mathf.PI) * (.85f + _burst * .15f));
+            Chevron(i * 2, W * .1f * (1f + _burst * .4f), th * 1.4f, _red, Mathf.Sin(p * Mathf.PI) * (.85f + _burst * .15f));
         }
     }
 
@@ -278,7 +282,7 @@ public sealed class CardModFxUI : MonoBehaviour
         }
     }
 
-    // Profitable: credit chips flip up off the top edge.
+    // Profitable: credit chips flip up the top-right corner.
     void CreditChips()
     {
         for (int i = 0; i < 3; i++)
@@ -293,28 +297,29 @@ public sealed class CardModFxUI : MonoBehaviour
                 Tint(chip, Color.white, 0f);
                 continue;
             }
-            float lane = Hash(round * 3 + i);
-            float size = W * .17f * (1f + _burst * .3f);
-            Put(chip, (lane - .5f) * W * .6f + (Hash(round * 3 + i + 101) - .5f) * W * .12f * p,
-                hy - W * .05f + W * .32f * (1f - (1f - p) * (1f - p)), size, size);
+            float size = W * .13f * (1f + _burst * .3f);
+            Put(chip, CornerX + (Hash(round * 3 + i + 101) - .5f) * W * .1f * p,
+                hy - W * .22f + W * .17f * (1f - (1f - p) * (1f - p)), size, size);
             chip.rectTransform.localScale = new Vector3(Mathf.Max(.15f, Mathf.Abs(Mathf.Cos(p * Mathf.PI * 3f))), 1f, 1f);
             Tint(chip, _disc == ((Image)chip).sprite ? _lime : Color.white, Smooth(0f, .15f, p) * (1f - Smooth(.65f, 1f, p)));
         }
     }
 
-    // Quickload: a segmented lime bar loads along the top edge, flashes full, reloads.
+    // Quickload: a segmented lime bar loads up the left edge, flashes full, reloads.
     void LoadBar()
     {
         float p = Mathf.Repeat(_clock / 2f, 1f);
         float fill = _burst > 0f ? 8f : Smooth(0f, .7f, p) * 8f;
         float flash = _burst > 0f ? _burst : p > .7f ? 1f - (p - .7f) / .3f : 0f;
-        float y = hy + th * 3.5f, height = th * 2f, gap = th * .8f;
-        float segment = (W - gap * 7f) / 8f;
-        Put(_g[0], 0f, y, W, height);
+        // A vertical bar inside the left edge, below the rank corner, filling upward.
+        float x = -hx + th * 2.5f, width = th * 2f, gap = th * .8f;
+        float bottom = -hy + H * .12f, length = H * .5f;
+        float segment = (length - gap * 7f) / 8f;
+        Put(_g[0], x, bottom + length / 2f, width, length);
         Tint(_g[0], _lime, .18f);
         for (int j = 0; j < 8; j++)
         {
-            Put(_g[1 + j], -hx + segment / 2f + j * (segment + gap), y, segment, height * (1f + flash * .5f));
+            Put(_g[1 + j], x, bottom + segment / 2f + j * (segment + gap), width * (1f + flash * .5f), segment);
             float alpha = j < Mathf.FloorToInt(fill + .001f) ? .85f + .15f * flash
                 : j == Mathf.FloorToInt(fill) && Mathf.Repeat(_clock * 8f, 1f) < .5f ? .35f : 0f;
             Tint(_g[1 + j], _lime, alpha);
@@ -373,15 +378,15 @@ public sealed class CardModFxUI : MonoBehaviour
         }
     }
 
-    // Wildcard: a tag on the top edge flips through all four suits.
+    // Wildcard: a tag in the top-right corner flips through all four suits.
     void SuitCycle()
     {
         float step = .55f / (1f + _burst * 5f);
         int round = Mathf.FloorToInt(_clock / step);
         float local = _clock - round * step;
         int suit = ((round % 4) + 4) % 4;
-        float size = W * .24f;
-        var at = new Vector2(0f, hy + size * .1f);
+        float size = W * .2f;
+        var at = new Vector2(CornerX, hy - size * .5f - th);
         Put(_g[0], at.x, at.y, size, size);
         Tint(_g[0], _ink, .95f);
         Frame(1, at, size, size, Mathf.Max(1.5f, th * .7f), _paper, .9f);
