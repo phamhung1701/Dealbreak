@@ -53,6 +53,11 @@ public partial class CombatManager : Singleton<CombatManager>
     readonly CombatResolver _resolver = new();
     readonly CombatReactionQueue _reactions = new();
     int _earnedCreditsReward;
+    /// <summary>
+    /// Credits secured by enemies defeated in the current encounter, paid only on victory. The HUD
+    /// shows them as they land (owner, 2026-10-23); gameplay never spends them before then.
+    /// </summary>
+    public int SecuredCredits => _encounterResolved ? 0 : _earnedCreditsReward;
     long _nextActionId = 1;
     int _nextReactiveHitIndex;
     int _playerTurnNumber;

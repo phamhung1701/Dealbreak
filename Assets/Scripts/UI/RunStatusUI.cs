@@ -75,8 +75,20 @@ public class RunStatusUI : MonoBehaviour
     void Update()
     {
         RefreshTiming();
-        if (_shownCredits.Tick(Time.unscaledDeltaTime) || _creditsHeld && !CreditsHudUI.HoldsCredits)
+        // A defeat secures Credits without a Credits event; notice the new total here.
+        if (_shownCredits.Tick(Time.unscaledDeltaTime) || _creditsHeld && !CreditsHudUI.HoldsCredits ||
+            CardManager.Instance != null && CreditsTarget(CardManager.Instance) != _lastCreditsTarget)
             RefreshCredits(CardManager.Instance);
+    }
+
+    int _lastCreditsTarget = int.MinValue;
+
+    // The Credits on the HUD: those owned plus those secured by defeated enemies this encounter,
+    // which victory pays; so the count rises as each defeated enemy's coins land.
+    static int CreditsTarget(CardManager cards)
+    {
+        long secured = CombatManager.Instance != null ? CombatManager.Instance.SecuredCredits : 0;
+        return (int)System.Math.Min(int.MaxValue, cards.credits + secured);
     }
 
     void Refresh()
@@ -206,7 +218,8 @@ public class RunStatusUI : MonoBehaviour
         }
         bool animate = Application.isPlaying && isActiveAndEnabled;
         _creditsHeld = animate && CreditsHudUI.HoldsCredits;
-        if (!_creditsHeld) _shownCredits.SetTarget(cards.credits, animate);
+        _lastCreditsTarget = CreditsTarget(cards);
+        if (!_creditsHeld) _shownCredits.SetTarget(_lastCreditsTarget, animate);
         creditsLabel.text = $"{_shownCredits.Shown}";
         creditsLabel.color = _shownCredits.Tint(_creditsLabelColor);
     }

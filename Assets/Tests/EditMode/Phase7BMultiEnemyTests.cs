@@ -61,6 +61,7 @@ public sealed class Phase7BMultiEnemyTests
         Assert.That(_cards.HandCount, Is.EqualTo(8), "The consumed attack card should be replaced by the kill draw.");
         Assert.That(_combat.pendingDamage, Is.EqualTo(4));
         Assert.That(_cards.credits, Is.Zero, "Kill rewards are secured until encounter victory.");
+        Assert.That(_combat.SecuredCredits, Is.EqualTo(3), "The HUD shows secured Credits as they land.");
 
         _combat.TakeRemainingDamage();
         KillTarget(goblins[0]);
@@ -72,6 +73,7 @@ public sealed class Phase7BMultiEnemyTests
         Assert.That(_combat.Enemies, Is.Empty);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.GameWon));
         Assert.That(_cards.credits, Is.EqualTo(9));
+        Assert.That(_combat.SecuredCredits, Is.Zero, "Victory paid them; none are counted twice.");
     }
 
     [Test]
