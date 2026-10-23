@@ -48,6 +48,9 @@ public static class RunEffectResolver
                         return $"Requires more than {effect.amount} HP";
                     if (!infiniteHealth) simulatedHealth -= effect.amount;
                     break;
+                case RunEffectType.LoseHealthNonLethal:
+                    if (!infiniteHealth) simulatedHealth -= Math.Min(effect.amount, Math.Max(0, simulatedHealth - 1));
+                    break;
                 case RunEffectType.GainMaxHealth:
                     if (!infiniteHealth)
                     {
@@ -99,6 +102,10 @@ public static class RunEffectResolver
                     break;
                 case RunEffectType.LoseHealth:
                     combat.TakeRunDamage(effect.amount);
+                    break;
+                case RunEffectType.LoseHealthNonLethal:
+                    int loss = Math.Min(effect.amount, Math.Max(0, combat.player.currentHealth - 1));
+                    if (loss > 0) combat.TakeRunDamage(loss);
                     break;
                 case RunEffectType.GainMaxHealth:
                     combat.IncreasePlayerMaxHealth(effect.amount);

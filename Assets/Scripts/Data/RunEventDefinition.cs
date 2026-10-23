@@ -13,7 +13,9 @@ public enum RunEffectType
     GainConsumable,
     RandomGearEnhancementOrNothing,
     // A penalty, not a payment: takes up to `amount` Credits and never blocks the choice.
-    LoseCreditsUpTo
+    LoseCreditsUpTo,
+    // A penalty, not a payment: takes up to `amount` HP, never below 1, and never blocks the choice.
+    LoseHealthNonLethal
 }
 
 [Serializable]

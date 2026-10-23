@@ -205,6 +205,20 @@ public sealed class LowerEffortEventTests
     }
 
     [Test]
+    public void Ambush_FleeIsNeverBlockedByLowHealth_AndLeavesAtLeastOneHp()
+    {
+        _cards.credits = 0;
+        _combat.TakeRunDamage(_combat.player.currentHealth - 2);
+        OpenEvent(_ambush);
+        Assert.That(_run.GetEventOptionUnavailableReason(1), Is.Empty, "Running is never blocked by HP.");
+
+        Assert.That(_run.ChooseEventOption(1), Is.True);
+
+        Assert.That(_combat.player.currentHealth, Is.EqualTo(1));
+        Assert.That(_run.ActiveEvent, Is.Null);
+    }
+
+    [Test]
     public void Swamp_CrossingCostsFiveHealthAndMakesTheSeededGearEnhancementOrNothingRoll()
     {
         var gear = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/AceProtocol.asset");

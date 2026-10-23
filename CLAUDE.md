@@ -36,7 +36,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
   - kill draw before encounter progression
   - Pickpocket per completed card action
 - Fleeing is not death: no kill draw and no Credits. Death, reward and terminal results each happen once. The final Headliner reward comes before run completion.
-- Event HP costs and resource payments are not combat damage: they never consume Shield or trigger reactions. A Credits payment (`RunEffectType.LoseCredits`) needs the Credits; a Credits penalty (`LoseCreditsUpTo`, Back-Alley Trap's run) takes what there is and never blocks the choice.
+- Event HP costs and resource payments are not combat damage: they never consume Shield or trigger reactions. A Credits payment (`RunEffectType.LoseCredits`) needs the Credits; a penalty (`LoseCreditsUpTo`, `LoseHealthNonLethal`: Back-Alley Trap's run) takes what there is, never below 1 HP, and never blocks the choice.
 - Dealbreaker (`rel_036`, Legendary): once per combat, an enemy hit that would be lethal and that Shield will not absorb destroys one random hand card (picked by card id from a node-keyed `dealbreaker` stream) and is negated. It runs only in `PlayerRuntime.ModifyIncomingCombatDamage` via `CombatManager.TryNegateLethalHit`, never in previews; an empty hand keeps the charge.
 
 ## Architecture contracts
@@ -98,7 +98,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Driving Unity (Locus MCP)
 
-- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-23): **EditMode 1814 passed + 1 skipped (1815 cases, the per-Gear matrices and balance drift tests included), PlayMode 10/10 plus the 12-District soak**.
+- Load the tools with ToolSearch (`+locus unity`). The loop is: edit, then `unity_recompile`, then `unity_test_run` (EditMode: `Dealbreak.EditModeTests`, about 2 min). Baseline (2026-10-23): **EditMode 1815 passed + 1 skipped (1816 cases, the per-Gear matrices and balance drift tests included), PlayMode 10/10 plus the 12-District soak**.
 - Tool calls are capped at about 5 minutes.
   - The full EditMode run (and some batches) blocks the main thread long enough that `unity_test_run` aborts with `native_main_thread_unresponsive` while the run goes on. Start it from `unity_execute` instead: `UnityTestApi.Start(new Locus.UnityTestRunOptions { Mode = Locus.UnityTestMode.Edit, Assemblies = new[]{"Dealbreak.EditModeTests"}, ResultDetail = Locus.UnityTestResultDetail.Failures })`, then poll `UnityTestApi.Status(runId)` in later calls. PlayMode and the soak work the same way (`Mode = Play`, `Groups`).
   - Run PlayMode with `groups: ["!TwelveDistricts"]`, then the 12-District soak test separately (80–100 s, often over the cap). Never poll it with `unity_execute` and `request_editor_status: "editing"`: that leaves Play mode and aborts the soak; wait on `TestResults.xml` instead.
