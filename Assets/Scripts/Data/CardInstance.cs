@@ -41,6 +41,19 @@ public sealed class CardInstance
 
     public bool MatchesRank(CardData.Rank rank) => Rank == rank || IsWildRank;
 
+    /// <summary>Jack, Queen or King, or a Joker.</summary>
+    public bool IsFaceCard => Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King || IsWildRank;
+
+    /// <summary>A Joker can be ranked below any rank.</summary>
+    public bool RanksBelow(CardData.Rank rank) => Rank < rank || IsWildRank;
+
+    /// <summary>A Joker can be ranked above any rank.</summary>
+    public bool RanksAbove(CardData.Rank rank) => Rank > rank || IsWildRank;
+
+    /// <summary>The two cards can stand as one rank (either may be a Joker).</summary>
+    public bool SharesRankWith(CardInstance other) =>
+        other != null && (Rank == other.Rank || IsWildRank || other.IsWildRank);
+
     public void GainPermanentAttackBonus(int amount = 1)
     {
         if (amount > 0) PermanentAttackBonus = (int)Math.Min(int.MaxValue, (long)PermanentAttackBonus + amount);

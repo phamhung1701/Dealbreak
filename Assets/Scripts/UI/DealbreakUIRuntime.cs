@@ -108,7 +108,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             var trigger=button.GetComponent<ContextualInfoTrigger>()??button.gameObject.AddComponent<ContextualInfoTrigger>();
             trigger.describe=()=>{
                 var cards=CardManager.Instance;var item=cards?.GetConsumableInstanceAtSlot(slot);if(item==null)return null;
-                return new ContextualInfo("Trick",item.Definition.displayName,$"{item.Definition.description}\n\nStack {cards.GetConsumableStackCountAtSlot(slot)} • Charges {item.RemainingCharges}/{item.Definition.uses}");
+                return new ContextualInfo("Trick",item.Definition.displayName,$"{ModSignature.TrickDescription(item.Definition)}\n\nStack {cards.GetConsumableStackCountAtSlot(slot)} • Charges {item.RemainingCharges}/{item.Definition.uses}");
             };
         }
     }

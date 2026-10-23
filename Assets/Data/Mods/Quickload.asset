@@ -33,6 +33,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Tutor
   signatureDescription: "Trigger: On Card Played\nEffect: Draw a card; draw 2 with 3 or fewer cards in hand, 3 with 1 or fewer.\nValue: 1"
+  signatureTrickText: "Tutor: draw 1 card when it is played, 2 with 3 or fewer cards in hand, 3 with 1 or fewer."
   signatureEffects:
   - kind: 34
     trigger: 2

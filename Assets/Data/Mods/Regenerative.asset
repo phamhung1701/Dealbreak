@@ -33,6 +33,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Transfusion
   signatureDescription: "Trigger: While in Hand\nEffect: Heal HP. Healing past full HP gives 1 Shield, once per fight.\nValue: 2"
+  signatureTrickText: "Transfusion: heal 2 HP at the start of each turn while it is in hand; healing past full HP gives 1 Shield, once per fight."
   signatureEffects:
   - kind: 35
     trigger: 3

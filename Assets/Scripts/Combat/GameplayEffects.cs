@@ -43,7 +43,7 @@ public enum GameplayEffectKind
     Executioner = 29,
     // Redline: extra action damage equal to the HP the player is missing.
     MissingHealthActionDamage = 30,
-    // Bulwark: after blocking, the card returns to hand, once per enemy turn.
+    // Bulwark: a blocking card stays in hand instead of returning to the draw pile, once per enemy turn.
     StayInHandAfterBlock = 31,
     // Feeding Frenzy: on a kill by its action, the card returns to hand.
     ReturnToHandOnKill = 32,
@@ -51,7 +51,7 @@ public enum GameplayEffectKind
     InterestCredits = 33,
     // Tutor: draws `amount`, one more at or below each gear.tutor threshold of cards held.
     DrawByHandShortfall = 34,
-    // Transfusion: heals `amount`; healing past full HP grants 1 Shield, once per fight per card.
+    // Transfusion: heals `amount`; healing past full HP grants 1 Shield, once per fight across all cards.
     OverhealShield = 35,
     // Chain Reaction: with the area blast, an enemy the blast kills explodes too (gear.chainReactionMaxBlasts).
     ChainReaction = 36,
@@ -142,7 +142,7 @@ public struct GameplayEffectCondition
         {
             GameplayConditionKind.AttackerHealthAtLeast => attackerHealth >= value,
             GameplayConditionKind.CardSuit => card != null && card.MatchesSuit(suit),
-            GameplayConditionKind.CardRank => card != null && card.Rank == rank,
+            GameplayConditionKind.CardRank => card != null && card.MatchesRank(rank),
             GameplayConditionKind.EnhancedCard => (card?.Enhancement != null) == expected,
             GameplayConditionKind.AttackValueGreaterThan => attackValue > value,
             GameplayConditionKind.MultiCardAction => (selectedCardCount > 1) == expected,
@@ -639,7 +639,7 @@ public static class GameplayEffectResolver
         for (int handIndex = 0; handIndex < cards.hand.Count; handIndex++)
         {
             var sourceCard = cards.hand[handIndex];
-            if (sourceCard?.Enhancement == null || requireMatchingRank && sourceCard.Rank != target.Rank) continue;
+            if (sourceCard?.Enhancement == null || requireMatchingRank && !sourceCard.SharesRankWith(target)) continue;
             var source = new GameplayEffectSource(sourceCard);
             for (int effectIndex = 0; effectIndex < EffectCount(source); effectIndex++)
             {
@@ -1374,7 +1374,7 @@ public static class GameplayEffectResolver
                 ExtraTurnRuleTrigger.FirstPlayerTurnCompleted => context.CompletedPlayerTurn == 1,
                 ExtraTurnRuleTrigger.QualifyingPlayedActionCompleted =>
                     context.CommittedCards.Count > 0 && (!ruleData.requireAllPlayedCardsBelowRank ||
-                        context.CommittedCards.All(card => card != null && card.Rank < ruleData.exclusiveRank)),
+                        context.CommittedCards.All(card => card != null && card.RanksBelow(ruleData.exclusiveRank))),
                 _ => false
             };
             if (!qualifies) continue;
@@ -1467,7 +1467,7 @@ public static class GameplayEffectResolver
             {
                 var effect = EffectAt(source, effectIndex);
                 if (!IsMimicRetriggerableHandEffect(effect) || !effect.Matches(card)) continue;
-                bool epicExtra = context.Card != null && card.Rank == context.Card.Rank &&
+                bool epicExtra = context.Card != null && card.SharesRankWith(context.Card) &&
                     GearRules.OwnsMimicEpic(cards);
                 int repeats = epicExtra ? 2 : 1;
                 int capturedIndex = effectIndex;
@@ -1662,6 +1662,15 @@ public static class GameplayEffectResolver
         return (credits, heal);
     }
 
+    // The flag lives on the card that granted it; encounter counters clear when a fight starts.
+    static bool TransfusionShieldGranted(CardManager cards)
+    {
+        foreach (var owned in cards.ownedCards)
+            if (owned != null && owned.EffectState.GetEncounterCounter(ModCounterKeys.TransfusionShieldGranted) != 0)
+                return true;
+        return false;
+    }
+
     static void ApplyReactive(GameplayEffectSource source, GameplayEffectDefinition effect,
         CombatManager combat, CardManager cards, CardInstance card, EnemyRuntime target,
         int sourceOrder = 0, int handlerOrder = 0)
@@ -1693,8 +1702,8 @@ public static class GameplayEffectResolver
                 int restored = combat.HealPlayer(amount);
                 if (restored > 0) combat.LogEffect($"{source.DisplayName}: Healed {restored} HP.");
                 if (restored > 0) EffectTriggerFeed.Report(source, EffectCue.Heal, restored);
-                if (restored >= amount || card == null ||
-                    card.EffectState.GetEncounterCounter(ModCounterKeys.TransfusionShieldGranted) != 0) break;
+                // One Shield per fight, however many Transfusion cards there are.
+                if (restored >= amount || card == null || TransfusionShieldGranted(cards)) break;
                 if (combat.player.GainShield(1) <= 0) break;
                 card.EffectState.SetEncounterCounter(ModCounterKeys.TransfusionShieldGranted, 1);
                 combat.LogEffect($"{source.DisplayName}: healing past full HP became 1 Shield.");

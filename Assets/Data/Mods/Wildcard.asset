@@ -30,7 +30,8 @@ MonoBehaviour:
     conditions: []
   ruleModifiers: []
   signatureName: Joker
-  signatureDescription: "Trigger: On Card Played\nEffect: This card counts as any suit, and as any rank for Ace pairs, Hands sets and the Royal Flush."
+  signatureDescription: "Trigger: On Card Played\nEffect: This card counts as any suit and any rank."
+  signatureTrickText: "Joker: it counts as every suit and every rank."
   signatureEffects:
   - kind: 21
     trigger: 0

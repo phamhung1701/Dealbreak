@@ -31,6 +31,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Chain Reaction
   signatureDescription: "Trigger: On Card Played\nEffect: Deal area-of-effect damage. An enemy it defeats explodes too, up to 3 times."
+  signatureTrickText: "Chain Reaction: its attack also hits every other enemy for the same DMG, and an enemy it defeats explodes too, up to 3 times."
   signatureEffects:
   - kind: 19
     trigger: 5

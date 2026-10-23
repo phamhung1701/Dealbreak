@@ -34,6 +34,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Afterburner
   signatureDescription: "Trigger: On Card Played\nEffect: This card deals additional flat damage. Damage beyond a kill carries over to the next enemy.\nValue: 5"
+  signatureTrickText: "Afterburner: it deals +5 DMG, and DMG beyond a kill hits the next enemy."
   signatureEffects:
   - kind: 0
     trigger: 0

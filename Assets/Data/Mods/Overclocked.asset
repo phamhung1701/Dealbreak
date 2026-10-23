@@ -32,6 +32,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Redline
   signatureDescription: "Trigger: On Card Played\nEffect: Deal additional damage equal to your missing HP."
+  signatureTrickText: "Redline: it deals extra DMG equal to your missing HP."
   signatureEffects:
   - kind: 30
     trigger: 5

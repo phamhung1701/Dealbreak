@@ -50,8 +50,8 @@ public sealed class BuildInventoryUI : MonoBehaviour
         {
             var item=cards.GetConsumableInstanceAtSlot(i);if(item==null)continue;
             int slot=i;
-            var row=Row(trickRows,item.Definition.displayName,$"Stack {cards.GetConsumableStackCountAtSlot(i)} • Charges {item.RemainingCharges}\n{item.Definition.description}",
-                new ContextualInfo("Trick",item.Definition.displayName,item.Definition.description));
+            var row=Row(trickRows,item.Definition.displayName,$"Stack {cards.GetConsumableStackCountAtSlot(i)} • Charges {item.RemainingCharges}\n{ModSignature.TrickDescription(item.Definition)}",
+                new ContextualInfo("Trick",item.Definition.displayName,ModSignature.TrickDescription(item.Definition)));
             row.onClick.AddListener(()=>{Close();if(cards.GetConsumableInstanceAtSlot(slot)==item)actions.backpackSlotButtons[slot].onClick.Invoke();});
         }
         if(gearRows.childCount==0)Row(gearRows,"No Gear equipped",string.Empty,new ContextualInfo("Gear","Empty build",string.Empty));

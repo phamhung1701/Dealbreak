@@ -215,7 +215,23 @@ public sealed class BalanceTextDriftTests
         AssertQuotes(Mod("Quickload").signatureDescription, "Tutor",
             $"draw 2 with {g.tutorSecondCardAtOrBelow} or fewer", $"3 with {g.tutorThirdCardAtOrBelow} or fewer");
         AssertQuotes(Mod("Volatile").signatureDescription, "Chain Reaction", $"up to {g.chainReactionMaxBlasts} times");
+
+        // The same numbers in the Mod Trick text a Signature gives.
+        AssertQuotes(Mod("Boosted").signatureTrickText, "Afterburner Trick", $"+{Amount("Boosted", GameplayEffectKind.FlatAttack)} DMG");
+        AssertQuotes(Mod("Backup").signatureTrickText, "Cover Fire Trick", $"for {Amount("Backup", GameplayEffectKind.CoverFire)} DMG");
+        AssertQuotes(Mod("Deadeye").signatureTrickText, "Executioner Trick",
+            $"{Amount("Deadeye", GameplayEffectKind.CriticalChanceOverride)}% chance", $"below {g.executionerHealthPercent}% HP");
+        AssertQuotes(Mod("Plated").signatureTrickText, "Bulwark Trick", $"blocks {Amount("Plated", GameplayEffectKind.FlatBlock)} more DMG");
+        AssertQuotes(Mod("Predatory").signatureTrickText, "Feeding Frenzy Trick", $"+{Amount("Predatory", GameplayEffectKind.PermanentKillAttack)} DMG");
+        AssertQuotes(Mod("Profitable").signatureTrickText, "Interest Trick", $"every {Amount("Profitable", GameplayEffectKind.InterestCredits)} Credits");
+        AssertQuotes(Mod("Regenerative").signatureTrickText, "Transfusion Trick", $"heal {Amount("Regenerative", GameplayEffectKind.OverhealShield)} HP");
+        AssertQuotes(Mod("Quickload").signatureTrickText, "Tutor Trick",
+            $"2 with {g.tutorSecondCardAtOrBelow} or fewer", $"3 with {g.tutorThirdCardAtOrBelow} or fewer");
+        AssertQuotes(Mod("Volatile").signatureTrickText, "Chain Reaction Trick", $"up to {g.chainReactionMaxBlasts} times");
     }
+
+    static int Amount(string asset, GameplayEffectKind kind) =>
+        Mod(asset).signatureEffects.Single(value => value.kind == kind).amount;
 
     static CardEnhancementData Mod(string asset) =>
         AssetDatabase.LoadAssetAtPath<CardEnhancementData>($"Assets/Data/Mods/{asset}.asset");

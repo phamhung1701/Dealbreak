@@ -91,8 +91,17 @@ public static partial class GearRules
     /// <summary>Ace Epic: an Ace committed with a face card is always critical.</summary>
     public static bool GuaranteesCritical(CardManager cards, IReadOnlyList<CardInstance> committedCards) =>
         cards != null && cards.HasGearSpecialRule(GearSpecialRule.AceEpic) &&
-        committedCards.Any(card => card?.Rank == CardData.Rank.Ace) &&
-        committedCards.Any(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King);
+        AceWithFaceCard(committedCards);
+
+    // Two different cards: one stands as the Ace and the other as a face card (a Joker can be either).
+    static bool AceWithFaceCard(IReadOnlyList<CardInstance> committedCards)
+    {
+        for (int i = 0; i < committedCards.Count; i++)
+            for (int j = 0; j < committedCards.Count; j++)
+                if (i != j && committedCards[i] != null && committedCards[j] != null &&
+                    committedCards[i].MatchesRank(CardData.Rank.Ace) && committedCards[j].IsFaceCard) return true;
+        return false;
+    }
 
     /// <summary>The live state an owned Gear shows under its description ("Currently +3."), or empty.</summary>
     public static string LiveStatus(CardManager cards, GearData gear, GearRuntimeInstance instance)
@@ -107,7 +116,7 @@ public static partial class GearRules
                 return $"Currently +{state.GetCounter(GearCounterKeys.DwarfEpicPermanentGained)}.";
             case GearSpecialRule.ArsenalEpic:
             {
-                int faces = cards.hand.Count(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King);
+                int faces = cards.hand.Count(card => card != null && card.IsFaceCard);
                 int bonus = HandCapacityBonus(cards, gear);
                 int next = faces + 1;
                 double harmonic = 0d;
@@ -141,7 +150,7 @@ public static partial class GearRules
     {
         if (gear.specialRule == GearSpecialRule.RareArsenal) return Tuning.memoryCardRareHandBonus;
         if (gear.specialRule != GearSpecialRule.ArsenalEpic) return 0;
-        int faces = cards.hand.Count(card => card?.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King);
+        int faces = cards.hand.Count(card => card != null && card.IsFaceCard);
         double harmonic = 0d;
         for (int faceIndex = 1; faceIndex <= faces; faceIndex++) harmonic += 1d / faceIndex;
         return (int)Math.Floor(harmonic);

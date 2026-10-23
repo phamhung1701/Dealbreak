@@ -30,6 +30,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Chain Strike
   signatureDescription: "This card hits the chosen enemy twice, plus once more for each other Chain Strike card in hand, dealing its full resolved damage on each hit."
+  signatureTrickText: "Chain Strike: it hits twice, plus once more for each other Chain Strike card in hand."
   signatureEffects:
   - kind: 24
     trigger: 0

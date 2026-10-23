@@ -23,6 +23,8 @@ public sealed class CardEnhancementData : ScriptableObject
     [Header("Signature (played instead while Overclock is owned; see ModSignature)")]
     public string signatureName;
     [TextArea] public string signatureDescription;
+    [Tooltip("What a Mod Trick gives while Overclock is owned, after \"Give a hand card \".")]
+    public string signatureTrickText;
     public GameplayEffectDefinition[] signatureEffects = System.Array.Empty<GameplayEffectDefinition>();
     public bool HasSignature => !string.IsNullOrEmpty(signatureName) && signatureEffects != null && signatureEffects.Length > 0;
 

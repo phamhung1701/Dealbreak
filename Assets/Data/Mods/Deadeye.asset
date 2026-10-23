@@ -30,6 +30,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Executioner
   signatureDescription: "Trigger: On Card Played\nCondition: 25% chance, always against an enemy below 50% HP\nEffect: This card can critically strike.\nValue: \u00d73"
+  signatureTrickText: "Executioner: it has a 25% chance to deal triple DMG, always against an enemy below 50% HP."
   signatureEffects:
   - kind: 15
     trigger: 10

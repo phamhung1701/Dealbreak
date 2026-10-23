@@ -36,6 +36,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Feeding Frenzy
   signatureDescription: "Trigger: On Card Played\nCondition: Defeats an enemy\nEffect: This card permanently gains flat damage and returns to your hand.\nValue: 1"
+  signatureTrickText: "Feeding Frenzy: each time it defeats an enemy, it permanently gains +1 DMG and returns to your hand."
   signatureEffects:
   - kind: 20
     trigger: 2

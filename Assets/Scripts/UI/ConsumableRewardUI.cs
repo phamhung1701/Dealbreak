@@ -75,9 +75,9 @@ public sealed class ConsumableRewardUI : MonoBehaviour
             instance.name = $"RewardChoice_{i}_{item.id}";
             var label = instance.GetComponentInChildren<TMP_Text>(true);
             if (label) label.text = (_selectedChoice == i ? "SELECTED  " : string.Empty) +
-                $"<size=125%><b>{item.displayName}</b></size>\n{item.description}";
+                $"<size=125%><b>{item.displayName}</b></size>\n{ModSignature.TrickDescription(item)}";
             var detail=instance.GetComponent<ContextualInfoTrigger>()??instance.AddComponent<ContextualInfoTrigger>();
-            detail.category="Trick reward";detail.title=item.displayName;detail.description=item.description;detail.allowWhileBlocked=true;detail.enabled=false;
+            detail.category="Trick reward";detail.title=item.displayName;detail.description=ModSignature.TrickDescription(item);detail.allowWhileBlocked=true;detail.enabled=false;
             var surface=instance.GetComponent<EditorialSurface>();if(!surface)surface=instance.AddComponent<EditorialSurface>();surface.treatment=EditorialSurface.Treatment.Paper;
             var button = instance.GetComponent<Button>();
             if (button) button.onClick.AddListener(() => SelectChoice(choiceIndex));
@@ -119,9 +119,9 @@ public sealed class ConsumableRewardUI : MonoBehaviour
             if (!selected)
                 detailsLabel.text = string.Empty;
             else if (cards != null && cards.CanAddConsumable(item))
-                detailsLabel.text = $"{item.displayName}\n"+(ContextualTooltipUI.Instance?string.Empty:$"{item.description}\n")+"A compatible Trick slot is available.";
+                detailsLabel.text = $"{item.displayName}\n"+(ContextualTooltipUI.Instance?string.Empty:$"{ModSignature.TrickDescription(item)}\n")+"A compatible Trick slot is available.";
             else
-                detailsLabel.text = $"{item.displayName}\n"+(ContextualTooltipUI.Instance?string.Empty:$"{item.description}\n")+"Trick slots full: explicitly replace a shown slot or decline.";
+                detailsLabel.text = $"{item.displayName}\n"+(ContextualTooltipUI.Instance?string.Empty:$"{ModSignature.TrickDescription(item)}\n")+"Trick slots full: explicitly replace a shown slot or decline.";
         }
         if (claimButton) claimButton.interactable = selected && cards != null && cards.CanAddConsumable(item);
         if (declineButton) declineButton.interactable = true;

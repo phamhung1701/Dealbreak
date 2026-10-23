@@ -197,8 +197,11 @@ public sealed class SignatureModTests
         Assert.That(_combat.TryPlayCards(new[] { attacker.data }, enemy), Is.True);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
 
+        int shuffles = _cards.deck.Count;
         Assert.That(_combat.TryDefendWithCards(new[] { card }, enemy), Is.True);
         Assert.That(_cards.hand, Does.Contain(card), "Bulwark stays in hand after blocking.");
+        Assert.That(_cards.deck.Count, Is.EqualTo(shuffles), "It never went into the draw pile.");
+        Assert.That(Views().Any(view => view.data == card), Is.True, "Its hand view stays.");
         Assert.That(_combat.pendingDamage, Is.GreaterThan(0));
 
         Assert.That(_combat.TryDefendWithCards(new[] { card }, enemy), Is.True);
@@ -254,16 +257,19 @@ public sealed class SignatureModTests
     }
 
     [Test]
-    public void Transfusion_TurnsHealingPastFullIntoOneShield_OncePerFight()
+    public void Transfusion_TurnsHealingPastFullIntoOneShield_OncePerFightAcrossAllCards()
     {
         Buy(_overclock);
         _cards.DrawToHand(CardManager.HAND_SIZE);
         var held = Views()[0];
+        var second = Views()[1];
         Assert.That(_cards.ApplyEnhancement(held.data.Id, Mod("Regenerative")), Is.True);
+        Assert.That(_cards.ApplyEnhancement(second.data.Id, Mod("Regenerative")), Is.True);
         var enemy = StartTarget(500, 1);
-        Assert.That(_combat.player.shieldCharges, Is.EqualTo(1), "Full HP at turn start: the heal becomes Shield.");
+        Assert.That(_combat.player.shieldCharges, Is.EqualTo(1),
+            "Full HP at turn start: the heal becomes Shield, once however many Transfusion cards are held.");
 
-        var attacker = FindView(_ => true, held.data);
+        var attacker = FindView(_ => true, held.data, second.data);
         Assert.That(_combat.TryPlayCards(new[] { attacker.data }, enemy), Is.True);
         _combat.TakeRemainingDamage();
         Assert.That(_combat.player.shieldCharges, Is.Zero, "The Shield took the hit; no second Shield this fight.");
@@ -320,6 +326,24 @@ public sealed class SignatureModTests
         Assert.That(AttackSelectionRules.IsRoyalFamily(royal), Is.True, "Joker fills the missing Ace of a one-suit Royal Flush.");
         Assert.That(AttackSelectionRules.IsRoyalFamily(royal.Take(4).Append(Make(CardData.Suit.Hearts, CardData.Rank.Ace)).ToArray()),
             Is.False, "A plain off-suit Ace still breaks the flush.");
+        var kingsOnly = new GameplayEffectCondition { kind = GameplayConditionKind.CardRank, rank = CardData.Rank.King };
+        Assert.That(kingsOnly.Matches(joker), Is.True, "Gear rank conditions count the Joker too.");
+        Assert.That(kingsOnly.Matches(seven), Is.False);
+        Assert.That((joker.IsFaceCard, joker.RanksBelow(CardData.Rank.Ace), joker.RanksAbove(CardData.Rank.King)),
+            Is.EqualTo((true, true, true)));
+    }
+
+    [Test]
+    public void ModTricks_NameTheSignatureTheyGive_WhileOverclockIsOwned()
+    {
+        var booster = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/BoosterShot.asset");
+        var bandage = AssetDatabase.LoadAssetAtPath<ConsumableData>("Assets/Data/Tricks/Bandage.asset");
+        Assert.That(ModSignature.TrickDescription(booster), Is.EqualTo(booster.description));
+        Buy(_overclock);
+        Assert.That(ModSignature.TrickDescription(booster), Does.StartWith("Give a hand card Afterburner:"));
+        Assert.That(ModSignature.TrickDescription(bandage), Does.StartWith("Give a hand card Transfusion:"));
+        foreach (var mod in SaveContentCatalog.Load().enhancements)
+            Assert.That(mod.signatureTrickText, Does.StartWith(mod.signatureName + ":"), mod.displayName);
     }
 
     [Test]

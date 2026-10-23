@@ -940,20 +940,30 @@ public partial class CombatManager : Singleton<CombatManager>
         }
     }
 
-    // Bulwark: a blocking card with it comes straight back from the draw pile, once per enemy turn.
-    void ReturnBulwarksToHand(IReadOnlyList<CardInstance> blockers, CardManager cards, EffectTriggerTrace triggers)
+    // Bulwark: a blocking card with it stays in hand, once per enemy turn.
+    List<CardInstance> BulwarksStayingInHand(IReadOnlyList<CardInstance> blockers)
     {
         int enemyTurn = _completedPlayerTurnCount + 1;
+        var staying = new List<CardInstance>();
         for (int i = 0; i < blockers.Count; i++)
+            if (GameplayEffectResolver.HasEnhancementEffect(blockers[i], GameplayEffectKind.StayInHandAfterBlock) &&
+                blockers[i].EffectState.GetEncounterCounter(ModCounterKeys.BulwarkReturnedTurn) != enemyTurn)
+                staying.Add(blockers[i]);
+        return staying;
+    }
+
+    void KeepBulwarksInHand(IReadOnlyList<CardInstance> staying, CardManager cards, EffectTriggerTrace triggers)
+    {
+        if (staying.Count == 0) return;
+        int enemyTurn = _completedPlayerTurnCount + 1;
+        foreach (var card in staying)
         {
-            var card = blockers[i];
-            if (!GameplayEffectResolver.HasEnhancementEffect(card, GameplayEffectKind.StayInHandAfterBlock) ||
-                card.EffectState.GetEncounterCounter(ModCounterKeys.BulwarkReturnedTurn) == enemyTurn ||
-                !cards.TryTakeCardToHand(card)) continue;
             card.EffectState.SetEncounterCounter(ModCounterKeys.BulwarkReturnedTurn, enemyTurn);
-            triggers.Add(card, EffectCue.ReturnToHand, 0);
+            triggers.Add(card, EffectCue.StaysInHand, 0);
             Log($"{ModSignature.Name(card.Enhancement)}: {card.DisplayName} stays in hand.");
         }
+        cards.ClearSelection();
+        cards.NotifyDeckChanged();
     }
 
     bool OpenNextDiamondDrawChoice(int remainingChoices, CombatActionContext completedAction,
@@ -1089,8 +1099,11 @@ public partial class CombatManager : Singleton<CombatManager>
             var triggers = new EffectTriggerTrace();
             foreach (var card in cards)
                 effectiveBlock += GameplayEffectResolver.CalculateBlock(card, cardManager, triggers);
-            if (cardManager == null || !cardManager.TryReturnToDrawPile(cards)) return false;
-            ReturnBulwarksToHand(cards, cardManager, triggers);
+            // Bulwark cards block from the hand and stay there; the rest go back into the draw pile.
+            var staying = BulwarksStayingInHand(cards);
+            var leaving = staying.Count == 0 ? cards : cards.Where(card => !staying.Contains(card)).ToList();
+            if (cardManager == null || leaving.Count > 0 && !cardManager.TryReturnToDrawPile(leaving)) return false;
+            KeepBulwarksInHand(staying, cardManager, triggers);
             triggers.Publish();
             _parryEffectiveBlock += effectiveBlock;
 

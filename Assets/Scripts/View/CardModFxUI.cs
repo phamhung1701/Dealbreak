@@ -6,7 +6,9 @@ using UnityEngine.UI;
 /// <summary>
 /// A Mod's own ambient look on a card that carries it, picked by <see cref="CardEnhancementData.visual"/>:
 /// flat shapes drawn in code over (for an echo, behind) the card art, sized to the drawn art.
-/// A Mod trigger replays the look louder. Presentation only; it reads the card and the clock, never gameplay RNG.
+/// A Mod trigger replays the look louder. While the card plays its Signature (Overclock), the look runs
+/// faster and brighter and two wires race round the card. Presentation only; it reads the card and the
+/// clock, never gameplay RNG.
 /// </summary>
 [RequireComponent(typeof(CardView))]
 public sealed class CardModFxUI : MonoBehaviour
@@ -14,6 +16,8 @@ public sealed class CardModFxUI : MonoBehaviour
     CardView _view;
     RectTransform _front, _backMirror, _back;
     CardModVisual _built;
+    bool _signature;
+    int _wire = -1;
     readonly List<Graphic> _g = new();
     readonly List<RectTransform> _groups = new();
     Color _red, _lime, _paper, _ink;
@@ -48,10 +52,12 @@ public sealed class CardModFxUI : MonoBehaviour
     {
         var enhancement = _view.data != null ? _view.data.Enhancement : null;
         var visual = enhancement != null ? enhancement.visual : CardModVisual.None;
-        if (visual != _built || visual != CardModVisual.None && _front == null) Build(visual);
+        bool signature = enhancement != null && ModSignature.Plays(enhancement);
+        if (visual != _built || signature != _signature || visual != CardModVisual.None && _front == null)
+            Build(visual, signature);
         if (visual == CardModVisual.None || _view.face == null) return;
 
-        float dt = Time.unscaledDeltaTime;
+        float dt = Time.unscaledDeltaTime * (_signature ? 1.5f : 1f);
         _clock += dt;
         _burst = Mathf.Max(0f, _burst - dt * 1.6f);
         _dim = _view.face.color.a;
@@ -70,6 +76,52 @@ public sealed class CardModFxUI : MonoBehaviour
             case CardModVisual.HealPulse: HealPulse(); break;
             case CardModVisual.Shockwave: Shockwave(); break;
             case CardModVisual.SuitCycle: SuitCycle(); break;
+        }
+        if (_signature) Wires();
+    }
+
+    // ---- Signature (Overclock): a red and a lime wire race round the card, just outside its edge.
+
+    void Wires()
+    {
+        float perimeter = 2f * (W + H);
+        Wire(_wire, _clock * (W + H) * .9f, perimeter * .16f, _red);
+        Wire(_wire + 4, -_clock * (W + H) * .9f + perimeter * .5f, perimeter * .11f, _lime);
+    }
+
+    // `head` is the segment's distance along the edge, clockwise from the top-left corner.
+    void Wire(int first, float head, float length, Color color)
+    {
+        float perimeter = 2f * (W + H);
+        float start = Mathf.Repeat(head, perimeter);
+        float gap = th * 1.5f, thick = th * 1.2f;
+        float edgeStart = 0f;
+        for (int edge = 0; edge < 4; edge++)
+        {
+            float edgeLength = edge % 2 == 0 ? W : H;
+            float a = -1f, b = -1f;
+            for (int pass = 0; pass < 2; pass++)
+            {
+                float shift = pass == 0 ? 0f : -perimeter;
+                float from = Mathf.Max(start + shift, edgeStart), to = Mathf.Min(start + shift + length, edgeStart + edgeLength);
+                if (to > from) { a = from - edgeStart; b = to - edgeStart; }
+            }
+            edgeStart += edgeLength;
+            var bar = _g[first + edge];
+            if (a < 0f)
+            {
+                Tint(bar, color, 0f);
+                continue;
+            }
+            float mid = (a + b) / 2f, span = b - a;
+            switch (edge)
+            {
+                case 0: Put(bar, -hx + mid, hy + gap, span, thick); break;
+                case 1: Put(bar, hx + gap, hy - mid, thick, span); break;
+                case 2: Put(bar, hx - mid, -hy - gap, span, thick); break;
+                default: Put(bar, -hx - gap, -hy + mid, thick, span); break;
+            }
+            Tint(bar, color, .95f);
         }
     }
 
@@ -343,10 +395,11 @@ public sealed class CardModFxUI : MonoBehaviour
 
     // ---- Building.
 
-    void Build(CardModVisual visual)
+    void Build(CardModVisual visual, bool signature)
     {
         Clear();
         _built = visual;
+        _signature = signature;
         if (visual == CardModVisual.None || _view.face == null) return;
 
         var theme = DealbreakUIStyle.Theme;
@@ -401,6 +454,11 @@ public sealed class CardModFxUI : MonoBehaviour
                 _g.Add(text);
                 break;
         }
+        if (signature)
+        {
+            _wire = _g.Count;
+            Parts(_front, 8);
+        }
         foreach (var graphic in _g) graphic.color = Color.clear;
     }
 
@@ -412,6 +470,8 @@ public sealed class CardModFxUI : MonoBehaviour
         _g.Clear();
         _groups.Clear();
         _built = CardModVisual.None;
+        _signature = false;
+        _wire = -1;
     }
 
     static RectTransform Layer(string name, RectTransform parent, int siblingIndex)
@@ -489,7 +549,7 @@ public sealed class CardModFxUI : MonoBehaviour
 
     void Tint(Graphic graphic, Color color, float alpha)
     {
-        color.a *= Mathf.Clamp01(alpha) * _dim;
+        color.a *= Mathf.Clamp01(alpha * (_signature ? 1.25f : 1f)) * _dim;
         graphic.color = color;
     }
 

@@ -62,7 +62,7 @@ public sealed class EnemyDropUI : MonoBehaviour
         var detail = token.GetComponent<ContextualInfoTrigger>();
         detail.allowWhileBlocked = true;
         detail.describe = () => _run != null && _run.PendingEnemyDrop != null
-            ? new ContextualInfo("Enemy drop", _run.PendingEnemyDrop.displayName, _run.PendingEnemyDrop.description)
+            ? new ContextualInfo("Enemy drop", _run.PendingEnemyDrop.displayName, ModSignature.TrickDescription(_run.PendingEnemyDrop))
             : (ContextualInfo?)null;
 
         _tokenLabel = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI))

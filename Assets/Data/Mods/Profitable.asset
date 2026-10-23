@@ -34,6 +34,7 @@ MonoBehaviour:
   ruleModifiers: []
   signatureName: Interest
   signatureDescription: "Trigger: While in Hand\nEffect: When a fight is won, gain 1 Credit for every 5 Credits you hold.\nValue: 5"
+  signatureTrickText: "Interest: when a fight is won while it is in hand, gain 1 Credit for every 5 Credits you hold."
   signatureEffects:
   - kind: 33
     trigger: 4

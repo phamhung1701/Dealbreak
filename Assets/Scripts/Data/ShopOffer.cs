@@ -91,7 +91,7 @@ public sealed class ShopOffer
             return $"Choose a card in your hand to enhance: {effect}";
         }
         if (kind == ShopOfferKind.Consumable)
-            return consumable != null ? consumable.description : string.Empty;
+            return consumable != null ? ModSignature.TrickDescription(consumable) : string.Empty;
         if (kind == ShopOfferKind.Investment)
             return $"Stake Credits now; at the next Black Market, receive {GameBalance.Current.blackMarket.stakePayoutMultiplier}× the stake or nothing.";
         if (kind == ShopOfferKind.Guidance)

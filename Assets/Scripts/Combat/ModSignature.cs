@@ -14,7 +14,8 @@ public static class ModSignature
         return false;
     }
 
-    static bool Plays(CardEnhancementData mod) => mod != null && mod.HasSignature && Active(CardManager.Instance);
+    /// <summary>Whether a card with <paramref name="mod"/> plays its Signature right now.</summary>
+    public static bool Plays(CardEnhancementData mod) => mod != null && mod.HasSignature && Active(CardManager.Instance);
 
     /// <summary>The effects a card with <paramref name="mod"/> plays right now.</summary>
     public static GameplayEffectDefinition[] Effects(CardEnhancementData mod) =>
@@ -25,6 +26,15 @@ public static class ModSignature
 
     public static string Description(CardEnhancementData mod) =>
         mod == null ? null : Plays(mod) ? mod.signatureDescription : mod.description;
+
+    /// <summary>A Trick's text; a Mod Trick names the Signature it gives while Overclock is owned.</summary>
+    public static string TrickDescription(ConsumableData trick)
+    {
+        if (trick == null) return null;
+        var mod = trick.effectType == ConsumableEffectType.ApplyEnhancement ? trick.enhancementToApply : null;
+        return mod != null && !string.IsNullOrEmpty(mod.signatureTrickText) && Plays(mod)
+            ? $"Give a hand card {mod.signatureTrickText}" : trick.description;
+    }
 }
 
 /// <summary>
@@ -33,8 +43,8 @@ public static class ModSignature
 /// </summary>
 public static class ModCounterKeys
 {
-    // Transfusion: 1 once its card has turned healing past full HP into Shield this fight.
+    // Transfusion: 1 on the card that turned healing past full HP into Shield; one per fight across all cards.
     public const int TransfusionShieldGranted = -1001;
-    // Bulwark: the enemy turn (completed player turns + 1) in which its card last returned to hand.
+    // Bulwark: the enemy turn (completed player turns + 1) in which its card last blocked and stayed in hand.
     public const int BulwarkReturnedTurn = -1002;
 }

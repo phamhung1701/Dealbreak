@@ -516,6 +516,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             EffectCue.MaxHealth => $"+{n} MAX HP",
             EffectCue.Carry => $"CARRY {n}",
             EffectCue.CoverFire => $"COVER {n}",
+            EffectCue.StaysInHand => "STAYS IN HAND",
             _ => string.Empty
         };
     }

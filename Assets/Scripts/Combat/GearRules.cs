@@ -87,7 +87,7 @@ public static partial class GearRules
             {
                 var source = instance.PreparedDwarfSourceCard;
                 bool qualifying = source != null && cards.FindOwnedCard(source.Id) == source &&
-                    playedCards.Any(card => card != null && card.Rank > source.Rank);
+                    playedCards.Any(card => card != null && card.RanksAbove(source.Rank));
                 if (qualifying)
                 {
                     bonuses.Dwarf = Tuning.lowballAttackBonus;
@@ -97,7 +97,7 @@ public static partial class GearRules
             if (gear.specialRule == GearSpecialRule.BalancersScale)
             {
                 int previousGroup = state.GetCounter(GearCounterKeys.BalancersScalePreviousGroup);
-                int playedGroup = playedCards.Count > 0 ? GetBalancerGroup(playedCards[0]) : 0;
+                int playedGroup = playedCards.Count > 0 ? GetBalancerGroup(playedCards[0], previousGroup) : 0;
                 if (playedGroup != 0 && playedGroup == previousGroup)
                 {
                     if (commit) state.SetCounter(GearCounterKeys.BalancersScaleBonus, 0);
@@ -148,11 +148,12 @@ public static partial class GearRules
             {
                 if (card == null) continue;
                 if (gear.specialRule is GearSpecialRule.DwarfRare or GearSpecialRule.DwarfEpic &&
-                    card.Rank < Tuning.lowballBelowRank)
+                    card.RanksBelow(Tuning.lowballBelowRank))
                     instance.PreparedDwarfSourceCard = card;
                 if (headlinerEncounter && gear.specialRule == GearSpecialRule.KingslayersMark)
                 {
-                    int mask = state.GetEncounterCounter(GearCounterKeys.KingslayerRankMask) | (1 << (int)card.Rank);
+                    int mask = state.GetEncounterCounter(GearCounterKeys.KingslayerRankMask);
+                    mask |= 1 << (int)(card.IsWildRank ? FirstUncountedRank(mask) : card.Rank);
                     int uniqueRanks = 0;
                     for (int bits = mask; bits != 0; bits >>= 1) uniqueRanks += bits & 1;
                     if (uniqueRanks >= Tuning.spotterEyeDistinctRanks)
@@ -176,9 +177,9 @@ public static partial class GearRules
                 }
                 if (gear.specialRule == GearSpecialRule.BalancersScale)
                 {
-                    int group = GetBalancerGroup(card);
-                    if (group == 0) continue;
                     int previous = state.GetCounter(GearCounterKeys.BalancersScalePreviousGroup);
+                    int group = GetBalancerGroup(card, previous);
+                    if (group == 0) continue;
                     int bonus = state.GetCounter(GearCounterKeys.BalancersScaleBonus);
                     if (group == previous) bonus = 0;
                     else if (previous != 0) bonus = ClampToInt((long)bonus + Tuning.flipSwitchAttackBonus);
@@ -190,9 +191,19 @@ public static partial class GearRules
         return diamondChoices;
     }
 
-    static int GetBalancerGroup(CardInstance card) => card == null ? 0 :
+    // Flip Switch groups: 1 below Five, 2 face cards. A Joker takes the group the last card did not.
+    static int GetBalancerGroup(CardInstance card, int previousGroup) => card == null ? 0 :
+        card.IsWildRank ? (previousGroup == 1 ? 2 : 1) :
         card.Rank < CardData.Rank.Five ? 1 :
         card.Rank is CardData.Rank.Jack or CardData.Rank.Queen or CardData.Rank.King ? 2 : 0;
+
+    // Kingslayer's Mark: a Joker counts as the lowest rank not yet counted.
+    static CardData.Rank FirstUncountedRank(int mask)
+    {
+        foreach (CardData.Rank rank in Enum.GetValues(typeof(CardData.Rank)))
+            if ((mask & (1 << (int)rank)) == 0) return rank;
+        return CardData.Rank.Ace;
+    }
 
     /// <summary>Hands Epic: a same-rank Hands action triggers each card's committed effects twice.</summary>
     public static bool HandsActionRepeatsCardEffects(CardManager cards) =>
@@ -262,7 +273,7 @@ public static partial class GearRules
             if (gear.specialRule != GearSpecialRule.DwarfEpic) continue;
             var source = instance.PendingDwarfSourceCard;
             if (source == null || cards.FindOwnedCard(source.Id) != source ||
-                !committedCards.Any(card => card != null && card.Rank > source.Rank)) continue;
+                !committedCards.Any(card => card != null && card.RanksAbove(source.Rank))) continue;
             int growth = Tuning.lowballEpicPermanentAttack;
             source.GainPermanentAttackBonus(growth);
             cards.NotifyCardInstanceChanged(source);
@@ -284,7 +295,9 @@ public static partial class GearRules
             if (gear.specialRule is not (GearSpecialRule.AceRare or GearSpecialRule.AceEpic)) continue;
             var state = instance.State;
             if (state.GetEncounterCounter(GearCounterKeys.AceReturnUsed) != 0) continue;
-            var ace = committedCards.FirstOrDefault(card => card != null && card.Rank == CardData.Rank.Ace);
+            // The physical Ace, or the Joker that stood in for it.
+            var ace = committedCards.FirstOrDefault(card => card != null && card.Rank == CardData.Rank.Ace) ??
+                committedCards.FirstOrDefault(card => card != null && card.IsWildRank);
             if (ace == null || !cards.TryTakeCardToHand(ace)) continue;
             state.SetEncounterCounter(GearCounterKeys.AceReturnUsed, 1);
             log?.Invoke($"{gear.displayName}: returned the physical Ace to hand.");
