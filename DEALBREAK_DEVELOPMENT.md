@@ -697,6 +697,11 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - Mods and Gear show when they work, after Balatro: gameplay reports each activation to `EffectTriggerFeed` (attack and block values through an `EffectTriggerTrace` filled by the committing calculation; previews never report), and `EffectTriggerPresenterUI` plays them in order. The card or Gear hops, a tag names the effect, Credits fly into the chip and healing onto the HP bar; Overclocked drains HP from the bar into its card before the attack. Played cards stand lifted while their pre-hit triggers play, and the board waits for combat triggers.
 - The HUD drops the District and Headliner lines. Gear and Tricks are two rows of slots across the header; the stage widens into the freed left column and centres over the hand; slot details open below the slot; the item DISCARD strip covers the wordmark; an active Contract's progress sits above the draw pile.
 
+## Black Market and Inventory Polish — October 23, 2026
+
+- Black Market tiles are one compact row each; a lack of Credits only disables the price button (`RunManager.GetShopOfferBlockedReason`); details omit the price; Supply and Stake always show MIN − n + MAX; REROLL GOODS is a lime button; Contracts need no earlier purchase; bought items fly into their slot.
+- Gear moves to any slot by drag (`CardManager.MoveGear`, which also sets trigger order). Gear and Tricks rows sit on their own panels (`InventoryPanelUI`). Any click elsewhere closes the open info. No Headliner-reward banner. Back-Alley Trap's run takes up to 5 Credits (`RunEffectType.LoseCreditsUpTo`) instead of requiring them.
+
 ## 10. Instructions for Future Locus Sessions
 
 1. Read `DEALBREAK_DEVELOPMENT.md` before beginning substantial project work.
