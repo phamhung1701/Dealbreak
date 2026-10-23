@@ -61,25 +61,6 @@ public class ShopUI : MonoBehaviour
         {
             bool selected=view.Offer?.StableId==_selectedOfferId;
             view.SetSelected(selected);
-            if(selected&&view.Offer.kind is ShopOfferKind.Supply or ShopOfferKind.Investment)
-            {
-                // MIN − [quantity] + MAX on their own row above the price button.
-                var controls=new Transform[]{_quantityMinimumButton?.transform,_quantityDecreaseButton?.transform,_investmentStakeInput?.transform,_quantityIncreaseButton?.transform,_quantityMaximumButton?.transform};
-                float available=((RectTransform)view.transform).rect.width*.90f;
-                float[] widths={64,40,0,40,64};
-                widths[2]=Mathf.Max(56,available-(widths[0]+widths[1]+widths[3]+widths[4])-16);
-                float x=0;
-                for(int i=0;i<controls.Length;i++)
-                {
-                    if(controls[i])
-                    {
-                        var rect=(RectTransform)controls[i];rect.SetParent(view.transform,false);
-                        rect.anchorMin=rect.anchorMax=new Vector2(.05f,0);rect.pivot=new Vector2(0,0);
-                        rect.anchoredPosition=new Vector2(x,ShopOfferUI.QuantityRowBottom);rect.sizeDelta=new Vector2(widths[i],44);
-                    }
-                    x+=widths[i]+4;
-                }
-            }
         }
         RefreshInlinePrices();
         Canvas.ForceUpdateCanvases();
@@ -101,10 +82,12 @@ public class ShopUI : MonoBehaviour
         {
             var offer=view.Offer;if(offer==null||!view.statusLabel)continue;
             int cost=offer.kind==ShopOfferKind.Investment?offer.investmentStake:offer.kind==ShopOfferKind.Supply?offer.supplyQuantity*3:offer.price;
-            string reason=run.GetShopOfferUnavailableReason(offer.StableId);
-            view.RefreshPurchase(reason,cost);
-            if(_investmentStakeInput&&_investmentStakeInput.textComponent)
-            {var text=_investmentStakeInput.textComponent;text.alignment=TextAlignmentOptions.Midline;text.font=DealbreakUIStyle.Theme.numericFont;text.fontSize=22;}
+            view.RefreshPurchase(run.GetShopOfferBlockedReason(offer.StableId),cost,run.CanPurchaseShopOffer(offer.StableId));
+            if(view.HasQuantityControls)
+            {
+                QuantityRange(offer,out int current,out int maximum);
+                view.RefreshQuantity(current,current>1&&!GameplayInputGate.IsBlocked,current<maximum&&!GameplayInputGate.IsBlocked);
+            }
         }
     }
     public void ClearOfferSelection()
@@ -284,7 +267,7 @@ public class ShopUI : MonoBehaviour
         scroll.viewport = sr; scroll.content = cr; scroll.horizontal = false; scroll.vertical = true;
         scroll.movementType = ScrollRect.MovementType.Clamped;
         _servicesContainer = cr;
-        if(storeComposition){DealbreakUIStyle.Place(viewport,.055f,.15f,.62f,.80f);DealbreakUIStyle.Place(sr,.66f,.15f,.95f,.80f);}
+        if(storeComposition){DealbreakUIStyle.Place(viewport,.055f,.02f,.62f,.80f);DealbreakUIStyle.Place(sr,.66f,.02f,.95f,.80f);}
         foreach (var text in parent.GetComponentsInChildren<TMP_Text>(true))
             if (text.text == "ARTIFACT & ENHANCEMENT SHOP") text.text = "SHOP — GOODS & SERVICES";
     }
@@ -430,15 +413,16 @@ public class ShopUI : MonoBehaviour
             string inspectedId=offer.StableId;
             inspect.describe=()=>
             {
+                // The price shows on the tile's button, so the detail is the rules text alone.
                 var live=FindOffer(inspectedId);if(live==null)return null;
-                string price=live.kind==ShopOfferKind.Investment?$"Stake {live.investmentStake} Credits":
-                    live.kind==ShopOfferKind.Supply?$"Total {live.supplyQuantity*3} Credits • {live.supplyQuantity} card(s)":$"Price {live.price} Credits";
-                return new ContextualInfo(live.IsService?"Service":"Goods",live.DisplayName,
-                    live.Description(CardManager.Instance)+$"\n\n{price}");
+                return new ContextualInfo(live.IsService?"Service":"Goods",live.DisplayName,live.Description(CardManager.Instance));
             };
             DealbreakUIStyle.ApplyHierarchy(btn.transform);
             var offerView=btn.GetComponent<ShopOfferUI>();if(!offerView)offerView=btn.AddComponent<ShopOfferUI>();
-            offerView.Bind(offer,unavailableReason);
+            string quantityId=offer.StableId;
+            if(storeComposition)PrepareQuantity(offer);
+            offerView.Bind(offer,storeComposition&&RunManager.Instance!=null?RunManager.Instance.GetShopOfferBlockedReason(offer.StableId):unavailableReason,
+                storeComposition?delta=>AdjustQuantity(quantityId,delta):null);
             string purchaseId=offer.StableId;offerView.purchaseButton.onClick.AddListener(()=>PurchaseInline(purchaseId));
             if (button)
             {
@@ -476,6 +460,8 @@ public class ShopUI : MonoBehaviour
         layout.minHeight = layout.preferredHeight = 36;
     }
 
+    // (owner, 2026-10-23) The reroll is a clear button in its own colour (acid lime, ink type), not
+    // an offer tile; it greys out while it cannot be afforded.
     void AddGoodsRefreshButton()
     {
         var run = RunManager.Instance;
@@ -483,9 +469,10 @@ public class ShopUI : MonoBehaviour
         var go = Instantiate(itemButtonPrefab, itemsContainer);
         go.name = "RefreshGoods";
         var label = go.GetComponentInChildren<TMP_Text>();
-        if (label) label.text = $"Refresh Goods • {run.GoodsRefreshPrice} Credits";
+        if (label) label.text = storeComposition
+            ? $"REROLL GOODS  •  {run.GoodsRefreshPrice} Credits" : $"Refresh Goods • {run.GoodsRefreshPrice} Credits";
         var layout = go.TryGetComponent(out LayoutElement existingLayoutElement) ? existingLayoutElement : go.AddComponent<LayoutElement>();
-        layout.minHeight = layout.preferredHeight = 42;
+        layout.minHeight = layout.preferredHeight = 46;
         var button = go.GetComponent<Button>();
         int expected = run.GoodsRefreshCount;
         if (button)
@@ -493,6 +480,7 @@ public class ShopUI : MonoBehaviour
             button.interactable = run.CanRefreshGoods;
             button.onClick.AddListener(() => { run.RefreshGoods(expected); });
         }
+        if (storeComposition && button) go.AddComponent<RerollButtonStyle>().Bind(button, label);
     }
 
     void SelectOffer(string stableId)
@@ -584,24 +572,46 @@ public class ShopUI : MonoBehaviour
         if (panel != null && panel.activeSelf) UpdateSelectionDetails();
     }
 
-    void AdjustSelectedQuantity(int delta)
+    void AdjustSelectedQuantity(int delta) => AdjustQuantity(_selectedOfferId, delta);
+
+    // A Supply quantity or Stake for any offer: each Supply/Stake tile carries its own controls.
+    void AdjustQuantity(string stableId, int delta)
     {
-        if (GameplayInputGate.IsBlocked || panel == null || !panel.activeSelf || string.IsNullOrEmpty(_selectedOfferId)) return;
+        if (GameplayInputGate.IsBlocked || panel == null || !panel.activeSelf || string.IsNullOrEmpty(stableId)) return;
         var run = RunManager.Instance;
-        var offer = FindOffer(_selectedOfferId);
+        var offer = FindOffer(stableId);
         if (run == null || offer == null) return;
-        int maximum = offer.kind == ShopOfferKind.Supply
-            ? run.GetSupplyMaximumQuantity()
-            : offer.kind == ShopOfferKind.Investment && CardManager.Instance != null ? CardManager.Instance.credits : 0;
-        int current = offer.kind == ShopOfferKind.Supply ? offer.supplyQuantity : offer.investmentStake;
+        QuantityRange(offer, out int current, out int maximum);
         if (maximum < 1) return;
         int next = Mathf.Clamp(current + delta, 1, maximum);
         bool changed = offer.kind == ShopOfferKind.Supply
             ? run.SetSupplyQuantity(offer.StableId, next)
             : offer.kind == ShopOfferKind.Investment && run.SetInvestmentStake(offer.StableId, next);
         if (!changed) return;
-        if (_investmentStakeInput) _investmentStakeInput.SetTextWithoutNotify(next.ToString());
+        if (_investmentStakeInput && stableId == _selectedOfferId) _investmentStakeInput.SetTextWithoutNotify(next.ToString());
         UpdateSelectionDetails();
+    }
+
+    static void QuantityRange(ShopOffer offer, out int current, out int maximum)
+    {
+        var run = RunManager.Instance;
+        maximum = offer.kind == ShopOfferKind.Supply
+            ? run != null ? run.GetSupplyMaximumQuantity() : 0
+            : offer.kind == ShopOfferKind.Investment && CardManager.Instance != null ? CardManager.Instance.credits : 0;
+        current = offer.kind == ShopOfferKind.Supply ? offer.supplyQuantity : offer.investmentStake;
+    }
+
+    // The quantity row always shows a buyable amount: Stake starts at 1, Supply stays in range.
+    static void PrepareQuantity(ShopOffer offer)
+    {
+        var run = RunManager.Instance;
+        if (run == null || offer.purchased && offer.kind != ShopOfferKind.Supply) return;
+        QuantityRange(offer, out int current, out int maximum);
+        if (maximum < 1) return;
+        int wanted = Mathf.Clamp(current, 1, maximum);
+        if (wanted == current) return;
+        if (offer.kind == ShopOfferKind.Supply) run.SetSupplyQuantity(offer.StableId, wanted);
+        else if (offer.kind == ShopOfferKind.Investment) run.SetInvestmentStake(offer.StableId, wanted);
     }
 
     void AdjustSelectedQuantityDown() => AdjustSelectedQuantity(-1);
@@ -654,8 +664,14 @@ public class ShopUI : MonoBehaviour
         var run = RunManager.Instance;
         if (run == null) return;
         string selectedId = _selectedOfferId;
+        var bought = FindOffer(selectedId);
+        var tile = panel.GetComponentsInChildren<ShopOfferUI>().FirstOrDefault(view => view.Offer?.StableId == selectedId);
+        Vector3 from = tile ? tile.transform.position : Vector3.zero;
+        var cards = CardManager.Instance;
+        var gearBefore = cards != null ? cards.OwnedGearInstances.Select(instance => instance?.Id ?? 0).ToArray() : System.Array.Empty<long>();
         if (run.PurchaseShopOffer(selectedId))
         {
+            if (tile) FlyIntoBackpack(bought, from, gearBefore);
             RefreshItems();
             return;
         }
@@ -665,6 +681,32 @@ public class ShopUI : MonoBehaviour
         _selectedOfferId = null;
         RefreshItems();
         UpdateSelectionDetails(string.IsNullOrEmpty(reason) ? "Offer unavailable" : reason);
+    }
+
+    // (owner, 2026-10-23) Bought Gear and Tricks jump from their tile into the slot they landed in,
+    // as enemy drops do. Presentation only: the item is already there.
+    void FlyIntoBackpack(ShopOffer offer, Vector3 from, long[] gearBefore)
+    {
+        var cards = CardManager.Instance;
+        var flight = ItemDragUI.Get();
+        if (offer == null || cards == null || !flight) return;
+        RectTransform slot = null;
+        if (offer.kind == ShopOfferKind.Gear)
+        {
+            var added = cards.OwnedGearInstances.FirstOrDefault(instance => instance != null && !gearBefore.Contains(instance.Id));
+            var rail = Object.FindFirstObjectByType<GearRailUI>();
+            if (rail) rail.Refresh();
+            var gearSlot = added != null && rail ? rail.SlotFor(added.Id) : null;
+            slot = gearSlot ? (RectTransform)gearSlot.transform : null;
+        }
+        else if (offer.kind == ShopOfferKind.Consumable)
+        {
+            var actions = Object.FindFirstObjectByType<ActionButtonsUI>();
+            for (int i = (actions ? actions.backpackSlotButtons.Length : 0) - 1; i >= 0 && !slot; i--)
+                if (actions.backpackSlotButtons[i] && cards.GetConsumableAtSlot(i) == offer.consumable)
+                    slot = (RectTransform)actions.backpackSlotButtons[i].transform;
+        }
+        if (slot) flight.FlyIntoSlot(from, slot, offer.DisplayName, offer.IconSprite);
     }
 
     ShopOffer FindOffer(string stableId)

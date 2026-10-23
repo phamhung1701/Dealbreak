@@ -50,48 +50,19 @@ public sealed class Phase8QuestOfferTests
         SetQuestFixtureServices();
         var contract = System.Linq.Enumerable.First(_run.GetCurrentShopOffers(), offer => offer.kind == ShopOfferKind.Contract);
         Assert.That(contract.price, Is.EqualTo(20));
-        Assert.That(_run.GetShopOfferUnavailableReason(contract.StableId), Is.EqualTo("Purchase another Black Market item first"));
-        var investment = System.Linq.Enumerable.First(_run.GetCurrentShopOffers(), offer => offer.kind == ShopOfferKind.Investment);
-        Assert.That(_run.PurchaseShopOffer(investment.StableId), Is.True);
-        Assert.That(_cards.credits, Is.EqualTo(45));
+        // (owner, 2026-10-23) A Contract no longer waits for another Black Market purchase.
         Assert.That(_run.GetShopOfferUnavailableReason(contract.StableId), Is.Empty);
 
         RunEventDefinition shown = null;
         _run.OnShowEvent += definition => shown = definition;
         Assert.That(_run.PurchaseShopOffer(contract.StableId), Is.True);
-        Assert.That(_cards.credits, Is.EqualTo(45), "The fee is not charged while choosing an objective.");
+        Assert.That(_cards.credits, Is.EqualTo(50), "The fee is not charged while choosing an objective.");
         Assert.That(shown, Is.Not.Null);
         Assert.That(_run.GetEventOptionUnavailableReason(1), Is.Empty);
         Assert.That(_run.ChooseEventOption(1), Is.True);
-        Assert.That(_cards.credits, Is.EqualTo(25));
+        Assert.That(_cards.credits, Is.EqualTo(30));
         Assert.That(_run.ActiveContract.objective, Is.EqualTo(RunContractObjective.DefeatEliteThisMap));
         Assert.That(_run.ActiveContract.startedAtNodeId, Is.EqualTo(shop.id));
-    }
-
-    [Test]
-    public void FailedAndFreeShopPurchasesDoNotUnlockContractOffer()
-    {
-        _cards.credits = 50;
-        var shop = new PathNode { id = 1, mapIndex = 0, kind = MapNodeType.Shop };
-        _run.currentPath.Add(shop);
-        SetPrivate(_run, "_activeNode", shop);
-        InvokePrivate(_run, "PrepareShopOffers", 4);
-        SetQuestFixtureServices();
-        var contract = System.Linq.Enumerable.First(_run.GetCurrentShopOffers(), offer => offer.kind == ShopOfferKind.Contract);
-        var investment = System.Linq.Enumerable.First(_run.GetCurrentShopOffers(), offer => offer.kind == ShopOfferKind.Investment);
-        Assert.That(_run.PurchaseShopOffer("missing-offer"), Is.False);
-        var freeGear = ScriptableObject.CreateInstance<GearData>();
-        try
-        {
-            freeGear.id = "quest-free-fixture";
-            _cards.gearCatalog.Add(freeGear);
-            var freeOffer = new ShopOffer { kind = ShopOfferKind.Gear, gear = freeGear, price = 0 };
-            ((List<ShopOffer>)_run.GetCurrentShopOffers()).Add(freeOffer);
-            Assert.That(_run.PurchaseShopOffer(freeOffer.StableId), Is.True);
-            Assert.That(_cards.credits, Is.EqualTo(50));
-            Assert.That(_run.GetShopOfferUnavailableReason(contract.StableId), Is.EqualTo("Purchase another Black Market item first"));
-        }
-        finally { Object.DestroyImmediate(freeGear); }
     }
 
     [Test]

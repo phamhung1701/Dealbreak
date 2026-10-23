@@ -454,15 +454,30 @@ public sealed class Phase7EShopSelectionTests
     {
         _ui.storeComposition=true;_cards.AddCredits(10);_ui.RefreshPresentation();
         var offer=ReplaceCurrentServiceWith(ShopOfferKind.Investment);
-        Click(offer);InvokeUi("AdjustSelectedQuantityUp");
-        Assert.That(offer.investmentStake,Is.EqualTo(2));
         var view=ButtonFor(offer).GetComponent<ShopOfferUI>();
-        var input=_ui.panel.GetComponentsInChildren<TMP_InputField>().Single();
-        Assert.That(input.transform.parent,Is.EqualTo(view.transform));
+        // (owner, 2026-10-23) Stake and Supply always show MIN − n + MAX, without a click.
+        Assert.That(view.increaseButton.gameObject.activeInHierarchy,Is.True);
+        Assert.That(offer.investmentStake,Is.EqualTo(1),"The Stake starts at a buyable 1.");
+        view.increaseButton.onClick.Invoke();
+        Assert.That(offer.investmentStake,Is.EqualTo(2));
+        Assert.That(view.quantityLabel.text,Is.EqualTo("2"));
         Assert.That(view.statusLabel.text,Is.Empty);
         view.purchaseButton.onClick.Invoke();_ui.PurchaseInline(offer.StableId);
         Assert.That(_cards.credits,Is.EqualTo(8));Assert.That(_run.PendingInvestmentCount,Is.EqualTo(1));
         Assert.That(_ui.panel.GetComponentsInChildren<ShopOfferUI>().Any(v=>v.Offer.StableId==offer.StableId),Is.False);
+    }
+
+    [Test]
+    public void ShortOfCredits_DisablesThePriceButtonWithoutText_AndTheDetailOmitsThePrice()
+    {
+        _ui.storeComposition=true;_ui.RefreshPresentation();
+        var offer=GearOffer();
+        Assert.That(_cards.credits,Is.LessThan(offer.price));
+        var view=ButtonFor(offer).GetComponent<ShopOfferUI>();
+        Assert.That(view.purchaseButton.interactable,Is.False);
+        Assert.That(view.statusLabel.text,Is.Empty,"A short purse shows no message.");
+        Assert.That(ButtonFor(offer).GetComponent<ContextualInfoTrigger>().Info.Value.Body,Does.Not.Contain("Credits"));
+        Assert.That(_run.GetShopOfferUnavailableReason(offer.StableId),Does.StartWith("Need"),"Gameplay still knows why.");
     }
 
     Button ButtonFor(ShopOffer offer) => _ui.panel.GetComponentsInChildren<Button>(true)

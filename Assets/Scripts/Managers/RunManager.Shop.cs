@@ -74,8 +74,21 @@ public partial class RunManager
     public bool CanPurchaseShopOffer(string stableId) =>
         string.IsNullOrEmpty(GetShopOfferUnavailableReason(stableId));
 
-    public string GetShopOfferUnavailableReason(string stableId)
+    public string GetShopOfferUnavailableReason(string stableId) => ShopOfferReason(stableId, out _);
+
+    /// <summary>
+    /// Why an offer cannot be bought, leaving out a plain lack of Credits: the Black Market shows only
+    /// these, and a short purse just disables the price button (owner, 2026-10-23).
+    /// </summary>
+    public string GetShopOfferBlockedReason(string stableId)
     {
+        string reason = ShopOfferReason(stableId, out bool creditsOnly);
+        return creditsOnly ? string.Empty : reason;
+    }
+
+    string ShopOfferReason(string stableId, out bool creditsOnly)
+    {
+        creditsOnly = false;
         if (_shopTransaction) return "Black Market transaction in progress";
         if (_activeNode == null || _activeNode.completed || _activeNode.kind != MapNodeType.Shop || string.IsNullOrEmpty(stableId))
             return "Offer unavailable";
@@ -97,7 +110,6 @@ public partial class RunManager
             if (_activeContract != null || _pendingContractSelectionEvent != null)
                 return "A Contract is already active";
             if (_usedSpecialShopOffers.Contains(offer.kind)) return "Already purchased during this Black Market visit";
-            if (!_madeSuccessfulPurchaseInCurrentShop) return "Purchase another Black Market item first";
         }
         else if (offer.kind == ShopOfferKind.Consumable)
         {
@@ -109,23 +121,32 @@ public partial class RunManager
         else if (offer.kind == ShopOfferKind.Supply)
         {
             int maximum = GetSupplyMaximumQuantity();
-            if (maximum <= 0) return "Supply needs Credits, Draw Pile cards and free Hand space";
+            if (maximum <= 0)
+            {
+                if (cards.deck.Count == 0) return "Draw Pile empty";
+                if (cards.HandCount >= cards.HandCapacity) return "Hand full";
+                creditsOnly = true;
+                return "Supply needs Credits";
+            }
             if (offer.supplyQuantity <= 0 || offer.supplyQuantity > maximum) return $"Choose 1–{maximum} cards";
         }
         else if (offer.kind == ShopOfferKind.Investment || offer.kind == ShopOfferKind.Guidance)
         {
             if (_usedSpecialShopOffers.Contains(offer.kind)) return "Already purchased during this Black Market visit";
             if (offer.kind == ShopOfferKind.Investment && (offer.investmentStake <= 0 || offer.investmentStake > cards.credits))
+            {
+                creditsOnly = cards.credits <= 0;
                 return "Stake must be between 1 and your current Credits";
+            }
             if (offer.kind == ShopOfferKind.Guidance && !CanRevealEligibleHiddenNode())
                 return "No eligible hidden node to reveal";
         }
         else return "Offer unavailable";
 
         int requiredCredits = offer.kind == ShopOfferKind.Investment ? offer.investmentStake : offer.price;
-        return cards.CanAfford(requiredCredits)
-            ? string.Empty
-            : $"Need {requiredCredits} Credits (have {cards.credits} Credits)";
+        if (cards.CanAfford(requiredCredits)) return string.Empty;
+        creditsOnly = true;
+        return $"Need {requiredCredits} Credits (have {cards.credits} Credits)";
     }
 
     // No purchase needs a target: Mods are sold as Mod Tricks.
