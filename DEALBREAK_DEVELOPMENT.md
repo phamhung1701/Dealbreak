@@ -702,6 +702,11 @@ Retain this storage envelope, content-ID registry and owner contracts. Add a new
 - Black Market tiles are one compact row each; a lack of Credits only disables the price button (`RunManager.GetShopOfferBlockedReason`); details omit the price; Supply and Stake always show MIN − n + MAX; REROLL GOODS is a lime button; Contracts need no earlier purchase; bought items fly into their slot.
 - Gear moves to any slot by drag (`CardManager.MoveGear`, which also sets trigger order). Gear and Tricks rows sit on their own panels (`InventoryPanelUI`). Any click elsewhere closes the open info. No Headliner-reward banner. Back-Alley Trap's run takes up to 5 Credits (`RunEffectType.LoseCreditsUpTo`) instead of requiring them.
 
+## Prototype v1.4 — October 23, 2026
+
+- Version 1.4 (`bundleVersion`, main-menu label). Since the polish pass above: the HUD Credits count includes Credits secured this fight (`CombatManager.SecuredCredits`; still paid only on victory); enemy HP is a bigger meter, grey while Shielded with one glyph per charge, abilities named under the enemy; the route map names the Headliner and its abilities; Black Market tiles are narrow with big art, bought rows close up, CONTINUE TO MAP sits under the services, dev mode stocks everything; the hand size rides with the hand; DISCARD stands on the right edge; Recover is automatic.
+- The tutorial copy covers these: the Headliner line, Shield glyphs, click-to-read and click-away, secured Credits, Mod and Gear trigger hops, buying, REROLL GOODS, the quantity row, moving items between slots and the right-edge DISCARD strip.
+
 ## 10. Instructions for Future Locus Sessions
 
 1. Read `DEALBREAK_DEVELOPMENT.md` before beginning substantial project work.

@@ -90,7 +90,8 @@ public static class TutorialScript
             Ready = () => run.ActiveNode == null
         });
         steps.Add(Route("route", "Pick a route",
-            () => "This is the District map. Its nodes are fights, Black Markets, Incidents and, at the end, the Headliner. You only move forward.\n\nClick the first fight.",
+            () => "This is the District map. Its nodes are fights, Black Markets, Incidents and, at the end, the Headliner. You only move forward. " +
+                "The line under the District title names its Headliner and what it can do.\n\nClick the first fight.",
             0, CountWins));
 
         // Fight 1: attack, the enemy response, Perfect Block and the kill draw.
@@ -98,7 +99,9 @@ public static class TutorialScript
         steps.Add(new TutorialStep
         {
             Id = "enemy", Lesson = "Combat", Title = () => "Read the enemy",
-            Body = () => $"HP is the damage it takes to defeat the {firstEnemy}.\n\nATTACK is how hard it hits back each time it survives your turn.",
+            Body = () => $"HP is the damage it takes to defeat the {firstEnemy}.\n\nATTACK is how hard it hits back each time it survives your turn. " +
+                "Shield icons on an enemy's HP bar each stop one hit; while it has any, the bar is grey.\n\n" +
+                "Click an enemy, card or item to read it. Click anywhere else to close it.",
             Targets = () => TutorialTargets.Enemies(), Ready = PlayerTurn, Skip = () => !InFight()
         });
         steps.Add(new TutorialStep
@@ -148,7 +151,7 @@ public static class TutorialScript
         steps.Add(new TutorialStep
         {
             Id = "loot", Lesson = "Loot", Title = () => "Credits and drops",
-            Body = () => "Defeated enemies pay Credits. Spend them at the Black Market." +
+            Body = () => "Defeated enemies pay Credits: the count rises as their coins land, and they are yours once the fight is won. Spend them at the Black Market." +
                 (def.fights[0].drop ? $"\n\nThis fight also dropped a Trick, the {def.fights[0].drop.displayName}. Drops go straight into your backpack, which holds {d.Cards.BackpackCapacity} Tricks." : string.Empty),
             Targets = () => Join(TutorialTargets.Credits(), TutorialTargets.BackpackSlots()),
             Ready = () => OnMap(1)
@@ -173,7 +176,8 @@ public static class TutorialScript
             TutorialTargets.PlayerHealth));
         steps.Add(TrickLesson("trick-card", "Mod a card", ConsumableEffectType.ApplyEnhancement,
             trick => $"Card Tricks only work on cards in your hand. Drag the {trick.displayName} onto any card to give it the " +
-                $"{(trick.enhancementToApply ? trick.enhancementToApply.displayName : "new")} Mod. Click the card to read it.",
+                $"{(trick.enhancementToApply ? trick.enhancementToApply.displayName : "new")} Mod. Click the card to read it. " +
+                "Whenever a Mod does something, its card hops and shows what it did.",
             TutorialTargets.Hand));
         steps.Add(TrickLesson("trick-enemy", "Hit an enemy", ConsumableEffectType.DirectEnemyDamage,
             trick => $"Drag the {trick.displayName} onto an enemy: {trick.damageAmount} damage, and no card spent.",
@@ -211,7 +215,7 @@ public static class TutorialScript
         {
             Id = "market", Lesson = "Black Market", Title = () => "Gear and Tricks",
             Body = () => $"Gear works in every fight for the rest of the run, and you can hold {d.Cards.GearCapacity}. Tricks are one-use and go in your backpack.\n\n" +
-                "Each price button buys at once. Click a tile to read its rules.",
+                "Each price button buys at once and the item jumps into its slot. Click a tile to read its rules. REROLL GOODS swaps the goods for a new set.",
             Targets = () => TutorialTargets.ShopOffers(offer => !offer.IsService),
             Ready = () => TutorialTargets.MarketOpen, Skip = () => !InMarket()
         });
@@ -220,7 +224,8 @@ public static class TutorialScript
         steps.Add(new TutorialStep
         {
             Id = "buy-gear", Lesson = "Black Market", Title = () => "Buy Gear",
-            Body = () => $"Buy the {def.marketGear.displayName} for {GearPrice()} Credits. Owned Gear sits in the Gear rail.",
+            Body = () => $"Buy the {def.marketGear.displayName} for {GearPrice()} Credits. Owned Gear sits in the Gear row at the top. " +
+                "When Gear does something, it hops and shows what it did, in the order of the row.",
             Targets = () => TutorialTargets.ShopOffers(offer => offer.kind == ShopOfferKind.Gear && offer.gear == def.marketGear),
             Ready = () => TutorialTargets.MarketOpen,
             Skip = () => !InMarket() || !d.Cards.HasGear(def.marketGear) && !d.Cards.CanAfford(GearPrice()),
@@ -230,15 +235,15 @@ public static class TutorialScript
         {
             Id = "services", Lesson = "Black Market", Title = () => "Services",
             Body = () => "Stake puts Credits down: at your next Black Market it pays back 3× or nothing.\n\n" +
-                "Supply buys cards from your draw pile straight into your hand.",
+                "Supply buys cards from your draw pile straight into your hand.\n\nSet the amount with MIN, −, + and MAX on the tile, then press its price.",
             Targets = () => TutorialTargets.ShopOffers(offer => offer.IsService),
             Ready = () => TutorialTargets.MarketOpen, Skip = () => !InMarket()
         });
         steps.Add(new TutorialStep
         {
-            Id = "sell", Lesson = "Black Market", Title = () => "Sell and merge",
+            Id = "sell", Lesson = "Black Market", Title = () => "Sell, merge and move",
             Body = () => "To sell Gear or a Trick, drag it onto the Black Market. Drop a Gear on a matching copy to merge the two into the next tier.\n\n" +
-                "While you hold an item, a red DISCARD strip lets you throw it away.",
+                "Drop a Gear or a Trick on another slot to move it there. While you hold an item, a red DISCARD strip on the right edge lets you throw it away.",
             Targets = () => Join(TutorialTargets.GearRail(), TutorialTargets.BackpackSlots()),
             Ready = () => TutorialTargets.MarketOpen, Skip = () => !InMarket()
         });
