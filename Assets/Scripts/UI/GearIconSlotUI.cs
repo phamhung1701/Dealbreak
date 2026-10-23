@@ -52,8 +52,9 @@ public sealed class GearIconSlotUI : MonoBehaviour, IPointerClickHandler
         if (TryGetComponent<Outline>(out var outline)) outline.enabled = false;
         if (iconLabel) iconLabel.gameObject.SetActive(false);
         ItemIconUI.Show(transform, null);
+        // Still hit by raycasts: a dragged Gear can be dropped into an empty slot to move there.
         var image = GetComponent<Image>();
-        if (image) image.raycastTarget = false;
+        if (image) image.raycastTarget = true;
         RefreshSlotBackground();
     }
 

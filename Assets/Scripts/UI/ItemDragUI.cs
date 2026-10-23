@@ -155,7 +155,8 @@ public sealed class ItemDragUI : MonoBehaviour
         SetHandTargetState(false);
         _dragging = false;
         if (_settle != null) StopCoroutine(_settle);
-        _settle = StartCoroutine(committed || target.Kind == ItemDropKind.TrickSlot ? Vanish() : ReturnToSource());
+        _settle = StartCoroutine(committed || target.Kind is ItemDropKind.TrickSlot or ItemDropKind.GearPosition
+            ? Vanish() : ReturnToSource());
     }
 
     /// <summary>
@@ -250,6 +251,8 @@ public sealed class ItemDragUI : MonoBehaviour
             var gearSlot = hit.gameObject.GetComponentInParent<GearIconSlotUI>();
             if (_isGear && gearSlot && gearSlot.Gear && gearSlot.InstanceId != 0 && gearSlot.InstanceId != _gearId)
                 return ItemDropTarget.OnGear(gearSlot.InstanceId);
+            if (_isGear && gearSlot && !gearSlot.Gear)
+                return ItemDropTarget.GearPosition(gearSlot.transform.GetSiblingIndex());
             var view = hit.gameObject.GetComponentInParent<CardView>();
             if (!_isGear && view && view.data != null && view.homeField != null && cards.hand.Contains(view.data))
                 return ItemDropTarget.HandCard(view.data);
@@ -366,6 +369,11 @@ public sealed class ItemDragUI : MonoBehaviour
             case ItemDropKind.GearSlot:
                 foreach (var slot in Object.FindObjectsByType<GearIconSlotUI>(FindObjectsSortMode.None))
                     if (slot.isActiveAndEnabled && slot.InstanceId == target.GearId) return (RectTransform)slot.transform;
+                return null;
+            case ItemDropKind.GearPosition:
+                foreach (var slot in Object.FindObjectsByType<GearIconSlotUI>(FindObjectsSortMode.None))
+                    if (slot.isActiveAndEnabled && !slot.Gear && slot.transform.GetSiblingIndex() == target.Slot)
+                        return (RectTransform)slot.transform;
                 return null;
             default:
                 return null;

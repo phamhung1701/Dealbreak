@@ -102,7 +102,7 @@ public sealed class GearRailUITests
     }
 
     [Test]
-    public void DroppingGearOnADifferentFamilyDoesNotMerge()
+    public void DroppingGearOnADifferentFamilyMovesItInsteadOfMerging()
     {
         GameplayInputGate.Clear();
         var firstGear = Gear("one", "One", "1", "One detail");
@@ -116,9 +116,31 @@ public sealed class GearRailUITests
         Assert.That(_cards.BuyGear(secondGear, 0), Is.True);
         long first = _cards.GetGearInstanceAt(0).Id;
         long second = _cards.GetGearInstanceAt(1).Id;
-        Assert.That(ItemDropRules.CanDropGear(first, ItemDropTarget.OnGear(second), out _), Is.False);
-        Assert.That(ItemDropRules.DropGear(first, ItemDropTarget.OnGear(second)), Is.False);
-        Assert.That(_cards.ownedGear.Count, Is.EqualTo(2));
+        // (owner, 2026-10-23) Gear can be placed in any slot: a non-matching drop moves it there.
+        Assert.That(ItemDropRules.CanDropGear(first, ItemDropTarget.OnGear(second), out string preview), Is.True);
+        Assert.That(preview, Is.EqualTo("MOVE"));
+        Assert.That(ItemDropRules.DropGear(first, ItemDropTarget.OnGear(second)), Is.True);
+        Assert.That(_cards.ownedGear, Is.EqualTo(new[] { secondGear, firstGear }), "No merge: the two swap places.");
+    }
+
+    [Test]
+    public void DroppingGearOnAnEmptySlotMovesItThere()
+    {
+        GameplayInputGate.Clear();
+        var a = Gear("move-a", "A", "A", "A detail");
+        var b = Gear("move-b", "B", "B", "B detail");
+        var c = Gear("move-c", "C", "C", "C detail");
+        foreach (var gear in new[] { a, b, c }) Assert.That(_cards.BuyGear(gear, 0), Is.True);
+        long first = _cards.GetGearInstanceAt(0).Id;
+
+        Assert.That(ItemDropRules.CanDropGear(first, ItemDropTarget.GearPosition(4), out string preview), Is.True);
+        Assert.That(preview, Is.EqualTo("MOVE"));
+        Assert.That(ItemDropRules.DropGear(first, ItemDropTarget.GearPosition(4)), Is.True);
+        Assert.That(_cards.ownedGear, Is.EqualTo(new[] { b, c, a }), "An empty slot past the last Gear means the end.");
+        Assert.That(_cards.GetGearInstanceAt(2).Id, Is.EqualTo(first), "The runtime instance moves with its Gear.");
+        Assert.That(ItemDropRules.CanDropGear(first, ItemDropTarget.GearPosition(3), out _), Is.False, "Already last.");
+        Assert.That(ItemDropRules.DropGear(first, ItemDropTarget.OnGear(_cards.GetGearInstanceAt(0).Id)), Is.True);
+        Assert.That(_cards.ownedGear, Is.EqualTo(new[] { a, b, c }));
     }
 
     [Test]

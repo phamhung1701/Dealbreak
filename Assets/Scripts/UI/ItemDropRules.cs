@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>What a dragged Trick or Gear item is released over.</summary>
-public enum ItemDropKind { None, HandCard, Enemy, PlayerHealth, BlackMarket, TrickSlot, Discard, GearSlot }
+public enum ItemDropKind { None, HandCard, Enemy, PlayerHealth, BlackMarket, TrickSlot, Discard, GearSlot, GearPosition }
 
 public readonly struct ItemDropTarget
 {
@@ -29,14 +29,16 @@ public readonly struct ItemDropTarget
     public static ItemDropTarget TrickSlot(int slot) => new(ItemDropKind.TrickSlot, slot: slot);
     public static ItemDropTarget Discard => new(ItemDropKind.Discard);
     public static ItemDropTarget OnGear(long gearId) => new(ItemDropKind.GearSlot, gearId: gearId);
+    /// <summary>A Gear rail position, for an empty slot (a position past the last Gear means the end).</summary>
+    public static ItemDropTarget GearPosition(int slot) => new(ItemDropKind.GearPosition, slot: slot);
 }
 
 /// <summary>
 /// The rules behind dragging a Trick or Gear item onto something: a card-targeting Trick onto a
 /// hand card, a damage Trick onto an enemy, a heal onto the HP bar, either item onto the Black
 /// Market to sell it, a Trick onto another Trick slot to reorder, a Gear onto a matching copy to
-/// merge the two into the next tier, or either onto the discard strip to throw it away for
-/// nothing. Every drop goes through the
+/// merge the two into the next tier, a Gear onto another Gear or an empty Gear slot to move it
+/// there, or either onto the discard strip to throw it away for nothing. Every drop goes through the
 /// existing CardManager/RunManager command for that effect, so validation and payment stay there.
 /// The preview is the number or change the drop would make, shown beside the target.
 /// </summary>
@@ -131,8 +133,22 @@ public static class ItemDropRules
         if (target.Kind == ItemDropKind.GearSlot)
         {
             var merged = CardManager.Instance.GetGearMergeResult(gearId, target.GearId);
-            if (merged == null) return false;
-            preview = $"→ {merged.displayName.ToUpperInvariant()}";
+            if (merged != null)
+            {
+                preview = $"→ {merged.displayName.ToUpperInvariant()}";
+                return true;
+            }
+            // A Gear that cannot merge with the one it is dropped on moves to its slot.
+            if (target.GearId == gearId || GearPosition(target.GearId) < 0) return false;
+            preview = "MOVE";
+            return true;
+        }
+        if (target.Kind == ItemDropKind.GearPosition)
+        {
+            int from = GearPosition(gearId);
+            int last = CardManager.Instance.OwnedGearInstances.Count - 1;
+            if (from < 0 || target.Slot < 0 || System.Math.Min(target.Slot, last) == from) return false;
+            preview = "MOVE";
             return true;
         }
         if (target.Kind != ItemDropKind.BlackMarket || !CanSell(gear.Definition.price)) return false;
@@ -144,9 +160,21 @@ public static class ItemDropRules
     {
         if (!CanDropGear(gearId, target, out _)) return false;
         if (target.Kind == ItemDropKind.Discard) return Saved(CardManager.Instance.RemoveGearInstance(gearId));
-        if (target.Kind == ItemDropKind.GearSlot) return Saved(CardManager.Instance.MergeGear(gearId, target.GearId));
+        if (target.Kind == ItemDropKind.GearSlot)
+            return Saved(CardManager.Instance.GetGearMergeResult(gearId, target.GearId) != null
+                ? CardManager.Instance.MergeGear(gearId, target.GearId)
+                : CardManager.Instance.MoveGear(gearId, GearPosition(target.GearId)));
+        if (target.Kind == ItemDropKind.GearPosition) return Saved(CardManager.Instance.MoveGear(gearId, target.Slot));
         var gear = CardManager.Instance.GetGearInstanceById(gearId);
         return RunManager.Instance.SellGear(gearId, gear.Definition.price);
+    }
+
+    static int GearPosition(long gearId)
+    {
+        var owned = CardManager.Instance.OwnedGearInstances;
+        for (int i = 0; i < owned.Count; i++)
+            if (owned[i] != null && owned[i].Id == gearId) return i;
+        return -1;
     }
 
     // A discard keeps the save in step, as a sale does (a no-op at unsafe combat boundaries).

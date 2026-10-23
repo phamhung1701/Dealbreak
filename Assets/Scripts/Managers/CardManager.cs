@@ -677,6 +677,28 @@ public partial class CardManager : Singleton<CardManager>
         return true;
     }
 
+    /// <summary>
+    /// Moves an owned Gear to another position in the rail, shifting the rest (as Trick slots move).
+    /// The order is the order Gear triggers in. Positions past the last Gear mean the end.
+    /// </summary>
+    public bool MoveGear(long instanceId, int toIndex)
+    {
+        EnsureGearInstances();
+        int fromIndex = _orderedGearInstances.FindIndex(value => value != null && value.Id == instanceId);
+        if (fromIndex < 0 || toIndex < 0) return false;
+        toIndex = Math.Min(toIndex, ownedGear.Count - 1);
+        if (toIndex == fromIndex) return false;
+        var definition = ownedGear[fromIndex];
+        var instance = _orderedGearInstances[fromIndex];
+        ownedGear.RemoveAt(fromIndex);
+        _orderedGearInstances.RemoveAt(fromIndex);
+        ownedGear.Insert(toIndex, definition);
+        _orderedGearInstances.Insert(toIndex, instance);
+        RebuildGearIds();
+        OnBuildChanged?.Invoke();
+        return true;
+    }
+
     public GearData GetGearMergeResult(long firstInstanceId, long secondInstanceId)
     {
         if (firstInstanceId == secondInstanceId) return null;
