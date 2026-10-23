@@ -157,11 +157,9 @@ public class RunResultUI : MonoBehaviour
     void HandleHeadlinerRewardGranted(CardInstance reward)
     {
         _lastHeadlinerRewardName = reward != null ? reward.DisplayName : null;
-        if (rewardBanner) rewardBanner.SetActive(reward != null);
-        if (rewardLabel)
-            rewardLabel.text = reward != null
-                ? $"HEADLINER REWARD  •  {reward.DisplayName} added to your draw pile"
-                : string.Empty;
+        // (owner, 2026-10-23) No banner: the reward card is seen flying into the draw pile.
+        if (rewardBanner) rewardBanner.SetActive(false);
+        if (rewardLabel) rewardLabel.text = string.Empty;
     }
 
     // The tutorial ends on its own closing step, not on a run summary.
