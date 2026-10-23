@@ -196,7 +196,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             else if(actions.selectionLabel&&cards!=null&&cards.SelectedCards.Count>0&&!cards.IsEnemyTargeting&&!cards.IsHandEnhancementTargeting&&CombatManager.Instance.currentState==GameState.PlayerTurn)
                 actions.selectionLabel.text=CombatDetailPanelUI.SelectionSummary(cards);
             if(actions.playButton)actions.playButton.GetComponentInChildren<TMP_Text>().text=cards.IsEnemyTargeting?"CANCEL":"ATTACK";
-            if(actions.recoverButton)actions.recoverButton.gameObject.SetActive(CombatManager.Instance.currentState==GameState.PlayerTurn&&cards.HandCount==0);
+            if(actions.recoverButton&&actions.recoverButton.gameObject.activeSelf)actions.recoverButton.gameObject.SetActive(false);
         }
         if(Time.unscaledTime<_nextStyleCheck)return;_nextStyleCheck=Time.unscaledTime+.35f;
         if(market&&market.panel&&market.panel.activeInHierarchy&&CardManager.Instance)

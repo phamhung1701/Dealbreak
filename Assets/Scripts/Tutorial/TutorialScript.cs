@@ -36,11 +36,11 @@ public static class TutorialScript
         string FightBody(string goal) => Defending()
             ? $"Block with cards, or press PASS to take the {Incoming()} damage."
             : d.Cards.HandCount == 0
-                ? $"Your hand is empty. Press RECOVER: you take the enemies' {d.Combat.TotalEnemyAttack} attack, then draw a card."
+                ? $"Your hand is empty, so you Recover on your own: you take the enemies' {d.Combat.TotalEnemyAttack} attack, then draw a card."
                 : goal;
         IEnumerable<RectTransform> FightTargets() => Defending()
             ? Join(TutorialTargets.Hand(), TutorialTargets.BlockButton(), TutorialTargets.PassButton())
-            : d.Cards.HandCount == 0 ? TutorialTargets.RecoverButton() : TutorialTargets.Enemies();
+            : d.Cards.HandCount == 0 ? TutorialTargets.PlayerHealth() : TutorialTargets.Enemies();
 
         // A fight's route step ends once that fight is under way; the Black Market's once it is open.
         TutorialStep Route(string id, string title, Func<string> body, int node, Action enter = null) => new()
@@ -105,7 +105,7 @@ public static class TutorialScript
         {
             Id = "hand", Lesson = "Combat", Title = () => "Your hand",
             Body = () => $"Each card deals its rank in damage: Ace 1, then 2 to 10. You hold up to {d.Cards.HandCapacity} cards.\n\n" +
-                "There is no draw each turn. Cards come from defeating enemies, from Perfect Blocks, and from RECOVER when your hand is empty.",
+                "There is no draw each turn. Cards come from defeating enemies, from Perfect Blocks, and from Recover, which happens on its own when your hand is empty.",
             Targets = TutorialTargets.Hand, Ready = PlayerTurn, Skip = () => !InFight()
         });
         steps.Add(Attack("attack", "Attack", "Attack",

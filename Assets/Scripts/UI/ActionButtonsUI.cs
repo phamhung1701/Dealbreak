@@ -134,6 +134,7 @@ public class ActionButtonsUI : MonoBehaviour
             RefreshEnemyTargetPresentation();
         }
         RefreshBoardGuidance();
+        TickAutoRecover();
         if (_shownHealth.Tick(Time.unscaledDeltaTime) || _healthHeld && !EffectTriggerPresenterUI.HoldsHealth)
             RefreshPlayerHealthLabel(CombatManager.Instance);
     }
@@ -537,6 +538,25 @@ public class ActionButtonsUI : MonoBehaviour
     }
 
     void OnRecoverClicked() => CombatManager.Instance?.Recover();
+
+    // (owner, 2026-10-23) Recover is automatic: on the player's turn with an empty hand, once the
+    // board has settled (no attack or trigger still playing, no item held, input free), the player
+    // recovers after a short beat. There is no button. CombatManager.Recover stays the one path.
+    const float AutoRecoverDelay = .8f;
+    float _emptyHandSince = -1f;
+    void TickAutoRecover()
+    {
+        var combat = CombatManager.Instance;
+        var cards = CardManager.Instance;
+        bool due = combat != null && cards != null && combat.currentState == GameState.PlayerTurn &&
+            cards.HandCount == 0 && combat.Enemies.Count > 0 && !combat.IsResolvingAction &&
+            !GameplayInputGate.IsBlocked && !DealbreakUIRuntime.BoardPresentationBusy && !ItemDragUI.IsDragging;
+        if (!due) { _emptyHandSince = -1f; return; }
+        if (_emptyHandSince < 0f) { _emptyHandSince = Time.unscaledTime; return; }
+        if (Time.unscaledTime - _emptyHandSince < AutoRecoverDelay) return;
+        _emptyHandSince = -1f;
+        combat.Recover();
+    }
 
     void BindBackpackSlots()
     {

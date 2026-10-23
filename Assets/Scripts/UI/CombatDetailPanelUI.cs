@@ -34,10 +34,8 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         if (runStatus == null) return;
         if (runStatus.timingLabel) runStatus.timingLabel.gameObject.SetActive(false);
         if (runStatus.pileSummaryLabel) runStatus.pileSummaryLabel.enabled = visible;
-        if (visible && actions)
-        {
-            if (actions.recoverButton) actions.recoverButton.gameObject.SetActive(true);
-        }
+        // Recover is automatic (ActionButtonsUI): its button never shows.
+        if (actions && actions.recoverButton) actions.recoverButton.gameObject.SetActive(false);
     }
 
     void LateUpdate()
@@ -61,8 +59,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         {
             var attackLabel = actions.playButton ? actions.playButton.GetComponentInChildren<TMP_Text>() : null;
             if (attackLabel) attackLabel.text = cards != null && cards.IsEnemyTargeting ? "CANCEL" : "ATTACK";
-            if (actions.recoverButton) actions.recoverButton.gameObject.SetActive(
-                CombatManager.Instance.currentState == GameState.PlayerTurn && cards != null && cards.HandCount == 0);
+            if (actions.recoverButton && actions.recoverButton.gameObject.activeSelf) actions.recoverButton.gameObject.SetActive(false);
             // Incoming damage shows under the enemies, so the HP panel keeps one shape in both phases.
             if (playerStatePanel)
             {
