@@ -182,6 +182,24 @@ public sealed class ItemDragUI : MonoBehaviour
         StartCoroutine(Fly(flyer, (Vector2)_root.InverseTransformPoint(fromWorld) - _root.rect.center, slot, held));
     }
 
+    /// <summary>
+    /// The backpack slot the latest Trick went into (<see cref="CardManager.LastConsumableSlot"/>), and
+    /// whether it is new there: a new slot stays hidden until the flight lands, while a stack it joined
+    /// keeps showing the copies already in it.
+    /// </summary>
+    public static RectTransform LatestTrickSlot(ConsumableData item, out bool isNew)
+    {
+        isNew = false;
+        var cards = CardManager.Instance;
+        var actions = FindFirstObjectByType<ActionButtonsUI>();
+        if (item == null || cards == null || actions == null || actions.backpackSlotButtons == null) return null;
+        int index = cards.LastConsumableSlot;
+        if (index < 0 || index >= actions.backpackSlotButtons.Length || cards.GetConsumableAtSlot(index) != item ||
+            !actions.backpackSlotButtons[index]) return null;
+        isNew = !cards.LastConsumableStacked;
+        return (RectTransform)actions.backpackSlotButtons[index].transform;
+    }
+
     // Hides what a slot shows (its icon and labels, not its frame) until the flight lands in it.
     readonly List<CanvasGroup> _held = new();
 

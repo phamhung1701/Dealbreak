@@ -170,17 +170,11 @@ public sealed class ConsumableRewardUI : MonoBehaviour
     // The claimed Trick drops into the backpack slot that now holds it.
     static void FlyIntoBackpack(ConsumableData item, Vector3 origin)
     {
-        var cards = CardManager.Instance;
-        var actions = FindFirstObjectByType<ActionButtonsUI>();
-        if (item == null || cards == null || actions == null || actions.backpackSlotButtons == null) return;
-        for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
-        {
-            if (cards.GetConsumableAtSlot(i) != item || !actions.backpackSlotButtons[i]) continue;
-            string icon = string.IsNullOrEmpty(item.icon) ? item.displayName : item.icon;
-            ItemDragUI.Get()?.FlyIntoSlot(origin, (RectTransform)actions.backpackSlotButtons[i].transform,
-                icon.Length > 6 ? icon.Substring(0, 6) : icon, item.iconSprite, revealOnLanding: true);
-            return;
-        }
+        var slot = ItemDragUI.LatestTrickSlot(item, out bool isNew);
+        if (!slot) return;
+        string icon = string.IsNullOrEmpty(item.icon) ? item.displayName : item.icon;
+        ItemDragUI.Get()?.FlyIntoSlot(origin, slot, icon.Length > 6 ? icon.Substring(0, 6) : icon, item.iconSprite,
+            revealOnLanding: isNew);
     }
 
     void Decline()

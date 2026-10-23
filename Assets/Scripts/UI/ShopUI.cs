@@ -865,14 +865,10 @@ public class ShopUI : MonoBehaviour
             var gearSlot = added != null && rail ? rail.SlotFor(added.Id) : null;
             slot = gearSlot ? (RectTransform)gearSlot.transform : null;
         }
-        else if (offer.kind == ShopOfferKind.Consumable)
-        {
-            var actions = Object.FindFirstObjectByType<ActionButtonsUI>();
-            for (int i = (actions ? actions.backpackSlotButtons.Length : 0) - 1; i >= 0 && !slot; i--)
-                if (actions.backpackSlotButtons[i] && cards.GetConsumableAtSlot(i) == offer.consumable)
-                    slot = (RectTransform)actions.backpackSlotButtons[i].transform;
-        }
-        if (slot) flight.FlyIntoSlot(from, slot, offer.DisplayName, offer.IconSprite, revealOnLanding: true);
+        bool isNew = true;
+        if (offer.kind == ShopOfferKind.Consumable)
+            slot = ItemDragUI.LatestTrickSlot(offer.consumable, out isNew);
+        if (slot) flight.FlyIntoSlot(from, slot, offer.DisplayName, offer.IconSprite, revealOnLanding: isNew);
     }
 
     ShopOffer FindOffer(string stableId)

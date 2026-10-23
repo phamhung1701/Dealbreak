@@ -169,6 +169,35 @@ public sealed class BreadConsumableTests
     }
 
     [Test]
+    public void TheBackpackReportsWhereTheLatestTrickWent_AndWhetherItJoinedAStack()
+    {
+        var pack = ScriptableObject.CreateInstance<GearData>();
+        _created.Add(pack);
+        pack.id = "test_stack_pack";
+        pack.displayName = "Test Pack";
+        pack.rarity = "Common";
+        pack.tier = 1;
+        pack.price = 0;
+        pack.specialRule = GearSpecialRule.TravelerPackRare;
+        pack.effects = System.Array.Empty<GameplayEffectDefinition>();
+        pack.ruleModifiers = System.Array.Empty<GameplayRuleModifierData>();
+        var other = ScriptableObject.CreateInstance<ConsumableData>();
+        _created.Add(other);
+        other.id = "test_other";
+        other.displayName = "Other";
+        _cards.Configure(null, null, null, new[] { pack }, System.Array.Empty<CardEnhancementData>(), new[] { _bread, other });
+        Assert.That(_cards.BuyGear(pack, 0), Is.True);
+
+        // A flight into a new slot hides it until landing; one into a stack keeps the copies there showing.
+        Assert.That(_cards.AddConsumable(other), Is.True);
+        Assert.That((_cards.LastConsumableSlot, _cards.LastConsumableStacked), Is.EqualTo((0, false)));
+        Assert.That(_cards.AddConsumable(_bread), Is.True);
+        Assert.That((_cards.LastConsumableSlot, _cards.LastConsumableStacked), Is.EqualTo((1, false)));
+        Assert.That(_cards.AddConsumable(_bread), Is.True);
+        Assert.That((_cards.LastConsumableSlot, _cards.LastConsumableStacked), Is.EqualTo((1, true)));
+    }
+
+    [Test]
     public void EncounterDrop_AutoMergesIntoExistingStackEvenWhenBackpackHasNoFreeSlot()
     {
         var pack = ScriptableObject.CreateInstance<GearData>();

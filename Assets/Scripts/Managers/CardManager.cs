@@ -224,6 +224,13 @@ public partial class CardManager : Singleton<CardManager>
         return true;
     }
 
+    /// <summary>
+    /// Presentation only, never saved: the backpack slot the latest Trick went into, and whether it
+    /// joined a stack already there. A flight into that slot hides it until landing only when it is new.
+    /// </summary>
+    public int LastConsumableSlot { get; private set; } = -1;
+    public bool LastConsumableStacked { get; private set; }
+
     void AddConsumableInstance(ConsumableInstance instance)
     {
         if (ConsumablesPerSlot > 1)
@@ -233,12 +240,16 @@ public partial class CardManager : Singleton<CardManager>
             if (target != null)
             {
                 target.Add(instance);
+                LastConsumableSlot = _backpack.IndexOf(target);
+                LastConsumableStacked = true;
                 return;
             }
         }
         var created = new ConsumableStack(instance.Definition);
         created.Add(instance);
         _backpack.Add(created);
+        LastConsumableSlot = _backpack.Count - 1;
+        LastConsumableStacked = false;
     }
 
     public bool RemoveConsumableInstanceAtSlot(int slotIndex, ConsumableInstance expected)

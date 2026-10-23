@@ -145,24 +145,13 @@ public sealed class EnemyDropUI : MonoBehaviour
 
     void HandleClaimed(ConsumableData drop)
     {
-        var slot = SlotHolding(drop);
+        var slot = ItemDragUI.LatestTrickSlot(drop, out bool isNew);
         if (!slot) return;
         Vector3 from = _token && _token.gameObject.activeInHierarchy ? _token.position
             : _lastEnemyArea != Vector3.zero ? _lastEnemyArea : _root.position;
         string icon = string.IsNullOrEmpty(drop.icon) ? drop.displayName : drop.icon;
         ItemDragUI.Get()?.FlyIntoSlot(from, slot, icon.Length > 6 ? icon.Substring(0, 6) : icon, drop.iconSprite,
-            revealOnLanding: true);
-    }
-
-    static RectTransform SlotHolding(ConsumableData drop)
-    {
-        var cards = CardManager.Instance;
-        var actions = FindFirstObjectByType<ActionButtonsUI>();
-        if (cards == null || actions == null || actions.backpackSlotButtons == null) return null;
-        for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
-            if (cards.GetConsumableAtSlot(i) == drop && actions.backpackSlotButtons[i])
-                return (RectTransform)actions.backpackSlotButtons[i].transform;
-        return null;
+            revealOnLanding: isNew);
     }
 
     // The drop is claimed by releasing it over the Trick slots (or clicking it when there is room).
