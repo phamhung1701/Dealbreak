@@ -4,10 +4,11 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 /// <summary>
-/// Compact store tile: item art, the offer's name and why it cannot be bought (never a plain lack
-/// of Credits, which only disables the price button), and a buy button that always shows the
-/// price. Supply and Stake tiles always carry their quantity row: MIN − n + MAX. Its rules text
-/// opens beside the tile when the tile is clicked (ContextualTooltipUI).
+/// A Black Market tile. Services are rows: the name, why it cannot be bought (never a plain lack of
+/// Credits, which only disables the price button) and a price button that buys at once; Supply and
+/// Stake rows always carry their quantity row: MIN − n + MAX. Goods are squares (<see cref="Square"/>):
+/// big art, the price and the name; clicking one selects it (lime border) and shows BUY under it,
+/// which confirms the purchase. Rules text opens beside the tile on click (ContextualTooltipUI).
 /// </summary>
 public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExitHandler,ISelectHandler,IDeselectHandler
 {
@@ -43,9 +44,16 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
     RectTransform _quantityRow;
     System.Action<int> _adjustQuantity;
 
-    public void Bind(ShopOffer offer,string availability,System.Action<int> adjustQuantity=null)
+    // (owner, 2026-10-24) Goods are squares in a grid; BUY hangs under the selected square.
+    public bool Square { get; private set; }
+    /// <summary>Height under a square for its BUY button; the grid leaves this much between rows.</summary>
+    public const float SquareBuyHeight = 36f, SquareBuyGap = 6f;
+    TMP_Text _priceTag;
+
+    public void Bind(ShopOffer offer,string availability,System.Action<int> adjustQuantity=null,bool square=false)
     {
         Offer=offer;
+        Square=square;
         _adjustQuantity=adjustQuantity;
         if(!titleLabel)titleLabel=GetComponentInChildren<TMP_Text>();
         if(!statusLabel)statusLabel=Label("OfferAvailability",.05f,.06f,.95f,.22f);
@@ -53,7 +61,8 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         DealbreakUIStyle.Frame(transform,true);
         var old=GetComponent<EditorialButton>();if(old)old.enabled=false;
         titleLabel.text=offer.DisplayName;
-        ItemIconUI.ShowTopLeft(transform,offer.IconSprite,IconSize,new Vector2(IconInset,IconInset));
+        if(square)ItemIconUI.Show(transform,offer.IconSprite,new Vector2(.18f,.27f),new Vector2(.82f,.85f));
+        else ItemIconUI.ShowTopLeft(transform,offer.IconSprite,IconSize,new Vector2(IconInset,IconInset));
         ItemTierFxUI.Show(transform,offer.kind==ShopOfferKind.Gear?offer.gear:null);
         statusLabel.text=availability?.Replace("Backpack Full","Trick slots full");
         // The price lives on the buy button and the rules text in the click detail.
@@ -69,6 +78,21 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         {label.alignment=TextAlignmentOptions.TopLeft;label.overflowMode=TextOverflowModes.Overflow;label.margin=Vector4.zero;}
         titleLabel.textWrappingMode=TextWrappingModes.NoWrap;titleLabel.overflowMode=TextOverflowModes.Ellipsis;
         titleLabel.alignment=TextAlignmentOptions.MidlineLeft;
+        if(square&&!_priceTag)
+        {
+            _priceTag=Label("PriceTag",0,0,1,1);
+            _priceTag.raycastTarget=false;_priceTag.textWrappingMode=TextWrappingModes.NoWrap;
+        }
+        if(_priceTag)
+        {
+            _priceTag.gameObject.SetActive(square);
+            if(theme)DealbreakUIStyle.Text(_priceTag,theme.labelFont?theme.labelFont:theme.headingFont,16,theme.paper);
+        }
+        if(square&&theme)
+        {
+            DealbreakUIStyle.Text(titleLabel,theme.headingFont,19,theme.paper);
+            DealbreakUIStyle.Text(statusLabel,theme.bodyFont,13,theme.brick);
+        }
         if(!purchaseButton)
         {
             var control=DealbreakUIStyle.Child(transform,"OfferBuy",typeof(Image),typeof(Button));
@@ -129,6 +153,7 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
     {
         _selected=selected;
         if(Offer==null||!statusLabel)return;
+        if(Square){LayoutSquare();return;}
         bool hasIcon=ItemIconUI.Shown(transform)!=null;
         float textLeft=hasIcon?IconInset+IconSize+14:16;
         float rowWidth=Mathf.Max(200,((RectTransform)transform.parent).rect.width);
@@ -150,6 +175,26 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         statusLabel.alignment=TextAlignmentOptions.MidlineLeft;
         statusLabel.gameObject.SetActive(hasStatus);
         if(HasQuantityControls&&_quantityRow)LayoutQuantityRow(rowWidth);
+        RefreshBorder();
+    }
+
+    // The square: price across the top, art in the middle, the name (and any status) along the foot;
+    // BUY hangs under the square, shown only while it is selected.
+    void LayoutSquare()
+    {
+        void Box(RectTransform rect,float x1,float y1,float x2,float y2){rect.anchorMin=new Vector2(x1,y1);rect.anchorMax=new Vector2(x2,y2);rect.pivot=new Vector2(.5f,.5f);rect.offsetMin=rect.offsetMax=Vector2.zero;}
+        bool hasStatus=!string.IsNullOrEmpty(statusLabel.text);
+        Box(titleLabel.rectTransform,.06f,hasStatus?.12f:.05f,.94f,hasStatus?.27f:.22f);
+        titleLabel.alignment=TextAlignmentOptions.Center;
+        Box(statusLabel.rectTransform,.06f,.02f,.94f,.13f);
+        statusLabel.alignment=TextAlignmentOptions.Center;statusLabel.textWrappingMode=TextWrappingModes.NoWrap;
+        statusLabel.overflowMode=TextOverflowModes.Ellipsis;
+        statusLabel.gameObject.SetActive(hasStatus);
+        if(_priceTag){Box(_priceTag.rectTransform,.07f,.86f,.93f,.97f);_priceTag.alignment=TextAlignmentOptions.MidlineLeft;}
+        var buy=(RectTransform)purchaseButton.transform;
+        buy.anchorMin=new Vector2(0,0);buy.anchorMax=new Vector2(1,0);buy.pivot=new Vector2(.5f,1);
+        buy.sizeDelta=new Vector2(0,SquareBuyHeight);buy.anchoredPosition=new Vector2(0,-SquareBuyGap);
+        purchaseButton.gameObject.SetActive(_selected);
         RefreshBorder();
     }
 
@@ -185,7 +230,10 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
     {
         if(!purchaseButton)return;
         purchaseButton.interactable=affordable&&string.IsNullOrEmpty(reason)&&!GameplayInputGate.IsBlocked;
-        purchaseButton.GetComponentInChildren<TMP_Text>(true).text=cost>1?$"{cost} Credits":cost==1?"1 Credit":"Free";
+        string price=cost>1?$"{cost} Credits":cost==1?"1 Credit":"Free";
+        // A square shows its price on the tile; its button is the confirmation.
+        purchaseButton.GetComponentInChildren<TMP_Text>(true).text=Square?"BUY":price;
+        if(_priceTag)_priceTag.text=price;
         DealbreakUIStyle.Button(purchaseButton,EditorialButton.Role.Primary);
         string shown=(reason??string.Empty).Replace("Backpack Full","Trick slots full");
         if(statusLabel&&statusLabel.text!=shown)

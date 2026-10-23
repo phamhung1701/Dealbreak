@@ -399,38 +399,48 @@ public sealed class Phase7EShopSelectionTests
 
     ShopOffer GearOffer() => _run.GetCurrentShopOffers().First(offer => offer.kind == ShopOfferKind.Gear);
 
+    // (owner, 2026-10-24) Goods are squares three across; selecting one shows BUY under it, which confirms.
     [Test]
-    public void PriceButton_AlwaysShowsThePrice_AndBuysOnceWhileTheTileOpensItsDetail()
+    public void GoodsSquare_ShowsItsPrice_SelectingShowsBuy_AndBuyConfirmsOnce()
     {
         _ui.storeComposition=true;_cards.AddCredits(50);_ui.RefreshPresentation();
         var offer=GearOffer();string id=offer.StableId;int before=_cards.credits;
         var view=ButtonFor(offer).GetComponent<ShopOfferUI>();
-        Assert.That(view.purchaseButton.gameObject.activeSelf,Is.True,"The price button shows before any click.");
-        Assert.That(view.purchaseButton.GetComponentInChildren<TMP_Text>(true).text,Is.EqualTo($"{offer.price} Credits"));
+        Assert.That(view.Square,Is.True);
+        Assert.That(view.transform.parent.GetComponent<GridLayoutGroup>().constraintCount,Is.EqualTo(3));
+        Assert.That(view.GetComponentsInChildren<TMP_Text>(true).Single(t=>t.name=="PriceTag").text,Is.EqualTo($"{offer.price} Credits"));
+        Assert.That(view.purchaseButton.gameObject.activeSelf,Is.False,"BUY shows only under a selected square.");
         var detail=ButtonFor(offer).GetComponent<ContextualInfoTrigger>();
         Assert.That(detail.pinOnClick,Is.True,"Offer details open on click, not on hover.");
         Assert.That(detail.Info.Value.Body,Does.Contain(offer.gear.description));
         Click(offer);
-        Assert.That(_cards.credits,Is.EqualTo(before),"Clicking the tile only opens its detail.");
+        Assert.That(_cards.credits,Is.EqualTo(before),"Selecting a square never buys.");
+        Assert.That(view.purchaseButton.gameObject.activeSelf,Is.True);
+        Assert.That(view.purchaseButton.GetComponentInChildren<TMP_Text>(true).text,Is.EqualTo("BUY"));
         view.purchaseButton.onClick.Invoke();
         Assert.That(_cards.credits,Is.EqualTo(before-offer.price));
         Assert.That(_cards.ownedGear,Has.Count.EqualTo(1));
         Assert.That(_ui.panel.GetComponentsInChildren<ShopOfferUI>().Any(v=>v.Offer.StableId==id),Is.False);
+        Assert.That(_ui.itemsContainer.GetComponentInChildren<GridLayoutGroup>().transform.Cast<Transform>()
+            .Count(cell=>cell.name=="SoldGoods"),Is.EqualTo(1),"A bought square leaves its cell empty.");
         _ui.PurchaseInline(id); // A queued/stale submit must not charge or grant again.
         Assert.That(_cards.credits,Is.EqualTo(before-offer.price));
         Assert.That(_cards.ownedGear,Has.Count.EqualTo(1));
     }
 
     [Test]
-    public void InlineSelection_SwitchesWithoutPurchasing()
+    public void InlineSelection_SwitchesWithoutPurchasing_AndASecondClickPutsTheSquareDown()
     {
         _ui.storeComposition=true;_cards.AddCredits(50);_ui.RefreshPresentation();
         var offers=_run.GetCurrentShopOffers().Where(o=>!o.IsService).Take(2).ToArray();
         Click(offers[0]);Click(offers[1]);
         Assert.That(_ui.SelectedOfferId,Is.EqualTo(offers[1].StableId));
-        Assert.That(offers.All(o=>ButtonFor(o).GetComponent<ShopOfferUI>().purchaseButton.gameObject.activeSelf),Is.True);
-        _ui.ClearOfferSelection();
-        Assert.That(_ui.SelectedOfferId,Is.Null);Assert.That(_cards.credits,Is.EqualTo(50));Assert.That(_cards.ownedGear,Is.Empty);
+        Assert.That(ButtonFor(offers[0]).GetComponent<ShopOfferUI>().purchaseButton.gameObject.activeSelf,Is.False);
+        Assert.That(ButtonFor(offers[1]).GetComponent<ShopOfferUI>().purchaseButton.gameObject.activeSelf,Is.True);
+        Click(offers[1]);
+        Assert.That(_ui.SelectedOfferId,Is.Null);
+        Assert.That(ButtonFor(offers[1]).GetComponent<ShopOfferUI>().purchaseButton.gameObject.activeSelf,Is.False);
+        Assert.That(_cards.credits,Is.EqualTo(50));Assert.That(_cards.ownedGear,Is.Empty);
     }
 
     [Test]

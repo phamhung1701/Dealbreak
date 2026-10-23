@@ -25,6 +25,7 @@ public class ShopUI : MonoBehaviour
     Button _quantityMaximumButton;
     ScrollRect _offersScroll;
     Transform _servicesContainer;
+    RectTransform _goodsGrid;
     RectTransform _selectedOfferRect;
     Vector2 _selectedOfferAnchorMax;
 
@@ -371,7 +372,7 @@ public class ShopUI : MonoBehaviour
         UpdateSelectionDetails();
         if (itemsContainer == null || itemButtonPrefab == null) return;
 
-        var previousRows = RowSnapshot(itemsContainer).Concat(RowSnapshot(_servicesContainer)).ToList();
+        var previousRows = RowSnapshot(itemsContainer).Concat(RowSnapshot(_goodsGrid)).Concat(RowSnapshot(_servicesContainer)).ToList();
         var closingGaps = GapSnapshot(itemsContainer).Concat(GapSnapshot(_servicesContainer)).ToList();
         foreach (Transform child in ShopRows())
         {
@@ -385,14 +386,22 @@ public class ShopUI : MonoBehaviour
             : System.Array.Empty<ShopOffer>();
         AddSectionHeading("GOODS", itemsContainer);
         AddGoodsRefreshButton();
+        _goodsGrid = storeComposition ? AddGoodsGrid() : null;
         AddSectionHeading("SERVICES", _servicesContainer ?? itemsContainer);
-        foreach (var offer in offers.Where(offer=>!offer.purchased).OrderBy(offer => offer.IsService ? 1 : 0))
+        foreach (var offer in offers.OrderBy(offer => offer.IsService ? 1 : 0))
         {
+            // A bought square leaves its cell empty, so the grid keeps its places.
+            if (offer.purchased)
+            {
+                if (_goodsGrid && !offer.IsService)
+                    new GameObject("SoldGoods", typeof(RectTransform)).transform.SetParent(_goodsGrid, false);
+                continue;
+            }
             string unavailableReason = RunManager.Instance != null
                 ? RunManager.Instance.GetShopOfferUnavailableReason(offer.StableId)
                 : "Offer unavailable";
 
-            var container = offer.IsService ? _servicesContainer ?? itemsContainer : itemsContainer;
+            var container = offer.IsService ? _servicesContainer ?? itemsContainer : _goodsGrid ? _goodsGrid : itemsContainer;
             var btn = Instantiate(itemButtonPrefab, container);
             btn.name = $"ShopOffer_{offer.StableId.Replace(':', '_')}";
             var text = btn.GetComponentInChildren<TMP_Text>();
@@ -425,7 +434,7 @@ public class ShopUI : MonoBehaviour
             string quantityId=offer.StableId;
             if(storeComposition)PrepareQuantity(offer);
             offerView.Bind(offer,storeComposition&&RunManager.Instance!=null?RunManager.Instance.GetShopOfferBlockedReason(offer.StableId):unavailableReason,
-                storeComposition?delta=>AdjustQuantity(quantityId,delta):null);
+                storeComposition?delta=>AdjustQuantity(quantityId,delta):null,square:_goodsGrid&&!offer.IsService);
             string purchaseId=offer.StableId;offerView.purchaseButton.onClick.AddListener(()=>PurchaseInline(purchaseId));
             if (button)
             {
@@ -494,7 +503,9 @@ public class ShopUI : MonoBehaviour
             var offer = offers.FirstOrDefault(candidate => candidate.StableId == row.Id);
             if (offer == null) continue;
             same |= !offer.purchased;
-            if (!offer.purchased || row.Container == null) continue;
+            // Rows slide up; the goods grid keeps an empty cell instead (RefreshItems).
+            if (!offer.purchased || row.Container == null ||
+                row.Container != itemsContainer && row.Container != _servicesContainer) continue;
             var gap = new GameObject(CollapsingRowName, typeof(RectTransform), typeof(LayoutElement));
             gap.transform.SetParent(row.Container, false);
             PlaceAtActiveIndex(gap.transform, row.Index);
@@ -573,6 +584,28 @@ public class ShopUI : MonoBehaviour
         viewport.offsetMin = new Vector2(viewport.offsetMin.x, ContinueHeight + ContinueGap);
     }
 
+    // (owner, 2026-10-24) Goods are a grid of squares, three across, so a normal Black Market's five
+    // sit in two rows. Each row leaves room under it for the selected square's BUY.
+    const int GoodsColumns = 3;
+    const float GoodsGap = 10f;
+
+    RectTransform AddGoodsGrid()
+    {
+        var go = new GameObject("GoodsGrid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(SquareGoodsGrid));
+        go.transform.SetParent(itemsContainer, false);
+        var grid = go.GetComponent<GridLayoutGroup>();
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = GoodsColumns;
+        grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+        grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+        grid.childAlignment = TextAnchor.UpperLeft;
+        float buyRoom = ShopOfferUI.SquareBuyGap + ShopOfferUI.SquareBuyHeight;
+        grid.spacing = new Vector2(GoodsGap, buyRoom + 4f);
+        grid.padding = new RectOffset(0, 0, 0, Mathf.CeilToInt(buyRoom));
+        go.GetComponent<SquareGoodsGrid>().Fit();
+        return (RectTransform)go.transform;
+    }
+
     void AddSectionHeading(string title, Transform container)
     {
         var go = new GameObject(title.StartsWith("GOODS") ? "GoodsHeading" : "ServicesHeading",
@@ -619,6 +652,12 @@ public class ShopUI : MonoBehaviour
         foreach (var offer in offers)
             if (offer.StableId == stableId) { found = true; break; }
         if (!found) return;
+        // A second click on the selected square puts it down again, like its detail.
+        if (storeComposition && _selectedOfferId == stableId && FindOffer(stableId) is { IsService: false })
+        {
+            ClearOfferSelection();
+            return;
+        }
 
         _selectedOfferId = stableId;
         var selectedOffer = FindOffer(stableId);
