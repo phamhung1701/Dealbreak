@@ -30,4 +30,11 @@ MonoBehaviour:
     amount: 5
     conditions: []
   ruleModifiers: []
+  signatureName: Redline
+  signatureDescription: "Trigger: On Card Played\nEffect: Deal additional damage equal to your missing HP."
+  signatureEffects:
+  - kind: 30
+    trigger: 5
+    amount: 0
+    conditions: []
   visual: 5

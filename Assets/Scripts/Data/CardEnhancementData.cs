@@ -20,6 +20,12 @@ public sealed class CardEnhancementData : ScriptableObject
     public GameplayEffectDefinition[] effects = System.Array.Empty<GameplayEffectDefinition>();
     public GameplayRuleModifierData[] ruleModifiers = System.Array.Empty<GameplayRuleModifierData>();
 
+    [Header("Signature (played instead while Overclock is owned; see ModSignature)")]
+    public string signatureName;
+    [TextArea] public string signatureDescription;
+    public GameplayEffectDefinition[] signatureEffects = System.Array.Empty<GameplayEffectDefinition>();
+    public bool HasSignature => !string.IsNullOrEmpty(signatureName) && signatureEffects != null && signatureEffects.Length > 0;
+
     [Header("Presentation")]
     [Tooltip("This Mod's own look on a card that carries it (CardModFxUI).")]
     public CardModVisual visual;

@@ -147,7 +147,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             var card=view.data;var combat=CombatManager.Instance;
             int attack=combat?combat.CalculateCardAttackDamage(card):card.AttackValue;
             int block=combat?combat.CalculateCardDefense(card):card.DefenseValue;
-            string mod=card.Enhancement?$"\n\nMOD • {card.Enhancement.displayName}\n{card.Enhancement.description}":string.Empty;
+            string mod=card.Enhancement?$"\n\nMOD • {ModSignature.Name(card.Enhancement)}\n{ModSignature.Description(card.Enhancement)}":string.Empty;
             string preview=string.Empty;
             if(combat&&combat.currentState==GameState.EnemyAttacking&&CardManager.Instance?.SelectedCards.Count>0&&
                combat.TryPreviewDefense(CardManager.Instance.SelectedCards,out int blocked,out int remaining))

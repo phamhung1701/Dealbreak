@@ -414,7 +414,7 @@ public partial class CombatManager : Singleton<CombatManager>
     {
         return currentState == GameState.PlayerTurn && selectedCards != null && selectedCards.Count == 1 &&
             selectedCards[0]?.data != null && candidate?.data != null &&
-            (selectedCards[0].data.Rank == CardData.Rank.Ace || candidate.data.Rank == CardData.Rank.Ace);
+            (selectedCards[0].data.MatchesRank(CardData.Rank.Ace) || candidate.data.MatchesRank(CardData.Rank.Ace));
     }
 
     public bool TryPreviewDefense(IReadOnlyList<CardView> cards, out int blockedCount, out int remainingDamage)
@@ -648,7 +648,8 @@ public partial class CombatManager : Singleton<CombatManager>
         var cardInstances = new CardInstance[cards.Count];
         for (int i = 0; i < cards.Count; i++) cardInstances[i] = cards[i];
         // Derive the enhancement's extra hit from the committed gameplay data, not from UI input.
-        if (GameplayEffectResolver.HasDoubleStrikeEffect(cardInstances)) hitCount = 2;
+        if (GameplayEffectResolver.HasDoubleStrikeEffect(cardInstances))
+            hitCount = GameplayEffectResolver.StrikeCount(cardInstances, CardManager.Instance);
         _openingPlayerAttackInProgress = _playerAttackActionCount == 0;
         _activeGearBonuses = default;
 
@@ -695,6 +696,8 @@ public partial class CombatManager : Singleton<CombatManager>
             cardInstances, cm, out float criticalChanceOverride);
         float actionCriticalChance = hasCriticalChanceOverride
             ? criticalChanceOverride : criticalChancePercent;
+        if (GameplayEffectResolver.ExecutesTarget(cardInstances, target)) actionCriticalChance = 100f;
+        int criticalMultiplier = GameplayEffectResolver.CriticalMultiplier(cardInstances);
 
         bool isOverflowAutoPlay = _executingOverflowAutoPlay;
         if (!isOverflowAutoPlay)
@@ -724,7 +727,7 @@ public partial class CombatManager : Singleton<CombatManager>
             for (int i = 0; i < cardInstances.Length; i++)
                 if (GameplayEffectResolver.HasEnhancementEffect(cardInstances[i], GameplayEffectKind.DoubleStrike) &&
                     !hitsPerCard)
-                    triggers.Add(cardInstances[i], EffectCue.DoubleStrike, 2);
+                    triggers.Add(cardInstances[i], EffectCue.DoubleStrike, hitCount);
             triggers.Publish();
             _playerAttackActionCount++;
             GameplayBalanceTelemetry.Record("attack_action", "", cards.Count);
@@ -747,9 +750,10 @@ public partial class CombatManager : Singleton<CombatManager>
             }
             if (critical && hasCriticalChanceOverride)
                 GameplayEffectResolver.ReportCriticalSources(cardInstances, cm);
-            if (critical) damagePerHit = (int)Math.Min((long)damagePerHit * 2, int.MaxValue);
+            int criticalFactor = critical ? criticalMultiplier : 1;
+            if (critical) damagePerHit = (int)Math.Min((long)damagePerHit * criticalFactor, int.MaxValue);
             int remainingActionDamage = actionDamageCap < 0 ? -1 :
-                (int)Math.Min((long)actionDamageCap * (critical ? 2 : 1), int.MaxValue);
+                (int)Math.Min((long)actionDamageCap * criticalFactor, int.MaxValue);
 
             int totalHpLost = 0;
             int resolvedHits = 0;
@@ -757,9 +761,9 @@ public partial class CombatManager : Singleton<CombatManager>
             {
                 long damageBudget = actionDamageCap < 0
                     ? Math.Max(0L, (long)damagePerHit)
-                    : Math.Min(Math.Max(0L, (long)actionDamageCap * (critical ? 2 : 1)),
+                    : Math.Min(Math.Max(0L, (long)actionDamageCap * criticalFactor),
                         Math.Max(0L, (long)damagePerHit));
-                long expectedBaseAfterCritical = rawCardDamageTotal * (critical ? 2 : 1);
+                long expectedBaseAfterCritical = rawCardDamageTotal * criticalFactor;
                 long actionBonus = Math.Max(0L, (long)damagePerHit - expectedBaseAfterCritical);
                 for (int cardIndex = 0; cardIndex < cards.Count; cardIndex++)
                 {
@@ -775,7 +779,7 @@ public partial class CombatManager : Singleton<CombatManager>
 
                     long perCardDamage = cardDamages[cardIndex];
                     if (cardIndex == 0) perCardDamage += actionBonus;
-                    if (critical) perCardDamage *= 2;
+                    perCardDamage *= criticalFactor;
                     int requestedDamage = (int)Math.Min(Math.Max(0L, perCardDamage), damageBudget);
                     damageBudget -= requestedDamage;
                     if (requestedDamage <= 0) continue;
@@ -798,6 +802,8 @@ public partial class CombatManager : Singleton<CombatManager>
                     {
                         AwardDevouringKillBonus(cardInstances);
                         HandleEnemyDefeated(target);
+                        reactionFailed = !CarryOverkill(cardInstances, result.OverkillDamage, critical);
+                        if (reactionFailed || _reactionFaulted) break;
                     }
                 }
 
@@ -855,9 +861,16 @@ public partial class CombatManager : Singleton<CombatManager>
                     {
                         AwardDevouringKillBonus(cardInstances);
                         HandleEnemyDefeated(target);
+                        reactionFailed = !CarryOverkill(cardInstances, result.OverkillDamage, critical);
                         break;
                     }
                 }
+            }
+            if (_reactionFaulted) return true;
+            if (player.IsDefeated)
+            {
+                ResolveEncounter(EncounterResult.Defeat);
+                return true;
             }
 
             if (critical && isAcePair)
@@ -865,6 +878,14 @@ public partial class CombatManager : Singleton<CombatManager>
 
             if (!reactionFailed && isExplosive && !isRoyalFamily)
                 ResolveExplosiveDamage(cardInstances, target, damagePerHit, critical);
+            if (!reactionFailed && !_reactionFaulted && !player.IsDefeated)
+                reactionFailed = !ResolveCoverFire(handSnapshot, target);
+            if (_reactionFaulted) return true;
+            if (player.IsDefeated)
+            {
+                ResolveEncounter(EncounterResult.Defeat);
+                return true;
+            }
 
             if (isRoyalFamily)
                 Log($"Played {string.Join(" + ", names)} on {target.DisplayName}: Royal Flush, instant defeat!");
@@ -916,6 +937,22 @@ public partial class CombatManager : Singleton<CombatManager>
                 _overflowBudgetRemaining = 0;
                 if (_encounterResolved || _reactionFaulted) _overflowAutoPlays.Clear();
             }
+        }
+    }
+
+    // Bulwark: a blocking card with it comes straight back from the draw pile, once per enemy turn.
+    void ReturnBulwarksToHand(IReadOnlyList<CardInstance> blockers, CardManager cards, EffectTriggerTrace triggers)
+    {
+        int enemyTurn = _completedPlayerTurnCount + 1;
+        for (int i = 0; i < blockers.Count; i++)
+        {
+            var card = blockers[i];
+            if (!GameplayEffectResolver.HasEnhancementEffect(card, GameplayEffectKind.StayInHandAfterBlock) ||
+                card.EffectState.GetEncounterCounter(ModCounterKeys.BulwarkReturnedTurn) == enemyTurn ||
+                !cards.TryTakeCardToHand(card)) continue;
+            card.EffectState.SetEncounterCounter(ModCounterKeys.BulwarkReturnedTurn, enemyTurn);
+            triggers.Add(card, EffectCue.ReturnToHand, 0);
+            Log($"{ModSignature.Name(card.Enhancement)}: {card.DisplayName} stays in hand.");
         }
     }
 
@@ -1053,6 +1090,7 @@ public partial class CombatManager : Singleton<CombatManager>
             foreach (var card in cards)
                 effectiveBlock += GameplayEffectResolver.CalculateBlock(card, cardManager, triggers);
             if (cardManager == null || !cardManager.TryReturnToDrawPile(cards)) return false;
+            ReturnBulwarksToHand(cards, cardManager, triggers);
             triggers.Publish();
             _parryEffectiveBlock += effectiveBlock;
 
@@ -1398,39 +1436,122 @@ public partial class CombatManager : Singleton<CombatManager>
         {
             var card = committedCards[i];
             int growth = GameplayEffectResolver.EnhancementEffectAmount(card, GameplayEffectKind.PermanentKillAttack);
-            if (growth <= 0) continue;
-            card.GainPermanentAttackBonus(growth);
-            CardManager.Instance.NotifyCardInstanceChanged(card);
-            Log($"{card.Enhancement.displayName}: permanently gained +{growth} attack.");
-            EffectTriggerFeed.Report(card, EffectCue.Growth, growth);
+            if (growth > 0)
+            {
+                card.GainPermanentAttackBonus(growth);
+                CardManager.Instance.NotifyCardInstanceChanged(card);
+                Log($"{ModSignature.Name(card.Enhancement)}: permanently gained +{growth} attack.");
+                EffectTriggerFeed.Report(card, EffectCue.Growth, growth);
+            }
+            // Feeding Frenzy: the card comes back from the draw pile; a later kill of the same action finds it held.
+            if (GameplayEffectResolver.HasEnhancementEffect(card, GameplayEffectKind.ReturnToHandOnKill) &&
+                CardManager.Instance.deck.Contains(card) && CardManager.Instance.TryTakeCardToHand(card))
+            {
+                Log($"{ModSignature.Name(card.Enhancement)}: {card.DisplayName} returned to hand.");
+                EffectTriggerFeed.Report(card, EffectCue.ReturnToHand);
+            }
         }
     }
 
+    /// <summary>
+    /// Afterburner: the excess damage of a killing hit carries on to the next living enemy, and on
+    /// again while it keeps killing. False when a reaction failed.
+    /// </summary>
+    bool CarryOverkill(IReadOnlyList<CardInstance> committedCards, int overkill, bool critical)
+    {
+        CardInstance carrier = null;
+        for (int i = 0; i < committedCards.Count && carrier == null; i++)
+            if (GameplayEffectResolver.HasEnhancementEffect(committedCards[i], GameplayEffectKind.OverkillCarry))
+                carrier = committedCards[i];
+        while (carrier != null && overkill > 0 && !_reactionFaulted && !player.IsDefeated)
+        {
+            var next = _enemies.FirstOrDefault(enemy => enemy != null && !enemy.IsDefeated);
+            if (next == null) return true;
+            EffectTriggerFeed.Report(carrier, EffectCue.Carry, overkill);
+            var result = ResolveDamage(new DamageRequest(_activeAction, _nextReactiveHitIndex++,
+                CombatDamageOrigin.Card, player, next, overkill, isCritical: critical));
+            overkill = 0;
+            if (next.IsDefeated)
+            {
+                AwardDevouringKillBonus(committedCards);
+                HandleEnemyDefeated(next);
+                overkill = result.OverkillDamage;
+            }
+            else
+                EnqueueIncomingHitResolvedAbilities(_activeAction, next, result);
+            if (!ProcessReactions(CombatReactionPhase.HitResolved)) return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Cover Fire: each held card with it shoots the weakest living enemy other than the attack's target
+    /// (the first in enemy order on a tie). False when a reaction failed.
+    /// </summary>
+    bool ResolveCoverFire(IReadOnlyList<CardInstance> held, EnemyRuntime primaryTarget)
+    {
+        if (held == null || GameplayEffectResolver.HeldCardEffectsSuppressed(this)) return true;
+        for (int i = 0; i < held.Count; i++)
+        {
+            int amount = GameplayEffectResolver.EnhancementEffectAmount(held[i], GameplayEffectKind.CoverFire);
+            if (amount <= 0) continue;
+            EnemyRuntime weakest = null;
+            foreach (var enemy in _enemies)
+                if (enemy != null && !enemy.IsDefeated && !ReferenceEquals(enemy, primaryTarget) &&
+                    (weakest == null || enemy.currentHp < weakest.currentHp)) weakest = enemy;
+            if (weakest == null) return true;
+            EffectTriggerFeed.Report(held[i], EffectCue.CoverFire, amount);
+            var result = ResolveDamage(new DamageRequest(_activeAction, _nextReactiveHitIndex++,
+                CombatDamageOrigin.Card, player, weakest, amount));
+            if (weakest.IsDefeated) HandleEnemyDefeated(weakest);
+            else EnqueueIncomingHitResolvedAbilities(_activeAction, weakest, result);
+            if (!ProcessReactions(CombatReactionPhase.HitResolved)) return false;
+            if (_reactionFaulted || player.IsDefeated) return true;
+        }
+        return true;
+    }
+
+    // The blast spares the attack's target. With Chain Reaction each enemy a blast kills explodes too,
+    // hitting every living enemy, up to gear.chainReactionMaxBlasts chained blasts per action.
     void ResolveExplosiveDamage(IReadOnlyList<CardInstance> committedCards, EnemyRuntime primaryTarget, int damage, bool critical)
     {
         if (damage <= 0) return;
-        var targets = new List<EnemyRuntime>(_enemies);
-        if (targets.Any(target => target != null && !ReferenceEquals(target, primaryTarget) && !target.IsDefeated))
-            for (int i = 0; i < committedCards.Count; i++)
-                if (GameplayEffectResolver.HasEnhancementEffect(committedCards[i], GameplayEffectKind.ExplosiveAreaDamage))
-                    EffectTriggerFeed.Report(committedCards[i], EffectCue.AreaDamage, damage);
-        for (int i = 0; i < targets.Count; i++)
+        bool chains = committedCards.Any(card =>
+            GameplayEffectResolver.HasEnhancementEffect(card, GameplayEffectKind.ChainReaction));
+        int chainsLeft = chains ? Math.Max(0, GameBalance.Current.gear.chainReactionMaxBlasts) : 0;
+        int pendingBlasts = 1;
+        var spared = primaryTarget;
+        while (pendingBlasts-- > 0)
         {
-            var target = targets[i];
-            if (target == null || ReferenceEquals(target, primaryTarget) || target.IsDefeated || !_enemies.Contains(target))
-                continue;
-            var request = new DamageRequest(_activeAction, _nextReactiveHitIndex++,
-                CombatDamageOrigin.Card, player, target, damage, isCritical: critical);
-            var result = ResolveDamage(request);
-            if (target.IsDefeated)
+            var targets = new List<EnemyRuntime>(_enemies);
+            if (targets.Any(target => target != null && !ReferenceEquals(target, spared) && !target.IsDefeated))
+                for (int i = 0; i < committedCards.Count; i++)
+                    if (GameplayEffectResolver.HasEnhancementEffect(committedCards[i], GameplayEffectKind.ExplosiveAreaDamage))
+                        EffectTriggerFeed.Report(committedCards[i], EffectCue.AreaDamage, damage);
+            for (int i = 0; i < targets.Count; i++)
             {
-                AwardDevouringKillBonus(committedCards);
-                HandleEnemyDefeated(target);
+                var target = targets[i];
+                if (target == null || ReferenceEquals(target, spared) || target.IsDefeated || !_enemies.Contains(target))
+                    continue;
+                var request = new DamageRequest(_activeAction, _nextReactiveHitIndex++,
+                    CombatDamageOrigin.Card, player, target, damage, isCritical: critical);
+                var result = ResolveDamage(request);
+                if (target.IsDefeated)
+                {
+                    AwardDevouringKillBonus(committedCards);
+                    HandleEnemyDefeated(target);
+                    if (chainsLeft > 0)
+                    {
+                        chainsLeft--;
+                        pendingBlasts++;
+                    }
+                }
+                else
+                    EnqueueIncomingHitResolvedAbilities(_activeAction, target, result);
+                if (!ProcessReactions(CombatReactionPhase.HitResolved) || _reactionFaulted || player.IsDefeated)
+                    return;
             }
-            else
-                EnqueueIncomingHitResolvedAbilities(_activeAction, target, result);
-            if (!ProcessReactions(CombatReactionPhase.HitResolved) || _reactionFaulted || player.IsDefeated)
-                return;
+            spared = null;
         }
     }
 
@@ -1900,14 +2021,17 @@ public partial class CombatManager : Singleton<CombatManager>
     public int PreviewActionTotalDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target = null)
     {
         int perHit = PreviewActionDamage(cards, target, out int cap);
-        long total = (long)perHit * (PreviewHitsTwice(cards) ? 2 : 1);
+        long total = (long)perHit * PreviewHitCount(cards);
         return (int)Math.Min(cap < 0 ? total : Math.Min(total, cap), int.MaxValue);
     }
 
     /// <summary>Double Strike repeats a single hit; group actions hit once per card instead.</summary>
-    public bool PreviewHitsTwice(IReadOnlyList<CardInstance> cards) =>
-        GameplayEffectResolver.HasDoubleStrikeEffect(cards) &&
-        !GameplayEffectResolver.HitsOncePerCard(cards, CardManager.Instance);
+    public bool PreviewHitsTwice(IReadOnlyList<CardInstance> cards) => PreviewHitCount(cards) > 1;
+
+    /// <summary>How many times a single-target action hits: 2 with Double Strike, more with Chain Strike.</summary>
+    public int PreviewHitCount(IReadOnlyList<CardInstance> cards) =>
+        GameplayEffectResolver.HitsOncePerCard(cards, CardManager.Instance)
+            ? 1 : GameplayEffectResolver.StrikeCount(cards, CardManager.Instance);
 
     int PreviewActionDamage(IReadOnlyList<CardInstance> cards, EnemyRuntime target, out int cap)
     {

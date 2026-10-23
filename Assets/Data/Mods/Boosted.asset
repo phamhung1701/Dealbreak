@@ -32,4 +32,15 @@ MonoBehaviour:
     amount: 3
     conditions: []
   ruleModifiers: []
+  signatureName: Afterburner
+  signatureDescription: "Trigger: On Card Played\nEffect: This card deals additional flat damage. Damage beyond a kill carries over to the next enemy.\nValue: 5"
+  signatureEffects:
+  - kind: 0
+    trigger: 0
+    amount: 5
+    conditions: []
+  - kind: 27
+    trigger: 0
+    amount: 0
+    conditions: []
   visual: 2

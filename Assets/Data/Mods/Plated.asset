@@ -32,4 +32,15 @@ MonoBehaviour:
     amount: 3
     conditions: []
   ruleModifiers: []
+  signatureName: Bulwark
+  signatureDescription: "Trigger: On Discard\nEffect: This card provides additional block, then returns to your hand, once per enemy turn.\nValue: 5"
+  signatureEffects:
+  - kind: 2
+    trigger: 1
+    amount: 5
+    conditions: []
+  - kind: 31
+    trigger: 1
+    amount: 0
+    conditions: []
   visual: 6

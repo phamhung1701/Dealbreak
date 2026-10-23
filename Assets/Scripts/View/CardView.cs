@@ -174,7 +174,7 @@ public class CardView : MonoBehaviour,
 
         if (enhancementLabel)
             enhancementLabel.text = hasEnhancement
-                ? $"{data.Enhancement.icon}  {data.Enhancement.displayName}"
+                ? $"{data.Enhancement.icon}  {ModSignature.Name(data.Enhancement)}"
                 : string.Empty;
         RefreshState();
     }

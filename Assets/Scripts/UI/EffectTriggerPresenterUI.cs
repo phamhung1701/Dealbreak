@@ -481,7 +481,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             EffectCue.BlockBonus or EffectCue.BlockMultiplier or EffectCue.DamageReduction or
             EffectCue.MaxHealth => TagStyle.Gain,
         EffectCue.AttackBonus or EffectCue.AttackMultiplier or EffectCue.Counter or EffectCue.Critical or
-            EffectCue.DoubleStrike or EffectCue.AreaDamage => TagStyle.Attack,
+            EffectCue.DoubleStrike or EffectCue.AreaDamage or EffectCue.Carry or EffectCue.CoverFire => TagStyle.Attack,
         EffectCue.HealthCost or EffectCue.Destroy => TagStyle.Cost,
         _ => TagStyle.Utility
     };
@@ -502,7 +502,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             EffectCue.DamageReduction => $"−{n} DMG",
             EffectCue.Counter => $"COUNTER {n}",
             EffectCue.Critical => "CRIT",
-            EffectCue.DoubleStrike => "×2 HITS",
+            EffectCue.DoubleStrike => $"×{Mathf.Max(2, n)} HITS",
             EffectCue.AreaDamage => $"SPLASH {n}",
             EffectCue.Growth => $"UPGRADE +{n}",
             EffectCue.Weaken => $"−{n} ATK",
@@ -514,6 +514,8 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             EffectCue.Save => "SAVED",
             EffectCue.ReturnToHand => "BACK TO HAND",
             EffectCue.MaxHealth => $"+{n} MAX HP",
+            EffectCue.Carry => $"CARRY {n}",
+            EffectCue.CoverFire => $"COVER {n}",
             _ => string.Empty
         };
     }

@@ -394,10 +394,11 @@ public class ActionButtonsUI : MonoBehaviour
     {
         var selected = cards.SelectedCards.Select(view => view.data).ToArray();
         int damage = combat.PreviewActionDamage(selected, combat.currentEnemy);
-        if (!combat.PreviewHitsTwice(selected)) return $"{damage} damage";
-        // A damage cap (Scalpel) limits both hits together.
+        int hits = combat.PreviewHitCount(selected);
+        if (hits <= 1) return $"{damage} damage";
+        // A damage cap (Scalpel) limits all the hits together.
         int total = combat.PreviewActionTotalDamage(selected, combat.currentEnemy);
-        return total == damage * 2 ? $"{damage} damage ×2 hits" : $"{total} damage over 2 hits";
+        return total == damage * hits ? $"{damage} damage ×{hits} hits" : $"{total} damage over {hits} hits";
     }
 
     void OnPrimaryActionClicked()

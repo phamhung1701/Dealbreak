@@ -26,7 +26,9 @@ public enum EffectCue
     Retrigger,
     Save,
     ReturnToHand,
-    MaxHealth
+    MaxHealth,
+    Carry,
+    CoverFire
 }
 
 /// <summary>One Mod or Gear activation: its source (a card's Mod or an owned Gear), what it did and how much.</summary>

@@ -54,7 +54,7 @@ public sealed class ShopOffer
     public string DisplayName => kind switch
     {
         ShopOfferKind.Gear => gear != null ? gear.displayName : "Unknown Gear",
-        ShopOfferKind.Enhancement => enhancement != null ? enhancement.displayName : "Unknown Mod",
+        ShopOfferKind.Enhancement => enhancement != null ? ModSignature.Name(enhancement) : "Unknown Mod",
         ShopOfferKind.Investment => "Stake",
         ShopOfferKind.Guidance => "Intel",
         ShopOfferKind.Consumable => consumable != null ? consumable.displayName : "Unknown Trick",
@@ -87,7 +87,7 @@ public sealed class ShopOffer
             return gear != null ? gear.description : string.Empty;
         if (kind == ShopOfferKind.Enhancement)
         {
-            string effect = enhancement != null ? enhancement.description : string.Empty;
+            string effect = enhancement != null ? ModSignature.Description(enhancement) : string.Empty;
             return $"Choose a card in your hand to enhance: {effect}";
         }
         if (kind == ShopOfferKind.Consumable)

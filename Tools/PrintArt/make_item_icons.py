@@ -76,6 +76,7 @@ ICONS = {
     "Gear/ModdersKit": "Drone/33",
     "Gear/NotchedPistol": "Weapon/11",
     "Gear/NuclearOption": "Radiation/47",
+    "Gear/Overclock": "Artifacts/48",
     "Gear/OverflowCanister": "Energy/17",
     "Gear/PayoutTracker": "Radiation/16",
     "Gear/PowerBaton": "Energy/5",

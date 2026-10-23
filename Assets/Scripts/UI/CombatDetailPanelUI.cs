@@ -111,7 +111,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
             if (card.data == null || card.homeField == null) return false;
             var data = card.data;
             _text.Append($"ATTACK POWER  {combat.CalculateCardAttackDamage(data)}\nBLOCK VALUE  {combat.CalculateCardDefense(data)}\n\n");
-            if (data.Enhancement) _text.Append("MOD • ").Append(data.Enhancement.displayName).Append('\n').Append(data.Enhancement.description).Append("\n\n");
+            if (data.Enhancement) _text.Append("MOD • ").Append(ModSignature.Name(data.Enhancement)).Append('\n').Append(ModSignature.Description(data.Enhancement)).Append("\n\n");
             if (CardManager.Instance?.SelectedCards.Count > 0)
                 _text.Append(actions && actions.selectionLabel ? actions.selectionLabel.text : SelectionSummary(CardManager.Instance)).Append("\n\n");
             while (_text.Length > 0 && _text[_text.Length - 1] == '\n') _text.Length--;

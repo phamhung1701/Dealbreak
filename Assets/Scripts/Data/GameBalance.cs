@@ -231,6 +231,16 @@ public sealed class GearBalance
     [Tooltip("Most cards one attack may commit; each card hits separately. A Royal Flush always takes five.")]
     [Min(2)] public int nuclearOptionMaxCards = 5;
 
+    [Header("Overclock (Signature Mods)")]
+    [Tooltip("Executioner always crits an enemy below this percent of its max HP.")]
+    [Range(1, 100)] public int executionerHealthPercent = 50;
+    [Tooltip("Tutor draws one more card when this many cards or fewer are held after playing it.")]
+    [Min(0)] public int tutorSecondCardAtOrBelow = 3;
+    [Tooltip("Tutor draws one more card again when this many cards or fewer are held.")]
+    [Min(0)] public int tutorThirdCardAtOrBelow = 1;
+    [Tooltip("Most chained blasts one Chain Reaction action may set off.")]
+    [Min(0)] public int chainReactionMaxBlasts = 3;
+
     [Header("Survivor's Badge")]
     [Tooltip("Max HP gained per Headliner win.")]
     [Min(0)] public int survivorsBadgeMaxHealth = 3;

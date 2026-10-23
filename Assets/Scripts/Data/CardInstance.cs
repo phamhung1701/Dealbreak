@@ -36,6 +36,11 @@ public sealed class CardInstance
     public bool MatchesSuit(CardData.Suit suit) =>
         Suit == suit || GameplayEffectResolver.HasEnhancementEffect(this, GameplayEffectKind.WildSuit);
 
+    /// <summary>Joker: counts as any rank where cards group (Ace pairs, Hands sets, the Royal Flush).</summary>
+    public bool IsWildRank => GameplayEffectResolver.HasEnhancementEffect(this, GameplayEffectKind.WildRank);
+
+    public bool MatchesRank(CardData.Rank rank) => Rank == rank || IsWildRank;
+
     public void GainPermanentAttackBonus(int amount = 1)
     {
         if (amount > 0) PermanentAttackBonus = (int)Math.Min(int.MaxValue, (long)PermanentAttackBonus + amount);
@@ -45,7 +50,7 @@ public sealed class CardInstance
     public int AttackValue => Mathf.Max(0, BaseAttackValue + GameplayEffectResolver.CardLocalFlat(this, GameplayEffectKind.FlatAttack));
     public int DefenseValue => Mathf.Max(0, BaseAttackValue + GameplayEffectResolver.CardLocalFlat(this, GameplayEffectKind.FlatBlock));
     public string DisplayName => enhancement != null
-        ? $"{definition.RankLabel}{SuitSymbol} [{enhancement.displayName}]"
+        ? $"{definition.RankLabel}{SuitSymbol} [{ModSignature.Name(enhancement)}]"
         : $"{definition.RankLabel}{SuitSymbol}";
     public string SuitSymbol => Suit switch
     {

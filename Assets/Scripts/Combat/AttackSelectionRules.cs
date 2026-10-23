@@ -20,7 +20,10 @@ public static class AttackSelectionRules
         for (int i = 0; i < cards.Count; i++)
         {
             var card = cards[i];
-            if (card == null || !IsRoyalRank(card.Rank) || !ranks.Add(card.Rank)) return false;
+            // A Joker stands in for any royal rank still missing.
+            if (card == null) return false;
+            if (card.IsWildRank) continue;
+            if (!IsRoyalRank(card.Rank) || !ranks.Add(card.Rank)) return false;
         }
 
         foreach (CardData.Suit suit in System.Enum.GetValues(typeof(CardData.Suit)))
@@ -35,10 +38,8 @@ public static class AttackSelectionRules
 
     public static bool IsRoyalFamily(IReadOnlyList<CardInstance> cards)
     {
-        if (cards == null || cards.Count != RoyalRanks.Length || !IsRoyalFamilyPartial(cards)) return false;
-        var ranks = new HashSet<CardData.Rank>();
-        for (int i = 0; i < cards.Count; i++) ranks.Add(cards[i].Rank);
-        return ranks.Count == RoyalRanks.Length;
+        // Five cards whose non-Joker ranks are distinct royal ranks cover all five; Jokers fill the rest.
+        return cards != null && cards.Count == RoyalRanks.Length && IsRoyalFamilyPartial(cards);
     }
 
     static bool IsRoyalRank(CardData.Rank rank)

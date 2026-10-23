@@ -28,4 +28,15 @@ MonoBehaviour:
     amount: 25
     conditions: []
   ruleModifiers: []
+  signatureName: Executioner
+  signatureDescription: "Trigger: On Card Played\nCondition: 25% chance, always against an enemy below 50% HP\nEffect: This card can critically strike.\nValue: \u00d73"
+  signatureEffects:
+  - kind: 15
+    trigger: 10
+    amount: 25
+    conditions: []
+  - kind: 29
+    trigger: 10
+    amount: 3
+    conditions: []
   visual: 3

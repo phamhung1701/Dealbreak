@@ -31,7 +31,32 @@ public enum GameplayEffectKind
     DestroyBlockingCard = 22,
     MimicInHandEffects = 23,
     DoubleStrike = 24,
-    RevealAllMapNodes = 25
+    RevealAllMapNodes = 25,
+    // Signature Mods (Overclock, ModSignature). Each sits beside the Mod's own effects in its Signature list.
+    // Chain Strike: with Double Strike, one more hit for each other Double Strike card in hand.
+    ChainStrike = 26,
+    // Afterburner: a killing hit's excess damage carries on to the next enemy.
+    OverkillCarry = 27,
+    // Cover Fire: while held, each attack also shoots the weakest other enemy for `amount`.
+    CoverFire = 28,
+    // Executioner: always crits an enemy below gear.executionerHealthPercent; crits multiply by `amount`.
+    Executioner = 29,
+    // Redline: extra action damage equal to the HP the player is missing.
+    MissingHealthActionDamage = 30,
+    // Bulwark: after blocking, the card returns to hand, once per enemy turn.
+    StayInHandAfterBlock = 31,
+    // Feeding Frenzy: on a kill by its action, the card returns to hand.
+    ReturnToHandOnKill = 32,
+    // Interest: held when a fight is won, pays 1 Credit per `amount` Credits held.
+    InterestCredits = 33,
+    // Tutor: draws `amount`, one more at or below each gear.tutor threshold of cards held.
+    DrawByHandShortfall = 34,
+    // Transfusion: heals `amount`; healing past full HP grants 1 Shield, once per fight per card.
+    OverhealShield = 35,
+    // Chain Reaction: with the area blast, an enemy the blast kills explodes too (gear.chainReactionMaxBlasts).
+    ChainReaction = 36,
+    // Joker: with Wild Suit, the card counts as any rank for Ace pairs, Hands sets and the Royal Flush.
+    WildRank = 37
 }
 
 public enum GameplayEffectTrigger
@@ -153,7 +178,8 @@ public struct GameplayEffectDefinition
             GameplayEffectKind.FlatActionDamage or GameplayEffectKind.ActionDamageCap or
             GameplayEffectKind.IncomingCombatDamageReduction or
             GameplayEffectKind.CriticalChanceOverride or
-            GameplayEffectKind.HandSizeBonus or GameplayEffectKind.VampiricActionDamage => GameplayEffectCategory.NumericModifier,
+            GameplayEffectKind.HandSizeBonus or GameplayEffectKind.VampiricActionDamage or
+            GameplayEffectKind.MissingHealthActionDamage => GameplayEffectCategory.NumericModifier,
         _ => GameplayEffectCategory.Reactive
     };
 
@@ -234,7 +260,7 @@ public readonly struct GameplayEffectSource
     public GearRuntimeInstance Gear { get; }
     public CardInstance Card { get; }
     public GameplayEffectState State => Gear != null ? Gear.State : Card?.EffectState;
-    public string DisplayName => Gear != null ? Gear.Definition.displayName : Card?.Enhancement?.displayName;
+    public string DisplayName => Gear != null ? Gear.Definition.displayName : ModSignature.Name(Card?.Enhancement);
     public CombatReactionSourceCategory Category => Gear != null
         ? CombatReactionSourceCategory.Gear : CombatReactionSourceCategory.Enhancement;
 
@@ -464,8 +490,9 @@ public readonly struct NodeCompletedEffectContext
 
 public static class GameplayEffectResolver
 {
+    // A card plays its Mod's Signature effects while Overclock is owned.
     static GameplayEffectDefinition[] Effects(GameplayEffectSource source) =>
-        source.Gear != null ? source.Gear.Definition.effects : source.Card?.Enhancement?.effects;
+        source.Gear != null ? source.Gear.Definition.effects : ModSignature.Effects(source.Card?.Enhancement);
 
     public static int EffectCount(GameplayEffectSource source) => Effects(source)?.Length ?? 0;
 
@@ -708,10 +735,79 @@ public static class GameplayEffectResolver
         long damage = Math.Max(0, context.AggregatedDamage);
         damage += SumActionEffect(context, GameplayEffectKind.FlatActionDamage, trace, EffectCue.AttackBonus);
         damage += SumActionEffect(context, GameplayEffectKind.VampiricActionDamage, trace, EffectCue.HealthCost);
+        damage += MissingHealthDamage(context, trace);
         actionDamageCap = SmallestActionCap(context);
         // The cap is a budget over the complete action, not one cap per card or hit.
         // CombatManager applies the budget before critical multiplication and apportions it to hits.
         return ClampToInt(damage);
+    }
+
+    // Redline: each committed card with it adds the HP the player is missing.
+    static long MissingHealthDamage(ActionDamageEffectContext context, EffectTriggerTrace trace)
+    {
+        var player = context.Action?.SourcePlayer;
+        if (player == null || context.Cards == null) return 0;
+        int missing = Math.Max(0, player.maxHealth - player.currentHealth);
+        long total = 0;
+        for (int i = 0; i < context.Cards.Count; i++)
+        {
+            var card = context.Cards[i];
+            if (card?.Enhancement == null) continue;
+            var source = new GameplayEffectSource(card);
+            for (int j = 0; j < EffectCount(source); j++)
+            {
+                var effect = EffectAt(source, j);
+                if (effect.kind != GameplayEffectKind.MissingHealthActionDamage ||
+                    !Applies(source, effect, GameplayEffectTrigger.ActionDamageCalculated, card,
+                        selectedCardCount: context.Cards.Count, handsMultiCardAction: context.IsHandsMultiCardAction)) continue;
+                total += missing;
+                if (missing > 0) trace?.Add(source, EffectCue.AttackBonus, missing);
+            }
+        }
+        return total;
+    }
+
+    /// <summary>
+    /// Hits of a single-target action: Double Strike hits twice, and Chain Strike once more for each
+    /// other Double Strike card still in hand. Group actions hit once per card instead (HitsOncePerCard).
+    /// </summary>
+    public static int StrikeCount(IReadOnlyList<CardInstance> cards, CardManager manager)
+    {
+        if (!HasDoubleStrikeEffect(cards)) return 1;
+        bool chain = false;
+        for (int i = 0; i < cards.Count && !chain; i++)
+            chain = HasEnhancementEffect(cards[i], GameplayEffectKind.ChainStrike);
+        int hits = 2;
+        if (chain && manager != null)
+            for (int i = 0; i < manager.hand.Count; i++)
+            {
+                var held = manager.hand[i];
+                bool committed = false;
+                for (int j = 0; j < cards.Count && !committed; j++) committed = ReferenceEquals(held, cards[j]);
+                if (!committed && HasEnhancementEffect(held, GameplayEffectKind.DoubleStrike)) hits++;
+            }
+        return hits;
+    }
+
+    /// <summary>Executioner: a committed card with it always crits an enemy below the health threshold.</summary>
+    public static bool ExecutesTarget(IReadOnlyList<CardInstance> cards, EnemyRuntime target)
+    {
+        if (cards == null || target == null || target.maxHp <= 0) return false;
+        bool executioner = false;
+        for (int i = 0; i < cards.Count && !executioner; i++)
+            executioner = HasEnhancementEffect(cards[i], GameplayEffectKind.Executioner);
+        return executioner &&
+            (long)target.currentHp * 100 < (long)target.maxHp * GameBalance.Current.gear.executionerHealthPercent;
+    }
+
+    /// <summary>A critical action multiplies its damage by 2, or by an Executioner's larger amount.</summary>
+    public static int CriticalMultiplier(IReadOnlyList<CardInstance> cards)
+    {
+        int multiplier = 2;
+        if (cards != null)
+            for (int i = 0; i < cards.Count; i++)
+                multiplier = Math.Max(multiplier, EnhancementEffectAmount(cards[i], GameplayEffectKind.Executioner));
+        return multiplier;
     }
 
     // Matching critical overrides are resolved once per action in deterministic source order:
@@ -1113,15 +1209,29 @@ public static class GameplayEffectResolver
                 if (rule == null || rule.kind != GameplayRuleModifierKind.SameRankMultiCard ||
                     count > Math.Max(2, rule.sameRankMultiCard.maximumCards)) continue;
                 if (!rule.sameRankMultiCard.requireMatchingRank) return true;
-                var rank = selected.Count > 0 ? selected[0]?.data?.Rank : candidate.data.Rank;
-                if (rank != candidate.data.Rank) continue;
-                bool allMatch = true;
-                for (int i = 1; i < selected.Count; i++)
-                    if (selected[i]?.data == null || selected[i].data.Rank != rank) { allMatch = false; break; }
-                if (allMatch) return true;
+                var proposed = new CardInstance[count];
+                for (int i = 0; i < selected.Count; i++) proposed[i] = selected[i]?.data;
+                proposed[count - 1] = candidate.data;
+                if (ShareRank(proposed)) return true;
             }
         }
         return false;
+    }
+
+    /// <summary>All the cards can stand as one rank; a Joker (Wild Rank) counts as any rank.</summary>
+    public static bool ShareRank(IReadOnlyList<CardInstance> cards)
+    {
+        if (cards == null) return false;
+        CardData.Rank? rank = null;
+        for (int i = 0; i < cards.Count; i++)
+        {
+            var card = cards[i];
+            if (card == null) return false;
+            if (card.IsWildRank) continue;
+            if (rank == null) rank = card.Rank;
+            else if (card.Rank != rank) return false;
+        }
+        return true;
     }
 
     public static bool CanContinueAttackSelection(IReadOnlyList<CardView> selected,
@@ -1176,9 +1286,8 @@ public static class GameplayEffectResolver
     {
         if (cards == null || cards.Count < 2 || cards.Count > 4 || manager == null || cards[0] == null) return false;
         // A legal two-card Ace action retains its existing Ace-pair semantics, even A+A.
-        if (cards.Count == 2 && cards.Any(card => card?.Rank == CardData.Rank.Ace)) return false;
-        for (int i = 1; i < cards.Count; i++)
-            if (cards[i] == null || cards[i].Rank != cards[0].Rank) return false;
+        if (cards.Count == 2 && cards.Any(card => card != null && card.MatchesRank(CardData.Rank.Ace))) return false;
+        if (!ShareRank(cards)) return false;
         return HasHandsRule(manager, cards.Count);
     }
 
@@ -1210,8 +1319,7 @@ public static class GameplayEffectResolver
     public static bool IsSameRankMultiCardAction(IReadOnlyList<CardInstance> cards, CardManager manager)
     {
         if (cards == null || cards.Count < 2 || manager == null || cards[0] == null) return false;
-        for (int i = 1; i < cards.Count; i++)
-            if (cards[i] == null || cards[i].Rank != cards[0].Rank) return false;
+        if (!ShareRank(cards)) return false;
         for (int i = 0; i < manager.ownedGear.Count; i++)
         {
             var rules = manager.ownedGear[i]?.ruleModifiers;
@@ -1221,12 +1329,7 @@ public static class GameplayEffectResolver
                 var rule = rules[j];
                 if (rule == null || rule.kind != GameplayRuleModifierKind.SameRankMultiCard ||
                     cards.Count > Math.Max(2, rule.sameRankMultiCard.maximumCards)) continue;
-                if (!rule.sameRankMultiCard.requireMatchingRank) return true;
-                bool allMatch = true;
-                for (int cardIndex = 1; cardIndex < cards.Count; cardIndex++)
-                    if (cards[cardIndex] == null || cards[cardIndex].Rank != cards[0].Rank)
-                    { allMatch = false; break; }
-                if (allMatch) return true;
+                return true;
             }
         }
         return false;
@@ -1290,7 +1393,7 @@ public static class GameplayEffectResolver
     public static bool CanPlayAsAcePair(IReadOnlyList<CardInstance> cards)
     {
         return cards != null && cards.Count == 2 && cards[0] != null && cards[1] != null &&
-            (cards[0].Rank == CardData.Rank.Ace || cards[1].Rank == CardData.Rank.Ace);
+            (cards[0].MatchesRank(CardData.Rank.Ace) || cards[1].MatchesRank(CardData.Rank.Ace));
     }
 
     public static bool CanPlaySelection(IReadOnlyList<CardView> cards, EnemyRuntime target,
@@ -1389,7 +1492,7 @@ public static class GameplayEffectResolver
         if (effect.Category != GameplayEffectCategory.Reactive ||
             effect.trigger is not (GameplayEffectTrigger.AttackCommitted or GameplayEffectTrigger.PlayerTurnStart or
                 GameplayEffectTrigger.EncounterStart)) return false;
-        return effect.kind is GameplayEffectKind.Heal or GameplayEffectKind.Draw or
+        return effect.kind is GameplayEffectKind.Heal or GameplayEffectKind.OverhealShield or GameplayEffectKind.Draw or
             GameplayEffectKind.BonusCredits or GameplayEffectKind.ReduceAttackByCardValue or
             GameplayEffectKind.RecycleDiscardByCardValue or GameplayEffectKind.DrawByCardValue;
     }
@@ -1540,6 +1643,22 @@ public static class GameplayEffectResolver
                     EffectTriggerFeed.Report(source, EffectCue.Credits, effect.amount);
             }
         }
+        // Interest: each held card with it pays on the Credits held as the fight is won.
+        for (int i = 0; i < cards.hand.Count; i++)
+        {
+            var card = cards.hand[i];
+            if (card?.Enhancement == null) continue;
+            var source = new GameplayEffectSource(card);
+            for (int j = 0; j < EffectCount(source); j++)
+            {
+                var effect = EffectAt(source, j);
+                if (effect.kind != GameplayEffectKind.InterestCredits || effect.amount <= 0 ||
+                    !Applies(source, effect, GameplayEffectTrigger.EncounterWon, card)) continue;
+                int paid = Math.Max(0, cards.credits) / effect.amount;
+                credits += paid;
+                if (paid > 0) EffectTriggerFeed.Report(source, EffectCue.Credits, paid);
+            }
+        }
         return (credits, heal);
     }
 
@@ -1560,6 +1679,26 @@ public static class GameplayEffectResolver
                 int drawn = cards.DrawToHand(amount);
                 if (drawn > 0) combat.LogEffect($"{source.DisplayName}: Drew {drawn} card(s).");
                 if (drawn > 0) EffectTriggerFeed.Report(source, EffectCue.Draw, drawn);
+                break;
+            case GameplayEffectKind.DrawByHandShortfall:
+                var tuning = GameBalance.Current.gear;
+                int held = cards.HandCount;
+                int shortfallDraw = amount + (held <= tuning.tutorSecondCardAtOrBelow ? 1 : 0) +
+                    (held <= tuning.tutorThirdCardAtOrBelow ? 1 : 0);
+                int tutored = cards.DrawToHand(shortfallDraw);
+                if (tutored > 0) combat.LogEffect($"{source.DisplayName}: Drew {tutored} card(s).");
+                if (tutored > 0) EffectTriggerFeed.Report(source, EffectCue.Draw, tutored);
+                break;
+            case GameplayEffectKind.OverhealShield:
+                int restored = combat.HealPlayer(amount);
+                if (restored > 0) combat.LogEffect($"{source.DisplayName}: Healed {restored} HP.");
+                if (restored > 0) EffectTriggerFeed.Report(source, EffectCue.Heal, restored);
+                if (restored >= amount || card == null ||
+                    card.EffectState.GetEncounterCounter(ModCounterKeys.TransfusionShieldGranted) != 0) break;
+                if (combat.player.GainShield(1) <= 0) break;
+                card.EffectState.SetEncounterCounter(ModCounterKeys.TransfusionShieldGranted, 1);
+                combat.LogEffect($"{source.DisplayName}: healing past full HP became 1 Shield.");
+                EffectTriggerFeed.Report(source, EffectCue.Shield, 1);
                 break;
             case GameplayEffectKind.BonusCredits:
                 // Reported first, so the Credits display waits for the coins it is about to send.

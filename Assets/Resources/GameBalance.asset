@@ -94,6 +94,10 @@ MonoBehaviour:
     bountyHologramHeadlinerPercent: 125
     goldPistolCreditsPerDamage: 10
     nuclearOptionMaxCards: 5
+    executionerHealthPercent: 50
+    tutorSecondCardAtOrBelow: 3
+    tutorThirdCardAtOrBelow: 1
+    chainReactionMaxBlasts: 3
     survivorsBadgeMaxHealth: 3
     survivorsBadgeFlawlessBonus: 3
     savingsSafeInterestPercent: 30

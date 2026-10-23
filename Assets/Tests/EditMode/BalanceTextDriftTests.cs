@@ -200,6 +200,34 @@ public sealed class BalanceTextDriftTests
     }
 
     [Test]
+    public void SignatureModText_QuotesItsEffectAmountsAndBalance()
+    {
+        var g = Balance.gear;
+        AssertSignature("Boosted", "Value: {0}", GameplayEffectKind.FlatAttack);
+        AssertSignature("Backup", "Value: {0}", GameplayEffectKind.CoverFire);
+        AssertSignature("Deadeye", "{0}% chance", GameplayEffectKind.CriticalChanceOverride);
+        AssertSignature("Deadeye", "Value: ×{0}", GameplayEffectKind.Executioner);
+        AssertQuotes(Mod("Deadeye").signatureDescription, "Executioner", $"below {g.executionerHealthPercent}% HP");
+        AssertSignature("Plated", "Value: {0}", GameplayEffectKind.FlatBlock);
+        AssertSignature("Predatory", "Value: {0}", GameplayEffectKind.PermanentKillAttack);
+        AssertSignature("Profitable", "every {0} Credits", GameplayEffectKind.InterestCredits);
+        AssertSignature("Regenerative", "Value: {0}", GameplayEffectKind.OverhealShield);
+        AssertQuotes(Mod("Quickload").signatureDescription, "Tutor",
+            $"draw 2 with {g.tutorSecondCardAtOrBelow} or fewer", $"3 with {g.tutorThirdCardAtOrBelow} or fewer");
+        AssertQuotes(Mod("Volatile").signatureDescription, "Chain Reaction", $"up to {g.chainReactionMaxBlasts} times");
+    }
+
+    static CardEnhancementData Mod(string asset) =>
+        AssetDatabase.LoadAssetAtPath<CardEnhancementData>($"Assets/Data/Mods/{asset}.asset");
+
+    static void AssertSignature(string asset, string quote, GameplayEffectKind kind)
+    {
+        var mod = Mod(asset);
+        var effect = mod.signatureEffects.Single(value => value.kind == kind);
+        AssertQuotes(mod.signatureDescription, mod.signatureName, string.Format(quote, effect.amount));
+    }
+
+    [Test]
     public void RedlineDealChoices_QuoteTheirCostsAndRarities()
     {
         var r = Balance.redlineDeal;

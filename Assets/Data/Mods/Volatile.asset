@@ -29,4 +29,15 @@ MonoBehaviour:
     amount: 0
     conditions: []
   ruleModifiers: []
+  signatureName: Chain Reaction
+  signatureDescription: "Trigger: On Card Played\nEffect: Deal area-of-effect damage. An enemy it defeats explodes too, up to 3 times."
+  signatureEffects:
+  - kind: 19
+    trigger: 5
+    amount: 0
+    conditions: []
+  - kind: 36
+    trigger: 5
+    amount: 0
+    conditions: []
   visual: 11

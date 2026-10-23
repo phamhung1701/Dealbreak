@@ -32,4 +32,11 @@ MonoBehaviour:
     amount: 3
     conditions: []
   ruleModifiers: []
+  signatureName: Cover Fire
+  signatureDescription: "Trigger: While in Hand\nEffect: Each attack also shoots the weakest other enemy.\nValue: 3"
+  signatureEffects:
+  - kind: 28
+    trigger: 13
+    amount: 3
+    conditions: []
   visual: 1

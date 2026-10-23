@@ -61,7 +61,9 @@ public enum GearSpecialRule
     WanderersBoots = 48,
     WarpathBanner = 49,
     // 50 was MasterThief, an enemy ability listed here by mistake; keep the value retired.
-    Dealbreaker = 51
+    Dealbreaker = 51,
+    // Overclock: every modded card plays its Mod's Signature version (ModSignature).
+    SignatureMods = 52
 }
 
 [CreateAssetMenu(fileName = "Gear", menuName = "Game/Gear Data")]
