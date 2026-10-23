@@ -150,7 +150,8 @@ public sealed class EnemyDropUI : MonoBehaviour
         Vector3 from = _token && _token.gameObject.activeInHierarchy ? _token.position
             : _lastEnemyArea != Vector3.zero ? _lastEnemyArea : _root.position;
         string icon = string.IsNullOrEmpty(drop.icon) ? drop.displayName : drop.icon;
-        ItemDragUI.Get()?.FlyIntoSlot(from, slot, icon.Length > 6 ? icon.Substring(0, 6) : icon, drop.iconSprite);
+        ItemDragUI.Get()?.FlyIntoSlot(from, slot, icon.Length > 6 ? icon.Substring(0, 6) : icon, drop.iconSprite,
+            revealOnLanding: true);
     }
 
     static RectTransform SlotHolding(ConsumableData drop)

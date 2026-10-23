@@ -811,7 +811,7 @@ public class ShopUI : MonoBehaviour
     }
 
     // (owner, 2026-10-23) Bought Gear and Tricks jump from their tile into the slot they landed in,
-    // as enemy drops do. Presentation only: the item is already there.
+    // as enemy drops do. The item is already there; the slot shows it only once the flight lands.
     void FlyIntoBackpack(ShopOffer offer, Vector3 from, long[] gearBefore)
     {
         var cards = CardManager.Instance;
@@ -833,7 +833,7 @@ public class ShopUI : MonoBehaviour
                 if (actions.backpackSlotButtons[i] && cards.GetConsumableAtSlot(i) == offer.consumable)
                     slot = (RectTransform)actions.backpackSlotButtons[i].transform;
         }
-        if (slot) flight.FlyIntoSlot(from, slot, offer.DisplayName, offer.IconSprite);
+        if (slot) flight.FlyIntoSlot(from, slot, offer.DisplayName, offer.IconSprite, revealOnLanding: true);
     }
 
     ShopOffer FindOffer(string stableId)

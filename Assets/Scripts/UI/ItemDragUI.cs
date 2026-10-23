@@ -161,9 +161,11 @@ public sealed class ItemDragUI : MonoBehaviour
 
     /// <summary>
     /// Flies an item from where it was earned into its backpack slot: it rises, then drops along
-    /// an arc and the slot pops as it lands. Presentation only; the item is already in the slot.
+    /// an arc and the slot pops as it lands. Presentation only; the item is already in the slot, so
+    /// with <paramref name="revealOnLanding"/> the slot's contents stay hidden until the flight lands.
     /// </summary>
-    public void FlyIntoSlot(Vector3 fromWorld, RectTransform slot, string label, Sprite icon = null)
+    public void FlyIntoSlot(Vector3 fromWorld, RectTransform slot, string label, Sprite icon = null,
+        bool revealOnLanding = false)
     {
         if (!slot) return;
         EnsureVisuals();
@@ -176,14 +178,49 @@ public sealed class ItemDragUI : MonoBehaviour
         if (text) text.text = hasSprite ? string.Empty : label;
         var frame = flyer.GetComponent<EditorialFrame>();
         if (frame && DealbreakUIStyle.Theme) { frame.rim = DealbreakUIStyle.Theme.ochre; frame.Refresh(); }
-        StartCoroutine(Fly(flyer, (Vector2)_root.InverseTransformPoint(fromWorld) - _root.rect.center, slot));
+        var held = revealOnLanding ? HoldContents(slot) : null;
+        StartCoroutine(Fly(flyer, (Vector2)_root.InverseTransformPoint(fromWorld) - _root.rect.center, slot, held));
+    }
+
+    // Hides what a slot shows (its icon and labels, not its frame) until the flight lands in it.
+    readonly List<CanvasGroup> _held = new();
+
+    List<CanvasGroup> HoldContents(RectTransform slot)
+    {
+        var held = new List<CanvasGroup>();
+        foreach (Transform child in slot)
+        {
+            if (child.GetComponent<EditorialFrame>() || child.GetComponent<CanvasGroup>()) continue;
+            var group = child.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            held.Add(group);
+        }
+        _held.AddRange(held);
+        return held;
+    }
+
+    void Release(List<CanvasGroup> held)
+    {
+        if (held == null) return;
+        foreach (var group in held)
+        {
+            _held.Remove(group);
+            if (group) Destroy(group);
+        }
+    }
+
+    // A flight cut short (a scene change) must not leave a slot looking empty.
+    void OnDisable()
+    {
+        foreach (var group in _held) if (group) Destroy(group);
+        _held.Clear();
     }
 
     const float Rise = .18f, Fall = .42f;
     /// <summary>How long a <see cref="FlyIntoSlot"/> flight takes to reach its slot.</summary>
     public const float FlightSeconds = Rise + Fall;
 
-    IEnumerator Fly(RectTransform flyer, Vector2 start, RectTransform slot)
+    IEnumerator Fly(RectTransform flyer, Vector2 start, RectTransform slot, List<CanvasGroup> held)
     {
         Vector2 peak = start + new Vector2(0f, 70f);
         float elapsed = 0f;
@@ -208,6 +245,7 @@ public sealed class ItemDragUI : MonoBehaviour
             yield return null;
         }
         if (flyer) Destroy(flyer.gameObject);
+        Release(held);
         if (!slot) yield break;
         elapsed = 0f;
         Vector3 rest = slot.localScale;
