@@ -10,8 +10,8 @@ using UnityEngine.UI;
 /// Drags a Trick or Gear item like a card. A ghost follows the pointer; the thing under it is
 /// resolved to an <see cref="ItemDropTarget"/> and, when <see cref="ItemDropRules"/> accepts it,
 /// ringed with the change the drop would make. Over the Black Market the whole market darkens
-/// and shows the sale price. While an item is held, a red discard strip covers the DEALBREAK
-/// wordmark in the header's corner; dropping there throws the item away. A Gear dropped on a matching copy
+/// and shows the sale price. While an item is held, a red discard strip stands down the right
+/// edge; dropping there throws the item away. A Gear dropped on a matching copy
 /// merges them. Releasing anywhere else returns the ghost to its slot.
 /// Presentation only: every effect runs through ItemDropRules.
 /// </summary>
@@ -272,22 +272,13 @@ public sealed class ItemDragUI : MonoBehaviour
         return ItemDropTarget.None;
     }
 
-    // The DEALBREAK wordmark in the header's left corner, in this layer's space.
-    TMP_Text _wordmark;
+    // (owner, 2026-10-23) A tall strip down the right edge, between the MAP button and the draw
+    // pile, clear of the stage and the header rows; in this layer's space.
     bool TryDiscardArea(out Rect area)
     {
-        area = default;
-        if (!_wordmark)
-            foreach (var text in Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
-                if (text.name == "Dealbreak Shell Title" && text.GetComponentInParent<ActionButtonsUI>()) { _wordmark = text; break; }
-        var label = _wordmark;
-        if (!label || !label.isActiveAndEnabled) return false;
-        // The rendered text, not the label rect, which runs past it.
-        var bounds = label.textBounds;
-        if (bounds.size.x <= 0f) return false;
-        Vector2 min = _root.InverseTransformPoint(label.rectTransform.TransformPoint(bounds.min));
-        Vector2 max = _root.InverseTransformPoint(label.rectTransform.TransformPoint(bounds.max));
-        area = Rect.MinMaxRect(Mathf.Min(min.x, max.x), Mathf.Min(min.y, max.y), Mathf.Max(min.x, max.x), Mathf.Max(min.y, max.y));
+        var bounds = _root.rect;
+        area = Rect.MinMaxRect(bounds.xMin + bounds.width * .895f, bounds.yMin + bounds.height * .53f,
+            bounds.xMin + bounds.width * .985f, bounds.yMin + bounds.height * .855f);
         return true;
     }
 

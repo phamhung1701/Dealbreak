@@ -26,18 +26,17 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     bool? _lastDefenseLayout;
     bool _compactHealthLayout;
     RectTransform _enemyContainer;
-    Vector2 _handAnchorMin,_handAnchorMax,_countAnchorMin,_countAnchorMax;
-    // The compact hand fills the strip under route, Black Market and Incident panels, so its
-    // size counter moves beside it instead of under it.
+    Vector2 _handAnchorMin,_handAnchorMax;
+    // The compact hand fills the strip under route, Black Market and Incident panels; its hand
+    // size travels with it (AttachHandCount).
     static readonly Vector2 CompactHandMin=new(.17f,.02f),CompactHandMax=new(.83f,.46f);
-    static readonly Vector2 CompactCountMin=new(.835f,.04f),CompactCountMax=new(.91f,.14f);
     void Start()
     {
         if(!handFrame&&actions&&actions.handField)handFrame=actions.handField.transform.parent as RectTransform;
         if(handFrame){_handAnchorMin=handFrame.anchorMin;_handAnchorMax=handFrame.anchorMax;}
         var enemies=FindFirstObjectByType<EnemyGroupUI>();
         _enemyContainer=enemies?enemies.enemyContainer:null;
-        if(handCount){_countAnchorMin=handCount.rectTransform.anchorMin;_countAnchorMax=handCount.rectTransform.anchorMax;}
+        AttachHandCount();
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
         // Credits sit just above the HP panel, so they show wherever it does.
         if(playerState&&actions&&actions.TryGetComponent<RunStatusUI>(out var status))CreditsHudUI.Install(playerState,status.creditsLabel);
@@ -63,6 +62,20 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         var members=new System.Collections.Generic.List<RectTransform>{trickHeading?trickHeading.rectTransform:null,trickCapacity?trickCapacity.rectTransform:null};
         foreach(var slot in slots)members.Add((RectTransform)slot.transform);
         InventoryPanelUI.Install("Tricks Panel",area,members.ToArray(),new[]{trickHeading,trickCapacity},theme.brick,theme.paper);
+    }
+    // (owner, 2026-10-23) The hand size rides at the hand's right end, as part of the hand, so it
+    // travels with the hand between the board and the compact strip instead of on its own path.
+    void AttachHandCount()
+    {
+        if(!handCount||!handFrame)return;
+        var count=handCount.rectTransform;
+        count.SetParent(handFrame,false);
+        count.anchorMin=count.anchorMax=new Vector2(1,0);count.pivot=new Vector2(0,0);
+        count.sizeDelta=new Vector2(120,64);count.anchoredPosition=new Vector2(14,8);
+        handCount.alignment=TextAlignmentOptions.BottomLeft;
+        handCount.textWrappingMode=TextWrappingModes.NoWrap;
+        handCount.fontSize=28;
+        handCount.raycastTarget=false;
     }
     void PositionSortControls()
     {
@@ -123,7 +136,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     }
     void LateUpdate()
     {
-        if(handCount&&CardManager.Instance!=null)handCount.text=$"{CardManager.Instance.HandCount}/{CardManager.Instance.HandCapacity}";
+        if(handCount&&CardManager.Instance!=null)handCount.text=$"<size=55%>HAND</size>\n{CardManager.Instance.HandCount}/{CardManager.Instance.HandCapacity}";
         if(trickCapacity&&CardManager.Instance!=null)trickCapacity.text=$"{CardManager.Instance.BackpackSlotsUsed}/{CardManager.Instance.BackpackCapacity}";
         // A drop waiting on the board after a fight also brings the hand up, so Tricks can make room.
         // The board stays up until the last card lands and the last enemy's defeat has played.
@@ -138,13 +151,6 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         {
             handFrame.anchorMin=Vector2.Lerp(handFrame.anchorMin,compactHand?CompactHandMin:_handAnchorMin,ease);
             handFrame.anchorMax=Vector2.Lerp(handFrame.anchorMax,compactHand?CompactHandMax:_handAnchorMax,ease);
-        }
-        if(handCount)
-        {
-            var count=handCount.rectTransform;
-            count.anchorMin=Vector2.Lerp(count.anchorMin,compactHand?CompactCountMin:_countAnchorMin,ease);
-            count.anchorMax=Vector2.Lerp(count.anchorMax,compactHand?CompactCountMax:_countAnchorMax,ease);
-            if(count.parent&&count.GetSiblingIndex()!=count.parent.childCount-1)count.SetAsLastSibling();
         }
         bool choosingCard=CardManager.Instance&&CardManager.Instance.IsHandEnhancementTargeting;
         if(combatGroups!=null)for(int i=0;i<combatGroups.Length;i++)
@@ -196,7 +202,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(market&&market.panel&&market.panel.activeInHierarchy&&CardManager.Instance)
         {
             int credits=CardManager.Instance.credits;
-            if(credits!=_lastShopCredits){_lastShopCredits=credits;market.RefreshPresentation();}
+            if(credits!=_lastShopCredits){_lastShopCredits=credits;market.RequestRefresh();}
         }
         else _lastShopCredits=int.MinValue;
         int signature=GetComponentsInChildren<Button>(true).Length+((overlay?1:0)<<16);
