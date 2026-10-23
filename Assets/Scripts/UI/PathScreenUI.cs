@@ -182,8 +182,41 @@ public class PathScreenUI : MonoBehaviour
     void HandleCycleStarted(string header)
     {
         var run = RunManager.Instance;
-        if (headerText) headerText.text = header;
+        if (headerText)
+        {
+            headerText.text = header + HeadlinerLine(run);
+            BindHeadlinerInfo();
+        }
         BuildMap();
+    }
+
+    // (owner, 2026-10-23) The District's Headliner and its abilities, on a small second line under
+    // the District title; a click on it opens the full rules.
+    static string HeadlinerLine(RunManager run)
+    {
+        var headliner = run != null ? run.CurrentHeadliner : null;
+        if (headliner == null) return string.Empty;
+        string abilities = headliner.abilities == null ? string.Empty : string.Join(" • ",
+            headliner.abilities.Where(ability => ability != null && !string.IsNullOrEmpty(ability.displayName))
+                .Select(ability => ability.displayName.ToUpperInvariant()));
+        string red = DealbreakUIStyle.Theme ? ColorUtility.ToHtmlStringRGB(DealbreakUIStyle.Theme.brick) : "E8322B";
+        return $"\n<size=62%><color=#{red}>HEADLINER</color>  {headliner.enemyName.ToUpperInvariant()}" +
+            (string.IsNullOrEmpty(abilities) ? string.Empty : $"  •  {abilities}") + "</size>";
+    }
+
+    void BindHeadlinerInfo()
+    {
+        var trigger = headerText.GetComponent<ContextualInfoTrigger>();
+        if (!trigger) trigger = headerText.gameObject.AddComponent<ContextualInfoTrigger>();
+        trigger.pinOnClick = true;
+        headerText.raycastTarget = true;
+        trigger.describe = () =>
+        {
+            var run = RunManager.Instance;
+            return run != null && run.CurrentHeadliner != null
+                ? new ContextualInfo("Headliner", run.CurrentHeadliner.enemyName, run.CurrentHeadlinerDescription)
+                : (ContextualInfo?)null;
+        };
     }
 
     void HandleRunCompleted()
