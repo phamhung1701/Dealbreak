@@ -52,6 +52,7 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         var old=GetComponent<EditorialButton>();if(old)old.enabled=false;
         titleLabel.text=offer.DisplayName;
         ItemIconUI.ShowTopLeft(transform,offer.IconSprite,IconSize,new Vector2(IconInset,IconInset));
+        ItemTierFxUI.Show(transform,offer.kind==ShopOfferKind.Gear?offer.gear:null);
         statusLabel.text=availability?.Replace("Backpack Full","Trick slots full");
         // The price lives on the buy button and the rules text in the click detail.
         if(priceLabel)priceLabel.gameObject.SetActive(false);
