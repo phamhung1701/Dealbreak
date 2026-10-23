@@ -75,12 +75,12 @@ public static class DealbreakUIArtCorrectionAuthoring
         var shop=root.GetComponent<ShopUI>();shop.storeComposition=true;Environment(shop.panel.transform);OpenPanel(shop.panel.transform);
         var store=shop.itemsContainer.parent;
         var title=store.GetComponentsInChildren<TMP_Text>(true).First(t=>t.name=="ShopTitleLabel");
-        DealbreakUIStyle.Place(title.transform,.055f,.84f,.66f,.96f);DealbreakUIStyle.Text(title,DealbreakUIStyle.Theme.headingFont,68,DealbreakUIStyle.Theme.paper);
+        DealbreakUIStyle.Place(title.transform,ShopUI.MarketLeft,.84f,ShopUI.MarketLeft+.6f,.96f);DealbreakUIStyle.Text(title,DealbreakUIStyle.Theme.headingFont,68,DealbreakUIStyle.Theme.paper);
         DealbreakUIStyle.Place(shop.creditsText.transform,.72f,.86f,.95f,.94f);shop.creditsText.alignment=TextAlignmentOptions.Right;shop.creditsText.fontSize=27;
         // Continue sits to the right of the Black Market, clear of the hand.
         DealbreakUIStyle.Place(shop.continueButton.transform,1.005f,.477f,1.16f,.55f);
         DealbreakUIStyle.Place(shop.buyButton.transform,.55f,.04f,.74f,.10f);shop.buyButton.gameObject.SetActive(false);
-        DealbreakUIStyle.Place(shop.selectedOfferText.transform,.055f,.04f,.52f,.11f);shop.selectedOfferText.text=string.Empty;
+        DealbreakUIStyle.Place(shop.selectedOfferText.transform,ShopUI.MarketLeft,.04f,ShopUI.MarketLeft+.465f,.11f);shop.selectedOfferText.text=string.Empty;
         var inventory=front.GetComponentInChildren<BuildInventoryUI>(true);
         if(inventory){inventory.enabled=false;if(inventory.panel)inventory.panel.SetActive(false);}
         var build=store.Find("ShopBuild");if(build)build.gameObject.SetActive(false);

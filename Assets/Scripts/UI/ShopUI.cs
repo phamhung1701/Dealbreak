@@ -228,6 +228,9 @@ public class ShopUI : MonoBehaviour
         return button;
     }
 
+    /// <summary>Left edge of the Goods column in the Black Market card, shared with its title.</summary>
+    public const float MarketLeft = .185f;
+
     void EnsureOfferScrolling()
     {
         if (_offersScroll != null || itemsContainer is not RectTransform content || content.parent is not RectTransform parent)
@@ -281,7 +284,9 @@ public class ShopUI : MonoBehaviour
         scroll.viewport = sr; scroll.content = cr; scroll.horizontal = false; scroll.vertical = true;
         scroll.movementType = ScrollRect.MovementType.Clamped;
         _servicesContainer = cr;
-        if(storeComposition){DealbreakUIStyle.Place(viewport,.055f,.02f,.43f,.80f);DealbreakUIStyle.Place(sr,.47f,.02f,.76f,.80f);}
+        // (owner, 2026-10-24) The two columns sit centred on the screen, over the hand, not against the
+        // panel's left edge; the title lines up with the Goods column (DealbreakUIArtCorrectionAuthoring).
+        if(storeComposition){DealbreakUIStyle.Place(viewport,MarketLeft,.02f,MarketLeft+.375f,.80f);DealbreakUIStyle.Place(sr,MarketLeft+.415f,.02f,MarketLeft+.705f,.80f);}
         foreach (var text in parent.GetComponentsInChildren<TMP_Text>(true))
             if (text.text == "ARTIFACT & ENHANCEMENT SHOP") text.text = "SHOP — GOODS & SERVICES";
     }
