@@ -50,6 +50,14 @@ public sealed class HealthBarBacking : MonoBehaviour
 
     public RectTransform Bar => _bar;
 
+    /// <summary>Recolours the fill, e.g. grey while an enemy's Shield stands in front of its HP.</summary>
+    public void SetFillColor(Color color)
+    {
+        if (!_fill || !_fill.TryGetComponent<EditorialFrame>(out var fill) || fill.fill == color) return;
+        fill.ink = fill.rim = fill.fill = color;
+        fill.Refresh();
+    }
+
     public void SetFraction(float fraction)
     {
         _fraction = Mathf.Clamp01(fraction);

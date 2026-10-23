@@ -155,8 +155,8 @@ public static class DealbreakUIStyle
                 if(text==enemy.nameText){Text(text,Theme.headingFont,24,Theme.ink);text.overflowMode=TextOverflowModes.Overflow;}
                 else if(text==enemy.hpText||text==enemy.atkText)
                 {
-                    // 18, not 20: at the global text scale "ATTACK n" otherwise runs into the HP bar.
-                    Text(text,Theme.numericFont,18,text==enemy.atkText?Theme.brick:Theme.paper);
+                    // (owner, 2026-10-23) A bigger HP meter: HP 24 on the wider bar, ATTACK 22 beside it.
+                    Text(text,Theme.numericFont,text==enemy.atkText?22:24,text==enemy.atkText?Theme.brick:Theme.paper);
                     text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Overflow;
                 }
                 else if(text==enemy.statusText)Text(text,Theme.bodyFont,15,Color.Lerp(Theme.paper,Theme.slate,.35f));

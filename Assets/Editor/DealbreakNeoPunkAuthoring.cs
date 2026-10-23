@@ -63,9 +63,30 @@ public static class DealbreakNeoPunkAuthoring
                 rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
                 rect.offsetMin = new Vector2(16, 14); rect.offsetMax = new Vector2(-16, -14);
             }
+            // (owner, 2026-10-23) A bigger HP meter: wider and in larger type, ATTACK beside it.
+            var display = enemy.GetComponent<EnemyDisplayUI>();
+            if (display.hpText)
+            {
+                DealbreakUIStyle.Place(display.hpText.transform, .05f, .10f, .58f, .19f);
+                display.hpText.fontSize = 24;
+            }
+            if (display.atkText)
+            {
+                DealbreakUIStyle.Place(display.atkText.transform, .63f, .10f, .97f, .19f);
+                display.atkText.alignment = TMPro.TextAlignmentOptions.MidlineRight;
+                display.atkText.fontSize = 22;
+            }
             PrefabUtility.SaveAsPrefabAsset(enemy, path);
         }
         finally { PrefabUtility.UnloadPrefabContents(enemy); }
+    }
+
+    /// <summary>Re-applies only the enemy view corrections.</summary>
+    [MenuItem("Dealbreak/UI/Apply Enemy View Correction")]
+    public static void ApplyEnemyView()
+    {
+        EnemyView();
+        AssetDatabase.SaveAssets();
     }
 
     static void Palette()

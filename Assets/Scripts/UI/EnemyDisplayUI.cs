@@ -229,21 +229,86 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     void ApplyHp(EnemyRuntime enemy)
     {
         if (hpText) hpText.text = $"HP  {Mathf.RoundToInt(_shownHp)}/{enemy.maxHp}";
-        ApplyHpBar(enemy.maxHp > 0 ? _shownHp / enemy.maxHp : 0f);
+        ApplyHpBar(enemy.maxHp > 0 ? _shownHp / enemy.maxHp : 0f, enemy.ShieldCharges);
     }
 
-    // A thin red HP bar runs under the mono HP numbers (see HealthBarBacking); the authored slider
-    // stays serialized but hidden. The name sits on an off-white label block.
+    // (owner, 2026-10-23) The HP numbers sit on a full meter, like the player's. While Shield stands
+    // in front of the HP the fill turns grey, and one shield glyph per charge sits on the bar's top
+    // edge. The authored slider stays serialized but hidden. The name sits on an off-white block.
+    static readonly Color ShieldedFill = new(.62f, .63f, .66f, 1f);
+    const int MaxShieldGlyphs = 4;
     HealthBarBacking _hpBacking;
     HealthBarBacking _nameBlock;
-    void ApplyHpBar(float fraction)
+    RectTransform _shieldRow;
+    TMP_Text _shieldCount;
+    readonly System.Collections.Generic.List<Image> _shieldGlyphs = new();
+    void ApplyHpBar(float fraction, int shields = 0)
     {
         if (healthBar && healthBar.gameObject.activeSelf) healthBar.gameObject.SetActive(false);
         if (!hpText) return;
-        if (_hpBacking == null) _hpBacking = HealthBarBacking.Attach(hpText, true, HealthBarBacking.Look.Underline);
+        if (_hpBacking == null) _hpBacking = HealthBarBacking.Attach(hpText, true, HealthBarBacking.Look.Meter);
         var theme = DealbreakUIStyle.Theme;
         if (theme && hpText.color != theme.paper) hpText.color = theme.paper;
-        if (_hpBacking != null) _hpBacking.SetFraction(fraction);
+        if (_hpBacking == null) return;
+        _hpBacking.SetFraction(fraction);
+        _hpBacking.SetFillColor(shields > 0 ? ShieldedFill : theme ? theme.brick : new Color(.91f, .2f, .17f));
+        ApplyShieldGlyphs(shields);
+    }
+
+    // One glyph per Shield charge on the bar's top edge; past four, one glyph and the count.
+    void ApplyShieldGlyphs(int shields)
+    {
+        if (!_shieldRow && shields <= 0) return;
+        if (!_shieldRow && _hpBacking.Bar)
+        {
+            var row = new GameObject("Shield Glyphs", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            _shieldRow = (RectTransform)row.transform;
+            _shieldRow.SetParent(_hpBacking.Bar, false);
+            _shieldRow.anchorMin = _shieldRow.anchorMax = new Vector2(0f, 1f);
+            _shieldRow.pivot = new Vector2(0f, 0f);
+            _shieldRow.anchoredPosition = new Vector2(0f, 4f);
+            _shieldRow.sizeDelta = new Vector2(240f, 42f);
+            var layout = row.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = 4f;
+            layout.childAlignment = TextAnchor.LowerLeft;
+            layout.childControlWidth = layout.childControlHeight = false;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+        }
+        if (!_shieldRow) return;
+        _shieldRow.gameObject.SetActive(shields > 0);
+        int glyphs = shields > MaxShieldGlyphs ? 1 : shields;
+        while (_shieldGlyphs.Count < glyphs)
+        {
+            var glyph = new GameObject("Shield", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)glyph.transform;
+            rect.SetParent(_shieldRow, false);
+            rect.sizeDelta = new Vector2(40f, 40f);
+            var image = glyph.GetComponent<Image>();
+            image.sprite = ShieldGlyph.Sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            _shieldGlyphs.Add(image);
+        }
+        for (int i = 0; i < _shieldGlyphs.Count; i++) _shieldGlyphs[i].gameObject.SetActive(i < glyphs);
+        bool counted = shields > MaxShieldGlyphs;
+        if (counted && !_shieldCount)
+        {
+            var count = new GameObject("Shield Count", typeof(RectTransform), typeof(TextMeshProUGUI));
+            var rect = (RectTransform)count.transform;
+            rect.SetParent(_shieldRow, false);
+            rect.sizeDelta = new Vector2(60f, 28f);
+            _shieldCount = count.GetComponent<TMP_Text>();
+            var theme = DealbreakUIStyle.Theme;
+            DealbreakUIStyle.Label(_shieldCount, 22f, theme ? theme.paper : Color.white);
+            _shieldCount.alignment = TextAlignmentOptions.MidlineLeft;
+            _shieldCount.raycastTarget = false;
+        }
+        if (_shieldCount)
+        {
+            _shieldCount.gameObject.SetActive(counted);
+            _shieldCount.text = $"×{shields}";
+            _shieldCount.transform.SetAsLastSibling();
+        }
     }
 
     void TickHitCue(float deltaTime)
@@ -463,8 +528,16 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     }
 
     void RefreshHp() => RefreshDisplay();
+    int _shownShields = -1;
     void LateUpdate()
     {
+        // Shield comes and goes without an HP change (Royal Guard, a blocked hit): keep the bar in step.
+        var shown = DisplayedEnemy;
+        if (shown != null && _shownHp >= 0f && shown.ShieldCharges != _shownShields)
+        {
+            _shownShields = shown.ShieldCharges;
+            ApplyHp(shown);
+        }
         if (!CombatDetailPanelUI.IsCombatActive || _enemyTargeting || IsDefeatCuePlaying) return;
         var cards = CardManager.Instance;
         var combat = CombatManager.Instance;
@@ -619,8 +692,12 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (state != GameState.EnemyAttacking && enemy.NextAttackIsCharged) parts.Add("CHARGED ATTACK NEXT");
         else if (state != GameState.EnemyAttacking && enemy.HasRoyalGuard) parts.Add("+1 SHIELD NEXT");
         if (enemy.HasDoubleStrike) parts.Add("2 HITS");
-        if (enemy.ShieldCharges > 0) parts.Add($"SHIELD {enemy.ShieldCharges}");
+        // Shield shows as glyphs on the HP bar, not as text.
         if (enemy.type.sourceCard) parts.Add(enemy.type.sourceCard.DisplayName);
-        return string.Join(" • ", parts);
+        // (owner, 2026-10-23) Abilities are named under the enemy; a click opens their rules.
+        string abilities = enemy.AbilitySummary;
+        string intents = string.Join(" • ", parts);
+        return string.IsNullOrEmpty(abilities) ? intents
+            : string.IsNullOrEmpty(intents) ? abilities.ToUpperInvariant() : $"{intents}\n{abilities.ToUpperInvariant()}";
     }
 }
