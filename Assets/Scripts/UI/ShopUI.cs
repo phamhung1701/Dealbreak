@@ -32,6 +32,19 @@ public class ShopUI : MonoBehaviour
     public string SelectedOfferId => _selectedOfferId;
     public void RefreshPresentation() => RefreshItems();
 
+    // Events (offers, build, Credits) only ask for a rebuild; in play it runs once, next frame, so
+    // one purchase rebuilds the list once rather than once per event (a dev-mode market has ~100).
+    bool _refreshQueued;
+    public void RequestRefresh()
+    {
+        if (Application.isPlaying && isActiveAndEnabled) _refreshQueued = true;
+        else RefreshItems();
+    }
+    void LateUpdate()
+    {
+        if (_refreshQueued && panel && panel.activeInHierarchy) RefreshItems();
+    }
+
     // The price button buys at once; for Supply and Stake it buys the quantity on the controls.
     public void PurchaseInline(string stableId)
     {
@@ -116,12 +129,12 @@ public class ShopUI : MonoBehaviour
         {
             RunManager.Instance.OnShowShop += Open;
             RunManager.Instance.OnHideShop += Close;
-            RunManager.Instance.OnShopOffersChanged += RefreshItems;
+            RunManager.Instance.OnShopOffersChanged += RequestRefresh;
         }
         if (CardManager.Instance != null)
         {
             CardManager.Instance.OnCreditsChanged += HandleCreditsChanged;
-            CardManager.Instance.OnBuildChanged += RefreshItems;
+            CardManager.Instance.OnBuildChanged += RequestRefresh;
             CardManager.Instance.OnDeckChanged += RefreshQuantityLimitDetails;
         }
         if (continueButton) { continueButton.onClick.AddListener(OnContinue); KeyButtonBorderStyle.Apply(continueButton); }
@@ -138,13 +151,13 @@ public class ShopUI : MonoBehaviour
         {
             RunManager.Instance.OnShowShop -= Open;
             RunManager.Instance.OnHideShop -= Close;
-            RunManager.Instance.OnShopOffersChanged -= RefreshItems;
+            RunManager.Instance.OnShopOffersChanged -= RequestRefresh;
             RunManager.Instance.OnInvestmentResult -= ShowInvestmentResult;
         }
         if (CardManager.Instance != null)
         {
             CardManager.Instance.OnCreditsChanged -= HandleCreditsChanged;
-            CardManager.Instance.OnBuildChanged -= RefreshItems;
+            CardManager.Instance.OnBuildChanged -= RequestRefresh;
             CardManager.Instance.OnDeckChanged -= RefreshQuantityLimitDetails;
         }
         if (continueButton) continueButton.onClick.RemoveListener(OnContinue);
@@ -267,7 +280,7 @@ public class ShopUI : MonoBehaviour
         scroll.viewport = sr; scroll.content = cr; scroll.horizontal = false; scroll.vertical = true;
         scroll.movementType = ScrollRect.MovementType.Clamped;
         _servicesContainer = cr;
-        if(storeComposition){DealbreakUIStyle.Place(viewport,.055f,.02f,.62f,.80f);DealbreakUIStyle.Place(sr,.66f,.02f,.95f,.80f);}
+        if(storeComposition){DealbreakUIStyle.Place(viewport,.055f,.02f,.43f,.80f);DealbreakUIStyle.Place(sr,.47f,.02f,.76f,.80f);}
         foreach (var text in parent.GetComponentsInChildren<TMP_Text>(true))
             if (text.text == "ARTIFACT & ENHANCEMENT SHOP") text.text = "SHOP — GOODS & SERVICES";
     }
@@ -331,18 +344,12 @@ public class ShopUI : MonoBehaviour
 #else
         if (creditsText) creditsText.text = $"{credits} Credits";
 #endif
-        if (panel != null && panel.activeSelf) RefreshItems();
+        if (panel != null && panel.activeSelf) RequestRefresh();
     }
 
+    // In dev mode the Black Market shows itself too, stocked with everything (RunManager).
     void Open()
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (DevModeRuntime.Enabled && DevModeRuntime.UnlimitedShopOffers)
-        {
-            BoardPanelTransition.Hide(panel);
-            return;
-        }
-#endif
         BoardPanelTransition.Show(panel);
         RefreshItems();
     }
@@ -356,13 +363,7 @@ public class ShopUI : MonoBehaviour
 
     void RefreshItems()
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (DevModeRuntime.Enabled && DevModeRuntime.UnlimitedShopOffers)
-        {
-            BoardPanelTransition.Hide(panel);
-            return;
-        }
-#endif
+        _refreshQueued = false;
         ReturnQuantityControls();
         _selectedOfferId = null;
         if (_investmentStakeInput) _investmentStakeInput.gameObject.SetActive(false);
@@ -370,6 +371,8 @@ public class ShopUI : MonoBehaviour
         UpdateSelectionDetails();
         if (itemsContainer == null || itemButtonPrefab == null) return;
 
+        var previousRows = RowSnapshot(itemsContainer).Concat(RowSnapshot(_servicesContainer)).ToList();
+        var closingGaps = GapSnapshot(itemsContainer).Concat(GapSnapshot(_servicesContainer)).ToList();
         foreach (Transform child in ShopRows())
         {
             child.gameObject.SetActive(false);
@@ -431,20 +434,136 @@ public class ShopUI : MonoBehaviour
                 button.onClick.AddListener(() => SelectOffer(stableId));
             }
         }
+        // Gaps still closing from an earlier rebuild keep their place among the new rows.
+        foreach (var (gap, index) in closingGaps) PlaceAtActiveIndex(gap, index);
+        bool sameShop = storeComposition && Application.isPlaying && CollapseBoughtRows(previousRows, offers);
+        PlaceContinueUnderServices();
         RefreshInlinePrices();
         // Style the rebuilt rows now; left to the periodic check they show default fonts for a few frames.
         var styles = GetComponentInParent<DealbreakUIRuntime>();
         if (styles) styles.RefreshStyles();
+        foreach (var reroll in itemsContainer.GetComponentsInChildren<RerollButtonStyle>()) reroll.LateUpdate();
         Canvas.ForceUpdateCanvases();
-        if (_offersScroll != null)
+        // A purchase keeps the list where it was; a new Black Market or a reroll starts at the top.
+        if (_offersScroll != null && !sameShop)
         {
             _offersScroll.velocity = Vector2.zero;
             _offersScroll.verticalNormalizedPosition = 1f;
         }
     }
 
+    // Rows that persist across rebuilds: closing gaps and the CONTINUE TO MAP button.
+    const string CollapsingRowName = "Collapsing Row";
+    bool IsKeptRow(Transform child) => child.name == CollapsingRowName || continueButton && child == continueButton.transform;
+
     System.Collections.Generic.IEnumerable<Transform> ShopRows() => itemsContainer.Cast<Transform>()
-        .Concat(_servicesContainer != null ? _servicesContainer.Cast<Transform>() : System.Array.Empty<Transform>()).ToArray();
+        .Concat(_servicesContainer != null ? _servicesContainer.Cast<Transform>() : System.Array.Empty<Transform>())
+        .Where(child => !IsKeptRow(child)).ToArray();
+
+    readonly struct RowRecord
+    {
+        public readonly string Id;
+        public readonly Transform Container;
+        public readonly int Index;
+        public readonly float Height;
+        public RowRecord(string id, Transform container, int index, float height) { Id = id; Container = container; Index = index; Height = height; }
+    }
+
+    static System.Collections.Generic.IEnumerable<RowRecord> RowSnapshot(Transform container)
+    {
+        if (!container) yield break;
+        int index = 0;
+        foreach (Transform child in container)
+        {
+            if (!child.gameObject.activeSelf) continue;
+            var view = child.GetComponent<ShopOfferUI>();
+            if (view && view.Offer != null)
+                yield return new RowRecord(view.Offer.StableId, container, index, ((RectTransform)child).rect.height);
+            index++;
+        }
+    }
+
+    // (owner, 2026-10-23) A bought row does not vanish at once: an empty gap of its height takes its
+    // place and closes, so the rows under it slide up. Returns whether this is the same Black Market
+    // (some earlier row is still offered), not a fresh one or a reroll.
+    bool CollapseBoughtRows(System.Collections.Generic.List<RowRecord> previous, System.Collections.Generic.IReadOnlyList<ShopOffer> offers)
+    {
+        bool same = false;
+        foreach (var row in previous)
+        {
+            var offer = offers.FirstOrDefault(candidate => candidate.StableId == row.Id);
+            if (offer == null) continue;
+            same |= !offer.purchased;
+            if (!offer.purchased || row.Container == null) continue;
+            var gap = new GameObject(CollapsingRowName, typeof(RectTransform), typeof(LayoutElement));
+            gap.transform.SetParent(row.Container, false);
+            PlaceAtActiveIndex(gap.transform, row.Index);
+            StartCoroutine(CloseGap(gap.GetComponent<LayoutElement>(), row.Height));
+        }
+        return same;
+    }
+
+    static System.Collections.Generic.IEnumerable<(Transform gap, int index)> GapSnapshot(Transform container)
+    {
+        if (!container) yield break;
+        int index = 0;
+        foreach (Transform child in container)
+        {
+            if (!child.gameObject.activeSelf) continue;
+            if (child.name == CollapsingRowName) yield return (child, index);
+            index++;
+        }
+    }
+
+    // Moves the row to the given position among its container's active rows.
+    static void PlaceAtActiveIndex(Transform row, int index)
+    {
+        if (!row || !row.parent) return;
+        int active = 0;
+        foreach (Transform child in row.parent)
+        {
+            if (child == row || !child.gameObject.activeSelf) continue;
+            if (active == index)
+            {
+                // Lands just before that row; moving down, its index drops by one once the row leaves.
+                int target = child.GetSiblingIndex();
+                if (row.GetSiblingIndex() < target) target--;
+                row.SetSiblingIndex(target);
+                return;
+            }
+            active++;
+        }
+        row.SetAsLastSibling();
+    }
+
+    System.Collections.IEnumerator CloseGap(LayoutElement gap, float height)
+    {
+        const float duration = .28f;
+        float elapsed = 0f;
+        while (gap && elapsed < duration)
+        {
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = t * t * (3f - 2f * t);
+            gap.minHeight = gap.preferredHeight = Mathf.Lerp(height, 0f, eased);
+            // A long frame (a big rebuild) must not skip the slide.
+            elapsed += Mathf.Min(Time.unscaledDeltaTime, .1f);
+            yield return null;
+        }
+        if (gap) Destroy(gap.gameObject);
+    }
+
+    // (owner, 2026-10-23) CONTINUE TO MAP stands at the foot of the services column.
+    void PlaceContinueUnderServices()
+    {
+        if (!storeComposition || !continueButton || !_servicesContainer) return;
+        if (continueButton.transform is not RectTransform button) return;
+        if (button.parent != _servicesContainer) button.SetParent(_servicesContainer, false);
+        button.SetAsLastSibling();
+        var layout = button.GetComponent<LayoutElement>();
+        if (!layout) layout = button.gameObject.AddComponent<LayoutElement>();
+        layout.minHeight = layout.preferredHeight = 52;
+        layout.flexibleWidth = 1;
+    }
 
     void AddSectionHeading(string title, Transform container)
     {
@@ -499,7 +618,7 @@ public class ShopUI : MonoBehaviour
         bool investmentSelected = selectedOffer != null && selectedOffer.kind == ShopOfferKind.Investment;
         if (_investmentStakeInput)
         {
-            _investmentStakeInput.gameObject.SetActive(investmentSelected || supplySelected);
+            _investmentStakeInput.gameObject.SetActive(!storeComposition && (investmentSelected || supplySelected));
             if (_investmentStakeInput.placeholder is TMP_Text placeholder)
                 placeholder.text = supplySelected ? "Card quantity" : "Stake (Credits)";
             if (_selectedOfferRect != null)
@@ -523,7 +642,7 @@ public class ShopUI : MonoBehaviour
                 _investmentStakeInput.SetTextWithoutNotify(selectedOffer.investmentStake > 0 ? selectedOffer.investmentStake.ToString() : string.Empty);
             }
         }
-        SetQuantityControlsActive(investmentSelected || supplySelected);
+        SetQuantityControlsActive(!storeComposition && (investmentSelected || supplySelected));
         RefreshQuantityControls();
         foreach (Transform child in ShopRows())
         {

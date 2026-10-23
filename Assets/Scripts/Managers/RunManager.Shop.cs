@@ -369,8 +369,11 @@ public partial class RunManager
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (DevModeRuntime.UnlimitedShopOffers)
         {
+            // Dev mode stocks everything: every Gear (Legendary too), every Trick and every service.
             PrepareAllDevShopOffers(cards);
-            AddSpecialShopOffers(unchecked(_activeNode.mapIndex * 397 ^ _activeNode.id));
+            foreach (var service in new[] { ShopOfferKind.Guidance, ShopOfferKind.Contract,
+                         ShopOfferKind.Investment, ShopOfferKind.Supply })
+                _activeShopOffers.Add(ServiceOffer(service));
             return;
         }
 #endif

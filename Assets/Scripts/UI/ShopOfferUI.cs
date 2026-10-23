@@ -11,12 +11,12 @@ using UnityEngine.EventSystems;
 /// </summary>
 public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExitHandler,ISelectHandler,IDeselectHandler
 {
-    // (owner, 2026-10-23) Tiles are one compact row: art, name, price button side by side.
-    const float RowHeight = 76f;
-    const float IconSize = 56f;
+    // (owner, 2026-10-23) A narrow tile: big art on the left; beside it the name, and under the
+    // name the price button with any status to its right.
+    const float IconSize = 76f;
     const float IconInset = 10f;
-    const float ButtonWidth = .34f;
-    const float TitleBottom = 50f;
+    const float NameTop = 6f, NameHeight = 44f;
+    const float ButtonTop = 52f, ButtonHeight = 38f, ButtonWidth = 150f;
     /// <summary>Height of the Supply/Stake quantity row, under the tile's main row.</summary>
     public const float QuantityRowHeight = 48f;
     public static float QuantityRowBottom => 8f;
@@ -83,14 +83,14 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         if(!_quantityRow)
         {
             _quantityRow=DealbreakUIStyle.Child(transform,"QuantityRow");
-            minimumButton=QuantityButton("Minimum Quantity","MIN",int.MinValue/2);
+            minimumButton=QuantityButton("Quantity Lowest","MIN",int.MinValue/2);
             decreaseButton=QuantityButton("Decrease Quantity","−",-1);
             var value=DealbreakUIStyle.Child(_quantityRow,"Quantity",typeof(TextMeshProUGUI));
             quantityLabel=value.GetComponent<TMP_Text>();
             quantityLabel.alignment=TextAlignmentOptions.Center;
             quantityLabel.raycastTarget=false;
             increaseButton=QuantityButton("Increase Quantity","+",1);
-            maximumButton=QuantityButton("Maximum Quantity","MAX",int.MaxValue/2);
+            maximumButton=QuantityButton("Quantity Highest","MAX",int.MaxValue/2);
         }
         _quantityRow.gameObject.SetActive(true);
         var theme=DealbreakUIStyle.Theme;
@@ -104,6 +104,8 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         var text=DealbreakUIStyle.Child(control,"Label",typeof(TextMeshProUGUI));DealbreakUIStyle.Place(text,0,0,1,1);
         var tmp=text.GetComponent<TMP_Text>();tmp.text=label;tmp.alignment=TextAlignmentOptions.Center;tmp.raycastTarget=false;
         button.onClick.AddListener(()=>_adjustQuantity?.Invoke(delta));
+        // MIN and MAX are boxed buttons like − and +: their names avoid "min"/"max", which the
+        // shared style pass reads as bare-text buttons.
         DealbreakUIStyle.Button(button,EditorialButton.Role.Secondary);
         if(label.Length>1)tmp.fontSize=16;
         return button;
@@ -125,28 +127,25 @@ public sealed class ShopOfferUI : MonoBehaviour,IPointerEnterHandler,IPointerExi
         _selected=selected;
         if(Offer==null||!statusLabel)return;
         bool hasIcon=ItemIconUI.Shown(transform)!=null;
-        float textLeft=hasIcon?IconInset+IconSize+12:16;
-        float rowWidth=Mathf.Max(240,((RectTransform)transform.parent).rect.width);
-        float textWidth=Mathf.Max(120,rowWidth*(1-ButtonWidth)-textLeft-16);
+        float textLeft=hasIcon?IconInset+IconSize+14:16;
+        float rowWidth=Mathf.Max(200,((RectTransform)transform.parent).rect.width);
+        float statusLeft=textLeft+ButtonWidth+10;
+        float statusWidth=Mathf.Max(80,rowWidth-statusLeft-12);
         bool hasStatus=!string.IsNullOrEmpty(statusLabel.text);
-        float statusHeight=hasStatus?statusLabel.GetPreferredValues(statusLabel.text,textWidth,0).y+4:0;
-        float mainHeight=Mathf.Max(RowHeight,TitleBottom+statusHeight+10);
+        float statusHeight=hasStatus?statusLabel.GetPreferredValues(statusLabel.text,statusWidth,0).y+4:0;
+        float mainHeight=Mathf.Max(hasIcon?IconSize+IconInset*2:0,ButtonTop+Mathf.Max(ButtonHeight,statusHeight)+10);
         float quantity=HasQuantityControls?QuantityRowHeight:0;
         var layout=GetComponent<LayoutElement>();if(!layout)layout=gameObject.AddComponent<LayoutElement>();layout.minHeight=layout.preferredHeight=mainHeight+quantity;
-        // Name and status beside the art; the status sits right under the name.
-        var title=titleLabel.rectTransform;title.anchorMin=new Vector2(0,1);title.anchorMax=new Vector2(1-ButtonWidth,1);
         // The title box must fit a full line: TMP's ellipsis drops a line that overflows vertically.
-        // Alone, the name centres on the row; with a status line it moves up to make room.
-        float titleTop=hasStatus?6:(mainHeight-(TitleBottom-6))*.5f;
-        title.offsetMin=new Vector2(textLeft,-titleTop-(TitleBottom-6));title.offsetMax=new Vector2(-12,-titleTop);
-        var status=statusLabel.rectTransform;status.anchorMin=new Vector2(0,1);status.anchorMax=new Vector2(1-ButtonWidth,1);status.pivot=new Vector2(.5f,1);
-        status.offsetMin=new Vector2(textLeft,-TitleBottom-statusHeight);status.offsetMax=new Vector2(-12,-TitleBottom);
-        statusLabel.gameObject.SetActive(hasStatus);
-        // The price button stands in the main row, right side, vertically centred on it.
+        var title=titleLabel.rectTransform;title.anchorMin=new Vector2(0,1);title.anchorMax=new Vector2(1,1);title.pivot=new Vector2(.5f,1);
+        title.offsetMin=new Vector2(textLeft,-NameTop-NameHeight);title.offsetMax=new Vector2(-12,-NameTop);
+        var buy=(RectTransform)purchaseButton.transform;buy.anchorMin=buy.anchorMax=new Vector2(0,1);buy.pivot=new Vector2(0,1);
+        buy.sizeDelta=new Vector2(ButtonWidth,ButtonHeight);buy.anchoredPosition=new Vector2(textLeft,-ButtonTop);
         purchaseButton.gameObject.SetActive(true);
-        var buy=(RectTransform)purchaseButton.transform;buy.anchorMin=new Vector2(1-ButtonWidth,1);buy.anchorMax=new Vector2(.97f,1);
-        buy.pivot=new Vector2(.5f,.5f);
-        buy.offsetMin=new Vector2(4,-mainHeight*.5f-23);buy.offsetMax=new Vector2(0,-mainHeight*.5f+23);
+        var status=statusLabel.rectTransform;status.anchorMin=status.anchorMax=new Vector2(0,1);status.pivot=new Vector2(0,1);
+        status.sizeDelta=new Vector2(statusWidth,Mathf.Max(ButtonHeight,statusHeight));status.anchoredPosition=new Vector2(statusLeft,-ButtonTop);
+        statusLabel.alignment=TextAlignmentOptions.MidlineLeft;
+        statusLabel.gameObject.SetActive(hasStatus);
         if(HasQuantityControls&&_quantityRow)LayoutQuantityRow(rowWidth);
         RefreshBorder();
     }

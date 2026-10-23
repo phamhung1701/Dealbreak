@@ -117,7 +117,7 @@ public sealed class DevModeTests
         shop.accessible = true;
         _run.OnPathChosen(shop.id);
 
-        int expectedCount = _gears.Length + _enhancements.Length + 2;
+        int expectedCount = _gears.Length + _enhancements.Length + 4; // Every service too.
         Assert.That(_run.GetCurrentShopOffers(), Has.Count.EqualTo(expectedCount));
         CollectionAssert.AllItemsAreUnique(_run.GetCurrentShopOffers().Select(offer => offer.StableId).ToArray());
         Assert.That(_run.GetCurrentShopOffers().Count(offer => offer.kind == ShopOfferKind.Gear),

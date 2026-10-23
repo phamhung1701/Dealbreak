@@ -24,10 +24,13 @@ public sealed class RerollButtonStyle : MonoBehaviour
         LateUpdate();
     }
 
-    void LateUpdate()
+    public void LateUpdate()
     {
         var theme = DealbreakUIStyle.Theme;
         if (!theme || !_button) return;
+        // The style pass re-adds the shared frame and button styler; this button draws itself.
+        foreach (var style in GetComponents<EditorialButton>()) if (style.enabled) style.enabled = false;
+        foreach (var frame in GetComponentsInChildren<EditorialFrame>()) frame.gameObject.SetActive(false);
         bool on = _button.interactable;
         if (_image)
         {

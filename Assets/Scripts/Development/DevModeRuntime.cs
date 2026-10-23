@@ -30,7 +30,8 @@ public static class DevModeRuntime
     }
     public static bool InfiniteHealth => Enabled && PlayerPrefs.GetInt(InfiniteHealthKey, 1) != 0;
     public static bool InfiniteMoney => Enabled && PlayerPrefs.GetInt(InfiniteMoneyKey, 1) != 0;
-    public static bool UnlimitedShopOffers => Enabled && PlayerPrefs.GetInt(UnlimitedShopOffersKey, 1) != 0;
+    // (owner, 2026-10-23) Dev mode always stocks every Gear, Trick and service at a Black Market.
+    public static bool UnlimitedShopOffers => Enabled;
 
     public static void Configure(bool enabled, bool infiniteHealth, bool infiniteMoney, bool unlimitedShopOffers)
     {

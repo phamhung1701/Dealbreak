@@ -100,7 +100,7 @@ public sealed class DevModeWindow : EditorWindow
         EditorGUILayout.LabelField("Dev rules", EditorStyles.boldLabel);
         _infiniteHealth = EditorGUILayout.ToggleLeft("Infinite health (combat and event costs)", _infiniteHealth);
         _infiniteMoney = EditorGUILayout.ToggleLeft("Infinite Credits (purchases and Incident costs)", _infiniteMoney);
-        _unlimitedShopOffers = EditorGUILayout.ToggleLeft("Show all catalog items at Black Markets", _unlimitedShopOffers);
+        EditorGUILayout.LabelField("Black Markets stock every Gear, Trick and service.");
         EditorGUILayout.HelpBox("The normal five-Persistent-Gear capacity and all purchase/target validation remain enabled.",
             MessageType.None);
 
