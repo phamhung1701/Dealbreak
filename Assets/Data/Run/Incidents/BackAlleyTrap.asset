@@ -23,12 +23,12 @@ MonoBehaviour:
     interaction: 3
     requiredDiscardValue: 6
   - label: Make a Run for It
-    description: -3 HP, -5 Credits
+    description: -3 HP, lose up to 5 Credits
     effects:
     - type: 3
       amount: 3
       consumableId: 
-    - type: 1
+    - type: 9
       amount: 5
       consumableId: 
     interaction: 0

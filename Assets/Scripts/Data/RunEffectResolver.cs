@@ -37,6 +37,9 @@ public static class RunEffectResolver
                         return $"Need {effect.amount} Credits (have {simulatedCredits} Credits)";
                     if (!infiniteCredits) simulatedCredits -= effect.amount;
                     break;
+                case RunEffectType.LoseCreditsUpTo:
+                    if (!infiniteCredits) simulatedCredits -= Math.Min(simulatedCredits, effect.amount);
+                    break;
                 case RunEffectType.Heal:
                     if (!infiniteHealth) simulatedHealth = Math.Min(simulatedMaxHealth, simulatedHealth + effect.amount);
                     break;
@@ -87,6 +90,9 @@ public static class RunEffectResolver
                     break;
                 case RunEffectType.LoseCredits:
                     cards.SpendCredits(effect.amount);
+                    break;
+                case RunEffectType.LoseCreditsUpTo:
+                    if (!cards.HasInfiniteMoney) cards.SpendCredits(Math.Min(cards.credits, effect.amount));
                     break;
                 case RunEffectType.Heal:
                     combat.HealPlayer(effect.amount);

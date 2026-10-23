@@ -192,6 +192,19 @@ public sealed class LowerEffortEventTests
     }
 
     [Test]
+    public void Ambush_FleeNeverNeedsCredits_ItTakesWhatThePlayerHas()
+    {
+        _cards.credits = 3;
+        OpenEvent(_ambush);
+        Assert.That(_run.GetEventOptionUnavailableReason(1), Is.Empty, "Running is never blocked by Credits.");
+
+        Assert.That(_run.ChooseEventOption(1), Is.True);
+
+        Assert.That(_cards.credits, Is.Zero);
+        Assert.That(_run.ActiveEvent, Is.Null);
+    }
+
+    [Test]
     public void Swamp_CrossingCostsFiveHealthAndMakesTheSeededGearEnhancementOrNothingRoll()
     {
         var gear = AssetDatabase.LoadAssetAtPath<GearData>("Assets/Data/Gear/AceProtocol.asset");

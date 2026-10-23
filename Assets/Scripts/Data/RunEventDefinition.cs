@@ -11,7 +11,9 @@ public enum RunEffectType
     DrawCards,
     RevealMapNode,
     GainConsumable,
-    RandomGearEnhancementOrNothing
+    RandomGearEnhancementOrNothing,
+    // A penalty, not a payment: takes up to `amount` Credits and never blocks the choice.
+    LoseCreditsUpTo
 }
 
 [Serializable]
