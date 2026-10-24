@@ -21,6 +21,30 @@ public sealed class EditorialFrame : MaskableGraphic
 
     public void Refresh() => SetVerticesDirty();
 
+    // Below 1080p the canvas scales under 1, where a 1-unit hairline falls between screen pixels and
+    // edges drop out; a border is drawn at least one screen pixel wide, and redrawn on a resize.
+    float ScreenPixelBorder()
+    {
+        if (border <= 0) return 0;
+        float scale = canvas ? canvas.scaleFactor : 1f;
+        return scale > 0f && scale < 1f ? Mathf.Max(border, 1f / scale) : border;
+    }
+
+    static readonly System.Collections.Generic.HashSet<EditorialFrame> Live = new();
+    static Vector2Int _screen;
+    protected override void OnEnable() { base.OnEnable(); Live.Add(this); }
+    protected override void OnDisable() { Live.Remove(this); base.OnDisable(); }
+
+    [RuntimeInitializeOnLoadMethod]
+    static void WatchScreenSize() { Canvas.willRenderCanvases -= RedrawOnResize; Canvas.willRenderCanvases += RedrawOnResize; }
+    static void RedrawOnResize()
+    {
+        var screen = new Vector2Int(Screen.width, Screen.height);
+        if (screen == _screen) return;
+        _screen = screen;
+        foreach (var frame in Live) if (frame) frame.SetVerticesDirty();
+    }
+
     // The fill prints with the halftone screen; borders and shadows stay solid.
     public override Material defaultMaterial => DealbreakUIStyle.Halftone ? DealbreakUIStyle.Halftone : base.defaultMaterial;
 
@@ -28,7 +52,7 @@ public sealed class EditorialFrame : MaskableGraphic
     {
         vh.Clear(); var bounds = rectTransform.rect;
         if (bounds.width <= 0 || bounds.height <= 0) return;
-        float edge = Mathf.Min(border, Mathf.Min(bounds.width,bounds.height)*.25f);
+        float edge = Mathf.Min(ScreenPixelBorder(), Mathf.Min(bounds.width,bounds.height)*.25f);
         if (showShadow) Fill(vh, Outline(bounds, 0), shadowOffset, shadowColor, bounds, false);
         if (fill.a > 0) Fill(vh, Outline(bounds, edge), Vector2.zero, fill, bounds, true);
         if (edge > 0) Ring(vh, Outline(bounds, 0), Outline(bounds, edge), rim);

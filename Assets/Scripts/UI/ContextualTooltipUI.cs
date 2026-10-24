@@ -49,7 +49,15 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         SlotGroups.RemoveAll(group=>group.All(member=>!member));
         if(slots!=null&&slots.Length>0)SlotGroups.Add(slots);
     }
-    void OnEnable(){Instance=this;Hide();}
+    void OnEnable(){Instance=this;LinkScrollbar();Hide();}
+    // The scrollbar shows only while the detail overflows. An authoring pass once dropped its link,
+    // leaving a fixed handle on every detail; the panel's own scrollbar is linked again here.
+    void LinkScrollbar()
+    {
+        if(!scroll||!panel)return;
+        if(!scroll.verticalScrollbar)scroll.verticalScrollbar=panel.transform.Find("Detail Scrollbar")?.GetComponent<Scrollbar>();
+        if(scroll.verticalScrollbar)scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;
+    }
     void OnDisable(){if(Instance==this)Instance=null;Hide();}
     public void Inspect(MonoBehaviour source){if(!source)return;_source=source;_dismissed=null;_leaveUntil=float.PositiveInfinity;}
     public void Leave(MonoBehaviour source){if(_source==source)_leaveUntil=Time.unscaledTime+.18f;}
@@ -148,11 +156,8 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             int attack=combat?combat.CalculateCardAttackDamage(card):card.AttackValue;
             int block=combat?combat.CalculateCardDefense(card):card.DefenseValue;
             string mod=card.Enhancement?$"\n\nMOD • {ModSignature.Name(card.Enhancement)}\n{ModSignature.Description(card.Enhancement)}":string.Empty;
-            string preview=string.Empty;
-            if(combat&&combat.currentState==GameState.EnemyAttacking&&CardManager.Instance?.SelectedCards.Count>0&&
-               combat.TryPreviewDefense(CardManager.Instance.SelectedCards,out int blocked,out int remaining))
-                preview=$"\n\nBlocks {blocked} pending attacks\nRemaining damage {remaining}";
-            info=new("Card",card.DisplayName,$"ATK {attack}    DEF {block}{mod}{preview}");return true;
+            // The selection's block preview reads on the status line under the enemies, not here.
+            info=new("Card",card.DisplayName,$"ATK {attack}    DEF {block}{mod}");return true;
         }
         if(source.TryGetComponent<EnemyDisplayUI>(out var enemy)&&enemy.DisplayedEnemy!=null&&!enemy.DisplayedEnemy.IsDefeated)
         {
@@ -161,7 +166,10 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             string accent=DealbreakUIStyle.Theme?ColorUtility.ToHtmlStringRGB(DealbreakUIStyle.Theme.brick):"A8453A";
             string traits=data.type.abilities==null?string.Empty:string.Join("\n\n",data.type.abilities.Where(a=>a).Select(a=>$"<b><color=#{accent}>{a.displayName.ToUpperInvariant()}</color></b>\n{a.description}"));
             string reward=data.type.sourceCard?$"\n\nReward • {data.type.sourceCard.DisplayName}":string.Empty;
-            info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,string.Join("\n\n",new[]{$"HP {data.currentHp}/{data.maxHp} • Attack {data.EffectiveAttack}",enemy.DetailGuidance,traits,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part))));return true;
+            // HP and attack already read under the enemy; the detail adds only what the board does not show.
+            string detail=string.Join("\n\n",new[]{enemy.DetailGuidance,traits,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part)));
+            if(string.IsNullOrEmpty(detail))return false;
+            info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,detail);return true;
         }
         if(source.TryGetComponent<GearIconSlotUI>(out var gear)&&gear.Gear)
         {info=new("Gear",gear.Gear.displayName,GearRules.OwnedDescription(CardManager.Instance,gear.Gear,gear.InstanceId));return true;}
@@ -186,8 +194,13 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         bool handCard=view&&view.homeField!=null;
         bool slotDetail=source.GetComponent<GearIconSlotUI>()!=null||
             source is ContextualInfoTrigger&&source.GetComponent<Button>()&&source.name.StartsWith("BackpackSlot");
-        float width=slotDetail?Mathf.Min(340,parent.rect.width*.26f):Mathf.Min(390,parent.rect.width*.38f);
-        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(body.GetPreferredValues(info.Body,width-44,0).y+140,150,460));
+        // A hand card's detail drops its heading (the card face already names the card), so it stays
+        // low enough to clear the enemies and status line above the hand.
+        bool compact=handCard;
+        ShowHeading(!compact);
+        float width=compact?Mathf.Min(320,parent.rect.width*.3f):slotDetail?Mathf.Min(340,parent.rect.width*.26f):Mathf.Min(390,parent.rect.width*.38f);
+        float chrome=compact?CompactChrome:140f,minimum=compact?CompactMinimum:150f;
+        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(body.GetPreferredValues(info.Body,width-44,0).y+chrome,minimum,460));
         rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);rect.sizeDelta=new(width,height);
 
         var anchor=view&&view.visualRoot?view.visualRoot:(RectTransform)source.transform;
@@ -207,6 +220,18 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         chosen.x=Mathf.Clamp(chosen.x,parent.rect.xMin+halfWidth+Gap,parent.rect.xMax-halfWidth-Gap);
         chosen.y=Mathf.Clamp(chosen.y,parent.rect.yMin+halfHeight+Gap,parent.rect.yMax-halfHeight-Gap);
         rect.anchoredPosition=chosen-parent.rect.center;
+    }
+
+    // Compact: 16 above and below the viewport, plus the body's own line padding.
+    const float HeadingTop=102f,CompactTop=16f,CompactChrome=52f,CompactMinimum=80f;
+    void ShowHeading(bool show)
+    {
+        if(title&&title.gameObject.activeSelf!=show)title.gameObject.SetActive(show);
+        var band=panel.transform.Find("DetailTitleBand");if(band&&band.gameObject.activeSelf!=show)band.gameObject.SetActive(show);
+        float top=show?HeadingTop:CompactTop;
+        if(scroll&&scroll.viewport&&!Mathf.Approximately(scroll.viewport.offsetMax.y,-top))scroll.viewport.offsetMax=new Vector2(scroll.viewport.offsetMax.x,-top);
+        if(scroll&&scroll.verticalScrollbar&&scroll.verticalScrollbar.transform is RectTransform bar&&!Mathf.Approximately(bar.offsetMax.y,-top))
+            bar.offsetMax=new Vector2(bar.offsetMax.x,-top);
     }
 
     // The row's horizontal extent with the hovered slot's height: the detail clears the
@@ -262,7 +287,8 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             : center.y-size.y*.5f>=bounds.yMin+Gap&&center.y+size.y*.5f<=bounds.yMax-Gap;
     }
 
-    // Steps past open action panels to their right, and lifts details off the hand unless they describe a hand card.
+    // Steps sideways past open action panels and status lines (to whichever side fits and stays
+    // nearer), and lifts details off the hand unless they describe a hand card.
     Vector2 Avoid(RectTransform parent,Vector2 center,Vector2 size,RectTransform self,bool handCard)
     {
         for(int pass=0;pass<2;pass++)
@@ -270,13 +296,28 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             {
                 var obstacle=Obstacles[i];
                 if(!obstacle){Obstacles.RemoveAt(i);continue;}
-                if(obstacle==self||!obstacle.gameObject.activeInHierarchy)continue;
-                var bounds=BoundsIn(parent,obstacle);
-                if(Overlaps(center,size,bounds))center.x=bounds.xMax+Gap+size.x*.5f;
+                if(obstacle==self||!obstacle.gameObject.activeInHierarchy||!ObstacleBounds(parent,obstacle,out var bounds))continue;
+                if(!Overlaps(center,size,bounds))continue;
+                float right=bounds.xMax+Gap+size.x*.5f,left=bounds.xMin-Gap-size.x*.5f;
+                bool rightFits=right+size.x*.5f<=parent.rect.xMax-Gap,leftFits=left-size.x*.5f>=parent.rect.xMin+Gap;
+                center.x=rightFits&&(!leftFits||right-center.x<=center.x-left)?right:leftFits?left:right;
             }
         if(!handCard&&GetHandBounds(parent,out var hand)&&Overlaps(center,size,hand))
             center.y=hand.yMax+Gap+size.y*.5f;
         return center;
+    }
+
+    // A label obstacle is its printed text, not its (often full-width) rect; hidden ones are skipped.
+    bool ObstacleBounds(RectTransform parent,RectTransform obstacle,out Rect bounds)
+    {
+        bounds=default;
+        foreach(var group in obstacle.GetComponentsInParent<CanvasGroup>())if(group.alpha<=.01f)return false;
+        if(!obstacle.TryGetComponent<TMP_Text>(out var text)){bounds=BoundsIn(parent,obstacle);return true;}
+        if(!text.enabled||text.alpha<=.01f||string.IsNullOrWhiteSpace(text.text))return false;
+        var printed=text.textBounds;if(printed.size.x<=0)return false;
+        Vector2 a=parent.InverseTransformPoint(obstacle.TransformPoint(printed.min)),b=parent.InverseTransformPoint(obstacle.TransformPoint(printed.max));
+        bounds=Rect.MinMaxRect(Mathf.Min(a.x,b.x),Mathf.Min(a.y,b.y),Mathf.Max(a.x,b.x),Mathf.Max(a.y,b.y));
+        return true;
     }
 
     static bool Overlaps(Vector2 center,Vector2 size,Rect other) =>

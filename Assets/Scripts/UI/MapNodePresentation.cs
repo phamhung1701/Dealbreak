@@ -12,7 +12,7 @@ using UnityEngine.UI;
 public sealed class MapNodePresentation : MaskableGraphic
 {
     public MapNodeType kind;
-    public bool unknown,completed,available,scouted;
+    public bool unknown,completed,available,scouted,current;
     bool _focused;
     TMPro.TMP_Text _label;
     float _nextPulse;
@@ -26,7 +26,9 @@ public sealed class MapNodePresentation : MaskableGraphic
         DealbreakUIStyle.Place(rect,0,0,1,1);rect.SetAsFirstSibling();
         if(!rect.GetComponent<CanvasRenderer>())rect.gameObject.AddComponent<CanvasRenderer>();
         var glyph=rect.GetComponent<MapNodePresentation>();glyph.raycastTarget=false;glyph.kind=node.kind;glyph.unknown=obj.GetComponentInChildren<TMPro.TMP_Text>()?.text.Trim()=="?";
-        glyph.completed=node.completed;glyph.available=node.accessible&&!node.completed;glyph.scouted=scouted;glyph.SetVerticesDirty();
+        glyph.completed=node.completed;glyph.available=node.accessible&&!node.completed;glyph.scouted=scouted;
+        // The node the run is in (a fight, Incident or Black Market seen from the MAP view) reads as "you are here".
+        glyph.current=!node.completed&&RunManager.Instance&&RunManager.Instance.ActiveNode==node;glyph.SetVerticesDirty();
         var style=obj.GetComponent<EditorialButton>();if(style)style.enabled=false;
         var image=obj.GetComponent<Image>();if(image)image.color=Color.clear;
         glyph._label=obj.GetComponentInChildren<TMPro.TMP_Text>();
@@ -37,7 +39,7 @@ public sealed class MapNodePresentation : MaskableGraphic
     public override Material defaultMaterial=>DealbreakUIStyle.Halftone?DealbreakUIStyle.Halftone:base.defaultMaterial;
     float LabelMaxSize=>unknown?26:18;
     Color LabelColor=>!DealbreakUIStyle.Theme?Color.white:Color.Lerp(DealbreakUIStyle.Theme.paper,DealbreakUIStyle.Theme.slate,
-        completed?.6f:available||scouted||KnownEnforcer?0f:.35f);
+        completed?.6f:available||scouted||KnownEnforcer||current?0f:.35f);
     // The label sits inside the node, clear of its border and the fight tag's cut corners, and sizes
     // itself to fit. The shared stylers restyle fresh buttons later, so LateUpdate puts it back.
     void StyleLabel()
@@ -59,10 +61,10 @@ public sealed class MapNodePresentation : MaskableGraphic
         var theme=DealbreakUIStyle.Theme;if(!theme)return;
         bool focus=EventSystem.current&&EventSystem.current.currentSelectedGameObject==transform.parent.gameObject;
         // Completed nodes go quiet; a known Enforcer prints in signal red; the frontier and focus in lime.
-        Color edge=focus?theme.ochre:completed?theme.paper:KnownEnforcer?theme.brick:available||scouted?theme.ochre:theme.slate;
-        float thickness=available||KnownEnforcer?3f:completed||scouted?2f:1.5f;
+        Color edge=focus||current?theme.ochre:completed?theme.paper:KnownEnforcer?theme.brick:available||scouted?theme.ochre:theme.slate;
+        float thickness=available||KnownEnforcer||current?3f:completed||scouted?2f:1.5f;
         if(available)edge=Color.Lerp(edge,theme.paper,_pulse*.35f);
-        Color fill=completed?theme.slate:KnownEnforcer?Color.Lerp(theme.charcoal,theme.brick,.28f):
+        Color fill=current?Color.Lerp(theme.charcoal,theme.ochre,.38f):completed?theme.slate:KnownEnforcer?Color.Lerp(theme.charcoal,theme.brick,.28f):
             scouted?Color.Lerp(theme.charcoal,theme.ochre,.16f):theme.charcoal;
         Vector2 half=r.size*.5f;
         if(scouted&&!completed)Ring(vh,r.center,half+Vector2.one*(ScoutRingGap+ScoutRingWidth),ScoutRingWidth,theme.ochre);

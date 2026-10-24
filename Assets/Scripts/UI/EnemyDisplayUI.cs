@@ -121,7 +121,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         var frame=transform.Find("Editorial Frame")?.GetComponent<EditorialFrame>();
         if(frame&&DealbreakUIStyle.Theme)
-        {frame.rim=DealbreakUIStyle.Theme.ochre;frame.border=_enemyTargeting&&_enemyTargetEligible?2:0;frame.Refresh();}
+        {frame.rim=DealbreakUIStyle.Theme.ochre;frame.border=_enemyTargeting&&_enemyTargetEligible||_markedTarget?2:0;frame.Refresh();}
         if (!_enemyTargeting)
         {
             _targetAlpha = 1f;
@@ -201,9 +201,28 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         _flashColor = blocked ? new Color(0.55f, 0.9f, 1f, 1f) : new Color(1f, 0.42f, 0.36f, 1f);
     }
 
+    // The enemy the next attack or block goes to carries a lime ring while two or more stand, so a
+    // click on an enemy visibly picks it (art direction: lime marks selection and valid targets).
+    bool _markedTarget;
+    bool IsMarkedTarget
+    {
+        get
+        {
+            var combat = CombatManager.Instance;
+            var enemy = DisplayedEnemy;
+            if (combat == null || enemy == null || enemy.IsDefeated || !ReferenceEquals(combat.currentEnemy, enemy)) return false;
+            if (combat.currentState is not (GameState.PlayerTurn or GameState.EnemyAttacking)) return false;
+            int standing = 0;
+            foreach (var other in combat.Enemies) if (other != null && !other.IsDefeated) standing++;
+            return standing > 1;
+        }
+    }
+
     void Update()
     {
         if (!Application.isPlaying) return;
+        bool marked = IsMarkedTarget;
+        if (marked != _markedTarget) { _markedTarget = marked; RefreshEnemyTargetPresentation(); }
         float deltaTime = Time.deltaTime;
         if (deltaTime <= 0f) return;
         TickHp(deltaTime);

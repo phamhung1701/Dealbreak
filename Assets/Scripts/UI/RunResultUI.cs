@@ -248,6 +248,11 @@ public class RunResultUI : MonoBehaviour
             : string.Join(", ", cards.ownedGear.Where(value => value != null).Select(value => value.displayName));
         int enhanced = cards != null ? cards.ownedCards.Count(card => card.Enhancement != null) : 0;
         string creditsDisplay = cards == null ? "0" : cards.HasInfiniteMoney ? "∞" : cards.credits.ToString();
+        string character = cards != null && cards.Character ? cards.Character.displayName : null;
+        // Section heads are muted off-white caps: the palette keeps red for danger and lime for selection.
+        var paper = DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.paper : new Color(.93f, .92f, .89f);
+        string head = ColorUtility.ToHtmlStringRGBA(new Color(paper.r, paper.g, paper.b, .55f));
+        string Section(string name) => $"<size=85%><b><color=#{head}>{name}</color></b></size>\n";
 
         if (resultTitleLabel)
         {
@@ -270,9 +275,10 @@ public class RunResultUI : MonoBehaviour
             resultBodyLabel.overflowMode = TextOverflowModes.Overflow;
             resultBodyLabel.text =
                 (_aborted ? "A combat rule error stopped this fight. Main Menu keeps your run: Continue resumes from before the encounter.\n\n" : string.Empty) +
-                $"<size=85%><b><color=#F2B95E>SEED</color></b></size>\n{EscapeRichText(seed)}\n\n" +
-                $"<size=85%><b><color=#F2B95E>PROGRESS</color></b></size>\nDistrict {mapReached}/{totalHeadliners}  ·  Headliners defeated {headlinersDefeated}/{totalHeadliners}\n\n" +
-                $"<size=85%><b><color=#F2B95E>RUN TOTALS</color></b></size>\nCredits  {creditsDisplay}\nGear  {EscapeRichText(gearItems)}\nMods applied  {enhanced}" +
+                Section("SEED") + $"{EscapeRichText(seed)}\n\n" +
+                (character != null ? Section("CHARACTER") + $"{EscapeRichText(character)}\n\n" : string.Empty) +
+                Section("PROGRESS") + $"District {mapReached}/{totalHeadliners}  ·  Headliners defeated {headlinersDefeated}/{totalHeadliners}\n\n" +
+                Section("RUN TOTALS") + $"Credits  {creditsDisplay}\nGear  {EscapeRichText(gearItems)}\nMods applied  {enhanced}" +
                 (victory && !string.IsNullOrEmpty(_lastHeadlinerRewardName)
                     ? $"\nFinal reward  {EscapeRichText(_lastHeadlinerRewardName)}" : string.Empty);
         }

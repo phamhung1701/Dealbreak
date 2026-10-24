@@ -40,7 +40,7 @@ MonoBehaviour:
     interaction: 0
     requiredDiscardValue: 0
   - label: Take a Booster Shot
-    description: Gain one Booster Shot Trick.
+    description: Gain 1 Booster Shot Trick
     effects:
     - type: 7
       amount: 1

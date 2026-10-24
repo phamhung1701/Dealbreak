@@ -28,6 +28,7 @@ public static class DealbreakNeoPunkAuthoring
         EnemyView();
         DealbreakPrintTextureAuthoring.RegenerateUnknownPortrait();
         AssetDatabase.SaveAssets();
+        DealbreakUiQaAuthoring.Apply();
     }
 
     // Enemies stand on the stage: a charcoal portrait window instead of cream, and the placeholder
@@ -43,6 +44,11 @@ public static class DealbreakNeoPunkAuthoring
             {
                 card.fill = Color.clear; card.border = 0; card.showShadow = false; card.showAccent = false;
                 foreach (Transform overlay in frame) overlay.gameObject.SetActive(false);
+                // The frame only draws the lime target ring; it ends just under the HP row so the ring
+                // never crosses the status line beneath the enemies.
+                var ring = (RectTransform)frame;
+                ring.anchorMin = new Vector2(0, .085f); ring.anchorMax = Vector2.one;
+                ring.offsetMin = ring.offsetMax = Vector2.zero;
             }
             var window = enemy.transform.Find("PortraitWindow");
             if (window && window.TryGetComponent<Image>(out var windowImage)) windowImage.color = Charcoal;
@@ -65,17 +71,17 @@ public static class DealbreakNeoPunkAuthoring
                 rect.offsetMin = new Vector2(16, 14); rect.offsetMax = new Vector2(-16, -14);
             }
             // (owner, 2026-10-23) A bigger HP meter: wider and in larger type, ATTACK beside it. The meter
-            // stops at .55 so "ATTACK  n" has room; ATTACK shrinks to fit (DealbreakUIStyle) rather than
-            // run under the meter.
+            // stops at .53 and ATTACK starts at .59, so the meter's padding keeps clear of "ATTACK  n";
+            // ATTACK shrinks to fit (DealbreakUIStyle) rather than run under the meter.
             var display = enemy.GetComponent<EnemyDisplayUI>();
             if (display.hpText)
             {
-                DealbreakUIStyle.Place(display.hpText.transform, .05f, .10f, .55f, .19f);
+                DealbreakUIStyle.Place(display.hpText.transform, .05f, .10f, .53f, .19f);
                 display.hpText.fontSize = 24;
             }
             if (display.atkText)
             {
-                DealbreakUIStyle.Place(display.atkText.transform, .57f, .10f, .97f, .19f);
+                DealbreakUIStyle.Place(display.atkText.transform, .59f, .10f, .97f, .19f);
                 display.atkText.alignment = TMPro.TextAlignmentOptions.MidlineRight;
                 display.atkText.fontSize = 22;
                 display.atkText.enableAutoSizing = true;

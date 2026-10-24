@@ -562,7 +562,8 @@ public class PathScreenUI : MonoBehaviour
         rect.anchorMin = new Vector2(1f, 1f);
         rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(1f, 1f);
-        rect.anchoredPosition = new Vector2(-24f, -100f);
+        // Under the header rows: a sixth Trick slot (Cargo Case and Nova) reaches this corner.
+        rect.anchoredPosition = new Vector2(-24f, -134f);
         rect.sizeDelta = new Vector2(150f, 42f);
 
         var image = control.GetComponent<Image>();

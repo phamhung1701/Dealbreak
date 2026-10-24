@@ -27,7 +27,7 @@ MonoBehaviour:
     interaction: 0
     requiredDiscardValue: 0
   - label: Take the Big Cut
-    description: Pay 15 current HP (must remain alive); gain an eligible Epic Gear.
+    description: Pay 15 current HP (must remain alive); gain an eligible Epic Gear
       Replacement/cancel is resolved before payment.
     effects: []
     interaction: 0

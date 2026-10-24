@@ -8,8 +8,11 @@ public sealed class CreditsUI : MonoBehaviour
     public FrontendMenuNavigator navigator;
     public TMP_Text bodyLabel;
     public Button backButton;
-    [TextArea(6, 14)] public string creditsText =
-        "DEALBREAK\n\nPrototype design and development\n\nBuilt with Unity\n\nInspired by card-based roguelikes and tabletop card combat.";
+    // Every bundled font (each ships its OFL licence) and the painted item and character art pack.
+    public const string DefaultText =
+        "Design & development • Built with Unity\n\nTypography • SIL Open Font License 1.1\nAnton · Barlow Condensed\nSpace Grotesk · IBM Plex Mono\n\n" +
+        "Item and character art • Tricks & Gears painted pack,\nreprinted as halftone cut-outs\n\nInspired by card-based roguelikes\nand tabletop card combat.";
+    [TextArea(6, 14)] public string creditsText = DefaultText;
 
     void OnEnable()
     {

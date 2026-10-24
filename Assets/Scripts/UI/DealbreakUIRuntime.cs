@@ -37,6 +37,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         var enemies=FindFirstObjectByType<EnemyGroupUI>();
         _enemyContainer=enemies?enemies.enemyContainer:null;
         AttachHandCount();
+        MergeStatusLines();
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
         // Credits sit just above the HP panel, so they show wherever it does.
         if(playerState&&actions&&actions.TryGetComponent<RunStatusUI>(out var status))CreditsHudUI.Install(playerState,status.creditsLabel);
@@ -65,6 +66,27 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         foreach(var slot in slots)members.Add((RectTransform)slot.transform);
         InventoryPanelUI.Install("Tricks Panel",area,members.ToArray(),new[]{trickHeading,trickCapacity},theme.brick,theme.paper);
     }
+    // The selection preview and the turn state share one line under the enemies: while cards are
+    // selected their preview stands in for PLAYER TURN or DEFENSE, so it never collides with INCOMING.
+    // Both lines and INCOMING are obstacles a hand card's detail steps around.
+    void MergeStatusLines()
+    {
+        if(!actions||!actions.selectionLabel||!actions.turnStateLabel)return;
+        var line=actions.selectionLabel.rectTransform;var turn=actions.turnStateLabel.rectTransform;
+        line.SetParent(turn.parent,false);
+        line.anchorMin=turn.anchorMin;line.anchorMax=turn.anchorMax;line.pivot=turn.pivot;
+        line.offsetMin=turn.offsetMin;line.offsetMax=turn.offsetMax;
+        actions.selectionLabel.alignment=TextAlignmentOptions.Center;
+        ContextualTooltipUI.RegisterObstacle(line);ContextualTooltipUI.RegisterObstacle(turn);
+        if(actions.pendingDamageLabel)ContextualTooltipUI.RegisterObstacle(actions.pendingDamageLabel.rectTransform);
+    }
+    void ShowOneStatusLine()
+    {
+        if(!actions||!actions.selectionLabel||!actions.turnStateLabel)return;
+        bool preview=actions.selectionLabel.enabled&&!string.IsNullOrWhiteSpace(actions.selectionLabel.text);
+        float alpha=preview?0f:1f;
+        if(!Mathf.Approximately(actions.turnStateLabel.alpha,alpha))actions.turnStateLabel.alpha=alpha;
+    }
     // (owner, 2026-10-23) The hand size rides at the hand's right end, as part of the hand, so it
     // travels with the hand between the board and the compact strip instead of on its own path.
     void AttachHandCount()
@@ -78,6 +100,30 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         handCount.textWrappingMode=TextWrappingModes.NoWrap;
         handCount.fontSize=28;
         handCount.raycastTarget=false;
+    }
+    // The hand frame widens on wide screens while the cards keep their spacing, so the hand size
+    // follows the last card's slot rather than the frame's edge.
+    readonly System.Collections.Generic.List<CardView> _handViews=new();
+    readonly Vector3[] _cardCorners=new Vector3[4];
+    void FollowHandEnd()
+    {
+        if(!handCount||!handFrame||CardManager.Instance==null)return;
+        var holder=CardManager.Instance.handField?CardManager.Instance.handField.cardsHolder:null;
+        float x=14f;
+        if(holder)
+        {
+            holder.GetComponentsInChildren(false,_handViews);
+            float right=float.NegativeInfinity;
+            foreach(var view in _handViews)
+            {
+                if(!view||view.data==null||view.transform.parent!=holder)continue;
+                ((RectTransform)view.transform).GetWorldCorners(_cardCorners);
+                for(int i=0;i<4;i++)right=Mathf.Max(right,handFrame.InverseTransformPoint(_cardCorners[i]).x);
+            }
+            if(!float.IsNegativeInfinity(right))x=Mathf.Min(14f,right-handFrame.rect.xMax+14f);
+        }
+        var count=handCount.rectTransform;
+        if(count.parent==handFrame&&!Mathf.Approximately(count.anchoredPosition.x,x))count.anchoredPosition=new Vector2(x,count.anchoredPosition.y);
     }
     void PositionSortControls()
     {
@@ -140,6 +186,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     {
         if(handCount&&CardManager.Instance!=null)handCount.text=$"<size=55%>HAND</size>\n{CardManager.Instance.HandCount}/{CardManager.Instance.HandCapacity}";
         if(trickCapacity&&CardManager.Instance!=null)trickCapacity.text=$"{CardManager.Instance.BackpackSlotsUsed}/{CardManager.Instance.BackpackCapacity}";
+        ShowOneStatusLine();
+        FollowHandEnd();
         // A drop waiting on the board after a fight also brings the hand up, so Tricks can make room.
         // The board stays up until the last card lands and the last enemy's defeat has played.
         bool presenting=BoardPresentationBusy;

@@ -224,7 +224,7 @@ public static class DealbreakUIOverhaulAuthoring
         foreach(var text in home.GetComponentsInChildren<TMP_Text>(true))if(text.name=="VersionLabel")text.gameObject.SetActive(false);
         var homeImage=home.GetComponent<Image>();if(homeImage){homeImage.color=Color.clear;homeImage.raycastTarget=false;}
         var credits=front.GetComponentInChildren<CreditsUI>(true);
-        if(credits){credits.creditsText="DEALBREAK\n\nDesign & development • Built with Unity\n\nTypography • SIL Open Font License 1.1\nBarlow Condensed\nSpace Grotesk\nIBM Plex Mono\n\nInspired by card-based roguelikes\nand tabletop card combat.";credits.bodyLabel.text=credits.creditsText;credits.bodyLabel.fontSize=20;}
+        if(credits){credits.creditsText=CreditsUI.DefaultText;credits.bodyLabel.text=credits.creditsText;credits.bodyLabel.fontSize=20;}
         var homeCard=home.Find("HomeCard");DealbreakUIStyle.Place(homeCard,.06f,.08f,.94f,.92f);
         var title=home.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(t=>t.name.ToLowerInvariant().Contains("title"));
         if(title){title.text="DEAL\nBREAK";DealbreakUIStyle.Place(title.transform,.08f,.45f,.48f,.91f);DealbreakUIStyle.Text(title,DealbreakUIStyle.Theme.headingFont,105,DealbreakUIStyle.Theme.paper);title.alignment=TextAlignmentOptions.TopLeft;}

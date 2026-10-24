@@ -54,6 +54,7 @@ public static class DealbreakCentralStageAuthoring
         var gear = root.GetComponentInChildren<GearRailUI>(true);
         float gearRight = RowRight(GearSlotsLeft, GearSlots);
         var bar = PlacePx(gear.transform, canvas, GearLabelLeft, RowTop - 6, gearRight + 6, RowBottom + 6);
+        Pin(gear.transform, GearLabelLeft, RowTop - 6, gearRight + 6, RowBottom + 6);
         PlacePx(gear.transform.Find("GearHeader"), bar, GearLabelLeft, RowTop + 14, GearLabelLeft + LabelWidth, RowTop + 52);
         PlacePx(gear.capacityLabel.transform, bar, GearLabelLeft, RowTop + 52, GearLabelLeft + LabelWidth, RowTop + 82);
         if (gear.slotsRoot.parent is RectTransform gearViewport)
@@ -90,9 +91,11 @@ public static class DealbreakCentralStageAuthoring
         var area = PxRect(player, canvas);
         var trickHeading = player.Find("TricksHeading").GetComponent<TMP_Text>();
         PlacePx(trickHeading.transform, area, TrickLabelLeft, RowTop + 14, TrickLabelLeft + LabelWidth, RowTop + 52);
+        Pin(trickHeading.transform, TrickLabelLeft, RowTop + 14, TrickLabelLeft + LabelWidth, RowTop + 52);
         trickHeading.fontSize = 28;
         trickHeading.alignment = TextAlignmentOptions.Left;
         PlacePx(runtime.trickCapacity.transform, area, TrickLabelLeft, RowTop + 52, TrickLabelLeft + LabelWidth, RowTop + 82);
+        Pin(runtime.trickCapacity.transform, TrickLabelLeft, RowTop + 52, TrickLabelLeft + LabelWidth, RowTop + 82);
         runtime.trickCapacity.fontSize = 22;
         runtime.trickCapacity.alignment = TextAlignmentOptions.Left;
         EnsureTrickSlotButtons(actions, TrickSlotButtons);
@@ -101,6 +104,7 @@ public static class DealbreakCentralStageAuthoring
             if (!actions.backpackSlotButtons[i]) continue;
             float left = TrickSlotsLeft + i * (ItemSlot + ItemGap);
             PlacePx(actions.backpackSlotButtons[i].transform, area, left, RowTop, left + ItemSlot, RowBottom);
+            Pin(actions.backpackSlotButtons[i].transform, left, RowTop, left + ItemSlot, RowBottom);
         }
 
         // The run header keeps only the wordmark, the rows above and the pause button. The District
@@ -146,6 +150,16 @@ public static class DealbreakCentralStageAuthoring
     static Rect PxRect(RectTransform r, Rect parent) => new(
         parent.x + r.anchorMin.x * parent.width, parent.y + (1 - r.anchorMax.y) * parent.height,
         (r.anchorMax.x - r.anchorMin.x) * parent.width, (r.anchorMax.y - r.anchorMin.y) * parent.height);
+
+    // The header rows keep these 1080p pixel boxes, measured from the canvas's top centre, at every
+    // aspect ratio (the canvas only grows past 1920×1080), so their slots stay square.
+    static void Pin(Transform t, float left, float top, float right, float bottom)
+    {
+        if (!t) return;
+        if (!t.TryGetComponent<CanvasPin>(out var pin)) pin = t.gameObject.AddComponent<CanvasPin>();
+        pin.SetFromReference(left, top, right, bottom, RefWidth);
+        EditorUtility.SetDirty(pin);
+    }
 
     // Copies the last Trick slot button until there are `count`; the copies are placed with the rest.
     static void EnsureTrickSlotButtons(ActionButtonsUI actions, int count)
@@ -205,7 +219,9 @@ public static class DealbreakCentralStageAuthoring
         runtime.map.laneSpacing = 150;
         DealbreakUIStyle.Place(runtime.map.mapContainer, .035f, .015f, .965f, .83f);
         runtime.map.headerText.fontSize = 34;
-        runtime.incident.titleLabel.fontSize = 42;
+        // An Incident's title reads like the Black Market's: 48 Anton caps.
+        runtime.incident.titleLabel.fontSize = 48;
+        runtime.incident.titleLabel.fontStyle |= TMPro.FontStyles.UpperCase;
         runtime.incident.descriptionLabel.fontSize = 25;
 
         var player = root.transform.Find("PlayerArea");

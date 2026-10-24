@@ -139,12 +139,26 @@ public sealed class GearRailUI : MonoBehaviour
         }
         for (int i = visibleSlotCount; i < _slots.Count; i++)
             _slots[i].gameObject.SetActive(false);
-        // More slots than the row was laid out for (a character's extra Gear slot) shrink to fit it.
-        float size = FittedSlotSize(visibleSlotCount);
-        for (int i = 0; i < visibleSlotCount && i < _slots.Count; i++)
-            ((RectTransform)_slots[i].transform).sizeDelta = new Vector2(size, size);
+        FitSlots();
 
         if (_selectedInstanceId != 0 && (!cards || cards.GetGearInstanceById(_selectedInstanceId) == null)) CloseDetail();
+    }
+
+    // More slots than the row was laid out for (a character's extra Gear slot) shrink to fit it; the
+    // fit is redone when the row's width changes (another window size).
+    float _fittedWidth = -1f;
+    void FitSlots()
+    {
+        int count = 0;
+        foreach (var slot in _slots) if (slot && slot.gameObject.activeSelf) count++;
+        float size = FittedSlotSize(count);
+        foreach (var slot in _slots) if (slot && slot.gameObject.activeSelf) ((RectTransform)slot.transform).sizeDelta = new Vector2(size, size);
+        _fittedWidth = slotsRoot && slotsRoot.parent is RectTransform viewport ? viewport.rect.width : -1f;
+    }
+
+    void LateUpdate()
+    {
+        if (slotsRoot && slotsRoot.parent is RectTransform viewport && !Mathf.Approximately(viewport.rect.width, _fittedWidth)) FitSlots();
     }
 
     float FittedSlotSize(int count)
