@@ -141,9 +141,10 @@ public static class RunMapGenerator
         var presenceRandom = randomContext.CreateStream("map-elite-presence", mapIndex);
         var eliteContentRandom = randomContext.CreateStream("map-elite-content", mapIndex);
         EnemyTypeData[] authoredElites = catalog != null ? catalog.eliteEnemies : null;
+        // Authored Enforcers honour their minMapIndex like every other enemy.
         var eligibleElites = authoredElites == null
             ? new List<EnemyTypeData>()
-            : authoredElites.Where(enemy => enemy != null).ToList();
+            : authoredElites.Where(enemy => enemy != null && mapIndex >= enemy.minMapIndex).ToList();
 
         foreach (var elite in eliteNodes)
         {

@@ -22,6 +22,6 @@ MonoBehaviour:
   portraitSprite: {fileID: 0}
   abilities:
   - {fileID: 11400000, guid: 369b4d2bdcf464c4cbde67dcbb7a94cf, type: 2}
-  minMapIndex: 0
+  minMapIndex: 1
   eligibleAsEliteBase: 1
   allies: []

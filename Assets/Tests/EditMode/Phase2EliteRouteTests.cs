@@ -99,6 +99,41 @@ public sealed class Phase2EliteRouteTests
         }
     }
 
+    [Test]
+    public void AuthoredEnforcersHonourMinMapIndex()
+    {
+        var catalog = ScriptableObject.CreateInstance<RunContentCatalog>();
+        _assets.Add(catalog);
+        var early = CreateEnemy("EarlyEnforcer");
+        var late = CreateEnemy("LateEnforcer");
+        late.minMapIndex = 1;
+        catalog.eliteEnemies = new[] { early, late };
+        for (int mapIndex = 0; mapIndex < 3; mapIndex++)
+        {
+            var selected = new HashSet<string>();
+            for (int seed = 0; seed < 64; seed++)
+                foreach (var node in RunMapGenerator.Generate(new RunRandomContext($"elite-gate-{seed}"), mapIndex, catalog)
+                             .Where(node => node.kind == MapNodeType.Elite))
+                    selected.Add(node.contentId);
+            var expected = mapIndex == 0 ? new[] { early.name } : new[] { early.name, late.name };
+            CollectionAssert.AreEquivalent(expected, selected, $"Map {mapIndex + 1}");
+        }
+    }
+
+    [Test]
+    public void RiotCaptainIsNotADistrictOneEnforcer_AndDistrictOneStillHasEnforcers()
+    {
+        // Owner decision (2026-10-24, bot playtest): the 32 HP Riot Captain killed 6 of 13 District 1 runs.
+        var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/Data/Run/PrototypeRunContent.asset");
+        var selected = new HashSet<string>();
+        for (int seed = 0; seed < 64; seed++)
+            foreach (var node in RunMapGenerator.Generate(new RunRandomContext($"district-one-enforcer-{seed}"), 0, catalog)
+                         .Where(node => node.kind == MapNodeType.Elite))
+                selected.Add(node.contentId);
+        Assert.That(selected, Is.Not.Empty);
+        Assert.That(selected, Does.Not.Contain("RiotCaptain"));
+    }
+
     static void AssertAlternativeForEachElitePredecessor(IReadOnlyList<PathNode> nodes, int mapIndex, string seed)
     {
         var byId = nodes.ToDictionary(node => node.id);
