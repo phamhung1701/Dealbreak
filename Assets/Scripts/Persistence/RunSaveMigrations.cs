@@ -16,6 +16,7 @@ public static class RunSaveMigrations
         [2] = RetireTrainingNodes,
         [3] = FoldDiscardIntoDrawPile,
         [4] = RenameEnemyContentIds,
+        [5] = StartWithoutCharacter,
     };
 
     // A fight node's contentId is its enemy's asset name, and the enemy assets took their workbook
@@ -26,6 +27,13 @@ public static class RunSaveMigrations
         ["Shieldbearer"] = "RiotGuard", ["WarDrummer"] = "HypeMan", ["Duelist"] = "Challenger",
         ["GoblinCaptain"] = "CrewLeader", ["RoyalKnight"] = "RiotCaptain", ["MasterThief"] = "Ghost",
     };
+
+    // v6 saves the run's character. A run saved before then had none: it keeps playing with no
+    // perk (the default look), never a perk it did not start with.
+    static void StartWithoutCharacter(RunSaveData data)
+    {
+        if (data.cards != null) data.cards.character = string.Empty;
+    }
 
     static void RenameEnemyContentIds(RunSaveData data)
     {

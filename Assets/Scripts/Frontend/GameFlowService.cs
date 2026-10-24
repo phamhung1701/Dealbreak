@@ -26,22 +26,22 @@ public sealed class GameFlowService : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    public void StartRun(string seed)
+    public void StartRun(string seed, string characterId = null)
     {
         if (SavePromptUI.IsOpen) return;
         if (SaveGameService.Store.HasActiveFiles)
         {
-            SavePromptUI.AskReplacement(() => StartConfirmedRun(seed));
+            SavePromptUI.AskReplacement(() => StartConfirmedRun(seed, characterId));
             return;
         }
-        StartConfirmedRun(seed);
+        StartConfirmedRun(seed, characterId);
     }
 
-    void StartConfirmedRun(string seed)
+    void StartConfirmedRun(string seed, string characterId)
     {
         if (!SaveGameService.DeleteActiveSave()) { SavePromptUI.ShowError(SaveGameService.LastError); return; }
         DevModeRuntime.Disable();
-        LoadRun(seed);
+        LoadRun(seed, characterId);
     }
 
     public bool ContinueRun()
@@ -68,16 +68,17 @@ public sealed class GameFlowService : MonoBehaviour
         SceneManager.LoadScene(GameSceneName);
     }
 
-    public void StartDevRun(string seed, bool infiniteHealth, bool infiniteMoney, bool unlimitedShopOffers)
+    public void StartDevRun(string seed, bool infiniteHealth, bool infiniteMoney, bool unlimitedShopOffers,
+        string characterId = null)
     {
         DevModeRuntime.Configure(true, infiniteHealth, infiniteMoney, unlimitedShopOffers);
-        LoadRun(seed);
+        LoadRun(seed, characterId);
     }
 
-    void LoadRun(string seed)
+    void LoadRun(string seed, string characterId)
     {
         RestoreGlobalRuntimeState();
-        FrontendLaunchContext.RequestRun(seed);
+        FrontendLaunchContext.RequestRun(seed, characterId);
         LoadingScreenUI.Show();
         SceneManager.LoadScene(GameSceneName);
     }

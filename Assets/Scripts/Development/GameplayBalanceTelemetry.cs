@@ -10,6 +10,8 @@ public sealed class BalanceJournal
     public int schemaVersion = 2;
     public string id = Guid.NewGuid().ToString("N");
     public string seed, unityVersion, gameVersion, startedUtc, endedUtc;
+    // CharacterData.id of the run's character; empty for none.
+    public string character = string.Empty;
     public string outcome = "in_progress";
     public bool truncated, developmentModified, invalid;
     // Continued from a save: resumed reopens the journal; partial means its start was not recorded.
@@ -76,12 +78,14 @@ public static class GameplayBalanceTelemetry
         LastExportPath = null;
     }
 
-    public static void Begin(string seed)
+    public static void Begin(string seed, string character = "")
     {
         Finish("restarted");
         if (!Enabled) { Current = null; return; }
-        Open(NewJournal(seed));
-        Record("run_start");
+        var journal = NewJournal(seed);
+        journal.character = character ?? string.Empty;
+        Open(journal);
+        Record("run_start", journal.character);
         var combat = CombatManager.Instance;
         if (combat != null) Health(combat.player.currentHealth, combat.player.maxHealth);
     }

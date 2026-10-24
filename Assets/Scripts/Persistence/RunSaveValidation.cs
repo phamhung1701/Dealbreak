@@ -4,7 +4,7 @@ using System.Linq;
 
 public static class RunSaveValidation
 {
-    public const int Version = 5;
+    public const int Version = 6;
     public const int ContentVersion = 1;
     public static bool Validate(RunSaveData s, SaveContentCatalog catalog, out string error)
     {
@@ -53,6 +53,7 @@ public static class RunSaveValidation
             Effects(card.effects);
         }
         Require(cards.nextCardId > ids.Max(), "Invalid next card identity.");
+        Require(string.IsNullOrEmpty(cards.character) || c.Character(cards.character) != null, "Unknown character ID.");
         Require(cards.deck != null && cards.hand != null && cards.discard != null, "Missing card zones.");
         var zones = cards.deck.Concat(cards.hand).Concat(cards.discard).ToArray();
         Require(zones.Length == ids.Count && zones.Distinct().Count() == ids.Count && zones.All(ids.Contains), "Card membership duplicated or missing.");

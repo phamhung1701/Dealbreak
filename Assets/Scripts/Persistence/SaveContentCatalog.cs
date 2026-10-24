@@ -12,7 +12,11 @@ public sealed class SaveContentCatalog : ScriptableObject
     public ConsumableData[] consumables = Array.Empty<ConsumableData>();
     public RunContentCatalog runContent;
     public EnemyTypeData[] fallbackEnemies = Array.Empty<EnemyTypeData>();
+    [Tooltip("Playable characters in their character-select order; the first is the default look.")]
+    public CharacterData[] characters = Array.Empty<CharacterData>();
     public static SaveContentCatalog Load() => Resources.Load<SaveContentCatalog>("RunSaveContent");
+    public CharacterData Character(string id) => string.IsNullOrEmpty(id) ? null :
+        characters.FirstOrDefault(x => x != null && x.id == id);
     public GearData Gear(string id) => gearItems.FirstOrDefault(x => x != null && x.id == id);
     public CardEnhancementData Enhancement(string id) => enhancements.FirstOrDefault(x => x != null && x.id == id);
     public ConsumableData Consumable(string id) => consumables.FirstOrDefault(x => x != null && x.id == id);

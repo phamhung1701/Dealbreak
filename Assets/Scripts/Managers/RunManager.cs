@@ -117,7 +117,11 @@ public partial class RunManager : Singleton<RunManager>
         StartRunWithSeed(runSeed);
     }
 
-    public void StartRunWithSeed(string seed)
+    /// <summary>A new run with the current run's character (none before the first run).</summary>
+    public void StartRunWithSeed(string seed) =>
+        StartRunWithSeed(seed, CardManager.Instance != null ? CardManager.Instance.Character : null);
+
+    public void StartRunWithSeed(string seed, CharacterData character)
     {
         if (!HasRequiredConfiguration())
         {
@@ -134,13 +138,17 @@ public partial class RunManager : Singleton<RunManager>
         CombatManager.Instance.ConfigureCriticalRandom(_randomContext.CreateStream("combat-critical"));
         CombatManager.Instance.ConfigureDuelistSuitRandom(_randomContext.CreateStream("duelist-suit"));
         CardManager.Instance.Reset();
+        // Before the deal: the character's hand size sets how many cards the first hand holds.
+        CardManager.Instance.SetCharacter(character);
         ResetRuntimeState();
         CardManager.Instance.ConfigureRandom(_randomContext.CreateStream("cards"));
         CardManager.Instance.BuildDeck();
         CardManager.Instance.DealHand();
         BuildHeadlinerDeck();
         Timing.StartNewRun(CurrentMapIndex);
-        GameplayBalanceTelemetry.Begin(runSeed);
+        ApplyCharacterMaxHealth(character);
+        GameplayBalanceTelemetry.Begin(runSeed, character != null ? character.id : string.Empty);
+        ApplyCharacterStartingItems(character);
         OnRunStarted?.Invoke(runSeed);
         NextCycle();
         SaveGameService.Checkpoint(this, true);

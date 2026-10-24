@@ -68,8 +68,8 @@ public class GameController : MonoBehaviour
         {
             RestoreSavedRun(saved);
         }
-        else if (FrontendLaunchContext.TryConsumeRunSeed(out string seed))
-            RunManager.Instance.StartRunWithSeed(seed);
+        else if (FrontendLaunchContext.TryConsumeRunSeed(out string seed, out string characterId))
+            RunManager.Instance.StartRunWithSeed(seed, SaveContentCatalog.Load()?.Character(characterId));
         else if (!DevModeRuntime.Enabled && SaveGameService.TryRead(out saved, out _))
             RestoreSavedRun(saved);
         else if (!DevModeRuntime.Enabled && SaveGameService.Store.HasActiveFiles)

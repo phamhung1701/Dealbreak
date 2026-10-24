@@ -11,6 +11,7 @@ public sealed class RunSetupUI : MonoBehaviour
     public Button randomSeedButton;
     public Button startButton;
     public Button backButton;
+    public CharacterPickerUI characterPicker;
 
     void OnEnable()
     {
@@ -31,6 +32,7 @@ public sealed class RunSetupUI : MonoBehaviour
     public void Prepare()
     {
         if (seedInput) seedInput.text = string.Empty;
+        if (characterPicker) characterPicker.Refresh();
         RefreshPreview();
     }
 
@@ -44,7 +46,7 @@ public sealed class RunSetupUI : MonoBehaviour
     public void StartRun()
     {
         string seed = ResolveStartSeed(seedInput != null ? seedInput.text : string.Empty);
-        GameFlowService.Instance?.StartRun(seed);
+        GameFlowService.Instance?.StartRun(seed, characterPicker ? characterPicker.SelectedId : null);
     }
 
     public static string ResolveStartSeed(string input) => string.IsNullOrWhiteSpace(input)

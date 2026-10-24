@@ -26,6 +26,17 @@ public sealed class ContentRegistryTests
     }
 
     [Test]
+    public void EveryAuthoredCharacter_IsRegisteredOnceWithAUniqueIdAndAPortrait()
+    {
+        var registry = SaveContentCatalog.Load();
+        CollectionAssert.AreEquivalent(Assets<CharacterData>("Assets/Data/Characters"), registry.characters);
+        Assert.That(registry.characters, Has.Length.EqualTo(6));
+        Assert.That(registry.characters.Select(item => item.id), Is.Unique);
+        Assert.That(registry.characters.All(item => !string.IsNullOrWhiteSpace(item.id) &&
+            !string.IsNullOrWhiteSpace(item.displayName) && item.portrait != null), Is.True);
+    }
+
+    [Test]
     public void EveryMod_HasItsOwnCardLook()
     {
         var mods = SaveContentCatalog.Load().enhancements;

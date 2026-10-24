@@ -59,6 +59,8 @@ using System.Collections.Generic;
 [Serializable] public sealed class CardManagerSaveData
 {
     public int gold, nextCardId;
+    // CharacterData.id; empty for a run without a character (saves before v6).
+    public string character = string.Empty;
     public long artifactIdWatermark;
     public uint random;
     public List<CardSaveData> owned = new();

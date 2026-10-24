@@ -129,3 +129,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4cf02a4bcf7b3ac4aa246a0da053d4eb, type: 2}
   - {fileID: 11400000, guid: d1bd1b5f338bb314187873c9dc5563c8, type: 2}
   - {fileID: 11400000, guid: 190c7f06bbf4153429c9f2f030089994, type: 2}
+  characters:
+  - {fileID: 11400000, guid: d4553a1301f809f40a16d7bb9ed475a0, type: 2}
+  - {fileID: 11400000, guid: 8c1ae5de74399754f91c0a7f53ac94c7, type: 2}
+  - {fileID: 11400000, guid: 558608532cb7bd744874877445ca8f0e, type: 2}
+  - {fileID: 11400000, guid: 0963ab2480476e645954d34951b91e08, type: 2}
+  - {fileID: 11400000, guid: 37b171c1fb73db749b29398e0b2b8c02, type: 2}
+  - {fileID: 11400000, guid: 7da584b26afac574583c03648981b24e, type: 2}

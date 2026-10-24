@@ -48,6 +48,7 @@ public sealed class BalanceIncidentPick
 public sealed class BalanceRunSummary
 {
     public string id, seed, startedUtc, endedUtc, outcome, gameVersion;
+    public string character = string.Empty;
     public bool dev, invalid, partial, truncated;
     public int journalSchema;
     // 1-based; 13 means all 12 Districts were cleared.
@@ -70,7 +71,8 @@ public sealed class BalanceRunSummary
         var summary = new BalanceRunSummary
         {
             id = journal.id, seed = journal.seed, startedUtc = journal.startedUtc, endedUtc = journal.endedUtc,
-            outcome = journal.outcome, gameVersion = journal.gameVersion, dev = journal.developmentModified,
+            outcome = journal.outcome, gameVersion = journal.gameVersion, character = journal.character ?? string.Empty,
+            dev = journal.developmentModified,
             invalid = journal.invalid, partial = journal.partial, truncated = journal.truncated,
             journalSchema = journal.schemaVersion
         };
@@ -311,6 +313,10 @@ public sealed class BalanceStatsReport
 
     static readonly string[] ServiceKinds = { "Guidance", "Contract", "Investment", "Supply" };
 
+    /// <summary>A character id as its name; runs without one read "None".</summary>
+    public static string CharacterName(string id) => string.IsNullOrEmpty(id) ? "None" :
+        SaveContentCatalog.Load()?.Character(id)?.displayName ?? id;
+
     public static string NodeName(string kind) => kind switch
     {
         "Combat" => "Fight",
@@ -475,11 +481,17 @@ public sealed class BalanceStatsReport
         }
         report.Tables.Add(incidents);
 
-        var log = new BalanceTable("Runs", "Started (UTC)", "Seed", "Outcome", "District", "Died to", "Fights", "Minutes",
+        var characters = new BalanceTable("Characters", "Character", "Runs", "Wins", "Win rate", "Avg District reached");
+        foreach (var group in finished.GroupBy(run => run.character ?? string.Empty).OrderBy(group => group.Key, StringComparer.Ordinal))
+            characters.Add(CharacterName(group.Key), group.Count(), group.Count(run => run.Won), Percent(group.Count(run => run.Won), group.Count()),
+                Average(group.Select(run => (double)Math.Min(run.districtReached, RunLength.Districts))));
+        report.Tables.Add(characters);
+
+        var log = new BalanceTable("Runs", "Started (UTC)", "Seed", "Character", "Outcome", "District", "Died to", "Fights", "Minutes",
             "Credits earned", "Gear at end", "Version", "Dev");
         foreach (var run in runs.OrderByDescending(run => run.startedUtc, StringComparer.Ordinal))
             log.Add(run.startedUtc != null && run.startedUtc.Length >= 16 ? run.startedUtc.Substring(0, 16).Replace('T', ' ') : run.startedUtc,
-                run.seed, run.outcome, Math.Min(run.districtReached, RunLength.Districts),
+                run.seed, CharacterName(run.character), run.outcome, Math.Min(run.districtReached, RunLength.Districts),
                 (run.deathEnemies ?? string.Empty).Replace("|", ", "), run.encounters.Count, run.seconds / 60.0,
                 run.creditsEarned,
                 string.Join(", ", run.items.Where(item => item.key.StartsWith("gear:", StringComparison.Ordinal) && item.final > 0)

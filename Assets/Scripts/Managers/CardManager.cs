@@ -55,12 +55,21 @@ public partial class CardManager : Singleton<CardManager>
     public int GetConsumableStackCountAtSlot(int slotIndex) =>
         slotIndex >= 0 && slotIndex < _backpack.Count ? _backpack[slotIndex].Count : 0;
     public int BackpackSlotsUsed => _backpack.Count;
-    public int BackpackCapacity => GearRules.BackpackCapacity(this);
+    /// <summary>The run's character; null for a run without one (the tutorial, older saves).</summary>
+    public CharacterData Character { get; private set; }
+    public void SetCharacter(CharacterData character)
+    {
+        Character = character;
+        OnBuildChanged?.Invoke();
+        OnConsumablesChanged?.Invoke();
+    }
+    public int BackpackCapacity => GearRules.BackpackCapacity(this) + (Character ? Character.trickSlotBonus : 0);
     public int ConsumablesPerSlot => GearRules.ConsumablesPerSlot(this);
     public int DistinctConsumableTypeCount => _backpack.Select(stack => stack.Definition).Distinct().Count();
     public bool IsBackpackFull => _backpack.Count >= BackpackCapacity;
     public int HandCount => _cards.HandCount;
-    public int HandCapacity => GameplayEffectResolver.CalculateHandCapacity(HAND_SIZE, this);
+    public int HandCapacity => GameplayEffectResolver.CalculateHandCapacity(
+        HAND_SIZE + (Character ? Character.handSizeBonus : 0), this);
     public int OverflowCapacity => GearRules.OverflowCapacity(this);
     public bool HasInfiniteMoney
     {
@@ -73,7 +82,7 @@ public partial class CardManager : Singleton<CardManager>
 #endif
         }
     }
-    public int GearCapacity => BASE_GEAR_CAPACITY;
+    public int GearCapacity => BASE_GEAR_CAPACITY + (Character ? Character.gearSlotBonus : 0);
     public int GearSlotsUsed
     {
         get
@@ -1136,6 +1145,7 @@ public partial class CardManager : Singleton<CardManager>
     {
         ClearCardState();
         credits = 0;
+        Character = null;
         gearIds.Clear();
         ownedGear.Clear();
         _orderedGearInstances.Clear();

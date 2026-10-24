@@ -139,8 +139,22 @@ public sealed class GearRailUI : MonoBehaviour
         }
         for (int i = visibleSlotCount; i < _slots.Count; i++)
             _slots[i].gameObject.SetActive(false);
+        // More slots than the row was laid out for (a character's extra Gear slot) shrink to fit it.
+        float size = FittedSlotSize(visibleSlotCount);
+        for (int i = 0; i < visibleSlotCount && i < _slots.Count; i++)
+            ((RectTransform)_slots[i].transform).sizeDelta = new Vector2(size, size);
 
         if (_selectedInstanceId != 0 && (!cards || cards.GetGearInstanceById(_selectedInstanceId) == null)) CloseDetail();
+    }
+
+    float FittedSlotSize(int count)
+    {
+        if (count <= 0 || !slotsRoot || slotsRoot.parent is not RectTransform viewport) return slotSize;
+        float width = viewport.rect.width;
+        if (width <= 0f) return slotSize;
+        var row = slotsRoot.GetComponent<HorizontalLayoutGroup>();
+        float spacing = row ? row.spacing : 0f, padding = row ? row.padding.horizontal : 0f;
+        return Mathf.Min(slotSize, Mathf.Floor((width - padding - spacing * (count - 1)) / count));
     }
 
     GearIconSlotUI CreateSlot()

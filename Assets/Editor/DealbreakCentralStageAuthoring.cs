@@ -42,6 +42,8 @@ public static class DealbreakCentralStageAuthoring
     const float ItemSlot = 100, ItemGap = 10, RowTop = 18, RowBottom = RowTop + ItemSlot;
     const float GearLabelLeft = 382, GearSlotsLeft = 476, GearSlots = 5;
     const float TrickLabelLeft = 1052, TrickSlotsLeft = 1146, LabelWidth = 86;
+    // Cargo Case's five Trick slots plus a character's extra one; unused slots stay hidden.
+    const int TrickSlotButtons = 6;
 
     static float RowRight(float left, float slots) => left + slots * ItemSlot + (slots - 1) * ItemGap;
 
@@ -93,6 +95,7 @@ public static class DealbreakCentralStageAuthoring
         PlacePx(runtime.trickCapacity.transform, area, TrickLabelLeft, RowTop + 52, TrickLabelLeft + LabelWidth, RowTop + 82);
         runtime.trickCapacity.fontSize = 22;
         runtime.trickCapacity.alignment = TextAlignmentOptions.Left;
+        EnsureTrickSlotButtons(actions, TrickSlotButtons);
         for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
         {
             if (!actions.backpackSlotButtons[i]) continue;
@@ -143,6 +146,24 @@ public static class DealbreakCentralStageAuthoring
     static Rect PxRect(RectTransform r, Rect parent) => new(
         parent.x + r.anchorMin.x * parent.width, parent.y + (1 - r.anchorMax.y) * parent.height,
         (r.anchorMax.x - r.anchorMin.x) * parent.width, (r.anchorMax.y - r.anchorMin.y) * parent.height);
+
+    // Copies the last Trick slot button until there are `count`; the copies are placed with the rest.
+    static void EnsureTrickSlotButtons(ActionButtonsUI actions, int count)
+    {
+        var buttons = actions.backpackSlotButtons.ToList();
+        var template = buttons.LastOrDefault(button => button);
+        if (!template) return;
+        while (buttons.Count < count)
+        {
+            var copy = Object.Instantiate(template.gameObject, template.transform.parent);
+            // BackpackSlot5Button -> BackpackSlot6Button
+            copy.name = System.Text.RegularExpressions.Regex.Replace(template.name, @"\d+", (buttons.Count + 1).ToString());
+            copy.transform.SetSiblingIndex(template.transform.GetSiblingIndex() + buttons.Count - actions.backpackSlotButtons.Length + 1);
+            buttons.Add(copy.GetComponent<Button>());
+        }
+        actions.backpackSlotButtons = buttons.ToArray();
+        EditorUtility.SetDirty(actions);
+    }
 
     static void Edit(string path, System.Action<Scene> action)
     {

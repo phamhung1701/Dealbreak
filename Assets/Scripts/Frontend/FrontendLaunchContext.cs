@@ -8,6 +8,7 @@ public static class FrontendLaunchContext
 {
     static RunSaveData _pendingContinue;
     static string _pendingRunSeed;
+    static string _pendingRunCharacter;
     static bool _hasPendingRun;
     static bool _pendingTutorial;
     static MainMenuDestination _pendingMenuDestination;
@@ -15,7 +16,7 @@ public static class FrontendLaunchContext
 
     public static void RequestContinue(RunSaveData data)
     {
-        _pendingRunSeed = null; _hasPendingRun = false; _pendingTutorial = false;
+        _pendingRunSeed = null; _pendingRunCharacter = null; _hasPendingRun = false; _pendingTutorial = false;
         _pendingContinue = data;
     }
 
@@ -25,19 +26,25 @@ public static class FrontendLaunchContext
         return data != null;
     }
 
-    public static void RequestRun(string seed)
+    /// <param name="characterId">The picked <see cref="CharacterData.id"/>; null or empty for none.</param>
+    public static void RequestRun(string seed, string characterId = null)
     {
         _pendingContinue = null;
         _pendingTutorial = false;
         _pendingRunSeed = RunRandomContext.NormalizeSeed(seed);
+        _pendingRunCharacter = characterId;
         _hasPendingRun = true;
     }
 
-    public static bool TryConsumeRunSeed(out string seed)
+    public static bool TryConsumeRunSeed(out string seed) => TryConsumeRunSeed(out seed, out _);
+
+    public static bool TryConsumeRunSeed(out string seed, out string characterId)
     {
         seed = _pendingRunSeed;
+        characterId = _pendingRunCharacter;
         bool hadRequest = _hasPendingRun;
         _pendingRunSeed = null;
+        _pendingRunCharacter = null;
         _hasPendingRun = false;
         return hadRequest;
     }
@@ -46,6 +53,7 @@ public static class FrontendLaunchContext
     {
         _pendingContinue = null;
         _pendingRunSeed = null;
+        _pendingRunCharacter = null;
         _hasPendingRun = false;
         _pendingTutorial = true;
     }
@@ -78,6 +86,7 @@ public static class FrontendLaunchContext
     {
         _pendingContinue = null;
         _pendingRunSeed = null;
+        _pendingRunCharacter = null;
         _hasPendingRun = false;
         _pendingTutorial = false;
         _pendingMenuDestination = MainMenuDestination.Home;

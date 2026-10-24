@@ -130,7 +130,8 @@ public static class DealbreakUIStyle
             if(!Fresh(text))continue;
             // The placeholder portrait name is authored display type (auto-sized Anton); leave it as set.
             if(text.name=="PortraitGlyph"&&text.GetComponentInParent<EnemyDisplayUI>())continue;
-            if(text.GetComponentInParent<CardView>()!=null||text.GetComponentInParent<ShopOfferUI>()!=null)continue;
+            // Cards, Black Market tiles and the character tiles draw their own type.
+            if(text.GetComponentInParent<CardView>()!=null||text.GetComponentInParent<ShopOfferUI>()!=null||text.GetComponentInParent<CharacterPickerUI>()!=null)continue;
             string name=text.name.ToLowerInvariant();
             bool numeric=name.Contains("health")||name.Contains("hp")||name.Contains("credits")||name.Contains("count")||name.Contains("capacity")||name.Contains("damage")||name.Contains("progress");
             bool heading=name.Contains("title")||name.Contains("heading")||name.Contains("header");
@@ -167,7 +168,7 @@ public static class DealbreakUIStyle
         foreach(var button in root.GetComponentsInChildren<Button>(true))
         {
             string name=button.name.ToLowerInvariant();
-            if(name=="blocker"||button.GetComponent<ShopOfferUI>()||!Fresh(button))continue;
+            if(name=="blocker"||button.GetComponent<ShopOfferUI>()||button.GetComponentInParent<CharacterPickerUI>()||!Fresh(button))continue;
             var role=name.Contains("discard")||name.Contains("abandon")||name.Contains("delete")||name.Contains("quit")||name.Contains("replace")?EditorialButton.Role.Destructive:
                 name.Contains("confirm")||name.Contains("buy")||name.Contains("play")||name.Contains("newrun")||name.Contains("start")||name.Contains("apply")||name.StartsWith("use")?EditorialButton.Role.Primary:
                 name.Contains("back")||name.Contains("cancel")||name.Contains("sort")||name.Contains("pass")||name.Contains("pause")||name.Contains("build")?EditorialButton.Role.Quiet:EditorialButton.Role.Secondary;

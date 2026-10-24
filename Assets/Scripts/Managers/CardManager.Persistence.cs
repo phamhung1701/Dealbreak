@@ -9,6 +9,7 @@ public partial class CardManager
         return new CardManagerSaveData
         {
             gold = credits, nextCardId = _nextCardId, random = _cards.CaptureRandomState(),
+            character = Character ? Character.id : string.Empty,
             artifactIdWatermark = GearRuntimeInstance.IdentityWatermark,
             owned = ownedCards.Select(card => card.CaptureSave()).ToList(),
             deck = deck.Select(card => card.Id).ToList(), hand = hand.Select(card => card.Id).ToList(),
@@ -29,6 +30,8 @@ public partial class CardManager
         ClearCardState();
         _enemyTargetHandler = null; _enemyTargetEligibility = null;
         credits = data.gold; _nextCardId = data.nextCardId;
+        // First: the character's slots bound the Gear and Tricks restored below.
+        Character = catalog.Character(data.character);
         gearIds.Clear(); ownedGear.Clear(); _orderedGearInstances.Clear(); _backpack.Clear();
         _consumableUsedThisEncounter = false;
         var restored = data.owned.Select(saved =>
