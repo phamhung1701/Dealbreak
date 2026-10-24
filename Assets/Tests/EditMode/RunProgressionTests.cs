@@ -144,6 +144,44 @@ public sealed class RunProgressionTests
         Assert.That(_runManager.Timing.IsActive, Is.True);
     }
 
+    static void InvokeHeadlinerVictory(RunManager run) =>
+        typeof(RunManager).GetMethod("HandleHeadlinerVictory", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.Invoke(run, null);
+
+    static int ExpectedDistrictClearHeal(int missing) =>
+        (missing * GameBalance.Current.districtClear.healPercentOfMissing + 50) / 100;
+
+    [Test]
+    public void HeadlinerVictory_RestoresTheBalanceShareOfMissingHp_BeforeTheNextDistrict()
+    {
+        _runManager.StartRunWithSeed("DISTRICT-CLEAR-HEAL");
+        _combatManager.ConfigurePlayer(30);
+        _combatManager.TakeRunDamage(17);
+        Assert.That(_combatManager.player.currentHealth, Is.EqualTo(13));
+
+        InvokeHeadlinerVictory(_runManager);
+
+        Assert.That(_runManager.headlinerIndex, Is.EqualTo(1));
+        Assert.That(_combatManager.player.currentHealth, Is.EqualTo(13 + ExpectedDistrictClearHeal(17)));
+        Assert.That(_combatManager.player.currentHealth, Is.LessThanOrEqualTo(_combatManager.player.maxHealth));
+    }
+
+    [Test]
+    public void DistrictClearHeal_LeavesFullHpAlone_AndSkipsTheFinalHeadliner()
+    {
+        _runManager.StartRunWithSeed("DISTRICT-CLEAR-FULL");
+        _combatManager.ConfigurePlayer(30);
+        InvokeHeadlinerVictory(_runManager);
+        Assert.That(_combatManager.player.currentHealth, Is.EqualTo(30));
+
+        // The last Headliner completes the run: there is no next District to heal for.
+        _runManager.headlinerIndex = _runManager.headlinerDeck.Count - 1;
+        _combatManager.TakeRunDamage(10);
+        InvokeHeadlinerVictory(_runManager);
+        Assert.That(_runManager.IsRunCompleted, Is.True);
+        Assert.That(_combatManager.player.currentHealth, Is.EqualTo(20));
+    }
+
     [Test]
     public void MissingEncounterContentRollsBackSelectionWithoutCompletingOrUnlockingNode()
     {

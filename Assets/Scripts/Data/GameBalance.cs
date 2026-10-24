@@ -17,6 +17,7 @@ public sealed class GameBalance : ScriptableObject
     public GearBalance gear = new();
     public EnemyAbilityBalance enemyAbilities = new();
     public RouteBalance route = new();
+    public DistrictClearBalance districtClear = new();
 
     static GameBalance _current;
 
@@ -51,6 +52,13 @@ public sealed class EnforcerBalance
     [Min(100)] public int hpPercent = 150;
     [Min(0)] public int attackBonus = 2;
     [Min(1)] public int creditsMultiplier = 2;
+}
+
+[Serializable]
+public sealed class DistrictClearBalance
+{
+    [Tooltip("Share of the missing HP restored when a Headliner falls and the run moves on to the next District, in percent.")]
+    [Range(0, 100)] public int healPercentOfMissing = 50;
 }
 
 [Serializable]

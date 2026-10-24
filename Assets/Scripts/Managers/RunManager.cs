@@ -743,6 +743,7 @@ public partial class RunManager : Singleton<RunManager>
             return;
         }
 
+        HealAtDistrictClear();
         NextCycle();
     }
 

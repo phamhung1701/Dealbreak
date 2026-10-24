@@ -75,6 +75,23 @@ public partial class RunManager
 
     static T Choose<T>(IRandomSource random, params T[] options) => options[random.NextInt(0, options.Length)];
 
+    /// <summary>
+    /// A cleared District restores part of the missing HP before the next one
+    /// (<c>GameBalance.districtClear</c>, rounded half up). Not combat healing: it consumes no RNG.
+    /// </summary>
+    internal int HealAtDistrictClear()
+    {
+        var combat = CombatManager.Instance;
+        if (combat == null || combat.player == null) return 0;
+        long missing = Math.Max(0, combat.player.maxHealth - combat.player.currentHealth);
+        int percent = GameBalance.Current.districtClear.healPercentOfMissing;
+        int amount = (int)Math.Min(int.MaxValue, (missing * percent + 50) / 100);
+        if (amount <= 0) return 0;
+        int healed = combat.HealPlayer(amount);
+        if (healed > 0) GameplayBalanceTelemetry.Record("district_clear_heal", "", healed);
+        return healed;
+    }
+
     EnemyAbility CreateAbility(EnemyAbilityEffect effect)
     {
         var ability = ScriptableObject.CreateInstance<EnemyAbility>();

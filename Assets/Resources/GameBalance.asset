@@ -141,3 +141,5 @@ MonoBehaviour:
     midBlackMarketAfterColumn: 1
     enforcerDemotedOneIn: 2
     hiddenIncidentOneIn: 2
+  districtClear:
+    healPercentOfMissing: 50
