@@ -34,6 +34,7 @@ Use them for work that would otherwise flood this context; each reads this file 
 - `unity-tester`: runs the regression gate (or a filtered subset) through Locus, handling the abort/soak traps, and returns counts plus failures only. Use it after every gameplay change instead of polling tests inline.
 - `invariant-reviewer`: read-only review of the current diff against the rules, invariants and contracts here and the owner decisions. Use it before committing anything non-trivial.
 - `content-author`: adds or edits Gear, Mods, Tricks, Enemies or Characters from the workbook end to end (asset, registry, balance, authored text, tests).
+- `balance-analyst`: answers balance questions from the recorded run stats (player and bot telemetry) and `GameBalance`, with numbers and sample sizes; recommends, never changes values.
 
 ## Combat invariants
 
