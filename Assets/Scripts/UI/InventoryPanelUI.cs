@@ -61,6 +61,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var blockImage = blockObject.GetComponent<Image>();
         blockImage.color = blockColor;
         blockImage.raycastTarget = false;
+        DealbreakUIStyle.PrintFill(blockImage);
 
         var panel = panelObject.GetComponent<InventoryPanelUI>();
         panel._members = members;

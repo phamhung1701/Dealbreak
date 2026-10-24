@@ -109,6 +109,7 @@ public sealed class CharacterPickerUI : MonoBehaviour
         var fillImage = fill.GetComponent<Image>();
         fillImage.raycastTarget = false;
         if (theme) fillImage.color = theme.charcoal;
+        DealbreakUIStyle.PrintFill(fillImage);
 
         var name = Label(tile, "Name", character.displayName, PortraitSize + 6f, NameHeight,
             theme ? theme.headingFont : null, 32f);

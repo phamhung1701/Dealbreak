@@ -8,6 +8,10 @@ public static class DealbreakUIStyle
     static DealbreakUITheme _theme;
     public static DealbreakUITheme Theme => _theme ? _theme : (_theme=Resources.Load<DealbreakUITheme>("DealbreakUITheme"));
     public static void SetTheme(DealbreakUITheme theme) => _theme=theme;
+    // (owner, 2026-10-24) Fills print with a halftone dot screen like the art; null keeps them flat.
+    public static Material Halftone => Theme?Theme.halftoneMaterial:null;
+    /// <summary>Prints a plain fill <paramref name="image"/> (no sprite) with the halftone screen.</summary>
+    public static void PrintFill(Image image){if(image&&!image.sprite&&Halftone)image.material=Halftone;}
     public static RectTransform Child(Transform parent,string name,params Type[] components)
     {
         var existing=parent.Find(name);if(existing)return (RectTransform)existing;

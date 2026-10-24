@@ -33,6 +33,8 @@ public sealed class MapNodePresentation : MaskableGraphic
         glyph.StyleLabel();
     }
     bool KnownEnforcer=>kind==MapNodeType.Elite&&!unknown;
+    // The tag's fill prints with the halftone screen; its rings stay solid.
+    public override Material defaultMaterial=>DealbreakUIStyle.Halftone?DealbreakUIStyle.Halftone:base.defaultMaterial;
     float LabelMaxSize=>unknown?26:18;
     Color LabelColor=>!DealbreakUIStyle.Theme?Color.white:Color.Lerp(DealbreakUIStyle.Theme.paper,DealbreakUIStyle.Theme.slate,
         completed?.6f:available||scouted||KnownEnforcer?0f:.35f);
@@ -86,15 +88,15 @@ public sealed class MapNodePresentation : MaskableGraphic
     void Fill(VertexHelper vh,Vector2 center,Vector2 half,Color tint)
     {
         var points=Outline(half);
-        int start=vh.currentVertCount;var v=UIVertex.simpleVert;v.color=tint;v.position=center;vh.AddVert(v);
-        foreach(var p in points){v.position=center+Vector2.Scale(p,half);vh.AddVert(v);}
+        int start=vh.currentVertCount;var v=UIVertex.simpleVert;v.color=tint;v.position=center;v.uv0=new(.5f,.5f);vh.AddVert(v);
+        foreach(var p in points){v.position=center+Vector2.Scale(p,half);v.uv0=(p+Vector2.one)*.5f;vh.AddVert(v);}
         for(int i=0;i<points.Length;i++)vh.AddTriangle(start,start+1+i,start+1+(i+1)%points.Length);
     }
     // A band of the given width just inside the outline at these half-extents.
     void Ring(VertexHelper vh,Vector2 center,Vector2 half,float width,Color tint)
     {
         var points=Outline(half);var inner=half-Vector2.one*width;
-        int start=vh.currentVertCount;var v=UIVertex.simpleVert;v.color=tint;
+        int start=vh.currentVertCount;var v=UIVertex.simpleVert;v.color=tint;v.uv0=new(-1,0);
         foreach(var p in points)
         {
             v.position=center+Vector2.Scale(p,half);vh.AddVert(v);

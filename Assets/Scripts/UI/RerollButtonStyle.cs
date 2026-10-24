@@ -36,6 +36,7 @@ public sealed class RerollButtonStyle : MonoBehaviour
         {
             _image.sprite = null;
             _image.color = on ? theme.ochre : theme.slate;
+            DealbreakUIStyle.PrintFill(_image);
         }
         if (_label)
         {

@@ -9,6 +9,8 @@ public sealed class DealbreakUITheme : ScriptableObject
     public TMP_FontAsset labelFont;
     public Texture2D paperTexture, slateTexture, darkTexture, dryAccents, cleanAccents;
     public Material inkAccentMaterial;
+    [Tooltip("UI/Dealbreak Halftone: flat fills printed with a dot screen, like the item and character art.")]
+    public Material halftoneMaterial;
     [Tooltip("The Credits coin beside the HP bar; enemy Credits fly into it.")]
     public Sprite creditsIcon;
     public Color ink = new(0.055f, .065f, .075f);
