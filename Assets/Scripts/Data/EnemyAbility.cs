@@ -25,7 +25,6 @@ public enum EnemyAbilityEffect
 }
 
 [CreateAssetMenu(fileName = "EnemyAbility", menuName = "Game/Enemy Ability")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "EnemyAbility")]
 public class EnemyAbility : ScriptableObject
 {
     public string id;

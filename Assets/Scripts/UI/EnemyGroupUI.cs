@@ -6,7 +6,6 @@ using UnityEngine.UI;
 /// Owns the dynamic enemy presentation for the active encounter.
 /// CombatManager remains authoritative; instantiated views bind to individual runtime enemies.
 /// </summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "EnemyGroupUI")]
 public class EnemyGroupUI : MonoBehaviour
 {
     [Header("Dynamic Enemy Area")]

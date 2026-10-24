@@ -10,7 +10,7 @@ aiEditMode: inherit
 
 ## Scope and disposition
 
-Read open issues from `phamhung1701/Cardpg` on branch `main` (starting commit `5682d54`). Changes are local, uncommitted, and reviewable. No GitHub comments, issue closures, commits, or pushes were made. Existing dirty settings, Plastic metadata, workspace state, recovery scene, and miscellaneous files were not intentionally edited.
+Read open issues from `phamhung1701/Dealbreak` on branch `main` (starting commit `5682d54`). Changes are local, uncommitted, and reviewable. No GitHub comments, issue closures, commits, or pushes were made. Existing dirty settings, Plastic metadata, workspace state, recovery scene, and miscellaneous files were not intentionally edited.
 
 | Issue | Result in this pass |
 | --- | --- |

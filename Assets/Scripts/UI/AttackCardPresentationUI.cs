@@ -6,7 +6,6 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>Disposable UGUI feedback for committed attacks and defense cards; CombatManager owns gameplay results.</summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "AttackCardPresentationUI")]
 public sealed class AttackCardPresentationUI : MonoBehaviour
 {
     public static AttackCardPresentationUI Instance { get; private set; }

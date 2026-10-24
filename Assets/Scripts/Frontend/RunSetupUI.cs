@@ -2,7 +2,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunSetupUI")]
 public sealed class RunSetupUI : MonoBehaviour
 {
     public FrontendMenuNavigator navigator;

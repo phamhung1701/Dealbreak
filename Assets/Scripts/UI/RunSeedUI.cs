@@ -1,7 +1,6 @@
 using TMPro;
 using UnityEngine;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunSeedUI")]
 public class RunSeedUI : MonoBehaviour
 {
     public TMP_Text seedDisplayLabel;

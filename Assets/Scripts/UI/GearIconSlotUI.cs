@@ -5,7 +5,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>One glyph-only Gear slot. The rail supplies its detail action; a click opens it.</summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ArtifactIconSlotUI")]
 public sealed class GearIconSlotUI : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] TMP_Text iconLabel;

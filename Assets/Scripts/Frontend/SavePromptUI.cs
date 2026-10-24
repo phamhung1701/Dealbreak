@@ -5,7 +5,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // Scene-local modal; neither its selection nor callbacks belong in a save.
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "SavePromptUI")]
 public sealed class SavePromptUI : MonoBehaviour
 {
     static SavePromptUI _active;

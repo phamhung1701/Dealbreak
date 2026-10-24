@@ -2,7 +2,6 @@ using UnityEngine;
 
 // Managers and scene references must exist before UI OnEnable subscriptions.
 [DefaultExecutionOrder(-50)]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "GameController")]
 public class GameController : MonoBehaviour
 {
     [Header("References")]

@@ -59,9 +59,9 @@ public sealed class DevModeTests
 
     public void DevMode_ResetSession_ClearsStaleEditorActivationKey()
     {
-        PlayerPrefs.SetInt("CardPG.DevMode.Enabled", 1);
+        PlayerPrefs.SetInt("Dealbreak.DevMode.Enabled", 1);
         DevModeRuntime.ResetSession();
-        Assert.That(PlayerPrefs.GetInt("CardPG.DevMode.Enabled", 1), Is.Zero);
+        Assert.That(PlayerPrefs.GetInt("Dealbreak.DevMode.Enabled", 1), Is.Zero);
         Assert.That(DevModeRuntime.Enabled, Is.False);
     }
 

@@ -1,7 +1,6 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Card", menuName = "Game/Card Data")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "CardData")]
 public class CardData : ScriptableObject
 {
     public enum Suit { Hearts, Diamonds, Clubs, Spades }

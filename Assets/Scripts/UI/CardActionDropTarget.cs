@@ -7,7 +7,6 @@ using UnityEngine.UI;
 /// Presentation-only drop target. It validates and forwards a card intent to CombatManager;
 /// authoritative card and combat mutations remain in the model/managers.
 /// </summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "CardActionDropTarget")]
 public class CardActionDropTarget : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     public EnemyDisplayUI enemyDisplay;

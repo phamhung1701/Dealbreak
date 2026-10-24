@@ -1,7 +1,6 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Enemy", menuName = "Game/Enemy Type")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "EnemyTypeData")]
 public class EnemyTypeData : ScriptableObject
 {
     public string enemyName;

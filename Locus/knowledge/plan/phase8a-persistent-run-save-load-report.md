@@ -58,7 +58,7 @@ No save existed in the production slot before testing. Smoke-test run files were
 
 ### Workspace/tooling status
 
-The workspace moved from `D:/Cardpg/Cardpg` to `D:/Dealbreak/Cardpg` during the task. The implementation was present in the active checkout. Unity temporarily disconnected during import, then reconnected without a forced restart; the final missing-primary and incompatible-file checks ran successfully there.
+The workspace moved from the old project folder to `D:/Dealbreak/Dealbreak` during the task. The implementation was present in the active checkout. Unity temporarily disconnected during import, then reconnected without a forced restart; the final missing-primary and incompatible-file checks ran successfully there.
 
 The last pre-move Console check after the UI fix had **0 errors and 1 unrelated Unity account-service warning**. The post-move Console also reports a project-file-generator sharing violation on generated `.csproj` files. No save/load runtime error was reported by the final storage checks. These tooling issues were not suppressed by modifying gameplay or Locus packages.
 

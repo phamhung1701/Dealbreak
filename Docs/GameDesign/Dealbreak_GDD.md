@@ -2,15 +2,15 @@
 
 > **Internal rename update (2026-10-13):** The runtime assembly is now `Dealbreak.Runtime`; Gear uses `GearData`/`GearRuntimeInstance`, and progression APIs use Headliner. This document is a historical implementation snapshot; see `Docs/Dealbreak_Internal_Rebranding_Report.md` for the current API and compatibility boundary.
 
-> **Current terminology authority:** `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` supersedes this snapshot for player-facing content names, categories, and terminology. Use Dealbreak, Credits, Gear, Mods, Tricks, Black Market, Incident, District, Enforcer, Headliner, and Perfect Block. References below to CardPG-era terms are historical descriptions, not current content definitions; serialized IDs and code identifiers remain unchanged unless separately migrated.
+> **Current terminology authority:** `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` supersedes this snapshot for player-facing content names, categories, and terminology. Use Dealbreak, Credits, Gear, Mods, Tricks, Black Market, Incident, District, Enforcer, Headliner, and Perfect Block. References below to pre-rename terms are historical descriptions, not current content definitions; serialized IDs and code identifiers remain unchanged unless separately migrated.
 
 ## 1. Game Overview
 
 **Genre:** Single-player, turn-based roguelike card battler with run-based deck and build progression.
 
-**Concept:** CardPG turns a familiar playing-card deck into both the player's combat vocabulary and progression track. The player spends cards to attack, defends by committing cards against enemy attacks, and reshapes a run through persistent Artifacts, per-card Enhancements, consumables, events, and route choices. A standard run has twelve major maps, each concluding in a face-card boss: four Jacks, four Queens, then four Kings. Beating a boss adds that exact rank-and-suit card to the run's collection.
+**Concept:** Dealbreak turns a familiar playing-card deck into both the player's combat vocabulary and progression track. The player spends cards to attack, defends by committing cards against enemy attacks, and reshapes a run through persistent Artifacts, per-card Enhancements, consumables, events, and route choices. A standard run has twelve major maps, each concluding in a face-card boss: four Jacks, four Queens, then four Kings. Beating a boss adds that exact rank-and-suit card to the run's collection.
 
-**Inspirations:** Regicide informs the suit-and-rank card combat foundation; Balatro informs the appeal of rule-changing items, synergies, and run-specific builds. CardPG retains its own tactical decisions: cards are also defense resources, attack actions are usually single-card, and long-term progression changes how particular cards or actions behave.
+**Inspirations:** Regicide informs the suit-and-rank card combat foundation; Balatro informs the appeal of rule-changing items, synergies, and run-specific builds. Dealbreak retains its own tactical decisions: cards are also defense resources, attack actions are usually single-card, and long-term progression changes how particular cards or actions behave.
 
 **Player experience goal:** Make each card commitment consequential. The player weighs immediate damage against future hand value, then uses route and reward choices to form a build from limited resources. Seeded runs support repeatable attempts and debugging; they do not prove balance or replay value.
 
@@ -140,7 +140,7 @@ Presentation remains a UI prototype with placeholder enemy portraits and tempora
 
 ## 10. Design Rationale
 
-CardPG's defining overlap is combat and resource management: playing a card can prevent damage now but removes that attack from the current hand; attacking leaves other cards available for defense. Persistent HP links encounters, while Recover provides a bounded response to an empty hand rather than a free reset.
+Dealbreak's defining overlap is combat and resource management: playing a card can prevent damage now but removes that attack from the current hand; attacking leaves other cards available for defense. Persistent HP links encounters, while Recover provides a bounded response to an empty hand rather than a free reset.
 
 Single-card combat keeps card identity, attack value, and suit builds easy to evaluate. Ace Pairing adds a high-variance exception while keeping ordinary selection constrained. Artifacts and Enhancements extend strategy across the run: one changes rules or resource economy; the other invests in a specific card. Routes determine which risks and rewards are pursued, while deterministic seeds support reproducible iteration.
 
@@ -148,4 +148,4 @@ These are observable design properties, not inferred developer motivations. The 
 
 ---
 
-**Research boundary:** Sources reviewed include current code and tests under `Assets/Scripts/`, `Assets/Data/`, and `Assets/Tests/`; `DEALBREAK_DEVELOPMENT.md`; `AGENTS.md`; `CardPG_GameData_organized.xlsx`; and dated implementation trackers in `Locus/knowledge/plan/`. The workbook contains a mixture of implemented, pending-acceptance, draft, and blank rows. Runtime evidence takes precedence for present gameplay.
+**Research boundary:** Sources reviewed include current code and tests under `Assets/Scripts/`, `Assets/Data/`, and `Assets/Tests/`; `DEALBREAK_DEVELOPMENT.md`; `AGENTS.md`; `the old game-data workbook (removed 2026-10-25)`; and dated implementation trackers in `Locus/knowledge/plan/`. The workbook contains a mixture of implemented, pending-acceptance, draft, and blank rows. Runtime evidence takes precedence for present gameplay.

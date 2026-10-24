@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Dealbreak/Save Content Catalog")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "SaveContentCatalog")]
 public sealed class SaveContentCatalog : ScriptableObject
 {
     [UnityEngine.Serialization.FormerlySerializedAs("artifacts")]

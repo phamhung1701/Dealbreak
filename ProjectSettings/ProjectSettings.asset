@@ -621,14 +621,14 @@ PlayerSettings:
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: Cardpg
+  metroPackageName: Dealbreak
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: Cardpg
+  metroApplicationDescription: Dealbreak
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -702,7 +702,7 @@ PlayerSettings:
   cloudProjectId: 28a37910-4f65-47a7-8b11-fe416ac264a8
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Cardpg
+  projectName: Dealbreak
   organizationId: phamhung1701
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

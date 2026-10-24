@@ -102,7 +102,7 @@ public sealed class Phase7FrontendTests
 
         string first = RunSetupUI.ResolveStartSeed(setup.seedInput.text);
         string second = RunSetupUI.ResolveStartSeed("   ");
-        Assert.That(first, Is.Not.Empty.And.Not.EqualTo("CARDPG"));
+        Assert.That(first, Is.Not.Empty.And.Not.EqualTo("DEALBREAK"));
         Assert.That(second, Is.Not.Empty.And.Not.EqualTo(first));
         Assert.That(setup.seedInput.text, Is.Empty, "Generated seeds must not turn into sticky custom input.");
     }

@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>Presentation order and layout targets only; CardCollection owns every card zone.</summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "Field")]
 public class Field : MonoBehaviour
 {
     [Header("References")]

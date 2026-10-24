@@ -4,7 +4,7 @@ injectMode: inherit
 aiEditMode: inherit
 ---
 
-# CardPG Phase 0 — baseline and implementation handoff
+# Dealbreak Phase 0 — baseline and implementation handoff
 
 ## Status and scope
 
@@ -12,7 +12,7 @@ Phase 0 completed: local recovery point verified, current scene/data configurati
 
 ## Recovery baseline
 
-- Local Git baseline commit: `2f68b705b57bb61ddcb3ac7091a7a4db0124924a` (`chore: capture CardPG prototype before phase 1`).
+- Local Git baseline commit: `2f68b705b57bb61ddcb3ac7091a7a4db0124924a` (`chore: capture Dealbreak prototype before phase 1`).
 - Captures 349 previously untracked files: Assets (including .meta files), Packages (including the embedded Locus package), ProjectSettings, .vsconfig, existing Unity setup/recreation guides, and ignore.conf. Existing .gitignore/.gitattributes remain unchanged.
 - Excludes Unity-generated caches, local Plastic workspace metadata (.plastic), and Locus session/workspace data. These excluded paths were not deleted or altered.
 - Git LFS integrity verified: `git lfs fsck` passed. No differences or untracked files remained under Assets, Packages, or ProjectSettings immediately after capture.

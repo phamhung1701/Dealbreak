@@ -1,7 +1,6 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "CardEnhancement", menuName = "Game/Mod Data")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "CardEnhancementData")]
 public sealed class CardEnhancementData : ScriptableObject
 {
     public string id;

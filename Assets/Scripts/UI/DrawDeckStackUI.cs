@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>Visual-only indicator for the remaining draw deck. The button's click behavior belongs to DeckViewerUI.</summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "DrawDeckStackUI")]
 public sealed class DrawDeckStackUI : MonoBehaviour
 {
     [Header("References")]

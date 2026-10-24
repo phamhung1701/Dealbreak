@@ -4,7 +4,7 @@ injectMode: inherit
 aiEditMode: inherit
 ---
 
-# CardPG Phase 1 — completion report
+# Dealbreak Phase 1 — completion report
 
 ## Scope completed
 

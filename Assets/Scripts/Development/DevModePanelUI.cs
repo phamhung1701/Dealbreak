@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>Build-gated runtime UI for entering and managing developer runs.</summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "DevModePanelUI")]
 public sealed class DevModePanelUI : MonoBehaviour
 {
     static readonly Color PanelColor = new(0.055f, 0.075f, 0.11f, 0.98f);

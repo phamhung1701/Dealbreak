@@ -6,7 +6,7 @@ injectAgents:
 aiEditMode: inherit
 ---
 
-# CardPG shared gameplay-effect architecture
+# Dealbreak shared gameplay-effect architecture
 
 Implemented September 25–26, 2026 for the canonical Artifact/Enhancement content migration and careful incremental expansion. This document describes the code that exists now, its deterministic contracts, and deliberate v1 limits. Add content one verified increment at a time; the draft workbook alone does not establish implementation or permission to bypass regression gates.
 

@@ -70,7 +70,6 @@ public static class SaveGameService
 }
 
 // Runs after synchronous gameplay commands. Never saves combat, resolver work or unfinished prompts.
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunSaveAutosave")]
 public sealed class RunSaveAutosave : MonoBehaviour
 {
     // A snapshot is captured only after gameplay reports a change, plus a slow fallback poll,

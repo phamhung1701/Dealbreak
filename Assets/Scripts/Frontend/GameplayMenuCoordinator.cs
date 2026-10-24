@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "GameplayMenuCoordinator")]
 public sealed class GameplayMenuCoordinator : MonoBehaviour
 {
     sealed class Layer

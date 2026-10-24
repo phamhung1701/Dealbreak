@@ -5,7 +5,6 @@ using UnityEngine.EventSystems;
 /// Pointer drag for a Trick slot: the Trick is dragged like a card onto a hand card, an enemy,
 /// the HP bar, the Black Market (to sell) or another Trick slot (see <see cref="ItemDragUI"/>).
 /// </summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ConsumableSlotDragUI")]
 public sealed class ConsumableSlotDragUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     int _slotIndex;

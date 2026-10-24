@@ -12,7 +12,7 @@ public sealed class CardCollection
     readonly List<CardInstance> _deck = new();
     readonly List<CardInstance> _hand = new();
     readonly List<CardInstance> _discardPile = new();
-    IRandomSource _random = new DeterministicRandom(RunRandomContext.StableHash("CARDPG_DEFAULT_CARDS"));
+    IRandomSource _random = new DeterministicRandom(RunRandomContext.StableHash("DEALBREAK_DEFAULT_CARDS"));
 
     public IReadOnlyList<CardInstance> OwnedCards => _ownedCards;
     public IReadOnlyList<CardInstance> Deck => _deck;

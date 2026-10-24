@@ -71,7 +71,7 @@ public sealed class RunRandomContext
     public static string NormalizeSeed(string value)
     {
         string normalized = value?.Trim();
-        return string.IsNullOrEmpty(normalized) ? "CARDPG" : normalized;
+        return string.IsNullOrEmpty(normalized) ? "DEALBREAK" : normalized;
     }
 
     public static int StableHash(string value)

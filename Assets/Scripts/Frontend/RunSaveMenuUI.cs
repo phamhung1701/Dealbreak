@@ -2,7 +2,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunSaveMenuUI")]
 public sealed class RunSaveMenuUI : MonoBehaviour
 {
     public Button ContinueButton { get; private set; }

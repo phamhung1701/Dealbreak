@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "PauseMenuUI")]
 public sealed class PauseMenuUI : MonoBehaviour
 {
     public GameplayMenuCoordinator coordinator;

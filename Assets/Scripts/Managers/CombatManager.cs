@@ -5,7 +5,6 @@ using UnityEngine;
 
 public enum GameState { Idle, PlayerTurn, EnemyAttacking, GameOver, GameWon }
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "CombatManager")]
 public partial class CombatManager : Singleton<CombatManager>
 {
     [Header("Critical Hits")]

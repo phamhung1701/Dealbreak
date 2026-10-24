@@ -59,8 +59,8 @@ To make a Windows test build, select **File → Build Profiles → Windows → B
 
 - `DEALBREAK_DEVELOPMENT.md` is the historical implementation and design handoff. `Docs/Dealbreak_Internal_Rebranding_Report.md` records current internal names and preserved serialization/save contracts.
 - `Locus/knowledge/plan/combat-shop-economy-rebalance-report.md` records combat, mandatory Black Market, Service, Supply and Goods Refresh implementation decisions and verification limits.
-- `Locus/knowledge/plan/cardpg-effect-architecture.md` describes the shared typed Gear/Mod effect system and its current limits.
-- `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` is authoritative for player-facing terminology and content names. Older `CardPG_GameData_organized.xlsx` material is superseded for content terminology and identities.
+- `Locus/knowledge/plan/dealbreak-effect-architecture.md` describes the shared typed Gear/Mod effect system and its current limits.
+- `Dealbreak_GameData_IDs_Terminology_Fixed.xlsx` is authoritative for player-facing terminology and content names. Older `the old game-data workbook (removed 2026-10-25)` material is superseded for content terminology and identities.
 - `Docs/Dealbreak_Rebranding_Report.md` records synchronized names, remaining legacy-ID mismatches, deferred Draft content, serialization risks, and verification results.
 
 The runtime keeps card identity, ownership, and zones in model state rather than deriving gameplay from UI objects. Runs use independently derived deterministic random streams, and the shared typed effect foundation keeps Gear and Mod behavior out of name-based combat branches.

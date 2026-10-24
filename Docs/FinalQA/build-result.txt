@@ -3,7 +3,7 @@ Errors: 0
 Warnings: 487
 Bytes: 460858393
 Seconds: 150.4301723
-Output: D:/Dealbreak/Cardpg/Builds/FinalQA/Dealbreak.exe
+Output: D:/Dealbreak/Dealbreak/Builds/FinalQA/Dealbreak.exe
 Warning: [ServicesCore]: To use Unity's dashboard services, you need to link your Unity project to a project ID. To do this, go to Project Settings to select your organization, select your project and then link a project ID. You also need to make sure your organization has access to the required products. Visit https://dashboard.unity3d.com to sign up.
 Warning: Assets\Scripts\Development\DevModeRuntime.cs(15,17): warning CS0414: The field 'DevModeRuntime._enabled' is assigned but its value is never used
 Warning: Shader warning in 'Hidden/Sentis/Pad': integer modulus may be much slower, try using uints if possible. at Packages/com.unity.ai.inference/Runtime/Core/Resources/Sentis/PixelShaders/Pad.shader(55) (on d3d11)

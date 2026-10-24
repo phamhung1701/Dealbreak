@@ -13,7 +13,7 @@ Unity 6 card combat roguelike. A task prompt defines the work; this file supplie
 
 ## Branches
 
-- Solo project: work directly on `main`. Origin is `phamhung1701/Dealbreak` (the old `Cardpg` URL redirects).
+- Solo project: work directly on `main`. Origin is `phamhung1701/Dealbreak`.
 - Older branches (`ui-new-look`, `ui-polish`, `architecture-audit-fixes`, `codex/combat-ui-vertical-slice`) are merged; don't build on them. A screen with flat blue panels, a TAKE DAMAGE button or ELITE/SHOP node labels means a stale commit.
 
 ## Working rules
@@ -83,7 +83,7 @@ Full specs are in `Docs/OWNER_DECISIONS.md`; these are the rules most often brok
 
 ## Repository traps
 
-- `Packages/com.farlocus.locus`, `Locus/` and `.plastic/` are live-updated by tools, and Unity locks `locus_native.dll`. Never commit them. A checkout or stash touching them fails half-way. To switch branches: back up the dirty files, merge in a `git worktree` outside the project, point HEAD at the branch (`git symbolic-ref`, then `git reset`), then check out only the non-Locus paths.
+- `Packages/com.farlocus.locus`, `Locus/` and `.plastic/` are live-updated by tools, and Unity locks `locus_native.dll`. Don't commit their tool churn (only `Locus/knowledge` notes you edited on purpose). A checkout or stash touching them fails half-way. To switch branches: back up the dirty files, merge in a `git worktree` outside the project, point HEAD at the branch (`git symbolic-ref`, then `git reset`), then check out only the non-Locus paths.
 - Line endings are mixed per file. With Python, use `newline=''` and match each file's newline style; the `Edit` tool handles this itself.
 - In Python heredocs, a C# `"\n"` becomes a real newline unless written as a raw string. Check scripted edits with `grep -n '"[A-Z]*$'`.
 - **Unity fake null:** `GetComponent<T>() ?? AddComponent<T>()` fails in the Editor. Use `TryGetComponent` or `== null`.

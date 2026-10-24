@@ -5,7 +5,6 @@ using UnityEngine;
 
 public enum ConsumableTargetType { None, Card, Enemy }
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "CardManager")]
 public partial class CardManager : Singleton<CardManager>
 {
     public const int HAND_SIZE = 8;

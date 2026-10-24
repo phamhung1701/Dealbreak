@@ -5,7 +5,7 @@
 
 ## Feature overview
 
-Ace Pairing lets the player commit exactly two hand cards as one attack action when at least one selected card is an Ace. Legal examples include Ace + Eight and Ace + Ace; Two + Eight is not a legal pair. Both cards are consumed together, their separately modified attack values are combined, and the action targets one selected enemy. It is a deliberately narrow break from CardPG's one-card combat baseline, rather than an open-ended poker-hand system.
+Ace Pairing lets the player commit exactly two hand cards as one attack action when at least one selected card is an Ace. Legal examples include Ace + Eight and Ace + Ace; Two + Eight is not a legal pair. Both cards are consumed together, their separately modified attack values are combined, and the action targets one selected enemy. It is a deliberately narrow break from Dealbreak's one-card combat baseline, rather than an open-ended poker-hand system.
 
 The action is eligible for one critical roll. The default critical chance is configurable at 25%; a successful critical doubles the paired action's damage. On a critical Ace pair, the system attempts to return an Ace to hand if there is room. The critical roll uses a dedicated seeded combat stream, so a repeatable run seed and the same decisions reproduce the result without consuming random values used by maps, shops, or card operations.
 

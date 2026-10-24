@@ -6,9 +6,9 @@ injectAgents:
 aiEditMode: inherit
 ---
 
-# CardPG content implementation audit — Artifacts and Enhancements
+# Dealbreak content implementation audit — Artifacts and Enhancements
 
-**Read-only audit, September 24, 2026.** Source of intended content: `CardPG_GameData_organized.xlsx`, sheets **Artifacts** and **Enhancements**, header row 1 and populated rows 2–101. Source of implementation: current working-tree code, the live `Assets/Scenes/Game.unity/GameController` catalog bindings, and authored assets under `Assets/Data/Relics/` and `Assets/Data/Enhancements/`. `DEALBREAK_DEVELOPMENT.md` and `Locus/knowledge/plan/cardpg-remaining-roadmap-implementation.md` supply context, not proof of an effect. No gameplay, asset, scene, test, or workbook changes were made. **Do not interpret this audit as authorization to add or rebalance content.**
+**Read-only audit, September 24, 2026.** Source of intended content: `the old game-data workbook (removed 2026-10-25)`, sheets **Artifacts** and **Enhancements**, header row 1 and populated rows 2–101. Source of implementation: current working-tree code, the live `Assets/Scenes/Game.unity/GameController` catalog bindings, and authored assets under `Assets/Data/Relics/` and `Assets/Data/Enhancements/`. `DEALBREAK_DEVELOPMENT.md` and `Locus/knowledge/plan/dealbreak-remaining-roadmap-implementation.md` supply context, not proof of an effect. No gameplay, asset, scene, test, or workbook changes were made. **Do not interpret this audit as authorization to add or rebalance content.**
 
 ## Scope, classification, and identity caveat
 

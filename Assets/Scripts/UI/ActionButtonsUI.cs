@@ -7,7 +7,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ActionButtonsUI")]
 public class ActionButtonsUI : MonoBehaviour
 {
     enum EnemyTargetAction { None, Attack }

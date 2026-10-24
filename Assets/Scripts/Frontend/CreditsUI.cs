@@ -2,7 +2,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "CreditsUI")]
 public sealed class CreditsUI : MonoBehaviour
 {
     public FrontendMenuNavigator navigator;

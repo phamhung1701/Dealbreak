@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "FrontendMenuNavigator")]
 public sealed class FrontendMenuNavigator : MonoBehaviour
 {
     public GameObject homePanel;

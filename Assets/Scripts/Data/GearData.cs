@@ -1,13 +1,11 @@
 using UnityEngine;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ArtifactCapacityCategory")]
 public enum GearCapacityCategory
 {
     Persistent = 0,
     NonSlot = 1
 }
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ArtifactSpecialRule")]
 public enum GearSpecialRule
 {
     None = 0,
@@ -67,7 +65,6 @@ public enum GearSpecialRule
 }
 
 [CreateAssetMenu(fileName = "Gear", menuName = "Game/Gear Data")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RelicData")]
 public class GearData : ScriptableObject
 {
     public string id;

@@ -58,7 +58,6 @@ public enum RunEventFlow
 }
 
 [CreateAssetMenu(fileName = "RunEvent", menuName = "Game/Incident")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunEventDefinition")]
 public class RunEventDefinition : ScriptableObject
 {
     public string id;

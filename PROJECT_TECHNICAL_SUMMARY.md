@@ -92,7 +92,7 @@ They allow content to be configured as assets under `Assets/Data/` while runtime
 
 ### Installed but not claimed as gameplay technology
 
-The package manifest contains additional Unity packages such as 2D tools, AI packages, Navigation, Timeline, Visual Scripting, Analytics, and Multiplayer Center. The inspected gameplay code does not establish them as part of CardPG's implemented runtime architecture, so they should not be presented as project features.
+The package manifest contains additional Unity packages such as 2D tools, AI packages, Navigation, Timeline, Visual Scripting, Analytics, and Multiplayer Center. The inspected gameplay code does not establish them as part of Dealbreak's implemented runtime architecture, so they should not be presented as project features.
 
 ## 3. Architecture
 
@@ -587,7 +587,7 @@ Key files:
 - Test assembly: `Assets/Tests/EditMode/Dealbreak.EditModeTests.asmdef`.
 - Framework: Unity Test Framework with NUnit.
 - Mode: Editor-only EditMode tests.
-- Runtime dependency: `CardPG.Runtime` assembly.
+- Runtime dependency: `Dealbreak.Runtime` assembly.
 - Current Unity discovery: **77 EditMode test cases** across 11 test classes/groups.
 
 ### Main tested invariants
@@ -662,7 +662,7 @@ Manual Play Mode verification documented in `DEALBREAK_DEVELOPMENT.md` covers:
 
 ### Short portfolio description
 
-CardPG is a Unity card-based roguelike/RPG prototype built around deterministic twelve-map runs. It combines authoritative runtime card-zone models, single-card attacks, multi-card defense, independently targetable enemy groups, branching maps, seeded shops/events, ScriptableObject-driven content, per-card Enhancements, and reusable frontend/results flows. The project emphasizes deterministic replay, reset correctness, UI/state separation, and focused automated regression coverage.
+Dealbreak is a Unity card-based roguelike/RPG prototype built around deterministic twelve-map runs. It combines authoritative runtime card-zone models, single-card attacks, multi-card defense, independently targetable enemy groups, branching maps, seeded shops/events, ScriptableObject-driven content, per-card Enhancements, and reusable frontend/results flows. The project emphasizes deterministic replay, reset correctness, UI/state separation, and focused automated regression coverage.
 
 ### Key technical features worth mentioning
 
@@ -681,73 +681,73 @@ CardPG is a Unity card-based roguelike/RPG prototype built around deterministic 
 
 ### Runtime models versus ScriptableObject definitions
 
-- **Why CardPG uses it:** Shared definitions should not carry mutable per-run state.
+- **Why Dealbreak uses it:** Shared definitions should not carry mutable per-run state.
 - **Where:** `CardData`, `CardInstance`, `EnemyTypeData`, `EnemyRuntime`, `RelicData`, `CardEnhancementData`.
 - **Possible questions:** Why not mutate ScriptableObjects at runtime? How would shared asset mutation affect two matching cards? How would you serialize runtime instances?
 
 ### Entity identity and collection invariants
 
-- **Why CardPG uses it:** Equal-looking cards need independent ownership and Enhancements.
+- **Why Dealbreak uses it:** Equal-looking cards need independent ownership and Enhancements.
 - **Where:** `CardInstance.Id`, `CardCollection.Initialize`, `AddOwnedToDeck`, `CardManager.FindOwnedCard`.
 - **Possible questions:** What makes an entity identity stable? How do you prevent duplicate ownership or a card appearing in two zones? Why target upgrades by ID?
 
 ### State machines
 
-- **Why CardPG uses it:** Combat actions must be legal only during specific phases.
+- **Why Dealbreak uses it:** Combat actions must be legal only during specific phases.
 - **Where:** `GameState` and `CombatManager` action validation/transitions.
 - **Possible questions:** How are illegal transitions prevented? How would you add a new phase? What state should own pending damage?
 
 ### Deterministic random generation
 
-- **Why CardPG uses it:** Runs need seed replay without unrelated systems affecting each other.
+- **Why Dealbreak uses it:** Runs need seed replay without unrelated systems affecting each other.
 - **Where:** `DeterministicRandom`, `RunRandomContext`, `RunMapGenerator`, `RunManager` offer generation.
 - **Possible questions:** Why not use `UnityEngine.Random`? What is stream independence? How can code changes break cross-version replay?
 
 ### Graph-based procedural maps
 
-- **Why CardPG uses it:** The player needs route choices, merges, hidden content, and a final boss.
+- **Why Dealbreak uses it:** The player needs route choices, merges, hidden content, and a final boss.
 - **Where:** `RunMapGenerator`, `PathNode`, `PathScreenUI`.
 - **Possible questions:** How do you guarantee connectivity? How are deterministic layout and content separated? How would you add more topology variation?
 
 ### Validation before mutation
 
-- **Why CardPG uses it:** Failed multi-card, shop, or event actions must not partially change state.
+- **Why Dealbreak uses it:** Failed multi-card, shop, or event actions must not partially change state.
 - **Where:** `CardCollection.TryDiscard`, `CombatManager.CanPlayCards`, `CanDefendWithCards`, `RunEffectResolver`, shop validation.
 - **Possible questions:** What makes an operation atomic? Where could rollback otherwise be required? How do cached prices prevent data races or inconsistency?
 
 ### Event-driven presentation
 
-- **Why CardPG uses it:** UI should react to state without becoming authoritative.
+- **Why Dealbreak uses it:** UI should react to state without becoming authoritative.
 - **Where:** Manager events and UI `OnEnable`/`OnDisable` subscriptions.
 - **Possible questions:** What are the risks of C# events in Unity? How do you prevent stale subscriptions? When is polling appropriate?
 
 ### Drag/drop and UI layout behavior
 
-- **Why CardPG uses it:** Cards must remain visually stable during drag, reorder cleanly, and submit actions without moving model ownership.
+- **Why Dealbreak uses it:** Cards must remain visually stable during drag, reorder cleanly, and submit actions without moving model ownership.
 - **Where:** `CardView`, `Field`, `CardActionDropTarget`, `CardManager` selection methods.
 - **Possible questions:** Why use a placeholder? How are cancelled drags restored? Why is sibling order not authoritative card order?
 
 ### Multi-enemy targeting
 
-- **Why CardPG uses it:** Encounters contain independent enemies with separate health, attack, rewards, abilities, and flee behavior.
+- **Why Dealbreak uses it:** Encounters contain independent enemies with separate health, attack, rewards, abilities, and flee behavior.
 - **Where:** `CombatManager.Enemies`, `EnemyRuntime`, `EnemyGroupUI`, `EnemyDisplayUI`.
 - **Possible questions:** How is exact target identity validated? How are combined attacks calculated? When is secured gold awarded?
 
 ### Dependency and lifecycle management
 
-- **Why CardPG uses it:** Persistent managers must be configured before UI subscriptions and reset across scenes.
+- **Why Dealbreak uses it:** Persistent managers must be configured before UI subscriptions and reset across scenes.
 - **Where:** `GameController`, `Singleton<T>`, `Bootstrap`, `GameFlowService`.
 - **Possible questions:** What problems can service-locator singletons cause? Why is initialization order explicit? How would dependency injection change this design?
 
 ### Testing Unity gameplay logic
 
-- **Why CardPG uses it:** Many critical rules can be tested without full Play Mode.
+- **Why Dealbreak uses it:** Many critical rules can be tested without full Play Mode.
 - **Where:** `Assets/Tests/EditMode/`.
 - **Possible questions:** What belongs in EditMode versus PlayMode tests? Why are plain models easier to test? How would you automate drag/drop or scene flow?
 
 ### Pause-safe timing
 
-- **Why CardPG uses it:** Playtest pacing should count active participation but exclude explicit pause.
+- **Why Dealbreak uses it:** Playtest pacing should count active participation but exclude explicit pause.
 - **Where:** `RunTimingStatistics`, `RunManager.Update`, `GameplayMenuCoordinator`.
 - **Possible questions:** Why use scaled delta time instead of wall-clock time? What happens if slow motion is added? How would save/resume affect the timer?
 

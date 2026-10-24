@@ -1,7 +1,6 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "RunContentCatalog", menuName = "Game/Run Content Catalog")]
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunContentCatalog")]
 public class RunContentCatalog : ScriptableObject
 {
     [Header("Encounters")]

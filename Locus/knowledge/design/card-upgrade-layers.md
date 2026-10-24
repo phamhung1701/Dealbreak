@@ -9,7 +9,7 @@ aiEditMode: inherit
 # Additional card-upgrade layers: deferred
 
 ## Approved prototype scope
-For GitHub issue [#3](https://github.com/phamhung1701/Cardpg/issues/3), the user explicitly chose to defer Seals, Editions, and other additional persistent card-upgrade layers. This closes the design-decision issue; it does not mean those features are implemented.
+For GitHub issue [#3](https://github.com/phamhung1701/Dealbreak/issues/3), the user explicitly chose to defer Seals, Editions, and other additional persistent card-upgrade layers. This closes the design-decision issue; it does not mean those features are implemented.
 
 Keep one Enhancement per CardInstance for the current prototype. Existing run-persistent Rune suit changes, permanent attack bonuses, Mirror duplication, and artifact tier upgrades are unchanged. These existing mechanics do not authorize new Enhancement slots or a Seal/Edition system.
 

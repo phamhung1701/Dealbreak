@@ -19,7 +19,6 @@ public class PathNode
     public bool isShopCheckpoint;
 }
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunManager")]
 public partial class RunManager : Singleton<RunManager>
 {
     [Header("Enemy Type Assets")]

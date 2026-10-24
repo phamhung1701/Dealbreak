@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>Displays the CardManager Gear build as a row of icons, with on-demand text.</summary>
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "ArtifactRailUI")]
 public sealed class GearRailUI : MonoBehaviour
 {
     [Header("Source and icon rail")]

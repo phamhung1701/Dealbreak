@@ -2,7 +2,6 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "RunStatusUI")]
 public class RunStatusUI : MonoBehaviour
 {
     [Header("Run Resources")]

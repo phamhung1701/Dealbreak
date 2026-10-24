@@ -227,7 +227,7 @@ public sealed class LowerEffortEventTests
         _combat.TakeRunDamage(5);
         OpenEvent(_swamp);
         int enhancementsBefore = _cards.ownedCards.Count(card => card.Enhancement != null);
-        int reward = new RunRandomContext("CARDPG").CreateStream("swamp-event-reward", 397).NextInt(0, 3);
+        int reward = new RunRandomContext("DEALBREAK").CreateStream("swamp-event-reward", 397).NextInt(0, 3);
         Assert.That(_swamp.id, Is.EqualTo("evt_010"));
         Assert.That(_run.contentCatalog.risks, Does.Contain(_swamp));
 

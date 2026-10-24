@@ -7,12 +7,28 @@ using UnityEngine;
 // Session-only activation; PlayerPrefs stores option defaults, never an enabled state.
 public static class DevModeRuntime
 {
-    const string Prefix = "CardPG.DevMode.";
+    const string Prefix = "Dealbreak.DevMode.";
     const string EnabledKey = Prefix + "Enabled";
     const string InfiniteHealthKey = Prefix + "InfiniteHealth";
     const string InfiniteMoneyKey = Prefix + "InfiniteMoney";
     const string UnlimitedShopOffersKey = Prefix + "UnlimitedShopOffers";
+    // Pre-rename prefix; its saved options move to the new keys once.
+    const string LegacyPrefix = "CardPG.DevMode.";
     static bool _enabled;
+
+    static DevModeRuntime()
+    {
+        bool moved = false;
+        foreach (string key in new[] { EnabledKey, InfiniteHealthKey, InfiniteMoneyKey, UnlimitedShopOffersKey })
+        {
+            string legacy = LegacyPrefix + key.Substring(Prefix.Length);
+            if (!PlayerPrefs.HasKey(legacy)) continue;
+            if (!PlayerPrefs.HasKey(key)) PlayerPrefs.SetInt(key, PlayerPrefs.GetInt(legacy));
+            PlayerPrefs.DeleteKey(legacy);
+            moved = true;
+        }
+        if (moved) PlayerPrefs.Save();
+    }
 
     public static bool Available => Application.isEditor || Debug.isDebugBuild;
     public static bool Enabled

@@ -12,7 +12,7 @@
 
 ### 1.1 What the project is
 
-CardPG is a single-player, seed-driven card combat roguelike prototype. The player's run begins with 40 cards (Ace–Ten in four suits), traverses branching maps, and defeats twelve face-card bosses in four-Jack / four-Queen / four-King groups. Combat uses the cards as attacks and as defensive resources. Artifacts modify run rules and resources; Enhancements attach to individual physical card instances; consumables provide limited-use run effects. The primary project goal evidenced by implementation is a replayable, content-driven prototype, not a completed production release.
+Dealbreak is a single-player, seed-driven card combat roguelike prototype. The player's run begins with 40 cards (Ace–Ten in four suits), traverses branching maps, and defeats twelve face-card bosses in four-Jack / four-Queen / four-King groups. Combat uses the cards as attacks and as defensive resources. Artifacts modify run rules and resources; Enhancements attach to individual physical card instances; consumables provide limited-use run effects. The primary project goal evidenced by implementation is a replayable, content-driven prototype, not a completed production release.
 
 A baseline attack is one card. Implemented exceptions include Ace pairing, Artifact-enabled same-rank actions, and the Royal Family set. This is not unrestricted poker-hand combat. Core current rules are in `Assets/Scripts/Managers/CombatManager.cs`, `Assets/Scripts/Combat/GameplayEffects.cs`, and `Assets/Scripts/Data/CardData.cs`.
 
@@ -34,8 +34,8 @@ The current source/content includes:
 - Unity 6000.3.24f1, C#, URP 17.3.0, Input System 1.20.0, UGUI 2.0.0, TextMesh Pro, Unity Test Framework 1.6.0/NUnit.
 - Runtime assembly: `Assets/Scripts/Dealbreak.Runtime.asmdef`; tests: `Assets/Tests/EditMode/Dealbreak.EditModeTests.asmdef` and `Assets/Tests/PlayMode/Dealbreak.PlayModeTests.asmdef`.
 - Active input handler is the New Input System (`ProjectSettings/ProjectSettings.asset`, `ProjectSettings/EditorBuildSettings.asset`, `Assets/Settings/InputSystem_Actions.inputactions`). The Game scene uses `InputSystemUIInputModule`.
-- Display defaults in `ProjectSettings/ProjectSettings.asset`: 1920×1080, product `Cardpg`, linear color space. MainMenu, Game, and Bootstrap scenes are enabled in Build Settings; SampleScene is disabled (`ProjectSettings/EditorBuildSettings.asset`).
-- Package manifest has Unity 2D tooling and other editor/services packages in addition to runtime-used UI/Input System/URP/Test Framework. Package presence alone is not evidence that AI, analytics, navigation, multiplayer, timeline, or Visual Scripting is part of CardPG gameplay. See `Packages/manifest.json` and `Packages/packages-lock.json`.
+- Display defaults in `ProjectSettings/ProjectSettings.asset`: 1920×1080, product `Dealbreak`, linear color space. MainMenu, Game, and Bootstrap scenes are enabled in Build Settings; SampleScene is disabled (`ProjectSettings/EditorBuildSettings.asset`).
+- Package manifest has Unity 2D tooling and other editor/services packages in addition to runtime-used UI/Input System/URP/Test Framework. Package presence alone is not evidence that AI, analytics, navigation, multiplayer, timeline, or Visual Scripting is part of Dealbreak gameplay. See `Packages/manifest.json` and `Packages/packages-lock.json`.
 - No save/resume, profile/metaprogression, online play, cloud seed sharing, or cross-version determinism guarantee is implemented. No release Windows build result for the current snapshot was found. An earlier Dev Mode build attempt failed in Unity's player compilation/Bee pipeline before producing an executable (`DEALBREAK_DEVELOPMENT.md:555–565`).
 
 ### 1.4 Status vocabulary and documentation conflicts
@@ -65,9 +65,9 @@ Use these labels in future work:
 | `Assets/Tests/EditMode/` | EditMode regression/model/UI/content tests, Editor-only asmdef. |
 | `Assets/Tests/PlayMode/` | Three PlayMode integration test classes. |
 | `ProjectSettings/` | Unity version, build scenes, graphics/quality/input/display/physics and other project settings. |
-| `Packages/` | `manifest.json`, lock file, embedded `com.farlocus.locus` package and its editor/runtime test-support assemblies. Its README describes Editor bridge/Roslyn/JSON integration; it is Locus tooling, not CardPG gameplay. |
+| `Packages/` | `manifest.json`, lock file, embedded `com.farlocus.locus` package and its editor/runtime test-support assemblies. Its README describes Editor bridge/Roslyn/JSON integration; it is Locus tooling, not Dealbreak gameplay. |
 | `Locus/knowledge/` | Design, memory, and dated execution plans/reports. Treat each as timestamped evidence, not a live registry unless current. |
-| `CardPG_GameData_organized.xlsx` | Ten-sheet content/design workbook. It contains mixed statuses and placeholders; it is not loaded directly by runtime. |
+| `the old game-data workbook (removed 2026-10-25)` | Ten-sheet content/design workbook. It contains mixed statuses and placeholders; it is not loaded directly by runtime. |
 | `Build/`, `Logs/`, `Library/`, `Temp/`, `obj/`, `uam/` | Local build/editor/generated or tooling state. Not runtime content; preserve unless separately authorized. `Assets/_Recovery/` is a Unity recovery scene, not a normal enabled build scene. |
 
 ### 2.2 Runtime C# modules
@@ -89,7 +89,7 @@ The following is the current owned-code inventory by function; source paths are 
 
 ### 2.3 Assemblies and dependency boundaries
 
-`CardPG.Runtime` references `UnityEngine.UI`, `Unity.TextMeshPro`, and `Unity.InputSystem`; it is auto-referenced and has no platform restriction. EditMode and PlayMode test assemblies reference `CardPG.Runtime` and `Unity.TextMeshPro`, plus Unity Test Assemblies; EditMode is Editor-only. The test assemblies are not auto-referenced. See the three `.asmdef` files listed in §1.3.
+`Dealbreak.Runtime` references `UnityEngine.UI`, `Unity.TextMeshPro`, and `Unity.InputSystem`; it is auto-referenced and has no platform restriction. EditMode and PlayMode test assemblies reference `Dealbreak.Runtime` and `Unity.TextMeshPro`, plus Unity Test Assemblies; EditMode is Editor-only. The test assemblies are not auto-referenced. See the three `.asmdef` files listed in §1.3.
 
 The code has no project-specific namespace convention; runtime types are generally global namespace. Unity serialized component references and ScriptableObject GUIDs are therefore a significant compatibility surface: avoid renaming/removing serialized fields, types, event callbacks, or assets without checking scene/prefab bindings and UnityEvent/AnimationEvent uses.
 
@@ -331,7 +331,7 @@ Current active `PrototypeRunContent.asset` normal enemies: Thief, Goblin, Knight
 
 ### 5.11 Deterministic randomness
 
-`IRandomSource` is injected into gameplay instead of using `UnityEngine.Random`. `DeterministicRandom` is a xorshift PRNG; `RunRandomContext.NormalizeSeed` trims input and uses `CARDPG` only as its core blank fallback, hashes with stable FNV-style arithmetic, and derives each stream from root seed + stream name + context (`Assets/Scripts/Randomness/DeterministicRandom.cs`). Run startup supplies named streams for cards, criticals, Duelist suit call, boss order/abilities, map layout/content, shops, and context-specific rewards. `RunMapGenerator` uses independent layout/content/elite streams; node-specific decisions use context keys. UI reads cached outcomes and should not consume RNG. The implementation promises stability within a game version, not across code/version changes.
+`IRandomSource` is injected into gameplay instead of using `UnityEngine.Random`. `DeterministicRandom` is a xorshift PRNG; `RunRandomContext.NormalizeSeed` trims input and uses `DEALBREAK` only as its core blank fallback, hashes with stable FNV-style arithmetic, and derives each stream from root seed + stream name + context (`Assets/Scripts/Randomness/DeterministicRandom.cs`). Run startup supplies named streams for cards, criticals, Duelist suit call, boss order/abilities, map layout/content, shops, and context-specific rewards. `RunMapGenerator` uses independent layout/content/elite streams; node-specific decisions use context keys. UI reads cached outcomes and should not consume RNG. The implementation promises stability within a game version, not across code/version changes.
 
 **Tests:** `Phase4DeterminismTests` (inside `Phase4RunTests.cs`), `Phase8BloodRitualGenerationTests`, `Phase7CCombatPairTests`, `ArtifactContentBatch1Tests`, `ArtifactContentBatch2Tests`, `Phase5BuildProgressionTests`, plus randomized content suites.
 
@@ -439,7 +439,7 @@ Runtime content is principally serialized object references:
 
 Current Data folders: 74 Artifact assets, 12 Enhancement assets, 19 Consumables, 10 enemies, 7 enemy ability assets, 5 run/boss ability assets, 13 RunEventDefinition assets, 1 catalog. Scene catalogs hold all 74/12/19 item assets, but special availability/effect filters still govern actual offer/use. Active run catalog is a subset; 13 event assets include unused content outside its 6/2/5 categorized lists.
 
-Workbook `CardPG_GameData_organized.xlsx` was opened with openpyxl during audit (not inferred from older report). Sheets and populated ID rows/statuses:
+Workbook `the old game-data workbook (removed 2026-10-25)` was opened with openpyxl during audit (not inferred from older report). Sheets and populated ID rows/statuses:
 
 | Sheet | ID-bearing rows | Status summary |
 |---|---:|---|
@@ -611,7 +611,7 @@ Dates/claims below are based on `git log` and dated docs; motivation is given on
 | Sep 27–28 | `bbaf34d`, `7482acf`, `714b2e8`, `f1d7d05`, `795cb2e` | Consumables/events/relics; persistent deck edits; tiered Artifact upgrade; multi-card actions; Recover–Shield policy finalization. |
 | Sep 28 | `377bd9a` | Content/development tooling expansion (includes Dev Mode work). |
 | Oct 3 | `5682d54` | “Complete early-access game progression”; new content/status beyond September README. |
-| Oct 4 | `57afa28` | Current issue backlog pass: sell/merge, enhanced consumable interactions, Double Strike, block cycling, visual-asset pipelines and UI work (see `Locus/knowledge/plan/cardpg-github-issue-pass.md`). |
+| Oct 4 | `57afa28` | Current issue backlog pass: sell/merge, enhanced consumable interactions, Double Strike, block cycling, visual-asset pipelines and UI work (see `Locus/knowledge/plan/dealbreak-github-issue-pass.md`). |
 | Oct 5 | `901b106`, `427c191` | Full-block coverage made boss ability; early-run difficulty tuning. |
 | Oct 6 | `269e97b`, `2987d2a` | Layered shared gameplay board UI; run workflow transition hardening. |
 | Oct 8 | `0dd58bc` | Restored seeded route connectivity. |
@@ -822,7 +822,7 @@ Human mouse/drag feel and non-16:9 checks; complete recorded twelve-map pacing/e
 | Hand/enemy/card presentation | `CardView`, `Field`, UI controllers, `AttackCardPresentationUI` | Card/Enemy/Path/Shop prefabs | Implemented prototype | UI/hand tests, programmatic scene smoke | Placeholder art; human input/aspect ratios unverified; three enemies max. |
 | Editor/content pipeline | `GameDataGenerator`, `VisualAssetAudit`, DevMode Editor tools | Editor assets/scripts | Implemented tools | `VisualAssetPipelineTests`; historical Editor checks | Generator hard-coded writes; inspect diff before execution. |
 | Automated tests | EditMode/PlayMode asmdefs | 65 EditMode source files / 3 PlayMode files | Broad coverage; latest recorded suite failing | Recorded 519/498 pass/21 fail, focused interaction 70/70 and new direct-targeting 10/10, PlayMode 6/6; not rerun this audit | See complete failure list and coverage inventory §8. |
-| Workbook/docs | Excel + root docs + Locus knowledge | `CardPG_GameData_organized.xlsx` | Mixed status; docs drift | Workbook inspected; docs cross-read | Workbook not auto-loaded; README/AGENTS/older references stale. |
+| Workbook/docs | Excel + root docs + Locus knowledge | `the old game-data workbook (removed 2026-10-25)` | Mixed status; docs drift | Workbook inspected; docs cross-read | Workbook not auto-loaded; README/AGENTS/older references stale. |
 
 ---
 

@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "", sourceAssembly: "CardPG.Runtime", sourceClassName: "GameFlowService")]
 public sealed class GameFlowService : MonoBehaviour
 {
     public const string MainMenuSceneName = "MainMenu";
