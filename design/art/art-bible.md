@@ -257,7 +257,7 @@ objects on it define it.
 
 - Sizes at 1080p: XL 72 Anton (victory, defeat, the NEW RUN title); L 48 Anton
   (screen and District titles); M 32 Anton (primary button labels, the
-  INCOMING number); numeric 28 Courier Prime Bold (HP, Credits); label 22
+  INCOMING number); numeric 28 Courier Prime Bold (Credits, draw count; HP text on its meter is 20); label 22
   Barlow; body 20 Zilla Slab.
 - The minimum is 18px anywhere, and 20px on kraft.
 - Check Anton against the card numerals' source. Rokkitt ExtraBold (OFL) is

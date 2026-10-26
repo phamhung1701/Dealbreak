@@ -2,7 +2,7 @@
 
 > **Scope**: the combat screen (header inventory, enemies, hand, HP and Credits, actions). Visual language: `design/art/art-bible.md` (Cut Sheet). Behaviour: `Docs/OWNER_DECISIONS.md`, which wins on any conflict.
 
-> **Status**: Draft complete (2026-10-27), awaiting `/ux-review`
+> **Status**: Revised 2026-10-27 after `/ux-review` (1 blocking, 8 advisory fixed)
 > **Author**: owner + ux-designer
 > **Last Updated**: 2026-10-27
 > **Platform Targets**: PC 16:9 (1920×1080 and up, Expand scaler); mouse primary, keyboard focus opens info; no gamepad or touch
@@ -104,18 +104,31 @@ PlayerArea and HandFrame). Before treating them as final, check them against
 the saved `Game.unity`, opened read-only (never enter Play mode with it open).
 Anchors are screen-normalised, with the origin at bottom-left.
 
+**Before implementation:** verify these anchors against the saved
+`Game.unity`, through the Editor API or a read-only YAML read, never in Play
+mode. Update this table wherever the scene differs, before any layout work
+starts. It is a hard step, not a suggestion: the authoring scripts disagree
+across generations.
+
+**Safe-zone margin:** nothing interactive or textual sits closer than 24px to
+any screen edge at 1080p, which is .0125 of the width and .022 of the height.
+The tightest edges today are MAP and the sort buttons at the right (about
+23px), so both move in to .9875 at most. This holds on 16:10 (the same pixel
+margin) and inside the 16:9 play area on 21:9. PC has no overscan, so there
+is no extra TV-safe inset.
+
 | Zone | Anchors (x, y) | Notes |
 |---|---|---|
 | Header Gear row | x .20–.54, y .885–.99 | 1080p pixel boxes pinned from the top centre (`CanvasPin`); heading and count on the left |
 | Header Trick row | x .55–.94, y .885–.99 | same pinning; up to six slots |
-| MAP | x .909–.988, y .837–.876 | under the header rows, top right |
+| MAP | x .9085–.9875, y .837–.876 | under the header rows, top right; moved in 1px to the 24px edge margin |
 | Pause | top-right corner, 58px | keep clear |
 | Stage / enemy row | stage x .06–.88, y .18–.86; enemies at about y .49–.846 | the enemy row is **raised about 20px** from today's .466 to make room for the band below |
 | INCOMING n | centred under the enemy row, about y .43–.47 | **directly under the enemies**, defense only; one total |
 | Status line | centred, x .18–.76, about y .37–.42 | **below INCOMING**; the selection preview replaces its text |
-| Pending drop + LEAVE IT | top of the stage, centred, about y .74–.82 | **moved from the centre**: shortest drag to the Trick slots; the run waits on it |
+| Pending drop + LEAVE IT | top of the stage, centred, about y .74–.82 | **moved from the centre**: shortest drag to the Trick slots; the run waits on it. It overlaps the enemy row's band on paper, but no enemy stands then: the drop is granted only on victory (`RunManager` victory path, `TryGrantConsumableDropForNode`), after every enemy is defeated or fled. Don't move it to avoid the enemy row |
 | Hand | x .17–.77, y .133–.351 | HAND n/8 follows the last card |
-| Action bar (ATTACK, BLOCK, PASS) | x .372–.832, y .016–.086 | **below the hand, centred** (unchanged) |
+| Action bar (ATTACK, BLOCK, PASS) | x .25–.69, y .016–.086 | **below the hand, centred on it** (centre x .47). Today's bar spans .372–.832 (centre about .60), so it moves left and narrows by about 4%, keeping about 29px clear of the HP panel (to .235); the sort buttons start at .88 |
 | Sort buttons | x .88–.985, y .014–.078 | right of the action bar |
 | HP panel (with the Block/Shield line above it) | x .025–.235, y .014–.082 | left of the action bar |
 | Credits chip | about y .09–.13, above HP | |
@@ -183,13 +196,13 @@ These are the Cut Sheet terms from art bible sections 3 and 7.
 | Gear row | MS | "GEAR n/cap", slots, icon, tier | Cream heading strip (Barlow); stickers at least 56px with one cut line, 3px shadow, tilt at most ±1°; empty slots are flat dashed outlines | event (gain, merge, move) | — | slap on a new item; 220ms hop on trigger |
 | Trick row | MS | "TRICKS n/cap", up to 6 slots, icon, stack ×n, charges | Kraft heading strip with a 2px ink border; the same stickers; charges on an untilted parent | event | — | as Gear; spending a charge shows a tag |
 | MAP | MS | "MAP" / "CLOSE MAP", map glyph | cream secondary button | static | — | press |
-| Player HP meter | MS | "HP n/max", fill, ticks every 5 HP | strip with a 2px ink border, cream track, red fill, ink ticks; Courier Prime Bold 20 in ink with a 2px cream outline | eased (`DisplayedNumber`), held while trigger heals land | — | drains on `ImpactDelay`; heals count up as chips land |
+| Player HP meter | MS | "HP n/max", fill, ticks every 5 HP | strip with a 2px ink border, cream track, red fill, ink ticks; Courier Prime Bold 20 in ink with a 2px cream outline (20, not the 28 numeric tier, because the text sits on the meter) | eased (`DisplayedNumber`), held while trigger heals land | — | drains on `ImpactDelay`; heals count up as chips land |
 | Block / Shield line | C | shield glyph and n; "BLOCK n" | cream text and glyph on the board, no shadow, no semantic colour | event | Block or Shield above 0 | tag pop on change |
-| Credits chip | MS | coin and number | round notched mustard stamp, ink Courier 28, 3px shadow | eased; waits for coins (`CreditsHudUI.HoldsCredits`) | — | 120ms stamp per landing; coins arc 350–450ms, staggered 40ms |
+| Credits chip | MS | coin and number | round notched mustard stamp, ink Courier 28, 3px shadow | eased; waits for coins (`CreditsHudUI.HoldsCredits`) | — | 120ms stamp per landing; coin arcs use the code's timing (0.42s each, 60ms stagger) until Open Question 9 settles it |
 | Enemy | MS | name, portrait, HP n/max, ATTACK n, ability names | portrait sticker; larger HP meter (ink fill on cream track, 0px); ATTACK as a small red tag with a glyph; abilities in Barlow 18 cream | HP eased, the rest event | — | 120ms 6px shake after `ImpactDelay`; defeat fade; Credits fly at the killing hit |
 | Enemy Shield | C | one glyph per charge (×n after 4) | hatch-grey fill (`#8C8270` plus hatch) with cream shield glyphs on the bar | event | Shield above 0 | fill crossfade; glyph pop on gain |
 | Intent | C | CHARGED ATTACK NEXT, +1 SHIELD NEXT, 2 HITS | Barlow 18 cream under the abilities, flat | event | not an ordinary attack | — |
-| Target marks | C | valid or targeted | thin teal crop marks (valid); thick marks and a teal strip under the HP meter (targeted); 2px ink outline; outside the portrait; no text | event | targeting | snap from thin to thick |
+| Target marks | C | valid or targeted | thin teal crop marks (valid); thick marks and a teal strip under the HP meter (targeted); 2px ink outline; outside the portrait; no text | event | targeting, only while two or more enemies stand | snap from thin to thick |
 | INCOMING n | C | "INCOMING" and n (one total); ALL BLOCKED | red notched tag, cream Barlow 22 and Anton 32, cream outer edge, 3px shadow; 4px halftone offset on the body only (doubled in defense); numerals solid | event | defense only | pop on change; counts to 0 and goes flat when fully blocked; tilt ±3° settling to ±1.5° |
 | Status line | MS | PLAYER TURN, BONUS ACTION, DEFENSE, ENCOUNTER WON, RUN DEFEAT | cream notched tag, Barlow 22 in ink, 3px shadow, no tilt (owner chose a tag over flat text) | event | text replaced by the selection preview | 250ms board-tone crossfade between states |
 | Selection preview | C | "n selected • Attack power n", "Blocks b of n • r damage left", "Can't block with this selection", "Royal Flush m/5 • n" | inside the status tag; numbers in Courier; one builder | event | cards selected | fade swap (instant with Reduce Motion) |
@@ -209,6 +222,42 @@ These are the Cut Sheet terms from art bible sections 3 and 7.
 
 The portrait sticker is decoration, not information. Clicking it opens the
 character's name and perk (On Demand).
+
+### Data Sources
+
+The UI owns no game state. Every element reads one runtime source, and
+previews never change state or consume RNG.
+
+| Element | Source (read-only) | Owner |
+|---|---|---|
+| Player HP meter | `CombatManager.player.CurrentHealth`, `.maxHealth` | `PlayerRuntime` |
+| Block / Shield line | `PlayerRuntime.EncounterBlock`, `.ShieldCharges` | `PlayerRuntime` |
+| Credits chip | `CardManager.credits`; kill Credits as they land: `CombatManager.SecuredCredits` | `CardManager`, `CombatManager` |
+| Enemy | `EnemyRuntime.DisplayName`, `.currentHp`, `.maxHp`, `.currentAttack`, `.AbilitySummary` | `EnemyRuntime` |
+| Enemy Shield | `EnemyRuntime.ShieldCharges` | `EnemyRuntime` |
+| Intent | `EnemyDisplayUI.CompactIntent(enemy, CombatManager.currentState)`, a formatter over `EnemyRuntime` state | `EnemyRuntime` |
+| Target marks | `CombatManager.IsEnemyTargeting`, `GetValidAttackTargets` | `CombatManager` |
+| INCOMING n | `CombatManager.IncomingDamageAfterModifiers` (the aggregate pending hit) | `CombatManager` |
+| Status line | `CombatManager.currentState`, `IsBonusPlayerAction` | `CombatManager` |
+| Selection preview | one builder (below), over `CardManager.SelectedCards`, the shared damage calculation and `CombatManager.TryPreviewDefense` | `CardManager`, `CombatManager` |
+| ATTACK / BLOCK / PASS | `CombatManager.currentState`, `GetValidAttackTargets`, `CanPassPlayerTurn`; commands go through `CombatCommands` | `CombatManager` |
+| Hand cards, HAND n/8 | `CardManager.hand`, `.HandCapacity` | `CardManager` |
+| Draw pile | `CardManager.deck.Count` | `CardManager` |
+| Gear row | `CardManager.ownedGear`, `.GearCapacity` | `CardManager` |
+| Trick row | `CardManager.Backpack`, `.BackpackCapacity`, `.ConsumablesPerSlot` | `CardManager` |
+| Contract line | `RunManager.ActiveContract` (`encounterWins`, `deadlineMapExclusive`), formatted by `RunStatusUI.FormatContractProgress` | `RunManager` |
+| Contract detail (click) | `RunContractState.ObjectiveDescription`; reward text from `Resources/QuestContract` and `GameBalance.Current` contracts. There is no runtime accessor for the reward yet, so add a read-only one. | `RunManager` |
+| Drop-target marks, DISCARD | `ItemDropRules` (the single drop path) | `ItemDropRules` |
+| Pending drop + LEAVE IT | `RunManager.PendingEnemyDrop`, `CanClaimPendingEnemyDrop`; actions `ClaimPendingEnemyDrop` and `LeavePendingEnemyDrop` | `RunManager` |
+| Feedback | `EffectTriggerFeed` (gameplay reports as it executes) | gameplay |
+
+**The selection preview has one builder: `CombatDetailPanelUI.SelectionSummary`.**
+- It takes over the attack-pattern forms (Ace pair, same rank ×n, Royal Flush
+  m/5, instant defeat) and the defense forms ("Blocks b of n • r damage left",
+  "Can't block with this selection") that `ActionButtonsUI` builds today.
+- `ActionButtonsUI` stops writing preview text.
+- Every attack number comes from the same damage calculation that execution
+  uses.
 
 ---
 
@@ -263,7 +312,11 @@ The busiest state is defense with an item held, three enemies, a full header
 tooltip is closed, because pressing to drag closes it.
 
 - **At most 26 HUD element groups at once.** Transient tags come on top of
-  these.
+  these. The busiest state reaches exactly 26, so there is **no headroom**: a
+  new always-on element must replace one, or drop one per the order below.
+- The figures below are estimates from the section C anchors. Measure them in
+  the scene during implementation (acceptance criterion 6). If the measured
+  chrome share exceeds 30%, apply the drop order.
 - **Screen share at 1920×1080:** chrome about 29%, game content (hand and
   portraits) about 22%, about 51% in total.
 - **Caps:** chrome at most 30%; chrome plus content at most 55%; red, teal
@@ -385,9 +438,11 @@ Designer constants (in code today):
 
 ## Acceptance Criteria
 
-- [ ] At 1920×1080 every zone sits within ±0.01 of its section C anchors, and
-      no two zones overlap. In particular, the DISCARD strip clears MAP and
-      the Contract line.
+- [ ] At 1920×1080 every zone sits within ±0.01 of its section C anchors
+      (after the scene check), no two zones overlap (the pending drop over the
+      empty enemy row excepted), nothing interactive or textual is within 24px
+      of a screen edge, the action bar is centred under the hand, and the
+      DISCARD strip clears MAP and the Contract line.
 - [ ] At 2560×1440 the layout matches 1920×1080 proportionally and no text is
       below 18 reference px. On 21:9 the play area stays 16:9 and centred.
 - [ ] With three enemies and two retaliating, defense shows exactly one
