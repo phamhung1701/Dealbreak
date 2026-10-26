@@ -76,7 +76,7 @@ Full specs are in `Docs/OWNER_DECISIONS.md`; these are the rules most often brok
 
 - No how-to guidance outside the tutorial (`ActionGuidanceCopyTests`); show state and numbers only. Show each fact once.
 - Info opens on click next to the clicked object, never on hover or in a fixed panel, through the single `ContextualTooltipUI`.
-- Neo-punk editorial look: near-black stage, off-white type, signal red = damage/danger, acid lime = selection/valid target, 1px hairline rectangles, halftone-printed fills. Theme fields keep legacy names: ink = stage, charcoal = surface, slate = hairline/disabled grey, paper = off-white, brick = signal red, ochre = acid lime. Styling goes through `DealbreakUIRuntime`, `DealbreakUIStyle`, `EditorialFrame`, `EditorialButton`, `EditorialSurface`.
+- The **Cut Sheet** paper look (owner ruling 2026-10-27, `design/art/art-bible.md`) replaces neo-punk but is not built yet. Until the UI rework lands the code draws the neo-punk editorial look: near-black stage, off-white type, signal red = damage/danger, acid lime = selection/valid target, 1px hairline rectangles, halftone-printed fills. Theme fields keep legacy names: ink = stage, charcoal = surface, slate = hairline/disabled grey, paper = off-white, brick = signal red, ochre = acid lime. Styling goes through `DealbreakUIRuntime`, `DealbreakUIStyle`, `EditorialFrame`, `EditorialButton`, `EditorialSurface`.
 - Many layouts are written by editor authoring scripts in `Assets/Editor/` (`DealbreakNeoPunkAuthoring`, which runs `DealbreakUiQaAuthoring` last; `DealbreakCentralStageAuthoring`; `DealbreakUIArtCorrectionAuthoring`). When moving an element, change the scene and its authoring script together.
 
 ## Driving Unity (Locus MCP)
