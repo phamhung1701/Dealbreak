@@ -36,6 +36,15 @@ Use them for work that would otherwise flood this context; each reads this file 
 - `content-author`: adds or edits Gear, Mods, Tricks, Enemies or Characters from the workbook end to end (asset, registry, balance, authored text, tests).
 - `balance-analyst`: answers balance questions from the recorded run stats (player and bot telemetry) and `GameBalance`, with numbers and sample sizes; recommends, never changes values.
 
+## Studio framework (Claude Code Game Studios)
+
+A curated copy of the [Claude Code Game Studios](https://github.com/Donchitos/Claude-Code-Game-Studios) template: its design, art, UI/UX, QA and review agents, their skills (`.claude/skills`), hooks, path rules (`.claude/rules`) and reference docs (`.claude/docs`). Godot/Unreal, networking, live-ops, release and sprint pieces were left out. Config is `project.yaml` (Unity, code root `Assets/`, workflow tier `minimal`).
+
+- **Precedence:** this file and `Docs/OWNER_DECISIONS.md` override any template agent, skill, rule or doc. Template agents read the owner-decisions section for their area before proposing UI, art or design changes. A template default that contradicts them (localization, gamepad, DI, doc-comment or ADR mandates) doesn't apply.
+- The project-specific agents above stay first choice for their jobs. Template skills that say "run the tests" mean `unity-tester`. Don't use `/test-setup`, or the batchmode commands in `/smoke-check`: they collide with the open Editor.
+- Template skills write design artifacts to `design/` and `docs/` (the existing `Docs/` folder). `production/session-state/active.md` is the per-session checkpoint (gitignored).
+- Hooks need Git Bash and Python 3. `guard-tool-churn.py` blocks commits that include Locus/`.plastic` churn. The template hooks are advisory, except that they block invalid staged JSON and whole-file reads of large design docs.
+
 ## Combat invariants
 
 - Surviving-enemy retaliation is one aggregate pending-damage instance; don't split it.

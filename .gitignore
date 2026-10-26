@@ -48,3 +48,13 @@ crashlytics-build.properties
 # Python bytecode from Tools/ scripts
 __pycache__/
 *.pyc
+
+# Claude Code Game Studios template: local and per-session files
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.claude/agent-memory/
+.claude/worktrees/
+Docs/consistency-failures.md
