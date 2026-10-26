@@ -255,13 +255,15 @@ previews never change state or consume RNG.
 | Pending drop + LEAVE IT | `RunManager.PendingEnemyDrop`, `CanClaimPendingEnemyDrop`; actions `ClaimPendingEnemyDrop` and `LeavePendingEnemyDrop` | `RunManager` |
 | Feedback | `EffectTriggerFeed` (gameplay reports as it executes) | gameplay |
 
-**The selection preview has one builder: `CombatDetailPanelUI.SelectionSummary`.**
-- It takes over the attack-pattern forms (Ace pair, same rank ×n, Royal Flush
-  m/5, instant defeat) and the defense forms ("Blocks b of n • r damage left",
+**The selection preview has one builder and one writer** (owner, 2026-10-27).
+- The builder is `CombatDetailPanelUI.SelectionSummary`. It takes over the
+  attack-pattern forms (Ace pair, same rank ×n, Royal Flush m/5, instant
+  defeat) and the defense forms ("Blocks b of n • r damage left",
   "Can't block with this selection") that `ActionButtonsUI` builds today.
-- `ActionButtonsUI` stops writing preview text.
-- Every attack number comes from the same damage calculation that execution
-  uses.
+- The writer is `ActionButtonsUI`, which calls that builder. Nothing else
+  writes the line, and `DealbreakUIRuntime` stops writing the ATTACK label.
+- Every attack number comes from the `PreviewAction*` calculation that
+  execution uses, not a per-card sum.
 
 ---
 
@@ -503,9 +505,9 @@ Designer constants (in code today):
    never in Play mode. The authoring scripts disagree across generations.
 6. Reduce Motion, the shake toggle, playback speed and tooltip text size are
    ruled but need building.
-7. A draw-pile click opens `DeckViewerUI`, a fixed panel, while
-   `CombatDetailPanelUI` also renders a draw-pile detail. Pick one; the rulings
-   ban fixed info panels.
+7. Resolved 2026-10-27: a draw-pile click opens the tooltip detail (draw
+   count, Mod count) next to the pile. The full deck list leaves the combat
+   click and lives in the deck menu screen.
 8. MAP during combat: is combat input gated, and are the enemies and INCOMING
    covered? This isn't traced yet.
 9. Credits flight timing: code uses 0.42s with a 60ms stagger; the art bible
