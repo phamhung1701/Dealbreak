@@ -104,16 +104,20 @@ PlayerArea and HandFrame). Before treating them as final, check them against
 the saved `Game.unity`, opened read-only (never enter Play mode with it open).
 Anchors are screen-normalised, with the origin at bottom-left.
 
-**Before implementation:** verify these anchors against the saved
-`Game.unity`, through the Editor API or a read-only YAML read, never in Play
-mode. Update this table wherever the scene differs, before any layout work
-starts. It is a hard step, not a suggestion: the authoring scripts disagree
-across generations.
+**Scene check (done 2026-10-27).** The anchors were verified against the saved
+`Game.unity` by reading its YAML read-only (the Editor did not open it, and
+Play mode was not used). Elements that code places at runtime were worked out
+from the layout code. Results:
+- Matches within ±0.01: Gear and Trick rows, pause, MAP, stage, status band,
+  INCOMING, action bar and its buttons, hand frame.
+- Corrected above: sort buttons, HP panel, draw pile.
+- Not observed on screen: the HP raise, chip, portrait, sort, MAP, DISCARD,
+  Contract line and HAND n/8 positions are derived from code. Confirm them
+  with a dev-run capture when the UI is built.
 
 **Safe-zone margin:** nothing interactive or textual sits closer than 24px to
 any screen edge at 1080p, which is .0125 of the width and .022 of the height.
-The tightest edges today are MAP and the sort buttons at the right (about
-23px), so both move in to .9875 at most. This holds on 16:10 (the same pixel
+MAP at the right edge already sits at .9875 (24px). This holds on 16:10 (the same pixel
 margin) and inside the 16:9 play area on 21:9. PC has no overscan, so there
 is no extra TV-safe inset.
 
@@ -128,12 +132,12 @@ is no extra TV-safe inset.
 | Status line | centred, x .18–.76, about y .37–.42 | **below INCOMING**; the selection preview replaces its text |
 | Pending drop + LEAVE IT | top of the stage, centred, about y .74–.82 | **moved from the centre**: shortest drag to the Trick slots; the run waits on it. It overlaps the enemy row's band on paper, but no enemy stands then: the drop is granted only on victory (`RunManager` victory path, `TryGrantConsumableDropForNode`), after every enemy is defeated or fled. Don't move it to avoid the enemy row |
 | Hand | x .17–.77, y .133–.351 | HAND n/8 follows the last card |
-| Action bar (ATTACK, BLOCK, PASS) | x .25–.69, y .016–.086 | **below the hand, centred on it** (centre x .47). Today's bar spans .372–.832 (centre about .60), so it moves left and narrows by about 4%, keeping about 29px clear of the HP panel (to .235); the sort buttons start at .88 |
-| Sort buttons | x .88–.985, y .014–.078 | right of the action bar |
-| HP panel (with the Block/Shield line above it) | x .025–.235, y .014–.082 | left of the action bar |
-| Credits chip | about y .09–.13, above HP | |
-| Portrait | x .025–.145, about y .14–.26, above the chip | check it clears the fan's left edge |
-| Draw pile | x .905–.98, y .285–.50 | |
+| Action bar (ATTACK, BLOCK, PASS) | x .25–.69, y .016–.086 | **below the hand, centred on it** (centre x .47). Today's bar spans .372–.832 (centre about .60), so it moves left and narrows by about 4%, keeping about 29px clear of the HP panel (to .235); the sort buttons ride inside its left end |
+| Sort buttons | inside the action bar's left 18% (rank above suit) | placed at runtime by `DealbreakUIRuntime.PositionSortControls`, relative to the bar, so they move with it (about x .254–.325 once the bar is re-centred). They are 29px tall: below the 44px rule, which covers only ATTACK, BLOCK and PASS (advisory) |
+| HP panel (with the Block/Shield line above it) | x .025–.235, y .014–.082 | left of the action bar. **Moves down**: today it is raised 114px (scene offset, capped by `CombatDetailPanelUI`) to y ≈.125–.18, which put the left column over the hand frame (owner choice, 2026-10-27) |
+| Credits chip | x .025–.134, about y .09–.13 | stacks above HP (`CreditsHudUI`, 210×46px, 10px gap) |
+| Portrait | x .025–.145, about y .14–.26 | stacks above the chip (`PlayerAvatarUI`); ends at x .145, clear of the hand frame (from .17) |
+| Draw pile | x .871–.98, y .187–.50 | the scene's `DeckDetailsButton` box; its left 17px sits inside the stage's right edge, clear of the enemy container (which ends at x .871) |
 | Contract line | x .78–.98, about y .51–.53 | right-aligned above the pile, clear of the DISCARD strip |
 | DISCARD strip | x .895–.985, y .55–.83 | only while an item is held; **its top stops at .83** so it clears MAP |
 
@@ -145,8 +149,8 @@ is held), Contract line, draw pile.
 - The DISCARD strip overlapped the Contract line; the strip starts at .55.
 - The band between the enemies and the hand had about 125px for both the
   status line and INCOMING; raising the enemy row about 20px gives both room.
-- The portrait and chip must clear the fanned hand's left edge; this is
-  checked in the scene.
+- The left column (HP, chip, portrait) overlapped the hand frame because HP
+  was raised 114px; moving HP down to the action-bar level clears it.
 
 ```
  x:  0  .06      .17           .47            .77   .88  .905   1.0
@@ -166,7 +170,7 @@ is held), Contract line, draw pile.
  .351|   portrait   -- hand frame x .17-.77 ------------  | PILE  |      |
      |   [sticker]   fanned hand ............. HAND n/8   |   n   |      |
  .13 |   [CREDITS]  -- hand frame bottom --               +-------+ .285 |
- .086|   [HP panel ]   [ ATTACK ][ BLOCK ][ PASS ]      [rank][suit]     |
+ .086|   [HP panel ]  [rank|suit][ ATTACK ][ BLOCK ][ PASS ]               |
  .014+---------------------------------------------------------------+
 ```
 

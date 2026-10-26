@@ -88,7 +88,7 @@ Balatro-deck style: the run setup screen (NEW RUN) picks one of six (`CharacterP
 - The shared stage (fight, map, Black Market, Incident) spans x .06–.88, y .18–.86 and centres over the hand (`StageLayout`).
 - Every CanvasScaler is Expand, so the canvas is never under 1920×1080 and the 16:9 layout only gains room; the header rows (Gear bar, Trick heading, count and six slots) keep their 1080p pixel boxes from the canvas's top centre (`CanvasPin`), and the MAP button sits under them.
 - An active Contract's progress is the only run-progress text, a small line above the draw pile.
-- (2026-10-27, combat HUD spec `design/ux/hud.md`, not built yet) ATTACK, BLOCK and PASS stay below the hand. INCOMING sits directly under the enemy row with the status line below it (the enemy row rises about 20px to make room). The status line becomes a cream notched tag. A waiting enemy drop and LEAVE IT move to the top of the stage, under the header. The DISCARD strip stops below MAP and above the Contract line.
+- (2026-10-27, combat HUD spec `design/ux/hud.md`, not built yet) ATTACK, BLOCK and PASS stay below the hand. INCOMING sits directly under the enemy row with the status line below it (the enemy row rises about 20px to make room). The status line becomes a cream notched tag. A waiting enemy drop and LEAVE IT move to the top of the stage, under the header. The DISCARD strip stops below MAP and above the Contract line. The HP panel moves down beside the action bar (it was raised 114px over the hand frame), with the Credits chip and portrait stacked above it; the action bar centres under the hand, carrying the sort buttons in its left end.
 
 ## Detail panel
 
