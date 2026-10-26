@@ -369,8 +369,10 @@ the stage anchors.
 
 ## Accessibility
 
-**Baseline:** WCAG 2.2 AA for text contrast and non-colour cues. This is
-proposed; the project tier is still open.
+**Tier:** Basic with elevated features, committed 2026-10-27 in
+`design/accessibility-requirements.md`. WCAG 2.2 AA applies to text contrast
+and non-colour cues. Reduce Motion, the shake toggle, playback speed and
+tooltip text size are elevated. This screen meets the tier as follows.
 
 - **Keyboard:** focus opens info. Tab order: Gear slots left to right, Trick
   slots, MAP, enemies left to right, hand cards, ATTACK, BLOCK, PASS, sort rank,
@@ -487,8 +489,9 @@ Designer constants (in code today):
 1. There is no player journey map. Author one from
    `.claude/docs/templates/player-journey.md` to give this screen upstream
    context.
-2. The accessibility tier is undefined; WCAG 2.2 AA is proposed. Keyboard-only
-   play was declined for now.
+2. Resolved 2026-10-27: the tier is committed in
+   `design/accessibility-requirements.md` (Basic with elevated features).
+   Keyboard-only play is a known limitation.
 3. Audio cues weren't inventoried; section H has no sound column.
 4. The pause button sits at the top-right corner by MAP and the sixth Trick
    slot. Confirm its place and its focus order.
