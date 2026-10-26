@@ -77,8 +77,8 @@ sprites at 1080p.
   as a card.
 - The tooltip is a cream panel next to the clicked object, with a notch
   pointing at it. It never tilts.
-- INCOMING n is a red notched tag with cream type, directly under its enemy,
-  one per enemy.
+- INCOMING n is a red notched tag with cream type: one total under the enemy
+  row, matching the single aggregate retaliation hit.
 
 **Tilt** is a visual-only child transform; UGUI layout stays axis-aligned.
 Angles come from a fixed per-slot table, never from `Random` or instance IDs.
@@ -90,8 +90,8 @@ Angles come from a fixed per-slot table, never from `Random` or instance IDs.
 - Hero: the hand (8–12px shadow, full saturation, tilt) and the enemies
   (portrait, with the INCOMING tag and the HP strip hugging it).
 - Mid: the tooltip and primary buttons (4–6px).
-- Supporting: the header inventory (stickers at reduced scale, 3px) and status
-  lines (0px, flat text or kraft on the board).
+- Supporting: the header inventory (stickers at reduced scale, 3px) and the status
+  line (a cream notched tag, 3px; owner choice 2026-10-27).
 - When two elements share a shadow depth but differ in importance, reduce the
   less important one.
 
@@ -329,7 +329,7 @@ objects on it define it.
   (`#8C8270` plus hatch), with one cream shield glyph per charge on the bar.
   ATTACK beside the bar is a small red tag with a glyph and number. Abilities
   are Barlow 18 in cream under the bar.
-- **INCOMING n:** a red notched tag directly under the enemy: "INCOMING" in
+- **INCOMING n:** one red notched tag under the enemy row (the total): "INCOMING" in
   Barlow 22 and n in Anton 32, both cream, with a cream outer edge for
   protanopia. The 4px red halftone misregistration offset applies to the tag
   body only, and the numerals stay solid. It pops when the value changes; in

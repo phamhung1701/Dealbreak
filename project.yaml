@@ -49,3 +49,10 @@ naming:
 
 # No `commands:` block on purpose: tests run through Locus in the open Editor
 # (the unity-tester agent). A batchmode Unity run would collide with it.
+
+platform:
+  targets: ["PC"]
+  primary_input: "Mouse"
+  gamepad_support: "None"
+  touch_support: "None"
+  # Keyboard focus also opens contextual info (OWNER_DECISIONS, UX principles).
