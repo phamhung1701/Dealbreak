@@ -19,7 +19,93 @@ public sealed class EditorialFrame : MaskableGraphic
     public Vector2 shadowOffset = new(6,-6);
     public Color shadowColor = new(.043f,.043f,.047f);
 
-    public void Refresh() => SetVerticesDirty();
+    // Cut Sheet sprite mode, off by default: the frame draws no mesh and drives a child Face image plus
+    // a sibling ink shadow placed before it. The frame's own rect stays the untilted hit area.
+    [Tooltip("Draw the sprite as a child Face with a CutSheetShadow instead of the flat mesh. Apply with Refresh().")]
+    public bool spriteMode;
+    public Sprite sprite;
+    public Image.Type spriteType = Image.Type.Sliced;
+    public bool spriteFillCenter = true;
+    public float spritePixelsPerUnitMultiplier = 1;
+    public Color spriteTint = Color.white;
+    [Tooltip("Shadow offset (d, -d) in pixels; 0 hides it. Depths live in CutSheetMetrics.")]
+    public float shadowDepth;
+    [Tooltip("Rest tilt in degrees for the face and its shadow; from a fixed table, never RNG.")]
+    public float tilt;
+
+    public const string FaceName = "CutSheetFace";
+    Image _face;
+    CutSheetShadow _shadow;
+    Vector2 _faceOffset;
+    bool _partsSearched;
+    public Image SpriteFace => _face;
+    public CutSheetShadow SpriteShadow => _shadow;
+
+    public void Refresh() { SyncSpriteMode(); SetMaterialDirty(); SetVerticesDirty(); }
+
+    public void SetSpriteMode(bool on) { spriteMode = on; Refresh(); }
+
+    // Moves the face only; the shadow stays put, so hover (-2, +2) reads the shadow 2 deeper and
+    // pressed (+4, -4) reads it at 0. No mesh rebuild, only the face's position changes.
+    public void SetFaceOffset(Vector2 offset)
+    {
+        _faceOffset = offset;
+        if (_face) Place(_face.rectTransform, offset);
+    }
+
+    void FindSpriteParts()
+    {
+        _partsSearched = true;
+        foreach (Transform child in transform)
+        {
+            if (!_shadow && child.TryGetComponent(out CutSheetShadow shadow)) _shadow = shadow;
+            else if (!_face && child.name == FaceName && child.TryGetComponent(out Image face)) _face = face;
+        }
+    }
+
+    void SyncSpriteMode()
+    {
+        if (!_partsSearched || (spriteMode && (!_face || !_shadow))) FindSpriteParts();
+        if (!spriteMode)
+        {
+            if (_face && _face.gameObject.activeSelf) _face.gameObject.SetActive(false);
+            if (_shadow && _shadow.gameObject.activeSelf) _shadow.gameObject.SetActive(false);
+            return;
+        }
+        if (!_shadow) _shadow = CutSheetShadow.Create(transform);
+        if (!_face)
+        {
+            var item = new GameObject(FaceName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            item.layer = gameObject.layer;
+            item.transform.SetParent(transform, false);
+            item.TryGetComponent(out _face);
+        }
+        if (!_shadow.gameObject.activeSelf) _shadow.gameObject.SetActive(true);
+        if (!_face.gameObject.activeSelf) _face.gameObject.SetActive(true);
+        // Shadow first, face second, so labels and other children print on top of both.
+        if (_shadow.transform.GetSiblingIndex() != 0) _shadow.transform.SetSiblingIndex(0);
+        if (_face.transform.GetSiblingIndex() != 1) _face.transform.SetSiblingIndex(1);
+
+        if (_face.raycastTarget) _face.raycastTarget = false;
+        if (_face.sprite != sprite) _face.sprite = sprite;
+        if (_face.type != spriteType) _face.type = spriteType;
+        if (_face.fillCenter != spriteFillCenter) _face.fillCenter = spriteFillCenter;
+        if (!Mathf.Approximately(_face.pixelsPerUnitMultiplier, spritePixelsPerUnitMultiplier)) _face.pixelsPerUnitMultiplier = spritePixelsPerUnitMultiplier;
+        if (_face.color != spriteTint) _face.color = spriteTint;
+        Place(_face.rectTransform, _faceOffset);
+        _shadow.Match(_face, CutSheetShadow.Tint, shadowDepth);
+        var rotation = Quaternion.Euler(0, 0, tilt);
+        if (_face.transform.localRotation != rotation) _face.transform.localRotation = rotation;
+        if (_shadow.transform.localRotation != rotation) _shadow.transform.localRotation = rotation;
+    }
+
+    static void Place(RectTransform rect, Vector2 offset)
+    {
+        if (rect.anchorMin != Vector2.zero) rect.anchorMin = Vector2.zero;
+        if (rect.anchorMax != Vector2.one) rect.anchorMax = Vector2.one;
+        if (rect.offsetMin != offset) rect.offsetMin = offset;
+        if (rect.offsetMax != offset) rect.offsetMax = offset;
+    }
 
     // Below 1080p the canvas scales under 1, where a 1-unit hairline falls between screen pixels and
     // edges drop out; a border is drawn at least one screen pixel wide, and redrawn on a resize.
@@ -32,7 +118,7 @@ public sealed class EditorialFrame : MaskableGraphic
 
     static readonly System.Collections.Generic.HashSet<EditorialFrame> Live = new();
     static Vector2Int _screen;
-    protected override void OnEnable() { base.OnEnable(); Live.Add(this); }
+    protected override void OnEnable() { base.OnEnable(); Live.Add(this); if (spriteMode) SyncSpriteMode(); }
     protected override void OnDisable() { Live.Remove(this); base.OnDisable(); }
 
     [RuntimeInitializeOnLoadMethod]
@@ -45,13 +131,14 @@ public sealed class EditorialFrame : MaskableGraphic
         foreach (var frame in Live) if (frame) frame.SetVerticesDirty();
     }
 
-    // The fill prints with the halftone screen; borders and shadows stay solid.
-    public override Material defaultMaterial => DealbreakUIStyle.Halftone ? DealbreakUIStyle.Halftone : base.defaultMaterial;
+    // The fill prints with the halftone screen; borders and shadows stay solid. Sprite mode draws
+    // nothing itself, and its Images keep the default UI material so they batch with the atlas.
+    public override Material defaultMaterial => !spriteMode && DealbreakUIStyle.Halftone ? DealbreakUIStyle.Halftone : base.defaultMaterial;
 
     protected override void OnPopulateMesh(VertexHelper vh)
     {
         vh.Clear(); var bounds = rectTransform.rect;
-        if (bounds.width <= 0 || bounds.height <= 0) return;
+        if (spriteMode || bounds.width <= 0 || bounds.height <= 0) return;
         float edge = Mathf.Min(ScreenPixelBorder(), Mathf.Min(bounds.width,bounds.height)*.25f);
         if (showShadow) Fill(vh, Outline(bounds, 0), shadowOffset, shadowColor, bounds, false);
         if (fill.a > 0) Fill(vh, Outline(bounds, edge), Vector2.zero, fill, bounds, true);
