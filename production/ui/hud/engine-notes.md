@@ -269,3 +269,20 @@ Captures always come from `MainMenu.unity` → Play → `GameFlowService.Instanc
 11. **Open questions that block parts of slices**: OQ7 (draw-pile detail vs `DeckViewerUI`) blocks S14 cut 5; OQ9 (coin timing) affects S10/S19; OQ4 (pause button place) affects S11.
 12. **Dirty font assets** in the working tree (dynamic atlas churn) are unrelated and must stay out of these commits.
 13. **Action bar width**: .25-.69 is 845px at 1080p for the sort column (18%) plus ATTACK ≥200, BLOCK ≥180 and PASS ≥60 hit targets with gaps; it fits, but check the 16:10 and 1440p captures for Anton 32 labels.
+
+---
+
+## Appendix: S6a theme usage audit (owner-approved 2026-10-28)
+
+The real count was 76 lines reading `ochre`, `ink` or `charcoal` (the 149 estimate counted expressions). In this slice `inkPrint` and `mustard` hold today's `ink` and `ochre` in the theme asset, so the retargets change nothing on screen; S6b sets the Cut Sheet values.
+
+| Read | Classified as | Action |
+|---|---|---|
+| Credits trigger tag (`EffectTriggerPresenterUI`, new `TagStyle.Credits`); Credits coin flight (`FlyChip`); Black Market sell price while dragging (`ItemDragUI` market label) | Credits | `ochre` → `mustard` |
+| Paper-button label (`EditorialButton`, `DealbreakUIStyle.Button`); text on paper surfaces (`DealbreakUIStyle` tint); enemy name text (`DealbreakUIStyle`; `DealbreakUIOverhaulAuthoring` name, HP, status); tooltip body (authoring); ability callout label; drop-preview tag label; reroll label; tier tag text (`ItemTierFxUI`); Mod FX marks (`CardModFxUI`); trigger tag labels; Shield glyph outline; `frame.ink` (×4, a field the frame never draws) | type on stock, border, outline | `ink` → `inkPrint` |
+| Selected character tile; active and selected button rim and label; toggle check; enemy targeting ring and outline; selected Gear slot; drag ghost rim, drop ring and drop tag on a valid target; map current, available and scouted nodes; selected Black Market good | selection or valid target | stays `ochre` (teal in S6b) |
+| Loading backdrop; tutorial and sell dimming shades; art-correction panel and portrait mount; overhaul background; HP meter track; pressed toggle; pressed-button darkening; Cost tag fill; NeoPunk authoring values | stage | stays `ink` |
+| All 13 `charcoal` reads | dark raised surface with paper text | unchanged (fine at both values) |
+| Loading suits and bar; tutorial lesson label and highlight rim; other gain tags (+HP, DRAW, BLOCK, SHIELD) and heal chips; ability callout fill; enemy Trick drop rim; Epic tier FX; Mod FX; reroll fill; RUN VICTORY / ENCOUNTER HALTED title | decorative accent | stays `ochre`; **owner: restyle each in its own zone slice** (they show teal between S6b and that slice) |
+
+Also removed: the green and blue `targetGraphic` colours on ATTACK and BLOCK in `ActionButtonsUI` (both are `EditorialButton`s, which paint the target graphic clear every `LateUpdate`). Pinned by `ThemeUsageAuditTests`.

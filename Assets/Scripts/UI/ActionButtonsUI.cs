@@ -305,13 +305,6 @@ public class ActionButtonsUI : MonoBehaviour
         if (blockButton) blockButton.interactable = !targeting && isDefense && canDefend;
         if (rankSortButton) rankSortButton.interactable = cards.HandCount > 1;
         if (suitSortButton) suitSortButton.interactable = cards.HandCount > 1;
-        // Emphasis follows the combat state; command availability remains authoritative above.
-        if (playButton && playButton.targetGraphic)
-            playButton.targetGraphic.color = combat.currentState == GameState.PlayerTurn
-                ? new Color(0.26f, 0.48f, 0.38f, 1f) : new Color(0.14f, 0.22f, 0.23f, 0.3f);
-        if (blockButton && blockButton.targetGraphic)
-            blockButton.targetGraphic.color = isDefense
-                ? new Color(0.32f, 0.48f, 0.64f, 1f) : new Color(0.14f, 0.22f, 0.23f, 0.3f);
         if (_primaryActionLabel)
         {
             _primaryActionLabel.text = cards.IsEnemyTargeting ? "Cancel" : combat.currentState switch

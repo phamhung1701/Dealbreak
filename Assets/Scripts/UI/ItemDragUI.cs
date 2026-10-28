@@ -499,7 +499,7 @@ public sealed class ItemDragUI : MonoBehaviour
         var shade = _marketShade.GetComponent<Image>();
         shade.color = theme ? new Color(theme.ink.r, theme.ink.g, theme.ink.b, .88f) : new Color(0f, 0f, 0f, .88f);
         shade.raycastTarget = false;
-        _marketLabel = Label(_marketShade, 64f, theme ? theme.ochre : Color.yellow);
+        _marketLabel = Label(_marketShade, 64f, theme ? theme.mustard : Color.yellow);
         _marketShade.gameObject.SetActive(false);
 
         _discardStrip = Child("Discard Strip", typeof(Image));
@@ -529,7 +529,7 @@ public sealed class ItemDragUI : MonoBehaviour
         var tagImage = _tag.GetComponent<Image>();
         tagImage.color = theme ? theme.ochre : Color.yellow;
         tagImage.raycastTarget = false;
-        _tagLabel = Label(_tag, 30f, theme ? theme.ink : Color.black);
+        _tagLabel = Label(_tag, 30f, theme ? theme.inkPrint : Color.black);
         _tag.gameObject.SetActive(false);
 
         _ghost = Child("Item Ghost", typeof(CanvasRenderer), typeof(EditorialFrame));
@@ -538,7 +538,7 @@ public sealed class ItemDragUI : MonoBehaviour
         _ghostFrame.border = 2f;
         _ghostFrame.corner = 0f;
         _ghostFrame.showAccent = false;
-        if (theme) { _ghostFrame.fill = theme.charcoal; _ghostFrame.ink = theme.ink; }
+        if (theme) { _ghostFrame.fill = theme.charcoal; _ghostFrame.ink = theme.inkPrint; }
         _ghostLabel = Label(_ghost, 20f, theme ? theme.paper : Color.white);
         _ghost.gameObject.SetActive(false);
     }

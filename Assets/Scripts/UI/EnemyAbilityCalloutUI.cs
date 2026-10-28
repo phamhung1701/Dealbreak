@@ -114,7 +114,7 @@ public sealed class EnemyAbilityCalloutUI : MonoBehaviour
         _label = text.GetComponent<TMP_Text>();
         if (theme)
         {
-            DealbreakUIStyle.Text(_label, theme.headingFont, 26, theme.ink);
+            DealbreakUIStyle.Text(_label, theme.headingFont, 26, theme.inkPrint);
             _label.raycastTarget = false;
         }
         _label.alignment = TextAlignmentOptions.Center;

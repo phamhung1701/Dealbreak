@@ -63,7 +63,7 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
         // Paper-treatment buttons (Incident and reward choices) are raised content blocks.
         if(!paper&&_surface&&_surface.treatment==EditorialSurface.Treatment.Paper)
         {fill=theme.charcoal;rim=theme.slate;border=1;}
-        Color labelColor=paper?theme.ink:role==Role.Destructive?theme.brick:theme.paper;
+        Color labelColor=paper?theme.inkPrint:role==Role.Destructive?theme.brick:theme.paper;
         if(open||role==Role.Quiet)labelColor=active?theme.ochre:theme.paper;
         if(!available)
         {

@@ -180,7 +180,7 @@ public static class DealbreakUIOverhaulAuthoring
         DealbreakUIStyle.Frame(tooltip.panel.transform,true);
         var group=tooltip.panel.GetComponent<CanvasGroup>();if(!group)group=tooltip.panel.AddComponent<CanvasGroup>();group.ignoreParentGroups=true;
         DealbreakUIStyle.Text(tooltip.title,DealbreakUIStyle.Theme.headingFont,28,DealbreakUIStyle.Theme.paper);
-        DealbreakUIStyle.Text(tooltip.body,DealbreakUIStyle.Theme.bodyFont,19,DealbreakUIStyle.Theme.ink);
+        DealbreakUIStyle.Text(tooltip.body,DealbreakUIStyle.Theme.bodyFont,19,DealbreakUIStyle.Theme.inkPrint);
         var title=tooltip.title.rectTransform;title.anchorMin=new Vector2(0,1);title.anchorMax=Vector2.one;title.pivot=new Vector2(.5f,1);
         title.offsetMin=new Vector2(22,-78);title.offsetMax=new Vector2(-22,-12);
         var band=tooltip.panel.transform.Find("DetailTitleBand") as RectTransform;
@@ -272,10 +272,10 @@ public static class DealbreakUIOverhaulAuthoring
                 {
                     var frame=root.transform.Find("Editorial Frame").GetComponent<EditorialFrame>();
                     var drop=root.GetComponent<CardActionDropTarget>();if(drop)drop.feedbackGraphic=frame;
-                    DealbreakUIStyle.Text(enemy.nameText,DealbreakUIStyle.Theme.headingFont,27,DealbreakUIStyle.Theme.ink);
-                    DealbreakUIStyle.Text(enemy.hpText,DealbreakUIStyle.Theme.numericFont,18,DealbreakUIStyle.Theme.ink);
+                    DealbreakUIStyle.Text(enemy.nameText,DealbreakUIStyle.Theme.headingFont,27,DealbreakUIStyle.Theme.inkPrint);
+                    DealbreakUIStyle.Text(enemy.hpText,DealbreakUIStyle.Theme.numericFont,18,DealbreakUIStyle.Theme.inkPrint);
                     DealbreakUIStyle.Text(enemy.atkText,DealbreakUIStyle.Theme.numericFont,18,DealbreakUIStyle.Theme.brick);
-                    DealbreakUIStyle.Text(enemy.statusText,DealbreakUIStyle.Theme.bodyFont,15,DealbreakUIStyle.Theme.ink);
+                    DealbreakUIStyle.Text(enemy.statusText,DealbreakUIStyle.Theme.bodyFont,15,DealbreakUIStyle.Theme.inkPrint);
                 }
                 if(path.Contains("PathNode"))foreach(var text in root.GetComponentsInChildren<TMP_Text>(true))DealbreakUIStyle.Text(text,DealbreakUIStyle.Theme.headingFont,21,DealbreakUIStyle.Theme.paper);
                 PrefabUtility.SaveAsPrefabAsset(root,path);

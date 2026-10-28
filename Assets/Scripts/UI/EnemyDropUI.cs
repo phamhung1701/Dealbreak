@@ -57,7 +57,7 @@ public sealed class EnemyDropUI : MonoBehaviour
         frame.border = 2f;
         frame.corner = 0f;
         frame.showAccent = false;
-        if (theme) { frame.fill = theme.charcoal; frame.ink = theme.ink; frame.rim = theme.ochre; }
+        if (theme) { frame.fill = theme.charcoal; frame.ink = theme.inkPrint; frame.rim = theme.ochre; }
         token.GetComponent<DropToken>().owner = this;
         var detail = token.GetComponent<ContextualInfoTrigger>();
         detail.allowWhileBlocked = true;

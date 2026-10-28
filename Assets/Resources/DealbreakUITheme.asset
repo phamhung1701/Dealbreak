@@ -31,3 +31,17 @@ MonoBehaviour:
   paper: {r: 0.9254902, g: 0.91764706, b: 0.89411765, a: 1}
   brick: {r: 0.9098039, g: 0.19607843, b: 0.16862746, a: 1}
   ochre: {r: 0.78431374, g: 0.9411765, b: 0.19215687, a: 1}
+  inkPrint: {r: 0.043137256, g: 0.043137256, b: 0.047058824, a: 1}
+  kraft: {r: 0.72156864, g: 0.58431375, b: 0.41568628, a: 1}
+  mustard: {r: 0.78431374, g: 0.9411765, b: 0.19215687, a: 1}
+  muted: {r: 0.54901963, g: 0.50980395, b: 0.4392157, a: 1}
+  boardDefense: {r: 0.08235294, g: 0.06666667, b: 0.05490196, a: 1}
+  panelSprite: {fileID: 0}
+  tagSprite: {fileID: 0}
+  chipSprite: {fileID: 0}
+  stickerSprite: {fileID: 0}
+  markSprite: {fileID: 0}
+  slotDashedSprite: {fileID: 0}
+  grainSprite: {fileID: 0}
+  halftoneSprite: {fileID: 0}
+  hatchSprite: {fileID: 0}

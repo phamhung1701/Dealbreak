@@ -35,7 +35,7 @@ public static class DealbreakUIStyle
         var frame=rect.GetComponent<EditorialFrame>();frame.raycastTarget=false;
         // Older authoring passes left duplicate frames on some controls; only this one draws.
         foreach(Transform sibling in target)if(sibling!=rect&&sibling.name=="Editorial Frame")sibling.gameObject.SetActive(false);
-        frame.ink=Theme.ink;frame.rim=Theme.slate;frame.fill=Theme.charcoal;
+        frame.ink=Theme.inkPrint;frame.rim=Theme.slate;frame.fill=Theme.charcoal;
         frame.accent=Theme.brick;frame.compact=compact;frame.border=1;frame.corner=0;
         frame.showAccent=false;frame.showShadow=false;
         var surface=target.GetComponent<EditorialSurface>();
@@ -64,7 +64,7 @@ public static class DealbreakUIStyle
             bool paper=surface&&surface.treatment==EditorialSurface.Treatment.Paper;
             bool open=frameless;
             bool action=button.name is "PlayButton" or "BlockButton" or "PassButton";
-            var color=role==EditorialButton.Role.Paper?Theme.ink:Theme.paper;
+            var color=role==EditorialButton.Role.Paper?Theme.inkPrint:Theme.paper;
             label.fontStyle=FontStyles.Normal;label.characterSpacing=0;
             // The three combat actions and the frameless menu words are Anton display type; other
             // buttons use condensed tracked caps.
@@ -148,7 +148,7 @@ public static class DealbreakUIStyle
                 var image=parent.GetComponent<Image>();
                 if(image&&image.color.a>.7f&&image.color.r<.25f){tint=Theme.paper;break;}
                 var surface=parent.Find("Editorial Frame")?.GetComponent<EditorialFrame>();
-                if(surface){tint=surface.fill==Theme.paper?Theme.ink:Theme.paper;break;}
+                if(surface){tint=surface.fill==Theme.paper?Theme.inkPrint:Theme.paper;break;}
             }
             // Big titles stay Anton; small section heads become condensed tracked caps.
             if(heading&&size<40)Label(text,size,tint);
@@ -158,7 +158,7 @@ public static class DealbreakUIStyle
             var enemy=text.GetComponentInParent<EnemyDisplayUI>();
             if(enemy)
             {
-                if(text==enemy.nameText){Text(text,Theme.headingFont,24,Theme.ink);text.overflowMode=TextOverflowModes.Overflow;}
+                if(text==enemy.nameText){Text(text,Theme.headingFont,24,Theme.inkPrint);text.overflowMode=TextOverflowModes.Overflow;}
                 else if(text==enemy.hpText||text==enemy.atkText)
                 {
                     // (owner, 2026-10-23) A bigger HP meter: HP 24 on the wider bar, ATTACK 22 beside it.

@@ -411,7 +411,7 @@ public sealed class CardModFxUI : MonoBehaviour
         _red = theme ? theme.brick : new Color(.9f, .2f, .17f);
         _lime = theme ? theme.ochre : new Color(.8f, 1f, .2f);
         _paper = theme ? theme.paper : new Color(.94f, .92f, .86f);
-        _ink = theme ? theme.ink : new Color(.05f, .05f, .06f);
+        _ink = theme ? theme.inkPrint : new Color(.05f, .05f, .06f);
 
         _front = Layer("Mod FX", _view.face.rectTransform, -1);
         switch (visual)

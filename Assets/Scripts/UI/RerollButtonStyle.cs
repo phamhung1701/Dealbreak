@@ -40,7 +40,7 @@ public sealed class RerollButtonStyle : MonoBehaviour
         }
         if (_label)
         {
-            _label.color = on ? theme.ink : new Color(theme.paper.r, theme.paper.g, theme.paper.b, .5f);
+            _label.color = on ? theme.inkPrint : new Color(theme.paper.r, theme.paper.g, theme.paper.b, .5f);
             _label.alignment = TextAlignmentOptions.Center;
             if (theme.headingFont) _label.font = theme.headingFont;
             _label.fontSize = 22;

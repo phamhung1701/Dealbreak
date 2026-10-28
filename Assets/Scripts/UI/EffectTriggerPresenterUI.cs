@@ -391,7 +391,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         int chips = Mathf.Clamp(amount, 1, MaxChips);
         int landed = 0;
         for (int i = 0; i < chips; i++)
-            StartCoroutine(FlyChip(from, coin, theme ? theme.creditsIcon : null, Lime, i * ChipStagger,
+            StartCoroutine(FlyChip(from, coin, theme ? theme.creditsIcon : null, Mustard, i * ChipStagger,
                 () => { landed++; PopCoin(coin); }));
         float elapsed = 0f;
         while (landed < chips && elapsed < 2f)
@@ -468,22 +468,35 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
 
     // ---- Tags -----------------------------------------------------------------------------
 
-    enum TagStyle { Gain, Attack, Cost, Utility }
+    internal enum TagStyle { Gain, Credits, Attack, Cost, Utility }
 
     static Color Lime => DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.ochre : new Color(.78f, .94f, .19f);
     static Color Signal => DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.brick : new Color(.91f, .2f, .17f);
     static Color Paper => DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.paper : new Color(.93f, .92f, .89f);
     static Color Ink => DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.ink : new Color(.04f, .04f, .05f);
+    static Color InkPrint => DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.inkPrint : new Color(.07f, .07f, .07f);
+    static Color Mustard => DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.mustard : new Color(.9f, .67f, .33f);
 
-    static TagStyle Style(EffectCue cue) => cue switch
+    internal static TagStyle Style(EffectCue cue) => cue switch
     {
-        EffectCue.Credits or EffectCue.Heal or EffectCue.Draw or EffectCue.Block or EffectCue.Shield or
+        EffectCue.Credits => TagStyle.Credits,
+        EffectCue.Heal or EffectCue.Draw or EffectCue.Block or EffectCue.Shield or
             EffectCue.BlockBonus or EffectCue.BlockMultiplier or EffectCue.DamageReduction or
             EffectCue.MaxHealth => TagStyle.Gain,
         EffectCue.AttackBonus or EffectCue.AttackMultiplier or EffectCue.Counter or EffectCue.Critical or
             EffectCue.DoubleStrike or EffectCue.AreaDamage or EffectCue.Carry or EffectCue.CoverFire => TagStyle.Attack,
         EffectCue.HealthCost or EffectCue.Destroy => TagStyle.Cost,
         _ => TagStyle.Utility
+    };
+
+    // Credits are mustard everywhere; other gains keep the selection accent until their zone is restyled.
+    internal static Color Fill(TagStyle style) => style switch
+    {
+        TagStyle.Gain => Lime,
+        TagStyle.Credits => Mustard,
+        TagStyle.Attack => Signal,
+        TagStyle.Cost => Ink,
+        _ => Paper
     };
 
     public static string TagText(EffectTrigger trigger)
@@ -531,13 +544,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         rect.pivot = new Vector2(.5f, 0f);
         var background = tag.GetComponent<Image>();
         background.raycastTarget = false;
-        background.color = style switch
-        {
-            TagStyle.Gain => Lime,
-            TagStyle.Attack => Signal,
-            TagStyle.Cost => Ink,
-            _ => Paper
-        };
+        background.color = Fill(style);
         var labelObject = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         var labelRect = (RectTransform)labelObject.transform;
         labelRect.SetParent(rect, false);
@@ -550,7 +557,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         {
             TagStyle.Attack => Paper,
             TagStyle.Cost => Signal,
-            _ => Ink
+            _ => InkPrint
         };
         label.alignment = TextAlignmentOptions.Center;
         label.textWrappingMode = TextWrappingModes.NoWrap;

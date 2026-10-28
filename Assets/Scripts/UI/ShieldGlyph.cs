@@ -23,7 +23,7 @@ public static class ShieldGlyph
             if (_sprite) return _sprite;
             var theme = DealbreakUIStyle.Theme;
             Color face = theme ? theme.paper : new Color(.93f, .92f, .89f);
-            Color rim = theme ? theme.ink : new Color(.04f, .04f, .05f);
+            Color rim = theme ? theme.inkPrint : new Color(.04f, .04f, .05f);
             var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false) { name = "Shield Glyph", wrapMode = TextureWrapMode.Clamp };
             var pixels = new Color[Size * Size];
             for (int y = 0; y < Size; y++)
