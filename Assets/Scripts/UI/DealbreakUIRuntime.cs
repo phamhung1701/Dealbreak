@@ -80,7 +80,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         line.offsetMin=turn.offsetMin;line.offsetMax=turn.offsetMax;
         actions.selectionLabel.alignment=TextAlignmentOptions.Center;
         ContextualTooltipUI.RegisterObstacle(line);ContextualTooltipUI.RegisterObstacle(turn);
-        if(actions.pendingDamageLabel)ContextualTooltipUI.RegisterObstacle(actions.pendingDamageLabel.rectTransform);
+        if(actions.IncomingArea)ContextualTooltipUI.RegisterObstacle(actions.IncomingArea);
     }
     void ShowOneStatusLine()
     {

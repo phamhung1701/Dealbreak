@@ -17,13 +17,87 @@ public static class DealbreakCentralStageAuthoring
         try
         {
             var size = enemy.GetComponent<LayoutElement>();
-            size.preferredWidth = 350; size.preferredHeight = 450;
-            ((RectTransform)enemy.transform).sizeDelta = new Vector2(350, 450);
+            size.preferredWidth = EnemyViewWidth; size.preferredHeight = EnemyViewHeight;
+            ((RectTransform)enemy.transform).sizeDelta = new Vector2(EnemyViewWidth, EnemyViewHeight);
             PrefabUtility.SaveAsPrefabAsset(enemy, "Assets/Prefabs/EnemyView.prefab");
         }
         finally { PrefabUtility.UnloadPrefabContents(enemy); }
         AssetDatabase.SaveAssets();
         DealbreakNeoPunkAuthoring.Apply();
+    }
+
+    /// <summary>
+    /// HUD slice S8: re-applies only the enemy row (EnemyArea's layout padding), the INCOMING tag's
+    /// rect (ActionButtonsUI.pendingDamageLabel) in Game.unity, and the EnemyView prefab's height.
+    /// </summary>
+    [MenuItem("Dealbreak/UI/Apply Enemy Row Layout")]
+    public static void ApplyEnemyRowLayout()
+    {
+        Edit("Assets/Scenes/Game.unity", scene => EnemyRowLayout(scene.GetRootGameObjects().First(g => g.name == "Canvas")));
+        EnemyViewSize();
+        AssetDatabase.SaveAssets();
+    }
+
+    // hud.md section C: the enemy row sits at y .49-.846 (raised about 20px), ending at x .871 so the
+    // draw pile keeps its clearance; INCOMING is one tag centred under it at y .43-.47. The row is the
+    // shared stage (EnemyArea) inset by its HorizontalLayoutGroup padding, so the market, map and
+    // Incident regions keep the full stage. Canvas fractions of the 1920x1080 reference.
+    public const float EnemyRowMinY = .49f, EnemyRowMaxY = .846f, EnemyRowRight = .871f;
+    public const float IncomingMinY = .43f, IncomingMaxY = .47f, IncomingWidth = .10f;
+    // The view fills the row's height, so it no longer runs down over the INCOMING band.
+    public const float EnemyViewWidth = 350, EnemyViewHeight = 384;
+
+    static void EnemyRowLayout(GameObject root)
+    {
+        var canvas = new Rect(0, 0, RefWidth, RefHeight);
+        var group = root.GetComponent<EnemyGroupUI>();
+        var container = group.enemyContainer;
+        var box = PxRect(container, canvas);
+        var layout = container.GetComponent<HorizontalLayoutGroup>();
+        layout.childAlignment = TextAnchor.UpperCenter;
+        layout.padding = new RectOffset(0,
+            Mathf.Max(0, Mathf.RoundToInt(box.xMax - EnemyRowRight * RefWidth)),
+            Mathf.Max(0, Mathf.RoundToInt((1 - EnemyRowMaxY) * RefHeight - box.yMin)),
+            Mathf.Max(0, Mathf.RoundToInt(box.yMax - (1 - EnemyRowMinY) * RefHeight)));
+        EditorUtility.SetDirty(layout);
+
+        var actions = root.GetComponent<ActionButtonsUI>();
+        var label = actions.pendingDamageLabel.rectTransform;
+        var parent = (RectTransform)label.parent;
+        AbsoluteAnchors(parent, root.transform, out var min, out var max);
+        float left = box.xMin / RefWidth, right = EnemyRowRight;
+        float centre = (left + right) * .5f;
+        float x1 = centre - IncomingWidth * .5f, x2 = centre + IncomingWidth * .5f;
+        DealbreakUIStyle.Place(label, (x1 - min.x) / (max.x - min.x), (IncomingMinY - min.y) / (max.y - min.y),
+            (x2 - min.x) / (max.x - min.x), (IncomingMaxY - min.y) / (max.y - min.y));
+        label.localRotation = Quaternion.identity;
+        label.localScale = Vector3.one;
+        EditorUtility.SetDirty(label);
+    }
+
+    /// <summary>A stretched rect's anchors in the canvas root's fractions, composed up the parent chain (offsets are zero).</summary>
+    public static void AbsoluteAnchors(RectTransform rect, Transform canvasRoot, out Vector2 min, out Vector2 max)
+    {
+        min = Vector2.zero; max = Vector2.one;
+        for (var r = rect; r && r != canvasRoot; r = r.parent as RectTransform)
+        {
+            var parentMin = r.anchorMin; var parentMax = r.anchorMax;
+            min = parentMin + Vector2.Scale(parentMax - parentMin, min);
+            max = parentMin + Vector2.Scale(parentMax - parentMin, max);
+        }
+    }
+
+    static void EnemyViewSize()
+    {
+        var enemy = PrefabUtility.LoadPrefabContents("Assets/Prefabs/EnemyView.prefab");
+        try
+        {
+            var size = enemy.GetComponent<LayoutElement>();
+            size.preferredWidth = EnemyViewWidth; size.preferredHeight = EnemyViewHeight;
+            ((RectTransform)enemy.transform).sizeDelta = new Vector2(EnemyViewWidth, EnemyViewHeight);
+            PrefabUtility.SaveAsPrefabAsset(enemy, "Assets/Prefabs/EnemyView.prefab");
+        }
+        finally { PrefabUtility.UnloadPrefabContents(enemy); }
     }
 
     /// <summary>Re-applies only the header rows (Gear, Tricks) and the widened stage to Game.unity.</summary>
@@ -289,6 +363,7 @@ public static class DealbreakCentralStageAuthoring
         // Last: the header rows and the widened stage override the older column and stage placement.
         InventoryLayout(root.transform, actions, runtime);
         StageLayout(root);
+        EnemyRowLayout(root);
         CleanCopy(scene);
     }
 

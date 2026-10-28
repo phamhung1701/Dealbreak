@@ -48,7 +48,7 @@ public static class TutorialTargets
     public static IEnumerable<RectTransform> BlockButton() => One(Rect(Actions?.blockButton));
     public static IEnumerable<RectTransform> PassButton() => One(Rect(Actions?.passButton));
     public static IEnumerable<RectTransform> RecoverButton() => One(Rect(Actions?.recoverButton));
-    public static IEnumerable<RectTransform> Incoming() => One(Rect(Actions?.pendingDamageLabel));
+    public static IEnumerable<RectTransform> Incoming() => One(Actions ? Actions.IncomingArea : null);
     public static IEnumerable<RectTransform> PlayerHealth() => One(Actions ? Actions.PlayerHealthArea : null);
     public static IEnumerable<RectTransform> DrawPile() => One(Rect(Find<DrawDeckStackUI>()));
     public static IEnumerable<RectTransform> Credits() => One(Rect(Find<RunStatusUI>()?.creditsLabel));

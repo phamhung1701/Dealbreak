@@ -162,12 +162,10 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         if(source.TryGetComponent<EnemyDisplayUI>(out var enemy)&&enemy.DisplayedEnemy!=null&&!enemy.DisplayedEnemy.IsDefeated)
         {
             var data=enemy.DisplayedEnemy;
-            // Ability names stand out from their rules text.
-            string accent=DealbreakUIStyle.Theme?ColorUtility.ToHtmlStringRGB(DealbreakUIStyle.Theme.brick):"A8453A";
-            string traits=data.type.abilities==null?string.Empty:string.Join("\n\n",data.type.abilities.Where(a=>a).Select(a=>$"<b><color=#{accent}>{a.displayName.ToUpperInvariant()}</color></b>\n{a.description}"));
+            // Ability names and rules open from each ability tag under the enemy (owner 2026-10-29): each fact once.
             string reward=data.type.sourceCard?$"\n\nReward • {data.type.sourceCard.DisplayName}":string.Empty;
             // HP and attack already read under the enemy; the detail adds only what the board does not show.
-            string detail=string.Join("\n\n",new[]{enemy.DetailGuidance,traits,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part)));
+            string detail=string.Join("\n\n",new[]{enemy.DetailGuidance,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part)));
             if(string.IsNullOrEmpty(detail))return false;
             info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,detail);return true;
         }

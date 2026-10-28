@@ -121,10 +121,8 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         {
             if (enemy.DisplayedEnemy == null || enemy.DisplayedEnemy.IsDefeated) return false;
             var data = enemy.DisplayedEnemy;
+            // Ability names and rules open from the ability tags under the enemy (owner 2026-10-29).
             _text.Append(enemy.DetailGuidance);
-            if (data.type.abilities != null)
-                foreach (var ability in data.type.abilities)
-                    if (ability) _text.Append("\n\n").Append(ability.displayName).Append('\n').Append(ability.description);
             if (data.type.sourceCard) _text.Append("\n\nHeadliner reward • ").Append(data.type.sourceCard.DisplayName);
             if (data.type.fleeAfterPlayerTurns > 0) _text.Append("\n\nFlees after ").Append(data.type.fleeAfterPlayerTurns).Append(" completed card actions. Completed: ").Append(data.PlayerTurnsCompleted);
             Show(data.DisplayName, _text.ToString().TrimStart('\n'));

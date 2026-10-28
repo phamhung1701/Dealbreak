@@ -145,8 +145,12 @@ public static class DealbreakUIStyle
             if(!Fresh(text))continue;
             // A Cut Sheet inventory slot styles its own glyph and disc numbers.
             if(text.GetComponentInParent<CutSheetSlotUI>(true))continue;
+            // The INCOMING tag styles its own word and numerals.
+            if(text.GetComponentInParent<IncomingTagUI>(true))continue;
             // The placeholder portrait name is authored display type (auto-sized Anton); leave it as set.
             if(text.name=="PortraitGlyph"&&text.GetComponentInParent<EnemyDisplayUI>())continue;
+            // An enemy's ability tags print ink names on paper; the tag owns that style.
+            if(text.name=="Ability Name"&&text.GetComponentInParent<EnemyDisplayUI>())continue;
             // Cards, Black Market tiles and the character tiles draw their own type.
             if(text.GetComponentInParent<CardView>()!=null||text.GetComponentInParent<ShopOfferUI>()!=null||text.GetComponentInParent<CharacterPickerUI>()!=null)continue;
             string name=text.name.ToLowerInvariant();
@@ -168,19 +172,8 @@ public static class DealbreakUIStyle
             // Run progress in the header reads as mono caps, like the coordinates on a flyer.
             if(name.Contains("progress"))text.fontStyle=FontStyles.UpperCase;
             var enemy=text.GetComponentInParent<EnemyDisplayUI>();
-            if(enemy)
-            {
-                if(text==enemy.nameText){Text(text,Theme.headingFont,24,Theme.inkPrint);text.overflowMode=TextOverflowModes.Overflow;}
-                else if(text==enemy.hpText||text==enemy.atkText)
-                {
-                    // (owner, 2026-10-23) A bigger HP meter: HP 24 on the wider bar, ATTACK 22 beside it.
-                    Text(text,Theme.numericFont,text==enemy.atkText?22:24,text==enemy.atkText?Theme.brick:Theme.paper);
-                    text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Overflow;
-                    // ATTACK shrinks to its slot beside the meter instead of running under it.
-                    if(text==enemy.atkText){text.enableAutoSizing=true;text.fontSizeMin=14;text.fontSizeMax=22;}
-                }
-                else if(text==enemy.statusText)Text(text,Theme.bodyFont,15,Color.Lerp(Theme.paper,Theme.slate,.35f));
-            }
+            // Enemy name, HP, ATTACK and intent/abilities: the Cut Sheet type the enemy view owns (S8).
+            if(enemy)EnemyDisplayUI.StyleOwnedText(enemy,text);
         }
         foreach(var button in root.GetComponentsInChildren<Button>(true))
         {

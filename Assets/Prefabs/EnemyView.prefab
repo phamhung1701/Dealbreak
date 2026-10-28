@@ -1013,6 +1013,14 @@ MonoBehaviour:
   compact: 0
   shadowOffset: {x: 8, y: -9}
   shadowColor: {r: 0.043, g: 0.043, b: 0.047, a: 1}
+  spriteMode: 0
+  sprite: {fileID: 0}
+  spriteType: 1
+  spriteFillCenter: 1
+  spritePixelsPerUnitMultiplier: 1
+  spriteTint: {r: 1, g: 1, b: 1, a: 1}
+  shadowDepth: 0
+  tilt: 0
 --- !u!222 &7030596387473214344
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1144,7 +1152,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 350, y: 450}
+  m_SizeDelta: {x: 350, y: 384}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1500931566750400249
 CanvasRenderer:
@@ -1236,7 +1244,7 @@ MonoBehaviour:
   m_MinWidth: 240
   m_MinHeight: 270
   m_PreferredWidth: 350
-  m_PreferredHeight: 450
+  m_PreferredHeight: 384
   m_FlexibleWidth: 0
   m_FlexibleHeight: 0
   m_LayoutPriority: 1

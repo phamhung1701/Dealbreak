@@ -23,6 +23,22 @@ public class ActionButtonsUI : MonoBehaviour
     public TMP_Text playerHealthLabel;
     public TMP_Text turnStateLabel;
     public TMP_Text pendingDamageLabel;
+    IncomingTagUI _incomingTag;
+    /// <summary>The INCOMING tag built around <see cref="pendingDamageLabel"/>.</summary>
+    public IncomingTagUI IncomingTag => _incomingTag;
+    /// <summary>The whole INCOMING tag's rect (tooltip obstacle, tutorial highlight); built on first use.</summary>
+    public RectTransform IncomingArea
+    {
+        get
+        {
+            EnsureIncomingTag();
+            return _incomingTag ? _incomingTag.transform as RectTransform : pendingDamageLabel ? pendingDamageLabel.rectTransform : null;
+        }
+    }
+    void EnsureIncomingTag()
+    {
+        if (_incomingTag == null && pendingDamageLabel) _incomingTag = IncomingTagUI.Dress(pendingDamageLabel);
+    }
     public TMP_Text selectionLabel;
     public TMP_Text combatLogLabel;
 
@@ -336,22 +352,13 @@ public class ActionButtonsUI : MonoBehaviour
             };
         }
 
+        // One INCOMING tag under the enemy row, defense only: the aggregate pending hit, never split.
         if (pendingDamageLabel)
         {
-            var theme = DealbreakUIStyle.Theme;
-            if (theme && pendingDamageLabel.color != theme.brick)
-            {
-                DealbreakUIStyle.Text(pendingDamageLabel, theme.headingFont, 30, theme.brick);
-                pendingDamageLabel.alignment = TextAlignmentOptions.Center;
-            }
-            DealbreakUIStyle.Outline(pendingDamageLabel, .12f);
-            bool showDamage = combat.currentState == GameState.EnemyAttacking;
-            pendingDamageLabel.gameObject.SetActive(showDamage);
-            pendingDamageLabel.text = showDamage
-                ? combat.pendingDamage > 0
-                    ? $"INCOMING {combat.IncomingDamageAfterModifiers}"
-                    : "ALL BLOCKED"
-                : string.Empty;
+            EnsureIncomingTag();
+            bool showDamage = IncomingTagUI.ShownFor(combat);
+            if (_incomingTag != null)
+                _incomingTag.Show(showDamage, IncomingTagUI.ValueFor(combat), showDamage, IncomingTagUI.FullyBlockedFor(combat));
         }
 
         if (selectionLabel)

@@ -148,6 +148,8 @@ public sealed class ScreenShakeUI : MonoBehaviour
 
     void Apply()
     {
+        // The red edge still flashes; only the movement honours the shake and Reduce Motion settings.
+        if (!CutSheetMotion.ShakeEnabled || CutSheetMotion.ReduceMotion) return;
         if (!isActiveAndEnabled || _applied.Count > 0 || _elapsed >= ShakeTime) return;
         float t = _elapsed / ShakeTime;
         float decay = (1f - t) * (1f - t);
