@@ -26,21 +26,34 @@ The seven hexes were sampled by eye. Sample the art with a median (not a mean: t
 
 **Procedure.** Add `Tools/PrintArt/sample_palette.py` (Pillow, takes file plus box list, prints median RGB and hex). Accept a hex if the sample is within CIE76 delta-E 6 of the bible value; otherwise adopt the sample (or the nearest value that keeps the ratios below) and **rerun section 3's contrast table** with `Tools/PrintArt/contrast_check.py` (the same relative-luminance maths as this document). Gates that must still hold after any change: ink on teal at least 4.5, ink on mustard at least 4.5, ink on kraft at least 4.5, paper on red at least 4.5 (or 3.0 where the text is large, see section 3), teal and red on board at least 3.0 as non-text.
 
-Computed values (effective hexes):
+**Result (2026-10-28, slice S1).** `python Tools/PrintArt/sample_palette.py` takes the median of the pixels in each box that pass the token's colour filter (the coordinates above miss the fill in places: the card border is at y 4-10, two of the three red "dot centres" are pip and paper, and the Rook points hit the outline). The owner adopted the samples.
+
+| Token | Eyeballed | Sample | dE76 | Decision |
+|---|---|---|---|---|
+| Cream | `#EFE4CC` | `#F0E6CF` | 0.9 | keep `#EFE4CC` |
+| Ink | `#121212` | `#0E1113` (pip and border agree) | 1.7 | keep `#121212` |
+| Red | `#B8382E` | `#A84538` (card halftone dots, n=2097) | 13.0 | adopt `#A84538` |
+| Teal | `#2E9AA8` | `#4AA6B8` (Scanner mid facet, hue 192) | 6.1 | adopt `#4AA6B8` |
+| Teal, Rook | `#2E9AA8` | `#437A9D` (bandana, hue 203) | 21.6 | reference only: bluer than 188 +/- 10, so Scanner sets the token |
+| Mustard | `#E0A82E` | `#E6AB55` (Gold Pistol slide) | 14.7 | adopt `#E6AB55` |
+
+All contrast gates still hold with the adopted values. Red on the board drops from 3.06 to 3.00, right at the non-text floor: keep red off the board as a thin line or small mark without a cream or ink edge.
+
+Computed values (effective hexes, after the 2026-10-28 result below; `python Tools/PrintArt/contrast_check.py`):
 
 | Pair | Ratio |
 |---|---|
 | Ink `#121212` on cream `#EFE4CC` | 14.8 |
 | Cream on board `#1C1814` | 14.0 (bible says about 13; this is higher, so safe) |
 | Cream on defense board `#15110E` | 14.9 |
-| Cream on red `#B8382E` | 4.57 |
-| Ink on red | 3.25 |
-| Red on board | 3.06 (non-text only) |
-| Ink on teal `#2E9AA8` | 5.6 |
-| Cream on teal | 2.6 (banned) |
-| Teal on board | 5.3 |
-| Ink on mustard `#E0A82E` | 8.8 |
-| Mustard on board | 8.2 |
+| Cream on red `#A84538` | 4.66 |
+| Ink on red | 3.19 |
+| Red on board | 3.00 (non-text only; at the floor) |
+| Ink on teal `#4AA6B8` | 6.6 |
+| Cream on teal | 2.2 (banned) |
+| Teal on board | 6.3 |
+| Ink on mustard `#E6AB55` | 9.2 |
+| Mustard on board | 8.7 |
 | Ink on kraft `#B8956A` | 6.7 |
 | Cream on kraft | 2.2 (banned) |
 | Kraft on board | 6.3 |
@@ -64,8 +77,8 @@ The theme asset lives at `Resources/DealbreakUITheme` (`DealbreakUIStyle.Theme`)
 | `charcoal` (surface) | none (see below) | `#241E18` (warm, one step above the board) | **Deliberately not changed to cream.** Legacy screens put `paper` text on `charcoal` fills. Making `charcoal` cream would turn cream text on cream. It stays a dark raised surface, warmed. Cut Sheet cream stock arrives through sprites and `paper` |
 | `slate` (hairline, disabled grey) | none | `#5C5247` (warm hairline) | **Split.** The disabled meaning moves to the new `muted`. Cream on `#8C8270` is 3.0, so pouring the disabled value into `slate` would break every legacy label that sits on it |
 | `paper` (off-white) | Cream stock | `#EFE4CC` | No (current value is about `#F0E6CE`; near no-op) |
-| `brick` (signal red) | Red | `#B8382E` | No. Danger only; audit in 1c |
-| `ochre` (acid lime) | Teal | `#2E9AA8` | **Value only, as decided.** Selection and valid target only. Audit usages (1c): any `ochre` read that means Credits must move to `mustard` first |
+| `brick` (signal red) | Red | `#A84538` | No. Danger only; audit in 1c. The current value (.66, .27, .22) already is this hex |
+| `ochre` (acid lime) | Teal | `#4AA6B8` | **Value only, as decided.** Selection and valid target only. Audit usages (1c): any `ochre` read that means Credits must move to `mustard` first |
 
 ### 1b. New fields
 
@@ -73,7 +86,7 @@ The theme asset lives at `Resources/DealbreakUITheme` (`DealbreakUIStyle.Theme`)
 |---|---|---|
 | `inkPrint` | `#121212` | type on stock, baked-border colour, every shadow tint |
 | `kraft` | `#B8956A` | Tricks heading strip, secondary surfaces |
-| `mustard` | `#E0A82E` | Credits only |
+| `mustard` | `#E6AB55` | Credits only |
 | `muted` | `#8C8270` | disabled fill (cream toward board) and the enemy Shield fill. One value, two uses by the bible; one field |
 | `boardDefense` | `#15110E` | defense board tone. Other states' board tones (map `#221C16`, market `#241B10`, incident, rewards, defeat) are added when those screens are specced |
 | `shadowPanel/Button/Slot/Meter` | 6 / 4 / 3 / 0 px (and 12 / 8 for cards) | constants, not theme fields: put them in one static `CutSheetMetrics` class |

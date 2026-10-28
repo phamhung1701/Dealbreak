@@ -27,7 +27,7 @@ public sealed class DealbreakUITheme : ScriptableObject
     [Tooltip("Tricks heading strip and secondary surfaces.")]
     public Color kraft = new Color32(0xB8, 0x95, 0x6A, 0xFF);
     [Tooltip("Credits only.")]
-    public Color mustard = new Color32(0xE0, 0xA8, 0x2E, 0xFF);
+    public Color mustard = new Color32(0xE6, 0xAB, 0x55, 0xFF);
     [Tooltip("Disabled fill and the enemy Shield fill.")]
     public Color muted = new Color32(0x8C, 0x82, 0x70, 0xFF);
     [Tooltip("The board tone while the enemy attacks.")]

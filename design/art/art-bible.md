@@ -126,9 +126,9 @@ before they go into `DealbreakUITheme`.
 | Cream stock | `#EFE4CC` | card paper | panels, the tooltip, primary type on the board |
 | Kraft | `#B8956A` | warm neutral | secondary surfaces: map sheet, price board, status strips |
 | Ink | `#121212` | card border and pips | type on stock, borders, every shadow |
-| Signal red | `#B8382E` | card halftone shadow dots | damage and danger only |
-| Teal | `#2E9AA8` | Rook's bandana, Scanner | selection and valid target only (replaces acid lime) |
-| Mustard | `#E0A82E` | Gold Pistol | Credits only |
+| Signal red | `#A84538` | card halftone shadow dots | damage and danger only |
+| Teal | `#4AA6B8` | Scanner (Rook's bandana reads bluer) | selection and valid target only (replaces acid lime) |
+| Mustard | `#E6AB55` | Gold Pistol | Credits only |
 
 **Semantic rules**
 - Red: damage, danger, HP costs, INCOMING n and the defense-state halftone
