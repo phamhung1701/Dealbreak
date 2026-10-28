@@ -20,6 +20,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     public ShopUI market;
     public RunEventUI incident;
     float _nextStyleCheck;
+    int _shownTricksUsed=int.MinValue,_shownTricksCap=int.MinValue;
     int _lastSignature;
     readonly System.Collections.Generic.HashSet<Object> _styled=new();
     int _lastShopCredits=int.MinValue;
@@ -49,8 +50,9 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(canvas&&actions)EffectTriggerPresenterUI.Install(canvas.rootCanvas);
         InstallInventoryPanels();
     }
-    // (owner, 2026-10-23) Each header row sits on its own panel with a coloured heading block, so
-    // Gear (slate) and Tricks (signal red) read apart.
+    // (owner, 2026-10-23) Each header row sits on its own panel with a coloured heading block, so the
+    // rows read apart. Cut Sheet (visual-design 3b): the block is a tag-sprite strip, paper for Gear
+    // and kraft for Tricks, with ink labels (never red text on kraft).
     void InstallInventoryPanels()
     {
         var theme=DealbreakUIStyle.Theme;if(!actions||!theme)return;
@@ -58,13 +60,13 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         var gearHeading=rail?rail.transform.Find("GearHeader")?.GetComponent<TMP_Text>():null;
         if(rail&&rail.slotsRoot)InventoryPanelUI.Install("Gear Panel",(RectTransform)rail.transform,
             new[]{gearHeading?gearHeading.rectTransform:null,rail.capacityLabel?rail.capacityLabel.rectTransform:null,rail.slotsRoot},
-            new[]{gearHeading,rail.capacityLabel},theme.slate,theme.paper);
+            new[]{gearHeading,rail.capacityLabel},theme.paper,theme.inkPrint,theme.tagSprite);
         var slots=System.Array.FindAll(actions.backpackSlotButtons,b=>b);if(slots.Length==0)return;
         var area=(RectTransform)slots[0].transform.parent;
         var trickHeading=area.Find("TricksHeading")?.GetComponent<TMP_Text>();
         var members=new System.Collections.Generic.List<RectTransform>{trickHeading?trickHeading.rectTransform:null,trickCapacity?trickCapacity.rectTransform:null};
         foreach(var slot in slots)members.Add((RectTransform)slot.transform);
-        InventoryPanelUI.Install("Tricks Panel",area,members.ToArray(),new[]{trickHeading,trickCapacity},theme.brick,theme.paper);
+        InventoryPanelUI.Install("Tricks Panel",area,members.ToArray(),new[]{trickHeading,trickCapacity},theme.kraft,theme.inkPrint,theme.tagSprite);
     }
     // The selection preview and the turn state share one line under the enemies: while cards are
     // selected their preview stands in for PLAYER TURN or DEFENSE, so it never collides with INCOMING.
@@ -185,7 +187,12 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     void LateUpdate()
     {
         if(handCount&&CardManager.Instance!=null)handCount.text=$"<size=55%>HAND</size>\n{CardManager.Instance.HandCount}/{CardManager.Instance.HandCapacity}";
-        if(trickCapacity&&CardManager.Instance!=null)trickCapacity.text=$"{CardManager.Instance.BackpackSlotsUsed}/{CardManager.Instance.BackpackCapacity}";
+        if(trickCapacity&&CardManager.Instance!=null)
+        {
+            // Set only on change: SetText formats without allocating a string each frame.
+            int used=CardManager.Instance.BackpackSlotsUsed,cap=CardManager.Instance.BackpackCapacity;
+            if(used!=_shownTricksUsed||cap!=_shownTricksCap){_shownTricksUsed=used;_shownTricksCap=cap;trickCapacity.SetText("{0:0}/{1:0}",used,cap);}
+        }
         ShowOneStatusLine();
         FollowHandEnd();
         // A drop waiting on the board after a fight also brings the hand up, so Tricks can make room.

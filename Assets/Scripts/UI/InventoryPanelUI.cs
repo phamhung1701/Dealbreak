@@ -3,10 +3,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// The panel behind one header inventory row (Gear or Tricks): a charcoal surface with a hairline
-/// that wraps the row's heading, count and visible slots, and a solid heading block in the row's
-/// own colour so the two rows read apart. It follows the slots as their count changes (a Cargo Case
-/// adds Trick slots). Presentation only.
+/// The panel behind one header inventory row (Gear or Tricks): it wraps the row's heading, count and
+/// visible slots, and puts a heading strip in the row's own colour under the heading and count so
+/// the two rows read apart. It follows the slots as their count changes (a Cargo Case adds Trick
+/// slots). Cut Sheet (a strip sprite given): the strip is the theme's tag sprite tinted per row,
+/// shadow 0, with the labels in Barlow Condensed Bold 22 ink, tracked and uppercase; the panel
+/// itself draws nothing, so the stickers sit on the board. Presentation only.
 /// </summary>
 public sealed class InventoryPanelUI : MonoBehaviour
 {
@@ -22,7 +24,7 @@ public sealed class InventoryPanelUI : MonoBehaviour
     /// are visible; <paramref name="labels"/> (the heading and count) sit on the coloured block.
     /// </summary>
     public static InventoryPanelUI Install(string name, RectTransform parent, RectTransform[] members,
-        TMP_Text[] labels, Color blockColor, Color labelColor)
+        TMP_Text[] labels, Color blockColor, Color labelColor, Sprite blockSprite = null)
     {
         if (!parent || members == null || members.Length == 0) return null;
         var existing = parent.Find(name);
@@ -50,6 +52,12 @@ public sealed class InventoryPanelUI : MonoBehaviour
         frame.fill = theme ? theme.charcoal : image.color;
         frame.rim = theme ? theme.slate : new Color(.23f, .23f, .25f);
         frame.border = 1;
+        if (blockSprite)
+        {
+            image.color = Color.clear;
+            frame.fill = Color.clear;
+            frame.border = 0;
+        }
         frame.Refresh();
 
         var blockObject = new GameObject("Heading Block", typeof(RectTransform), typeof(Image));
@@ -61,6 +69,11 @@ public sealed class InventoryPanelUI : MonoBehaviour
         var blockImage = blockObject.GetComponent<Image>();
         blockImage.color = blockColor;
         blockImage.raycastTarget = false;
+        if (blockSprite)
+        {
+            blockImage.sprite = blockSprite;
+            blockImage.type = Image.Type.Sliced;
+        }
 
         var panel = panelObject.GetComponent<InventoryPanelUI>();
         panel._members = members;
@@ -70,11 +83,25 @@ public sealed class InventoryPanelUI : MonoBehaviour
         {
             if (!labels[i]) continue;
             panel._labels[i] = labels[i].rectTransform;
+            if (blockSprite && theme) StripLabel(labels[i], theme.labelFont ? theme.labelFont : labels[i].font, labelColor);
             labels[i].color = labelColor;
         }
         panel.LateUpdate();
         return panel;
     }
+
+    public const float StripTextSize = 22, StripTracking = 4;
+
+    // "GEAR n/cap" / "TRICKS n/cap": Barlow Condensed Bold 22 ink, tracked, uppercase.
+    static void StripLabel(TMP_Text label, TMP_FontAsset font, Color color)
+    {
+        DealbreakUIStyle.Text(label, font, StripTextSize, color);
+        label.fontStyle = FontStyles.UpperCase;
+        label.characterSpacing = StripTracking;
+        label.raycastTarget = label.raycastTarget || label.GetComponent<ContextualInfoTrigger>() != null;
+    }
+
+    public Image HeadingStrip => _block && _block.TryGetComponent(out Image image) ? image : null;
 
     void LateUpdate()
     {
@@ -90,15 +117,18 @@ public sealed class InventoryPanelUI : MonoBehaviour
         }
         // The panel shows and fades with its row (results screens and overlays hide the slots).
         if (!_group) _group = gameObject.AddComponent<CanvasGroup>();
-        _group.blocksRaycasts = false;
-        _group.alpha = any ? alpha : 0f;
+        if (_group.blocksRaycasts) _group.blocksRaycasts = false;
+        float shown = any ? alpha : 0f;
+        if (!Mathf.Approximately(_group.alpha, shown)) _group.alpha = shown;
         if (!any) return;
         var rect = (RectTransform)transform;
         min -= Vector2.one * Padding;
         max += Vector2.one * Padding;
-        rect.sizeDelta = max - min;
+        var size = max - min;
+        if (rect.sizeDelta != size) rect.sizeDelta = size;
         // Anchored at the parent's centre, so the position is the box centre relative to it.
-        rect.anchoredPosition = (min + max) * .5f - parent.rect.center;
+        var centre = (min + max) * .5f - parent.rect.center;
+        if (rect.anchoredPosition != centre) rect.anchoredPosition = centre;
         // The coloured block runs under the heading and count, from the panel's left edge.
         bool label = false;
         Vector2 labelMin = default, labelMax = default;
@@ -107,9 +137,10 @@ public sealed class InventoryPanelUI : MonoBehaviour
         if (_block)
         {
             float right = label ? labelMax.x - rect.rect.xMin + Padding : 0f;
-            _block.sizeDelta = new Vector2(Mathf.Max(0f, right), 0f);
-            _block.anchoredPosition = Vector2.zero;
-            _block.gameObject.SetActive(label);
+            var blockSize = new Vector2(Mathf.Max(0f, right), 0f);
+            if (_block.sizeDelta != blockSize) _block.sizeDelta = blockSize;
+            if (_block.anchoredPosition != Vector2.zero) _block.anchoredPosition = Vector2.zero;
+            if (_block.gameObject.activeSelf != label) _block.gameObject.SetActive(label);
         }
     }
 

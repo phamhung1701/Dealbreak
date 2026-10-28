@@ -40,4 +40,11 @@ public sealed class DealbreakUITheme : ScriptableObject
     public Sprite slotDashedSprite;
     [Tooltip("Repeat-wrapped overlays, set one texel per screen pixel by ScreenPixelTile.")]
     public Sprite grainSprite, halftoneSprite, hatchSprite;
+    // Gear tier auras (owner 2026-10-29), appended: each tier's frame, halo, wires, sparks and shop tag.
+    [Tooltip("Rare Gear aura and Black Market tier tag (cobalt).")]
+    public Color rareAura = new Color32(0x5B, 0x7F, 0xD6, 0xFF);
+    [Tooltip("Epic Gear aura and Black Market tier tag (violet).")]
+    public Color epicAura = new Color32(0x9B, 0x6A, 0xD8, 0xFF);
+    [Tooltip("Legendary Gear aura and Black Market tier tag (orange).")]
+    public Color legendaryAura = new Color32(0xEE, 0x8A, 0x3A, 0xFF);
 }

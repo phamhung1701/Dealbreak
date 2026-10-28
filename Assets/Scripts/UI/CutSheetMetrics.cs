@@ -30,10 +30,13 @@ public static class CutSheetMetrics
     public const float TextFloor = 18, TextFloorOnKraft = 20;
 
     // Tilt in degrees. Slots stay within +/-1, tags settle to +/-1.5 (INCOMING starts at 3), the status
-    // tag never tilts. Slots read a fixed table by index, never RNG or instance IDs.
+    // tag never tilts. Slots read a fixed table by index, never RNG or instance IDs. The table values
+    // are approved (owner 2026-10-28).
     public const float SlotTiltMax = 1, TagTiltRest = 1.5f, IncomingTiltStart = 3, StatusTagTilt = 0;
     static readonly float[] SlotTilts = { -.6f, .8f, -.3f, 1f, -.9f, .4f, -.5f, .7f };
     public static int SlotTiltCount => SlotTilts.Length;
+    // The Trick row reads the table from this offset, so the two header rows don't repeat one pattern.
+    public const int TrickRowTiltOffset = 5;
     public static float SlotTilt(int index)
     {
         int n = SlotTilts.Length;

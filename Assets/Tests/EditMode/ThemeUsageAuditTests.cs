@@ -25,6 +25,7 @@ public sealed class ThemeUsageAuditTests
         new object[] { "paper", "EFE4CC" }, new object[] { "brick", "A84538" }, new object[] { "ochre", "4AA6B8" },
         new object[] { "inkPrint", "121212" }, new object[] { "kraft", "B8956A" }, new object[] { "mustard", "E6AB55" },
         new object[] { "muted", "8C8270" }, new object[] { "boardDefense", "15110E" },
+        new object[] { "rareAura", "5B7FD6" }, new object[] { "epicAura", "9B6AD8" }, new object[] { "legendaryAura", "EE8A3A" },
     };
 
     [TestCaseSource(nameof(CutSheetValues))]

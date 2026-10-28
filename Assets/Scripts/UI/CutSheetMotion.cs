@@ -5,7 +5,9 @@
 /// </summary>
 public static class CutSheetMotion
 {
-    public static bool ReduceMotion => false;
+    public static bool ReduceMotion => ReduceMotionOverride ?? false;
+    /// <summary>Set by the settings slice when it lands, and by tests; null reads the default (off).</summary>
+    public static bool? ReduceMotionOverride { get; set; }
     public static bool ShakeEnabled => !ReduceMotion;
     public static float PlaybackSpeed => 1f;
 

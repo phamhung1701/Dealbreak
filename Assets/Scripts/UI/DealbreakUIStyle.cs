@@ -143,6 +143,8 @@ public static class DealbreakUIStyle
         foreach(var text in root.GetComponentsInChildren<TMP_Text>(true))
         {
             if(!Fresh(text))continue;
+            // A Cut Sheet inventory slot styles its own glyph and disc numbers.
+            if(text.GetComponentInParent<CutSheetSlotUI>(true))continue;
             // The placeholder portrait name is authored display type (auto-sized Anton); leave it as set.
             if(text.name=="PortraitGlyph"&&text.GetComponentInParent<EnemyDisplayUI>())continue;
             // Cards, Black Market tiles and the character tiles draw their own type.
@@ -183,7 +185,7 @@ public static class DealbreakUIStyle
         foreach(var button in root.GetComponentsInChildren<Button>(true))
         {
             string name=button.name.ToLowerInvariant();
-            if(name=="blocker"||button.GetComponent<ShopOfferUI>()||button.GetComponentInParent<CharacterPickerUI>()||!Fresh(button))continue;
+            if(name=="blocker"||button.GetComponent<ShopOfferUI>()||button.GetComponent<CutSheetSlotUI>()||button.GetComponentInParent<CharacterPickerUI>()||!Fresh(button))continue;
             var role=name.Contains("discard")||name.Contains("abandon")||name.Contains("delete")||name.Contains("quit")||name.Contains("replace")?EditorialButton.Role.Destructive:
                 name.Contains("confirm")||name.Contains("buy")||name.Contains("play")||name.Contains("newrun")||name.Contains("start")||name.Contains("apply")||name.StartsWith("use")?EditorialButton.Role.Primary:
                 name.Contains("back")||name.Contains("cancel")||name.Contains("sort")||name.Contains("pass")||name.Contains("pause")||name.Contains("build")?EditorialButton.Role.Quiet:EditorialButton.Role.Secondary;

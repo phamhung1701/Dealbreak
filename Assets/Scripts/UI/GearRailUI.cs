@@ -116,6 +116,7 @@ public sealed class GearRailUI : MonoBehaviour
                 {
                     if (count == _slots.Count) _slots.Add(CreateSlot());
                     var slot = _slots[count];
+                    slot.SetSlotIndex(count);
                     slot.SetSlotSprites(occupiedSlotSprite, emptySlotSprite, selectedSlotSprite);
                     var instanceId = cards.GetGearInstanceAt(currentGearIndex)?.Id ?? 0;
                     slot.Bind(gear, selectedGear => SelectGear(instanceId, selectedGear),
@@ -132,6 +133,7 @@ public sealed class GearRailUI : MonoBehaviour
         {
             if (i == _slots.Count) _slots.Add(CreateSlot());
             var slot = _slots[i];
+            slot.SetSlotIndex(i);
             slot.SetSlotSprites(occupiedSlotSprite, emptySlotSprite, selectedSlotSprite);
             slot.BindEmpty();
             slot.gameObject.SetActive(true);

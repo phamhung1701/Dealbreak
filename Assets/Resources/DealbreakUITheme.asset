@@ -36,12 +36,15 @@ MonoBehaviour:
   mustard: {r: 0.9019608, g: 0.67058825, b: 0.33333334, a: 1}
   muted: {r: 0.54901963, g: 0.50980395, b: 0.4392157, a: 1}
   boardDefense: {r: 0.08235294, g: 0.06666667, b: 0.05490196, a: 1}
-  panelSprite: {fileID: 0}
-  tagSprite: {fileID: 0}
-  chipSprite: {fileID: 0}
-  stickerSprite: {fileID: 0}
-  markSprite: {fileID: 0}
-  slotDashedSprite: {fileID: 0}
-  grainSprite: {fileID: 0}
-  halftoneSprite: {fileID: 0}
-  hatchSprite: {fileID: 0}
+  panelSprite: {fileID: 21300000, guid: 9b26e5cab11dc2a4aa689169211b53da, type: 3}
+  tagSprite: {fileID: 21300000, guid: e6e38d14fd0207e45a652025004a84ec, type: 3}
+  chipSprite: {fileID: 21300000, guid: 462d13f3bf6210b40a5350bfdddf69c5, type: 3}
+  stickerSprite: {fileID: 21300000, guid: c1b8d17cb06a1704b976d6ab5133d2e4, type: 3}
+  markSprite: {fileID: 21300000, guid: c5b2d56a0b1bb724abc296548ac0b146, type: 3}
+  slotDashedSprite: {fileID: 21300000, guid: 7f705a3a1dad6564db18f727d9cc1d3f, type: 3}
+  grainSprite: {fileID: 21300000, guid: 85c536a7050af82429e3c73584cb453c, type: 3}
+  halftoneSprite: {fileID: 21300000, guid: 975875e6688761b41ad416f3420dcff4, type: 3}
+  hatchSprite: {fileID: 21300000, guid: cfed79dc9622dfe4990e74e401843da7, type: 3}
+  rareAura: {r: 0.35686275, g: 0.49803922, b: 0.8392157, a: 1}
+  epicAura: {r: 0.60784316, g: 0.41568628, b: 0.84705883, a: 1}
+  legendaryAura: {r: 0.93333334, g: 0.5411765, b: 0.22745098, a: 1}

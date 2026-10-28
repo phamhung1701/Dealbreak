@@ -153,6 +153,8 @@ public class RunStatusUI : MonoBehaviour
         {
             var label = backpackSlotLabels[i];
             if (!label) continue;
+            // A dressed Cut Sheet slot is drawn by ActionButtonsUI (glyph on the face, counts on discs).
+            if (label.GetComponentInParent<CutSheetSlotUI>(true)) continue;
             bool visible = cards != null && i < Mathf.Max(cards.BackpackCapacity, cards.BackpackSlotsUsed);
             label.transform.parent.gameObject.SetActive(visible);
             if (!visible)

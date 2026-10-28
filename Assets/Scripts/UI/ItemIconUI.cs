@@ -8,8 +8,8 @@ using UnityEngine.UI;
 public static class ItemIconUI
 {
     const string ChildName = "Authored Icon";
-    static readonly Vector2 InsetMin = new(.08f, .08f);
-    static readonly Vector2 InsetMax = new(.92f, .92f);
+    static readonly Vector2 InsetMin = CutSheetSlotUI.ArtMin;
+    static readonly Vector2 InsetMax = CutSheetSlotUI.ArtMax;
 
     /// <summary>Shows <paramref name="sprite"/> inset in <paramref name="parent"/>, or hides the icon when null.</summary>
     public static bool Show(Transform parent, Sprite sprite) => Show(parent, sprite, InsetMin, InsetMax);
@@ -17,6 +17,8 @@ public static class ItemIconUI
     public static bool Show(Transform parent, Sprite sprite, Vector2 anchorMin, Vector2 anchorMax)
     {
         if (!parent) return false;
+        // A Cut Sheet slot carries its art on its tilted face, not on the untilted root.
+        parent = CutSheetSlotUI.ArtParent(parent);
         var existing = parent.Find(ChildName);
         if (!sprite)
         {
@@ -28,6 +30,7 @@ public static class ItemIconUI
         else
         {
             var iconObject = new GameObject(ChildName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            iconObject.layer = parent.gameObject.layer;
             iconObject.transform.SetParent(parent, false);
             image = iconObject.GetComponent<Image>();
             image.preserveAspect = true;
@@ -46,7 +49,7 @@ public static class ItemIconUI
     public static bool ShowTopLeft(Transform parent, Sprite sprite, float size, Vector2 inset)
     {
         if (!Show(parent, sprite)) return false;
-        var rect = (RectTransform)parent.Find(ChildName);
+        var rect = (RectTransform)CutSheetSlotUI.ArtParent(parent).Find(ChildName);
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
         rect.sizeDelta = new Vector2(size, size);
         rect.anchoredPosition = new Vector2(inset.x, -inset.y);
@@ -56,7 +59,7 @@ public static class ItemIconUI
     /// <summary>The sprite currently shown in <paramref name="parent"/>, if any.</summary>
     public static Sprite Shown(Transform parent)
     {
-        var existing = parent ? parent.Find(ChildName) : null;
+        var existing = parent ? CutSheetSlotUI.ArtParent(parent).Find(ChildName) : null;
         return existing && existing.gameObject.activeSelf && existing.TryGetComponent<Image>(out var image)
             ? image.sprite : null;
     }

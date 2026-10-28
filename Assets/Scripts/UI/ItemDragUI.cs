@@ -265,6 +265,8 @@ public sealed class ItemDragUI : MonoBehaviour
         if (flyer) Destroy(flyer.gameObject);
         Release(held);
         if (!slot) yield break;
+        // A Cut Sheet slot slaps its face; its pinned root never animates.
+        if (slot.TryGetComponent(out CutSheetSlotUI sticker)) { sticker.Slap(); yield break; }
         elapsed = 0f;
         Vector3 rest = slot.localScale;
         while (elapsed < .16f && slot)

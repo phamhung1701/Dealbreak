@@ -611,6 +611,12 @@ public class ActionButtonsUI : MonoBehaviour
                 continue;
             }
             var consumable = cards.GetConsumableAtSlot(i);
+            if (DealbreakUIStyle.Theme)
+            {
+                RefreshCutSheetTrickSlot(cards, button, label, i, consumable);
+                button.interactable = true;
+                continue;
+            }
             if (button.targetGraphic) button.targetGraphic.color = consumable == null
                 ? new Color(0.14f, 0.22f, 0.23f, 0.3f)
                 : new Color(0.25f, 0.34f, 0.30f, 0.85f);
@@ -646,5 +652,33 @@ public class ActionButtonsUI : MonoBehaviour
             // CardManager revalidates every click/drop against current combat state.
             button.interactable = true;
         }
+    }
+
+    // Cut Sheet Trick slot (visual-design 3b): the glyph or art on the tilted sticker face; the
+    // charges (top-right) and stack (bottom-right) discs on the slot's untilted Badges parent, so the
+    // count is shown on the slot only. An empty slot inside BackpackCapacity is a dashed outline.
+    void RefreshCutSheetTrickSlot(CardManager cards, Button button, TMP_Text label, int index, ConsumableData consumable)
+    {
+        var sticker = CutSheetSlotUI.Dress(button.transform, index + CutSheetMetrics.TrickRowTiltOffset, label);
+        bool hasSprite = ItemIconUI.Show(button.transform, consumable != null ? consumable.iconSprite : null);
+        var activeItem = consumable != null ? cards.GetConsumableInstanceAtSlot(index) : null;
+        int stackCount = consumable != null ? cards.GetConsumableStackCountAtSlot(index) : 0;
+        if (label)
+        {
+            string glyph = consumable != null && !hasSprite ? consumable.icon ?? string.Empty : string.Empty;
+            if (glyph.Length > 2) glyph = glyph.Substring(0, 2);
+            if (label.text != glyph) label.text = glyph;
+            bool show = glyph.Length > 0;
+            if (label.gameObject.activeSelf != show) label.gameObject.SetActive(show);
+            if (label.alignment != TextAlignmentOptions.Center) label.alignment = TextAlignmentOptions.Center;
+            if (DealbreakUIStyle.Theme.paper != label.color) label.color = DealbreakUIStyle.Theme.paper;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.overflowMode = TextOverflowModes.Truncate;
+        }
+        sticker.SetContents(consumable != null, index < cards.BackpackCapacity);
+        sticker.SetPinSource(consumable != null && button.TryGetComponent<ContextualInfoTrigger>(out var detail) ? detail : null);
+        bool charges = consumable != null && consumable.uses > 1 && activeItem != null;
+        sticker.SetBadge(0, charges, charges ? activeItem.RemainingCharges : 0, false);
+        sticker.SetBadge(1, stackCount > 1, stackCount, true);
     }
 }

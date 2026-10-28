@@ -302,6 +302,8 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
     {
         if (handCard) { handCard.PlayTriggerPulse(); return; }
         if (!canHop) return;
+        // A Cut Sheet slot hops its own face; its root is the untilted (often pinned) hit area.
+        if (anchor && anchor.TryGetComponent(out CutSheetSlotUI sticker)) { sticker.Hop(); return; }
         if (_pulses.TryGetValue(anchor, out var running) && running != null) StopCoroutine(running);
         _pulses[anchor] = StartCoroutine(Pulse(anchor));
     }
