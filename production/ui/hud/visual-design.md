@@ -77,7 +77,7 @@ The theme asset lives at `Resources/DealbreakUITheme` (`DealbreakUIStyle.Theme`)
 | `charcoal` (surface) | none (see below) | `#241E18` (warm, one step above the board) | **Deliberately not changed to cream.** Legacy screens put `paper` text on `charcoal` fills. Making `charcoal` cream would turn cream text on cream. It stays a dark raised surface, warmed. Cut Sheet cream stock arrives through sprites and `paper` |
 | `slate` (hairline, disabled grey) | none | `#5C5247` (warm hairline) | **Split.** The disabled meaning moves to the new `muted`. Cream on `#8C8270` is 3.0, so pouring the disabled value into `slate` would break every legacy label that sits on it |
 | `paper` (off-white) | Cream stock | `#EFE4CC` | No (current value is about `#F0E6CE`; near no-op) |
-| `brick` (signal red) | Red | `#A84538` | No. Danger only; audit in 1c. The current value (.66, .27, .22) already is this hex |
+| `brick` (signal red) | Red | `#A84538` | No. Danger only; audit in 1c. The code default (.66, .27, .22) already is this hex, but the theme asset holds `#E8322B` (.91, .20, .17), which is what draws; S6b sets the asset |
 | `ochre` (acid lime) | Teal | `#4AA6B8` | **Value only, as decided.** Selection and valid target only. Audit usages (1c): any `ochre` read that means Credits must move to `mustard` first |
 
 ### 1b. New fields
