@@ -67,7 +67,7 @@ Balatro-deck style: the run setup screen (NEW RUN) picks one of six (`CharacterP
 
 ## Art direction
 
-**(2026-10-27) Cut Sheet replaces the neo-punk editorial look.** The full spec is [`design/art/art-bible.md`](../design/art/art-bible.md) (sections 1–4 and 7). This ruling is decided but **not built yet**: the code still draws the neo-punk look until the UI rework lands, so read "today" from the code and "target" from here and the art bible.
+**(2026-10-27) Cut Sheet replaces the neo-punk editorial look.** The full spec is [`design/art/art-bible.md`](../design/art/art-bible.md) (sections 1–4 and 7). This ruling is decided and **partly built**: since 2026-10-28 (slice S6b) the theme draws the Cut Sheet palette and fonts, but shapes, shadows, tilt and the board texture arrive zone by zone (`production/ui/hud/engine-notes.md`). Read "today" from the code and "target" from here and the art bible.
 
 - Scope is UI chrome only. Card faces, item icons and character portraits keep their halftone-print art and pipeline (below).
 - The rule: everything on screen is a printed paper object (edge, hard offset shadow, ink on stock). Warm ink-brown board `#1C1814` (not green felt), cream stock `#EFE4CC`, kraft `#B8956A`, ink `#121212`. (2026-10-28) Eyedropper check done (`Tools/PrintArt/sample_palette.py`): cream and ink match the art; red, teal and mustard take the colours sampled from the card dots, Scanner and Gold Pistol, and every contrast gate still holds (`contrast_check.py`).
