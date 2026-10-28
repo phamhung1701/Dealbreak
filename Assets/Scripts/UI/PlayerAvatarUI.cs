@@ -39,7 +39,6 @@ public sealed class PlayerAvatarUI : MonoBehaviour
         var fillImage = fill.GetComponent<Image>();
         fillImage.color = theme ? theme.charcoal : Color.black;
         fillImage.raycastTarget = false;
-        DealbreakUIStyle.PrintFill(fillImage);
         var portrait = DealbreakUIStyle.Child(root, "Portrait", typeof(Image));
         DealbreakUIStyle.Place(portrait, 0, 0, 1, 1);
         portrait.offsetMin = new Vector2(Inset, Inset);

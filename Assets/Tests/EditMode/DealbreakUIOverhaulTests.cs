@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,7 +15,11 @@ public sealed class DealbreakUIOverhaulTests
         Assert.That(theme,Is.Not.Null);
         foreach(var font in new[]{theme.headingFont,theme.bodyFont,theme.numericFont})
         {
-            Assert.That(font.sourceFontFile,Is.Not.Null);Assert.That(font.material.mainTexture,Is.Not.Null);
+            // A static font drops its runtime source and keeps it by GUID in the Editor.
+            if(font.atlasPopulationMode==AtlasPopulationMode.Static)
+                Assert.That(AssetDatabase.GUIDToAssetPath(new SerializedObject(font).FindProperty("m_SourceFontFileGUID").stringValue),Does.EndWith(".ttf"),font.name);
+            else Assert.That(font.sourceFontFile,Is.Not.Null,font.name);
+            Assert.That(font.material.mainTexture,Is.Not.Null);
             foreach(char symbol in "♥♦♣♠")Assert.That(font.HasCharacter(symbol,true,true),Is.True,$"{font.name}: {symbol}");
         }
         foreach(var texture in new[]{theme.paperTexture,theme.slateTexture,theme.darkTexture,theme.dryAccents,theme.cleanAccents})

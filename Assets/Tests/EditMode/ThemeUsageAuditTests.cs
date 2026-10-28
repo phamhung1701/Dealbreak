@@ -5,9 +5,9 @@ using NUnit.Framework;
 using UnityEngine;
 
 /// <summary>
-/// Pins the S6a theme usage audit (production/ui/hud/engine-notes.md): Credits read <c>mustard</c>, type
-/// on stock and print borders read <c>inkPrint</c>, and <c>ochre</c> is left to selection. Until S6b moves
-/// the values, the new fields hold the legacy ones, so the audit changes nothing on screen.
+/// Pins the theme audit (production/ui/hud/engine-notes.md, S6a and S6b): Credits read <c>mustard</c>,
+/// type on stock and print borders read <c>inkPrint</c>, <c>ochre</c> is left to selection, and the theme
+/// asset and its code defaults hold the Cut Sheet values and text fonts.
 /// </summary>
 public sealed class ThemeUsageAuditTests
 {
@@ -18,13 +18,34 @@ public sealed class ThemeUsageAuditTests
             .SelectMany(file => File.ReadAllLines(file).Select((text, i) => (file.Replace('\\', '/'), i + 1, text)))
             .ToArray();
 
-    [Test]
-    public void ThemeAsset_NewPrintFieldsHoldTheLegacyValuesUntilS6b()
+    // (token, field, hex) from visual-design sections 1a and 1b, after the S1 eyedropper result.
+    static readonly object[] CutSheetValues =
+    {
+        new object[] { "ink", "1C1814" }, new object[] { "charcoal", "241E18" }, new object[] { "slate", "5C5247" },
+        new object[] { "paper", "EFE4CC" }, new object[] { "brick", "A84538" }, new object[] { "ochre", "4AA6B8" },
+        new object[] { "inkPrint", "121212" }, new object[] { "kraft", "B8956A" }, new object[] { "mustard", "E6AB55" },
+        new object[] { "muted", "8C8270" }, new object[] { "boardDefense", "15110E" },
+    };
+
+    [TestCaseSource(nameof(CutSheetValues))]
+    public void ThemeAsset_HoldsTheCutSheetValue(string field, string hex)
     {
         var theme = Resources.Load<DealbreakUITheme>("DealbreakUITheme");
         Assert.That(theme, Is.Not.Null);
-        Assert.That(theme.inkPrint, Is.EqualTo(theme.ink), "S6a moves reads, not values; S6b sets #121212.");
-        Assert.That(theme.mustard, Is.EqualTo(theme.ochre), "S6a moves reads, not values; S6b sets #E6AB55.");
+        var asset = (Color)typeof(DealbreakUITheme).GetField(field).GetValue(theme);
+        var fresh = ScriptableObject.CreateInstance<DealbreakUITheme>();
+        var code = (Color)typeof(DealbreakUITheme).GetField(field).GetValue(fresh);
+        Object.DestroyImmediate(fresh);
+        Assert.That(ColorUtility.ToHtmlStringRGB(asset), Is.EqualTo(hex), $"{field} in the theme asset");
+        Assert.That(ColorUtility.ToHtmlStringRGB(code), Is.EqualTo(hex), $"{field} code default");
+    }
+
+    [Test]
+    public void ThemeAsset_UsesTheCutSheetTextFonts()
+    {
+        var theme = Resources.Load<DealbreakUITheme>("DealbreakUITheme");
+        Assert.That(theme.bodyFont.name, Is.EqualTo("Zilla Slab UI"));
+        Assert.That(theme.numericFont.name, Is.EqualTo("Courier Prime UI"));
     }
 
     [Test]

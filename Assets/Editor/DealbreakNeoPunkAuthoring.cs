@@ -13,11 +13,11 @@ using UnityEngine.UI;
 /// </summary>
 public static class DealbreakNeoPunkAuthoring
 {
-    // Theme fields keep their legacy names; their roles are now: ink = stage, charcoal = grouped
-    // surface, slate = hairline/disabled grey, paper = off-white type and cards, brick = signal red,
-    // ochre = acid lime (selection, valid target, valid drop).
+    // The neo-punk colours this script bakes into scene elements (stage background, portrait window,
+    // tooltip, scrollbar). They stay until each zone's Cut Sheet slice restyles its element, so a rerun
+    // doesn't repaint screens nobody has reviewed. The theme itself takes the Cut Sheet values (Palette).
     static readonly Color Ink = Hex(0x0B0B0C), Charcoal = Hex(0x16161A), Slate = Hex(0x3A3A40);
-    static readonly Color Paper = Hex(0xECEAE4), Signal = Hex(0xE8322B), Lime = Hex(0xC8F031);
+    static readonly Color Paper = Hex(0xECEAE4), Signal = Hex(0xE8322B);
 
     [MenuItem("Dealbreak/UI/Apply Neo-Punk Correction")]
     public static void Apply()
@@ -104,8 +104,11 @@ public static class DealbreakNeoPunkAuthoring
     static void Palette()
     {
         var theme = Resources.Load<DealbreakUITheme>("DealbreakUITheme");
-        theme.ink = Ink; theme.charcoal = Charcoal; theme.slate = Slate;
-        theme.paper = Paper; theme.brick = Signal; theme.ochre = Lime;
+        // Legacy names, Cut Sheet values: the code defaults in DealbreakUITheme (visual-design section 1a).
+        var cutSheet = ScriptableObject.CreateInstance<DealbreakUITheme>();
+        theme.ink = cutSheet.ink; theme.charcoal = cutSheet.charcoal; theme.slate = cutSheet.slate;
+        theme.paper = cutSheet.paper; theme.brick = cutSheet.brick; theme.ochre = cutSheet.ochre;
+        Object.DestroyImmediate(cutSheet);
         theme.labelFont = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/Fonts/Barlow Condensed UI.asset");
         EditorUtility.SetDirty(theme);
     }

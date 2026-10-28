@@ -13,15 +13,17 @@ public sealed class DealbreakUITheme : ScriptableObject
     public Material halftoneMaterial;
     [Tooltip("The Credits coin beside the HP bar; enemy Credits fly into it.")]
     public Sprite creditsIcon;
-    public Color ink = new(0.055f, .065f, .075f);
-    public Color charcoal = new(.105f, .13f, .155f);
-    public Color slate = new(.29f, .36f, .41f);
-    public Color paper = new(.94f, .90f, .81f);
-    public Color brick = new(.66f, .27f, .22f);
-    public Color ochre = new(.82f, .61f, .26f);
+    // Legacy names, Cut Sheet values (production/ui/hud/visual-design.md section 1a): ink = the board,
+    // charcoal = a raised dark surface, slate = warm hairline, paper = cream stock, brick = signal red,
+    // ochre = teal (selection and valid target only).
+    public Color ink = new Color32(0x1C, 0x18, 0x14, 0xFF);
+    public Color charcoal = new Color32(0x24, 0x1E, 0x18, 0xFF);
+    public Color slate = new Color32(0x5C, 0x52, 0x47, 0xFF);
+    public Color paper = new Color32(0xEF, 0xE4, 0xCC, 0xFF);
+    public Color brick = new Color32(0xA8, 0x45, 0x38, 0xFF);
+    public Color ochre = new Color32(0x4A, 0xA6, 0xB8, 0xFF);
 
-    // Cut Sheet tokens (production/ui/hud/visual-design.md section 1b). Appended after the legacy
-    // fields; nothing reads them until the combat zones move over, so today's look is unchanged.
+    // Cut Sheet tokens (production/ui/hud/visual-design.md section 1b), appended after the legacy fields.
     [Tooltip("Type on stock, baked-border colour and every Cut Sheet shadow tint.")]
     public Color inkPrint = new Color32(0x12, 0x12, 0x12, 0xFF);
     [Tooltip("Tricks heading strip and secondary surfaces.")]

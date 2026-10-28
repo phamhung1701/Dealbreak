@@ -19,14 +19,16 @@ public static class DealbreakUIOverhaulAuthoring
         if(!theme){theme=ScriptableObject.CreateInstance<DealbreakUITheme>();AssetDatabase.CreateAsset(theme,"Assets/Resources/DealbreakUITheme.asset");}
         theme.symbolFont=FontAsset("Assets/TextMesh Pro/Fonts/LiberationSans.ttf","Dealbreak Symbols");
         theme.headingFont=FontAsset("Assets/Art/Fonts/Anton-Regular.ttf","Anton UI");
-        theme.bodyFont=FontAsset("Assets/Art/Fonts/SpaceGrotesk.ttf","Space Grotesk UI");
-        theme.numericFont=FontAsset("Assets/Art/Fonts/IBMPlexMono-Regular.ttf","IBM Plex Mono UI");
+        // Body text and numbers are the Cut Sheet static fonts; CutSheetFontAuthoring builds them with
+        // their scale and fallbacks (Symbols, then LiberationSans).
+        CutSheetFontAuthoring.BuildAll();
+        theme.bodyFont=AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(CutSheetFontAuthoring.Folder+"/Zilla Slab UI.asset");
+        theme.numericFont=AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(CutSheetFontAuthoring.Folder+"/Courier Prime UI.asset");
         // Every label renders TextScale larger than its authored size. Anton's caps are 23% taller than
         // Barlow Condensed's, so it also scales to that cap height to keep authored layouts.
         foreach(var font in new[]{theme.headingFont,theme.bodyFont,theme.numericFont,theme.symbolFont})
         {var face=font.faceInfo;face.scale=TextScale*(font==theme.headingFont?.815f:1f);font.faceInfo=face;EditorUtility.SetDirty(font);}
-        foreach(var font in new[]{theme.headingFont,theme.bodyFont,theme.numericFont})
-        {font.fallbackFontAssetTable=new System.Collections.Generic.List<TMP_FontAsset>{theme.symbolFont};EditorUtility.SetDirty(font);}
+        theme.headingFont.fallbackFontAssetTable=new System.Collections.Generic.List<TMP_FontAsset>{theme.symbolFont};EditorUtility.SetDirty(theme.headingFont);
         theme.paperTexture=Texture(DealbreakPrintTextureAuthoring.PaperGrain);theme.slateTexture=Texture(DealbreakPrintTextureAuthoring.PaperPoster);
         theme.darkTexture=Texture(DealbreakPrintTextureAuthoring.SlateGrain);theme.dryAccents=Texture(DealbreakPrintTextureAuthoring.RoughAccents);
         theme.cleanAccents=Texture(DealbreakPrintTextureAuthoring.CleanAccents);
