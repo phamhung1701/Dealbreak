@@ -28,8 +28,8 @@ public static class SaveGameService
         var writer = run != null ? run.GetComponent<RunSaveAutosave>() : null;
         return writer != null && writer.Checkpoint(force);
     }
-    public static void EndRun(RunManager run) => run?.GetComponent<RunSaveAutosave>()?.EndRun();
-    public static void ResumeSaving(RunManager run) => run?.GetComponent<RunSaveAutosave>()?.StartSession();
+    public static void EndRun(RunManager run) { if (run != null && run.TryGetComponent<RunSaveAutosave>(out var writer)) writer.EndRun(); }
+    public static void ResumeSaving(RunManager run) { if (run != null && run.TryGetComponent<RunSaveAutosave>(out var writer)) writer.StartSession(); }
     public static bool BeginNewRun(RunManager run)
     {
         if (run == null || run.GetComponent<RunSaveAutosave>() == null || DevModeRuntime.Enabled) return true;
@@ -52,7 +52,7 @@ public static class SaveGameService
         }
         catch (Exception e)
         {
-            run?.GetComponent<RunSaveAutosave>()?.Suspend();
+            if (run != null && run.TryGetComponent<RunSaveAutosave>(out var writer)) writer.Suspend();
             error = "Could not restore saved run: " + e.Message; LastError = error; return false;
         }
         finally { IsRestoring = false; }

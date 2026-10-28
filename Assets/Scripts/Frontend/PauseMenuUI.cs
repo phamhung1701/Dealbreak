@@ -147,6 +147,7 @@ public sealed class PauseMenuUI : MonoBehaviour
         if (coordinator != null) coordinator.ClearAll();
         AttackCardPresentationUI.Instance?.CancelAll();
         RunManager.Instance?.AbandonRun();
-        Object.FindFirstObjectByType<RunResultUI>()?.ShowAbandonedRun();
+        var result = Object.FindFirstObjectByType<RunResultUI>();
+        if (result != null) result.ShowAbandonedRun();
     }
 }

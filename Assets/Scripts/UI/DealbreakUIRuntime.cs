@@ -153,7 +153,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             var button=actions.backpackSlotButtons[i];if(!button)continue;
             int slot=i;
             // The slot's own click (ActionButtonsUI) pins this detail, after a drag's click suppression.
-            var trigger=button.GetComponent<ContextualInfoTrigger>()??button.gameObject.AddComponent<ContextualInfoTrigger>();
+            if(!button.TryGetComponent<ContextualInfoTrigger>(out var trigger))trigger=button.gameObject.AddComponent<ContextualInfoTrigger>();
             trigger.describe=()=>{
                 var cards=CardManager.Instance;var item=cards?.GetConsumableInstanceAtSlot(slot);if(item==null)return null;
                 return new ContextualInfo("Trick",item.Definition.displayName,$"{ModSignature.TrickDescription(item.Definition)}\n\nStack {cards.GetConsumableStackCountAtSlot(slot)} • Charges {item.RemainingCharges}/{item.Definition.uses}");
@@ -169,7 +169,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         for(int i=0;i<buttons.Length;i++)
         {
             var button=buttons[i];if(!button)continue;string description=details[i];
-            var trigger=button.GetComponent<ContextualInfoTrigger>()??button.gameObject.AddComponent<ContextualInfoTrigger>();
+            if(!button.TryGetComponent<ContextualInfoTrigger>(out var trigger))trigger=button.gameObject.AddComponent<ContextualInfoTrigger>();
             trigger.describe=()=>button==actions.passButton&&CombatManager.Instance?.currentState==GameState.EnemyAttacking
                 ?new ContextualInfo("Defense","PASS",$"Take {CombatManager.Instance.pendingDamage} remaining damage. Shield and other combat effects resolve normally.")
                 :button.IsInteractable()?null:new ContextualInfo("Combat action",button.GetComponentInChildren<TMP_Text>().text,

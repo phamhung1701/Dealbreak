@@ -25,7 +25,7 @@ public sealed class MapNodePresentation : MaskableGraphic
         var rect=DealbreakUIStyle.Child(obj.transform,"Route Glyph",typeof(MapNodePresentation));
         DealbreakUIStyle.Place(rect,0,0,1,1);rect.SetAsFirstSibling();
         if(!rect.GetComponent<CanvasRenderer>())rect.gameObject.AddComponent<CanvasRenderer>();
-        var glyph=rect.GetComponent<MapNodePresentation>();glyph.raycastTarget=false;glyph.kind=node.kind;glyph.unknown=obj.GetComponentInChildren<TMPro.TMP_Text>()?.text.Trim()=="?";
+        var glyph=rect.GetComponent<MapNodePresentation>();glyph.raycastTarget=false;glyph.kind=node.kind;var label=obj.GetComponentInChildren<TMPro.TMP_Text>();glyph.unknown=label&&label.text.Trim()=="?";
         glyph.completed=node.completed;glyph.available=node.accessible&&!node.completed;glyph.scouted=scouted;
         // The node the run is in (a fight, Incident or Black Market seen from the MAP view) reads as "you are here".
         glyph.current=!node.completed&&RunManager.Instance&&RunManager.Instance.ActiveNode==node;glyph.SetVerticesDirty();

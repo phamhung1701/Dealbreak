@@ -22,7 +22,7 @@ public sealed class BuildInventoryUI : MonoBehaviour
         Rebuild();
         var card=(RectTransform)panel.transform.Find("Build Inventory Card");var parent=(RectTransform)panel.transform;
         int count=Mathf.Max(CardManager.Instance.ownedGear.Count,CardManager.Instance.BackpackSlotsUsed);
-        if(card.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open)DealbreakUIStyle.Place(card,0,0,1,1);
+        if(card.TryGetComponent<EditorialSurface>(out var surface)&&surface.treatment==EditorialSurface.Treatment.Open)DealbreakUIStyle.Place(card,0,0,1,1);
         else {card.anchorMin=card.anchorMax=new Vector2(.5f,.5f);card.anchoredPosition=Vector2.zero;
         card.sizeDelta=new Vector2(Mathf.Min(1100,parent.rect.width*.72f),Mathf.Min(parent.rect.height*.78f,260+Mathf.Clamp(count,1,4)*80));}
         coordinator.Push(this,panel,closeButton);

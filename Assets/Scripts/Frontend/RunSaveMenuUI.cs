@@ -27,7 +27,7 @@ public sealed class RunSaveMenuUI : MonoBehaviour
             var rect = buttons[i].GetComponent<RectTransform>();
             if(DealbreakUIStyle.Theme) rect.anchorMin=rect.anchorMax=new Vector2(.22f,.32f);
             rect.anchoredPosition = new Vector2(0, 175 - i * 65); rect.sizeDelta = new Vector2(430, 54);
-            if(buttons[i].GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open)
+            if(buttons[i].TryGetComponent<EditorialSurface>(out var surface)&&surface.treatment==EditorialSurface.Treatment.Open)
             {rect.anchorMin=rect.anchorMax=new Vector2(.08f,.32f);rect.pivot=new Vector2(0,.5f);var text=buttons[i].GetComponentInChildren<TMP_Text>();if(text)text.alignment=TextAlignmentOptions.MidlineLeft;}
         }
         var go = new GameObject("RunSaveStatus", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -36,7 +36,7 @@ public sealed class RunSaveMenuUI : MonoBehaviour
         if(DealbreakUIStyle.Theme)sr.anchorMin=sr.anchorMax=new Vector2(.22f,.32f);
         sr.anchoredPosition = new Vector2(0, -225); sr.sizeDelta = new Vector2(570, 70);
         _status = go.GetComponent<TMP_Text>(); _status.fontSize = 18; _status.alignment = TextAlignmentOptions.Center; _status.raycastTarget = false;
-        if(menu.newRunButton.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open)
+        if(menu.newRunButton.TryGetComponent<EditorialSurface>(out var newRunSurface)&&newRunSurface.treatment==EditorialSurface.Treatment.Open)
         {sr.anchorMin=sr.anchorMax=new Vector2(.08f,.32f);sr.pivot=new Vector2(0,.5f);_status.alignment=TextAlignmentOptions.MidlineLeft;}
     }
     void Continue()

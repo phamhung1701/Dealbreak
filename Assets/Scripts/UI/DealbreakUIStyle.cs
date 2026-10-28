@@ -53,15 +53,16 @@ public static class DealbreakUIStyle
         // controls; it would keep writing its stale role into the shared frame, so only one runs.
         if(!button.TryGetComponent<EditorialButton>(out var style))style=button.gameObject.AddComponent<EditorialButton>();
         foreach(var extra in button.GetComponents<EditorialButton>())if(extra!=style)extra.enabled=false;
-        bool frameless=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
+        button.TryGetComponent<EditorialSurface>(out var surface);
+        bool frameless=surface&&surface.treatment==EditorialSurface.Treatment.Open;
         if(!frameless)role=RoleFor(button.name,role);
         style.button=button;style.role=role;style.frame=Frame(button.transform,false,true);
         button.transition=Selectable.Transition.None;
         foreach(var label in button.GetComponentsInChildren<TMP_Text>(true))
         {
             bool offer=button.GetComponent<ShopOfferUI>()!=null;
-            bool paper=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper;
-            bool open=button.GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
+            bool paper=surface&&surface.treatment==EditorialSurface.Treatment.Paper;
+            bool open=frameless;
             bool action=button.name is "PlayButton" or "BlockButton" or "PassButton";
             var color=role==EditorialButton.Role.Paper?Theme.ink:Theme.paper;
             label.fontStyle=FontStyles.Normal;label.characterSpacing=0;
@@ -202,7 +203,8 @@ public static class DealbreakUIStyle
             if(dropdown.template)
             {
                 Frame(dropdown.template,false,true);
-                var viewport=dropdown.template.GetComponentInChildren<ScrollRect>(true)?.viewport;
+                var scroll=dropdown.template.GetComponentInChildren<ScrollRect>(true);
+                var viewport=scroll?scroll.viewport:null;
                 if(viewport&&viewport.TryGetComponent<Image>(out var backing))backing.color=Theme.charcoal;
                 var item=dropdown.itemText?.transform.parent as RectTransform;
                 if(item)item.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,34);

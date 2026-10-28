@@ -18,6 +18,7 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
     bool _hover,_pressed,_focus;
     TMPro.TMP_Text[] _labels;
     bool? _lastAvailable;
+    EditorialSurface _surface;
     void LateUpdate()
     {
         if(!Refresh())return;
@@ -38,7 +39,9 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
             _labels=GetComponentsInChildren<TMPro.TMP_Text>(true);
             _lastAvailable=available;
         }
-        bool open=GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Open;
+        // Cached, and looked up with TryGetComponent: a missing surface's Editor fake null would read as Open.
+        if(!_surface)TryGetComponent(out _surface);
+        bool open=_surface&&_surface.treatment==EditorialSurface.Treatment.Open;
         bool paper=role==Role.Paper;
         bool active=available&&(_hover||_focus||selected);
         var clear=new Color(0,0,0,0);
@@ -58,7 +61,7 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
         };
         float border=role is Role.Primary or Role.Paper or Role.Quiet?0:1;
         // Paper-treatment buttons (Incident and reward choices) are raised content blocks.
-        if(!paper&&GetComponent<EditorialSurface>()?.treatment==EditorialSurface.Treatment.Paper)
+        if(!paper&&_surface&&_surface.treatment==EditorialSurface.Treatment.Paper)
         {fill=theme.charcoal;rim=theme.slate;border=1;}
         Color labelColor=paper?theme.ink:role==Role.Destructive?theme.brick:theme.paper;
         if(open||role==Role.Quiet)labelColor=active?theme.ochre:theme.paper;

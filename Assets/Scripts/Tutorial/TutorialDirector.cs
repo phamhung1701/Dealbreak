@@ -53,7 +53,8 @@ public sealed class TutorialDirector : MonoBehaviour
         Definition = definition;
         _steps = TutorialScript.Build(this);
         Subscribe(true);
-        var canvas = FindFirstObjectByType<ActionButtonsUI>()?.GetComponentInParent<Canvas>();
+        var actions = FindFirstObjectByType<ActionButtonsUI>();
+        var canvas = actions != null ? actions.GetComponentInParent<Canvas>() : null;
         _coach = TutorialCoachUI.Install(canvas);
         if (_coach)
         {

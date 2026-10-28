@@ -80,7 +80,7 @@ public class RunEventUI : MonoBehaviour
                 string status = available ? string.Empty : $"\n<color=#DFA0A0>{unavailableReason}</color>";
                 string description = choice.description ?? string.Empty;
                 label.text = $"<size=125%><b>{choice.label}</b></size>\n{description}{status}";
-                var detail=buttonObject.GetComponent<ContextualInfoTrigger>()??buttonObject.AddComponent<ContextualInfoTrigger>();
+                if(!buttonObject.TryGetComponent<ContextualInfoTrigger>(out var detail))detail=buttonObject.AddComponent<ContextualInfoTrigger>();
                 detail.category="Incident choice";detail.title=choice.label;detail.description=description+"\n"+unavailableReason;detail.enabled=false;
             }
 

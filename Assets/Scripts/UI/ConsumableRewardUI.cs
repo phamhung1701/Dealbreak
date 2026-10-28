@@ -75,7 +75,7 @@ public sealed class ConsumableRewardUI : MonoBehaviour
             var label = instance.GetComponentInChildren<TMP_Text>(true);
             if (label) label.text = (_selectedChoice == i ? "SELECTED  " : string.Empty) +
                 $"<size=125%><b>{item.displayName}</b></size>\n{ModSignature.TrickDescription(item)}";
-            var detail=instance.GetComponent<ContextualInfoTrigger>()??instance.AddComponent<ContextualInfoTrigger>();
+            if(!instance.TryGetComponent<ContextualInfoTrigger>(out var detail))detail=instance.AddComponent<ContextualInfoTrigger>();
             detail.category="Trick reward";detail.title=item.displayName;detail.description=ModSignature.TrickDescription(item);detail.allowWhileBlocked=true;detail.enabled=false;
             var surface=instance.GetComponent<EditorialSurface>();if(!surface)surface=instance.AddComponent<EditorialSurface>();surface.treatment=EditorialSurface.Treatment.Paper;
             var button = instance.GetComponent<Button>();
