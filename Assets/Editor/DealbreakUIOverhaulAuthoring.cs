@@ -10,7 +10,7 @@ using UnityEngine.UI;
 /// <summary>Safe, repeatable authoring of the shared visual system into the existing scene/prefab bindings.</summary>
 public static class DealbreakUIOverhaulAuthoring
 {
-    const float TextScale=1.2f;
+    public const float TextScale=1.2f;
     public static DealbreakUITheme BuildDesignSystem()
     {
         AssetDatabase.Refresh();

@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine;
@@ -10,7 +11,8 @@ using UnityEngine.U2D;
 /// <summary>
 /// Pins the Cut Sheet UI sprites (visual-design section 2): borders and import settings applied by
 /// CutSheetAssetAuthoring, the CutSheetUI atlas, and the generator's pixels (Tools/PrintArt/make_ui_sprites.py
-/// prints the same hashes). Values are written out here on purpose: the test assembly cannot see the editor script.
+/// prints the same hashes). Also pins the Cut Sheet text fonts built by CutSheetFontAuthoring (section 2d).
+/// Values are written out here on purpose: the test assembly cannot see the editor scripts.
 /// </summary>
 public sealed class CutSheetAssetsTests
 {
@@ -106,5 +108,63 @@ public sealed class CutSheetAssetsTests
         Assert.That(importer.textureSettings.generateMipMaps, Is.False);
         Assert.That(importer.GetPlatformSettings("DefaultTexturePlatform").textureCompression,
             Is.EqualTo(TextureImporterCompression.Uncompressed));
+    }
+
+    // Cut Sheet text fonts (visual-design section 2d), built by Dealbreak/Art/Build Cut Sheet Fonts.
+    static readonly object[] TextFonts =
+    {
+        new object[] { "Assets/Art/Fonts/Zilla Slab UI.asset", "ZillaSlab-Medium", "Assets/Art/Fonts/ZillaSlab-OFL.txt" },
+        new object[] { "Assets/Art/Fonts/Zilla Slab SemiBold UI.asset", "ZillaSlab-SemiBold", "Assets/Art/Fonts/ZillaSlab-OFL.txt" },
+        new object[] { "Assets/Art/Fonts/Courier Prime UI.asset", "CourierPrime-Bold", "Assets/Art/Fonts/CourierPrime-OFL.txt" },
+    };
+
+    static TMP_FontAsset LoadFont(string path)
+    {
+        var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
+        Assert.That(font, Is.Not.Null, $"{path} is missing; run Dealbreak/Art/Build Cut Sheet Fonts.");
+        return font;
+    }
+
+    [TestCaseSource(nameof(TextFonts))]
+    public void TextFont_IsStaticWithItsSourceAndCharacterSet(string path, string source, string licence)
+    {
+        var font = LoadFont(path);
+        Assert.That(font.atlasPopulationMode, Is.EqualTo(AtlasPopulationMode.Static), path);
+        // A static asset drops its runtime sourceFontFile; the Editor keeps the source by GUID.
+        string sourceGuid = new SerializedObject(font).FindProperty("m_SourceFontFileGUID").stringValue;
+        Assert.That(AssetDatabase.GUIDToAssetPath(sourceGuid), Is.EqualTo($"Assets/Art/Fonts/{source}.ttf"), path);
+        Assert.That(font.atlasTextures, Is.Not.Empty, path);
+        Assert.That(font.atlasTexture.width, Is.EqualTo(1024), path);
+        Assert.That(font.faceInfo.pointSize, Is.EqualTo(90), path);
+        Assert.That(font.creationSettings.pointSize, Is.EqualTo(90), "Creation settings let TMP's Font Asset Creator rebuild it.");
+        Assert.That(font.atlasPadding, Is.EqualTo(9), path);
+        Assert.That(font.faceInfo.scale, Is.EqualTo(1.2f).Within(.0001f), "Same label scale as the other UI fonts.");
+        Assert.That(File.Exists(licence), Is.True, $"{licence}: the OFL text ships beside the font.");
+        string set = new string(Enumerable.Range(32, 95).Select(i => (char)i).ToArray()) + "•×‘’“”–—";
+        foreach (char c in set)
+            Assert.That(font.HasCharacter(c, false, false), Is.True, $"{font.name}: U+{(int)c:X4}");
+    }
+
+    [TestCaseSource(nameof(TextFonts))]
+    public void TextFont_ReachesSuitsThroughSymbolsThenLiberation(string path, string source, string licence)
+    {
+        var font = LoadFont(path);
+        Assert.That(font.fallbackFontAssetTable.Select(f => f.name),
+            Is.EqualTo(new[] { "Dealbreak Symbols", "LiberationSans SDF - Fallback" }), path);
+        foreach (char suit in "♥♦♣♠")
+            Assert.That(font.HasCharacter(suit, true, true), Is.True, $"{font.name}: {suit}");
+    }
+
+    [Test]
+    public void CourierPrimePaperOutline_IsASharedPresetOnTheFontAtlas()
+    {
+        var font = LoadFont("Assets/Art/Fonts/Courier Prime UI.asset");
+        var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Fonts/Courier Prime UI - Paper Outline.mat");
+        Assert.That(material, Is.Not.Null);
+        Assert.That(material.shader, Is.EqualTo(font.material.shader));
+        Assert.That(material.GetTexture(ShaderUtilities.ID_MainTex), Is.EqualTo(font.atlasTexture));
+        Assert.That((Color32)material.GetColor(ShaderUtilities.ID_OutlineColor), Is.EqualTo(new Color32(0xEF, 0xE4, 0xCC, 0xFF)));
+        Assert.That(material.GetFloat(ShaderUtilities.ID_OutlineWidth), Is.EqualTo(.24f).Within(.0001f));
+        Assert.That(material.IsKeywordEnabled(ShaderUtilities.Keyword_Outline), Is.True);
     }
 }
