@@ -258,8 +258,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(inventoryGroups!=null)foreach(var group in inventoryGroups)if(group){group.alpha=hideInventory?0:1;group.blocksRaycasts=!hideInventory;group.interactable=!hideInventory;}
         if(actions&&CombatActive)
         {
-            var cards=CardManager.Instance;
-            if(actions.playButton)actions.playButton.GetComponentInChildren<TMP_Text>().text=cards.IsEnemyTargeting?"CANCEL":"ATTACK";
+            // S13: the ATTACK label and the selection preview have one writer, ActionButtonsUI.RefreshAll.
             if(actions.recoverButton&&actions.recoverButton.gameObject.activeSelf)actions.recoverButton.gameObject.SetActive(false);
         }
         if(Time.unscaledTime<_nextStyleCheck)return;_nextStyleCheck=Time.unscaledTime+.35f;

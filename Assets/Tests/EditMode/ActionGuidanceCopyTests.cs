@@ -67,6 +67,19 @@ public sealed class ActionGuidanceCopyTests
         Assert.That(_selection.text, Is.Empty);
     }
 
+    // S13: RefreshAll is the one writer and CombatDetailPanelUI.SelectionSummary the one builder.
+    // Whatever it prints states numbers, never how to play.
+    [Test]
+    public void RefreshAll_WritesTheBuildersLine_WithNoInstructionWords()
+    {
+        typeof(CombatManager).GetMethod("BeginEnemyAttack", BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(_combat, null);
+        Refresh();
+        Assert.That(_selection.text, Is.EqualTo(CombatDetailPanelUI.SelectionSummary(_cards)));
+        foreach (var word in new[] { "select", "press", "click", "drag", "choose" })
+            Assert.That(_selection.text.ToLowerInvariant(), Does.Not.Contain(word));
+    }
+
     void Refresh() => typeof(ActionButtonsUI).GetMethod("RefreshAll", BindingFlags.Instance | BindingFlags.NonPublic)
         .Invoke(_actions, null);
 

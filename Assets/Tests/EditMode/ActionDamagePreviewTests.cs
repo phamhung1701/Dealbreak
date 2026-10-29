@@ -109,6 +109,37 @@ public sealed class ActionDamagePreviewTests
             "Executing a repeated group resets the bonus; previewing it must not.");
     }
 
+    // S13: the selection line's numbers are the damage execution deals, across a Gear bonus and two hits.
+    [Test]
+    public void SelectionPreviewText_EqualsExecutedDamage_WithFlatGearAndDoubleStrike()
+    {
+        var gear = Gear("preview_text_flat", GearSpecialRule.None);
+        gear.effects = new[] { new GameplayEffectDefinition
+        {
+            kind = GameplayEffectKind.FlatActionDamage,
+            trigger = GameplayEffectTrigger.ActionDamageCalculated,
+            amount = 4,
+            conditions = System.Array.Empty<GameplayEffectCondition>()
+        } };
+        Assert.That(_cards.BuyGear(gear, 0), Is.True);
+        var doubleStrike = ScriptableObject.CreateInstance<CardEnhancementData>();
+        doubleStrike.displayName = "Preview Double Strike";
+        doubleStrike.effects = new[] { new GameplayEffectDefinition { kind = GameplayEffectKind.DoubleStrike } };
+        _created.Add(doubleStrike);
+        var card = HandView(view => view.data.Rank != CardData.Rank.Ace);
+        Assert.That(card.data.TryApplyEnhancement(doubleStrike), Is.True);
+        var enemy = StartEnemy();
+        _cards.HandleCardClick(card);
+        int perHit = _combat.PreviewActionDamage(new[] { card.data }, enemy);
+
+        string text = CombatDetailPanelUI.SelectionSummary(_cards);
+
+        Assert.That(text, Is.EqualTo($"1 selected • Attack power {perHit} ×2 hits"));
+        int hp = enemy.currentHp;
+        Assert.That(_combat.TryPlayCards(new[] { card }, enemy), Is.True);
+        Assert.That(hp - enemy.currentHp, Is.EqualTo(perHit * 2), "The preview's numbers are the damage dealt.");
+    }
+
     EnemyRuntime StartEnemy()
     {
         var type = EnemyTypeData.Create("Preview Target", 500, 0, 0);

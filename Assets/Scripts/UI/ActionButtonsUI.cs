@@ -50,6 +50,7 @@ public class ActionButtonsUI : MonoBehaviour
     public TMP_Text combatLogLabel;
 
     TMP_Text _primaryActionLabel;
+    public const string PrimaryAttackLabel = "ATTACK", PrimaryCancelLabel = "CANCEL";
     readonly DisplayedNumber _shownHealth = new();
     bool _healthHeld;
     Color _healthLabelColor;
@@ -81,6 +82,8 @@ public class ActionButtonsUI : MonoBehaviour
             CardManager.Instance.OnCardSelected += HandleSelectionChanged;
             CardManager.Instance.OnDeckChanged += HandleDeckChanged;
             CardManager.Instance.OnConsumablesChanged += HandleDeckChanged;
+            // Gear discarded, moved or merged mid-fight changes the preview numbers.
+            CardManager.Instance.OnBuildChanged += HandleDeckChanged;
             CardManager.Instance.OnEnemyTargetingChanged += HandleEnemyTargetingChanged;
         }
         if (RunManager.Instance != null)
@@ -133,6 +136,7 @@ public class ActionButtonsUI : MonoBehaviour
             cards.OnCardSelected -= HandleSelectionChanged;
             cards.OnDeckChanged -= HandleDeckChanged;
             cards.OnConsumablesChanged -= HandleDeckChanged;
+            cards.OnBuildChanged -= HandleDeckChanged;
             cards.OnEnemyTargetingChanged -= HandleEnemyTargetingChanged;
         }
 
@@ -287,8 +291,6 @@ public class ActionButtonsUI : MonoBehaviour
         var cards = CardManager.Instance;
         if (combat == null || cards == null) return;
 
-        int selectedCount = cards.SelectedCards.Count;
-        bool hasSelected = selectedCount > 0;
         bool canPlay = GetValidAttackTargets(cards, combat).Count > 0;
         bool canDefend = combat.CanDefendWithCards(cards.SelectedCards);
         bool isDefense = combat.currentState == GameState.EnemyAttacking;
@@ -309,19 +311,11 @@ public class ActionButtonsUI : MonoBehaviour
         if (rankSortButton) rankSortButton.interactable = cards.HandCount > 1;
         if (suitSortButton) suitSortButton.interactable = cards.HandCount > 1;
         RefreshSortLatch(cards.HandCount);
-        if (_primaryActionLabel)
-        {
-            _primaryActionLabel.text = cards.IsEnemyTargeting ? "Cancel" : combat.currentState switch
-            {
-                GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilySelection(cards.SelectedCards.Select(view => view.data).ToArray(), cards) => "ATTACK ROYAL FLUSH",
-                GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) => "ATTACK ACE PAIR",
-                GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) => $"ATTACK SAME-RANK {selectedCount}",
-                GameState.PlayerTurn when GameplayEffectResolver.IsNuclearOptionGroup(cards.SelectedCards, cards) => $"ATTACK {selectedCount} CARDS",
-                GameState.PlayerTurn => "ATTACK",
-                GameState.EnemyAttacking => "CONFIRM BLOCK",
-                _ => "ACTION"
-            };
-        }
+        // S13: the one writer of the ATTACK label. The preview line names the action (Ace pair, Royal
+        // Flush...); the button only says what a press does. Upper case like BLOCK and PASS: the Cut
+        // Sheet action buttons print their text as written.
+        string primaryLabel = cards.IsEnemyTargeting ? PrimaryCancelLabel : PrimaryAttackLabel;
+        if (_primaryActionLabel && _primaryActionLabel.text != primaryLabel) _primaryActionLabel.text = primaryLabel;
         if (recoverButton) recoverButton.interactable = !targeting && canRecover;
 
         RefreshBackpackSlots(cards, combat);
@@ -346,18 +340,9 @@ public class ActionButtonsUI : MonoBehaviour
                 _incomingTag.Show(showDamage, IncomingTagUI.ValueFor(combat), showDamage, IncomingTagUI.FullyBlockedFor(combat));
         }
 
-        // Only what the current selection will do; how to play is left to the tutorial. The attack
-        // preview is the one builder the board showed before S9 (CombatDetailPanelUI.SelectionSummary).
-        string preview = cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting ? string.Empty : combat.currentState switch
-            {
-                GameState.PlayerTurn when cards.HandCount == 0 =>
-                    $"Recover: take {combat.TotalEnemyAttack}, draw 1",
-                GameState.PlayerTurn when hasSelected => CombatDetailPanelUI.SelectionSummary(cards),
-                GameState.EnemyAttacking when hasSelected && combat.TryPreviewDefense(cards.SelectedCards, out int blocked, out int remaining) =>
-                    $"Blocks {blocked} of {combat.PendingAttackCount} • {remaining} damage left",
-                GameState.EnemyAttacking when hasSelected => "Can't block with this selection",
-                _ => string.Empty
-            };
+        // Only what the current selection will do; how to play is left to the tutorial. S13: one
+        // builder (CombatDetailPanelUI.SelectionSummary), one writer (here).
+        string preview = CombatDetailPanelUI.SelectionSummary(cards);
         if (selectionLabel && selectionLabel.text != preview) selectionLabel.text = preview;
 
         // One status line, one writer: the preview stands in for the state while it has content.

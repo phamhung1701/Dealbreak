@@ -58,12 +58,12 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         var cards = CardManager.Instance;
         if (actions)
         {
-            var attackLabel = actions.playButton ? actions.playButton.GetComponentInChildren<TMP_Text>() : null;
-            if (attackLabel) attackLabel.text = cards != null && cards.IsEnemyTargeting ? "CANCEL" : "ATTACK";
+            // The ATTACK label has one writer, ActionButtonsUI.RefreshAll (S13).
             if (actions.recoverButton && actions.recoverButton.gameObject.activeSelf) actions.recoverButton.gameObject.SetActive(false);
             // The HP panel's rect has one writer, PlayerCornerLayout via DealbreakUIRuntime (S10a).
         }
-        // The selection preview has one writer, ActionButtonsUI (S9); this panel only reads it back.
+        // The selection preview has one writer, ActionButtonsUI.RefreshAll, and one builder,
+        // SelectionSummary (S13); this panel only reads it back.
         bool overPanel = panel && panel.activeSelf && UnityEngine.InputSystem.Mouse.current != null &&
             RectTransformUtility.RectangleContainsScreenPoint((RectTransform)panel.transform,
                 UnityEngine.InputSystem.Mouse.current.position.ReadValue(), null);
@@ -79,16 +79,56 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         _lastTitle = _lastBody = null;
     }
 
+    /// <summary>
+    /// S13: the one builder of the selection preview (attack, block and Recover). ActionButtonsUI.RefreshAll
+    /// is its one writer. State and numbers only; it never changes state or consumes RNG.
+    /// </summary>
     public static string SelectionSummary(CardManager cards)
     {
         var combat = CombatManager.Instance;
-        if (cards == null || combat == null || cards.SelectedCards.Count == 0) return string.Empty;
-        var instances = new CardInstance[cards.SelectedCards.Count];
-        for (int i = 0; i < instances.Length; i++) instances[i] = cards.SelectedCards[i].data;
-        if (GameplayEffectResolver.IsRoyalFamilySelection(instances, cards)) return "ROYAL FLUSH • Instant defeat";
-        // The execution calculation: primed Gear bonuses, action damage, hit count and caps (no RNG, no state change).
-        int power = combat.PreviewActionTotalDamage(instances, combat.currentEnemy);
-        return $"{instances.Length} selected • Attack power {power}";
+        if (cards == null || combat == null || cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting) return string.Empty;
+        var selected = cards.SelectedCards;
+        switch (combat.currentState)
+        {
+            case GameState.PlayerTurn:
+                if (cards.HandCount == 0) return $"Recover: take {combat.TotalEnemyAttack}, draw 1";
+                return selected.Count == 0 ? string.Empty : AttackSummary(cards, combat, selected);
+            case GameState.EnemyAttacking:
+                if (selected.Count == 0) return string.Empty;
+                return combat.TryPreviewDefense(selected, out int blocked, out int remaining)
+                    ? $"Blocks {blocked} of {combat.PendingAttackCount} • {remaining} damage left"
+                    : "Can't block with this selection";
+            default:
+                return string.Empty;
+        }
+    }
+
+    static string AttackSummary(CardManager cards, CombatManager combat, System.Collections.Generic.IReadOnlyList<CardView> selected)
+    {
+        int count = selected.Count;
+        var instances = new CardInstance[count];
+        for (int i = 0; i < count; i++) instances[i] = selected[i].data;
+        if (GameplayEffectResolver.IsRoyalFamilySelection(instances, cards)) return "Royal Flush • instant defeat";
+        string power = AttackPower(combat, instances);
+        if (count == 2 && GameplayEffectResolver.CanPlayAsAcePair(instances)) return $"Ace pair • {power}";
+        if (count >= 2 && GameplayEffectResolver.IsHandsMultiCardAction(instances, cards)) return $"Same rank ×{count} • {power}";
+        if (count >= 2 && GameplayEffectResolver.IsRoyalFamilyPartialSelection(selected, cards))
+            return $"Royal Flush {count}/{AttackSelectionRules.RoyalFlushSize} • {power}";
+        if (GameplayEffectResolver.IsNuclearOptionGroup(instances, cards)) return $"{count} cards • {power}";
+        return $"{count} selected • {power}";
+    }
+
+    // The execution calculation: primed Gear bonuses, action damage, hit count and caps. The critical
+    // roll and enemy defenses are not included.
+    static string AttackPower(CombatManager combat, CardInstance[] instances)
+    {
+        var target = combat.currentEnemy;
+        int hits = combat.PreviewHitCount(instances);
+        int total = combat.PreviewActionTotalDamage(instances, target);
+        if (hits <= 1) return $"Attack power {total}";
+        int perHit = combat.PreviewActionDamage(instances, target);
+        // A damage cap (Scalpel) limits all the hits together.
+        return total == (long)perHit * hits ? $"Attack power {perHit} ×{hits} hits" : $"Attack power {total} over {hits} hits";
     }
 
     bool RenderSource(GameObject source)

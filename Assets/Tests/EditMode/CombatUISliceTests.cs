@@ -103,11 +103,14 @@ public sealed class CombatUISliceTests
         var deck = _cards.deck.Select(c => c.Id).ToArray(); var hand = _cards.hand.Select(c => c.Id).ToArray();
         int hp = _combat.player.currentHealth, enemyHp = _combat.currentEnemy.currentHp;
         uint state = _random.State;
+        string summary = null;
         for (int i = 0; i < 30; i++)
         {
             inspect.OnPointerEnter(null); InvokeDetails("LateUpdate");
-            CombatDetailPanelUI.SelectionSummary(_cards);
+            summary = CombatDetailPanelUI.SelectionSummary(_cards);
         }
+        Assert.That(summary, Is.EqualTo(
+            $"1 selected • Attack power {_combat.PreviewActionTotalDamage(new[] { view.data }, _combat.currentEnemy)}"));
         Assert.That(_details.body.text, Does.Contain("ATTACK POWER"));
         Assert.That(_details.body.text, Does.Contain("BLOCK VALUE"));
         Assert.That(_cards.deck.Select(c => c.Id), Is.EqualTo(deck));

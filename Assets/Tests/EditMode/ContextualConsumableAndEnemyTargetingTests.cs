@@ -227,7 +227,7 @@ public sealed class ContextualConsumableAndEnemyTargetingTests
         var card = SelectHandCard();
         _attackButton.onClick.Invoke();
         Assert.That(_attackButton.interactable, Is.True);
-        Assert.That(_attackButton.GetComponentInChildren<TMP_Text>().text, Is.EqualTo("Cancel"));
+        Assert.That(_attackButton.GetComponentInChildren<TMP_Text>().text, Is.EqualTo("CANCEL"), "S13: upper case like the other action buttons.");
         _attackButton.onClick.Invoke();
         Assert.That(_cards.IsEnemyTargeting, Is.False);
         Assert.That(_cards.SelectedCards, Does.Contain(card));
