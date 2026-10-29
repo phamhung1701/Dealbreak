@@ -23,6 +23,32 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     float _lastWidth;
     readonly Vector3[] _positionCorners=new Vector3[4];
     readonly List<CardView> _positionHandViews=new();
+    static readonly List<CanvasGroup> ParentGroups=new();
+    readonly List<GearIconSlotUI> _gearSlots=new();
+
+    // Cut Sheet skin (HUD slice S12, visual-design 3b): a paper face over a 6px ink shadow, with a
+    // notch drawn under the face that peeks out toward the clicked object. Built once at runtime, so
+    // every scene that carries the detail panel (combat, map, Black Market, menus) gets the same look.
+    public const float BodySize=20,HeadingSize=22,NotchSize=14,NotchInset=14,GrainAlpha=.04f;
+    static float _textScale=1;
+    /// <summary>
+    /// Tooltip text size (owner 2026-10-27: 100/115/130%), for the settings slice; no UI sets it yet.
+    /// It scales the body and heading type and the maximum width together.
+    /// </summary>
+    public static float TextScale{get=>_textScale;set=>_textScale=Mathf.Clamp(value,1f,1.5f);}
+    public static float MaxWidth=>CutSheetMetrics.TooltipMaxWidth*TextScale;
+    Image _face;CutSheetShadow _shadow;RectTransform _notch;
+    public Image Face=>_face;
+    public CutSheetShadow Shadow=>_shadow;
+    public RectTransform Notch=>_notch;
+    /// <summary>Unit vector from the panel toward the object it describes; the notch points this way.</summary>
+    public Vector2 NotchDirection{get;private set;}
+    /// <summary>The panel's resting anchored position; the open slide ends here.</summary>
+    public Vector2 RestPosition{get;private set;}
+    float _openedAt,_closeStart,_closeFrom,_progress;
+    bool _closing;
+    string _headingCategory,_headingTitle,_headingText;
+    string _measuredHeading,_measuredBody;float _measuredWidth=-1,_measuredScale=-1,_headingHeight,_bodyHeight;
 
     // Above every gameplay layer (hand cards 1-21, route nodes, attack visuals 60-66), below modal menus (100).
     const int SortingOrder=90;
@@ -49,7 +75,97 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         SlotGroups.RemoveAll(group=>group.All(member=>!member));
         if(slots!=null&&slots.Length>0)SlotGroups.Add(slots);
     }
-    void OnEnable(){Instance=this;LinkScrollbar();Hide();}
+    void OnEnable(){Instance=this;EnsureSkin();LinkScrollbar();Hide(true);}
+    void EnsureSkin()
+    {
+        if(!panel||_face)return;
+        var theme=DealbreakUIStyle.Theme;var root=panel.transform;
+        // The neo-punk chrome (charcoal EditorialFrame, title band, backing fill) retires here.
+        for(int i=0;i<root.childCount;i++)
+        {
+            var child=root.GetChild(i);
+            if(child.name=="DetailTitleBand"||child.TryGetComponent<EditorialFrame>(out _))child.gameObject.SetActive(false);
+        }
+        if(panel.TryGetComponent<EditorialFrame>(out var frame))frame.enabled=false;
+        if(panel.TryGetComponent<Image>(out var backing))backing.color=Color.clear;
+        if(!panel.TryGetComponent<CanvasGroup>(out _))panel.AddComponent<CanvasGroup>();
+        _shadow=CutSheetShadow.Create(root);
+        _notch=SkinImage(root,"CutSheetNotch").rectTransform;
+        _notch.anchorMin=_notch.anchorMax=_notch.pivot=new Vector2(.5f,.5f);
+        _notch.sizeDelta=new Vector2(NotchSize,NotchSize);_notch.localRotation=Quaternion.Euler(0,0,45);
+        _face=SkinImage(root,"CutSheetFace");
+        var face=_face.rectTransform;face.anchorMin=Vector2.zero;face.anchorMax=Vector2.one;face.offsetMin=face.offsetMax=Vector2.zero;
+        // Draw order: shadow, notch, face, grain, then the panel's own text and scroll view.
+        _shadow.transform.SetSiblingIndex(0);_notch.SetSiblingIndex(1);face.SetSiblingIndex(2);
+        if(theme&&theme.grainSprite)
+        {
+            var grain=new GameObject("CutSheetGrain",typeof(RectTransform),typeof(CanvasRenderer),typeof(RawImage));
+            grain.layer=panel.layer;grain.transform.SetParent(face,false);
+            var rect=(RectTransform)grain.transform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;rect.offsetMin=rect.offsetMax=Vector2.zero;
+            var raw=grain.GetComponent<RawImage>();raw.texture=theme.grainSprite.texture;raw.raycastTarget=false;
+            var ink=theme.inkPrint;raw.color=new Color(ink.r,ink.g,ink.b,GrainAlpha);
+            grain.AddComponent<ScreenPixelTile>();
+        }
+        ApplySkinColors();
+        _shadow.SetDepth(0);
+        if(scroll&&scroll.verticalScrollbar)
+        {
+            var ink=theme?theme.inkPrint:CutSheetShadow.FallbackTint;
+            if(scroll.verticalScrollbar.TryGetComponent<Image>(out var track))track.color=new Color(ink.r,ink.g,ink.b,.12f);
+            if(scroll.verticalScrollbar.handleRect&&scroll.verticalScrollbar.handleRect.TryGetComponent<Image>(out var thumb))thumb.color=new Color(ink.r,ink.g,ink.b,.55f);
+        }
+        if(!panel.TryGetComponent<Canvas>(out var layer))
+        {
+            layer=panel.AddComponent<Canvas>();
+            if(!panel.TryGetComponent<GraphicRaycaster>(out _))panel.AddComponent<GraphicRaycaster>();
+        }
+    }
+    // Unity drops overrideSorting set while the panel is inactive (it is a root canvas then), so the
+    // order is written only while the panel is active, and re-asserted each shown frame on change.
+    void AssertLayer()
+    {
+        if(!panel.activeInHierarchy||!panel.TryGetComponent<Canvas>(out var layer))return;
+        if(!layer.overrideSorting)layer.overrideSorting=true;
+        if(layer.sortingOrder!=SortingOrder)layer.sortingOrder=SortingOrder;
+    }
+    // A closing panel must not swallow clicks meant for what lies under it.
+    void BlockRaycasts(bool block)
+    {
+        if(panel.TryGetComponent<CanvasGroup>(out var group)&&group.blocksRaycasts!=block)group.blocksRaycasts=block;
+    }
+    Image SkinImage(Transform root,string name)
+    {
+        var item=new GameObject(name,typeof(RectTransform),typeof(CanvasRenderer),typeof(Image));
+        item.layer=panel.layer;item.transform.SetParent(root,false);
+        var image=item.GetComponent<Image>();image.raycastTarget=false;
+        return image;
+    }
+    // Sprite and colour writes happen only when they differ (a theme swap, the first build).
+    void ApplySkinColors()
+    {
+        var theme=DealbreakUIStyle.Theme;if(!theme||!_face)return;
+        foreach(var image in new[]{_face,_notch.GetComponent<Image>()})
+        {
+            if(image.sprite!=theme.panelSprite)image.sprite=theme.panelSprite;
+            if(image.type!=Image.Type.Sliced)image.type=Image.Type.Sliced;
+            if(image.color!=theme.paper)image.color=theme.paper;
+        }
+        _shadow.Match(_face,theme.inkPrint,_shadow.Depth);
+    }
+    static void Style(TMP_Text text,TMP_FontAsset font,float size,Color color)
+    {
+        if(!text)return;
+        if(font&&text.font!=font)text.font=font;
+        if(text.enableAutoSizing)text.enableAutoSizing=false;
+        if(!Mathf.Approximately(text.fontSize,size))text.fontSize=size;
+        if(text.color!=color)text.color=color;
+    }
+    void ApplyType()
+    {
+        var theme=DealbreakUIStyle.Theme;if(!theme)return;
+        Style(body,theme.bodyFont,BodySize*TextScale,theme.inkPrint);
+        Style(title,theme.labelFont?theme.labelFont:theme.headingFont,HeadingSize*TextScale,theme.inkPrint);
+    }
     // The scrollbar shows only while the detail overflows. An authoring pass once dropped its link,
     // leaving a fixed handle on every detail; the panel's own scrollbar is linked again here.
     void LinkScrollbar()
@@ -58,7 +174,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         if(!scroll.verticalScrollbar)scroll.verticalScrollbar=panel.transform.Find("Detail Scrollbar")?.GetComponent<Scrollbar>();
         if(scroll.verticalScrollbar)scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;
     }
-    void OnDisable(){if(Instance==this)Instance=null;Hide();}
+    void OnDisable(){if(Instance==this)Instance=null;Hide(true);}
     public void Inspect(MonoBehaviour source){if(!source)return;_source=source;_dismissed=null;_leaveUntil=float.PositiveInfinity;}
     public void Leave(MonoBehaviour source){if(_source==source)_leaveUntil=Time.unscaledTime+.18f;}
     public void Pin(MonoBehaviour source){_pinned=_pinned==source?null:source;_dismissed=null;}
@@ -86,7 +202,9 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     {
         if(!_gearRail)_gearRail=Object.FindFirstObjectByType<GearRailUI>();
         if(!_gearRail)return null;
-        return _gearRail.GetComponentsInChildren<GearIconSlotUI>().FirstOrDefault(g=>g.IsDetailSelected)?.GetComponent<CombatInspectUI>();
+        _gearRail.GetComponentsInChildren(_gearSlots);
+        foreach(var slot in _gearSlots)if(slot&&slot.IsDetailSelected)return slot.GetComponent<CombatInspectUI>();
+        return null;
     }
     static bool PointerOver(MonoBehaviour source,Vector2 screen)
     {
@@ -101,13 +219,54 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         if(shown&&shown.GetComponent<GearIconSlotUI>()){if(!_gearRail)_gearRail=Object.FindFirstObjectByType<GearRailUI>();if(_gearRail)_gearRail.ClearObjectSelection();}
         Hide();
     }
-    void Hide(){if(panel){panel.SetActive(false);var group=panel.GetComponent<CanvasGroup>();if(group)group.alpha=0;}_lastHeading=_lastBody=null;}
+    /// <summary>True while the detail is open or opening (not while it closes).</summary>
+    public bool IsShown=>panel&&panel.activeSelf&&!_closing;
+    // Closes over 70ms (alpha and shadow to 0); instant under Reduce Motion, while dragging and on disable.
+    void Hide(bool instant=false)
+    {
+        _lastHeading=_lastBody=null;
+        if(!panel)return;
+        if(!panel.activeSelf){_closing=false;return;}
+        if(_closing&&!instant)return;
+        float seconds=CutSheetMotion.Seconds(CutSheetMetrics.TooltipCloseSeconds);
+        if(instant||seconds<=0){Deactivate();return;}
+        _closing=true;_closeStart=Time.unscaledTime;_closeFrom=_progress;
+        BlockRaycasts(false);
+    }
+    void Deactivate()
+    {
+        _closing=false;_progress=0;
+        panel.SetActive(false);
+        if(panel.TryGetComponent<CanvasGroup>(out var group))group.alpha=0;
+        if(_shadow)_shadow.SetDepth(0);
+    }
+    void TickClose()
+    {
+        float seconds=CutSheetMotion.Seconds(CutSheetMetrics.TooltipCloseSeconds);
+        float t=seconds<=0?1:Mathf.Clamp01((Time.unscaledTime-_closeStart)/seconds);
+        if(t>=1){Deactivate();return;}
+        _progress=_closeFrom*(1-t);
+        ApplyMotion(_progress,false);
+    }
+    // e is the eased open amount: alpha, shadow depth 0..6 and the 6px slide from the source side.
+    void ApplyMotion(float e,bool slide)
+    {
+        if(panel.TryGetComponent<CanvasGroup>(out var group)&&!Mathf.Approximately(group.alpha,e))group.alpha=e;
+        if(_shadow&&!Mathf.Approximately(_shadow.Depth,e*CutSheetMetrics.ShadowPanel))_shadow.SetDepth(e*CutSheetMetrics.ShadowPanel);
+        if(slide)
+        {
+            var rect=(RectTransform)panel.transform;
+            var position=RestPosition+NotchDirection*(CutSheetMetrics.TooltipSlide*(1-e));
+            if(rect.anchoredPosition!=position)rect.anchoredPosition=position;
+        }
+    }
     void LateUpdate()
     {
         if(!panel||!body||!title)return;
+        if(_closing)TickClose();
         // While an item is dragged its drop preview is the detail; nothing else opens.
-        if(ItemDragUI.IsDragging){if(panel.activeSelf)Hide();return;}
-        bool overPanel=panel.activeSelf&&Mouse.current!=null&&RectTransformUtility.RectangleContainsScreenPoint(
+        if(ItemDragUI.IsDragging){if(panel.activeSelf)Hide(true);return;}
+        bool overPanel=IsShown&&Mouse.current!=null&&RectTransformUtility.RectangleContainsScreenPoint(
             (RectTransform)panel.transform,Mouse.current.position.ReadValue(),null);
         bool inspected=_source is CombatInspectUI combat?combat.IsInspected:_source is ContextualInfoTrigger data&&data.IsInspected;
         MonoBehaviour candidate=_source&&(inspected||Time.unscaledTime<_leaveUntil||overPanel)?_source:_pinned;
@@ -118,14 +277,29 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         // (owner, 2026-10-23) A click anywhere but the detail or what it describes closes it, whatever opened it.
         if(Mouse.current!=null&&Mouse.current.leftButton.wasPressedThisFrame&&!overPanel&&!PointerOver(candidate,Mouse.current.position.ReadValue()))
         {Dismiss(candidate);return;}
-        Position(candidate,info);
-        panel.SetActive(true);
-        var fade=panel.GetComponent<CanvasGroup>();if(fade)fade.alpha=Mathf.MoveTowards(fade.alpha,1,Time.unscaledDeltaTime*16);
-        string heading=string.IsNullOrEmpty(info.Category)?info.Title:$"<size=55%>{info.Category.ToUpperInvariant()}</size>\n{info.Title}";
+        EnsureSkin();
+        ApplyType();
+        string heading=Heading(info);
+        string text=BodyMarkup(info.Body);
+        Position(candidate,heading,text);
+        if(!IsShown)
+        {
+            // Opening, or reopening mid-close from where the close had reached.
+            float from=_closing?_progress:0;
+            _closing=false;
+            _openedAt=Time.unscaledTime-from*CutSheetMotion.Seconds(CutSheetMetrics.TooltipOpenSeconds);
+            panel.SetActive(true);
+            BlockRaycasts(true);
+        }
+        AssertLayer();
+        float open=CutSheetMotion.Seconds(CutSheetMetrics.TooltipOpenSeconds);
+        float t=open<=0?1:Mathf.Clamp01((Time.unscaledTime-_openedAt)/open);
+        _progress=1-(1-t)*(1-t);
+        ApplyMotion(_progress,true);
         if(heading!=_lastHeading||info.Body!=_lastBody||Mathf.Abs(body.rectTransform.rect.width-_lastWidth)>.5f)
         {
-            title.text=heading;body.text=info.Body;
-            body.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,body.GetPreferredValues(info.Body,body.rectTransform.rect.width,0).y+16);
+            title.text=heading;body.text=text;
+            body.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,_bodyHeight+16);
             if(_lastHeading!=heading&&scroll)scroll.verticalNormalizedPosition=1;
             _lastHeading=heading;_lastBody=info.Body;
             _lastWidth=body.rectTransform.rect.width;
@@ -142,8 +316,13 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         bool allow=source is ContextualInfoTrigger t&&t.allowWhileBlocked;
         if(source.GetComponent<CardView>()&&CardManager.Instance?.CanRouteHandEnhancementTargetClick==true)allow=true;
         if(GameplayInputGate.IsBlocked&&!allow)return false;
-        foreach(var group in source.GetComponentsInParent<CanvasGroup>())if(group.alpha<=.01f)return false;
-        return true;
+        return !HiddenByGroup(source);
+    }
+    static bool HiddenByGroup(Component item)
+    {
+        item.GetComponentsInParent(false,ParentGroups);
+        foreach(var group in ParentGroups)if(group.alpha<=.01f)return true;
+        return false;
     }
     public static bool TryDescribe(MonoBehaviour source,out ContextualInfo info)
     {
@@ -177,36 +356,40 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     }
     // Every detail opens next to what it describes. Hand cards sit on the bottom edge, so theirs
     // open above them; everything else opens to the right, then left, above or below as room allows.
-    void Position(MonoBehaviour source,ContextualInfo info)
+    void Position(MonoBehaviour source,string heading,string text)
     {
         var rect=(RectTransform)panel.transform;var parent=(RectTransform)rect.parent;
-        var panelGroup=panel.GetComponent<CanvasGroup>();if(panelGroup)panelGroup.ignoreParentGroups=true;
+        var panelGroup=panel.GetComponent<CanvasGroup>();if(panelGroup&&!panelGroup.ignoreParentGroups)panelGroup.ignoreParentGroups=true;
         // Without its own Canvas the panel draws in hierarchy order, under panels that come later (the route map).
-        if(!panel.TryGetComponent<Canvas>(out var layer))
+        if(!panel.TryGetComponent<Canvas>(out _))
         {
-            layer=panel.AddComponent<Canvas>();
+            panel.AddComponent<Canvas>();
             if(!panel.TryGetComponent<GraphicRaycaster>(out _))panel.AddComponent<GraphicRaycaster>();
         }
-        layer.overrideSorting=true;layer.sortingOrder=SortingOrder;
         var view=source.GetComponent<CardView>();
         bool handCard=view&&view.homeField!=null;
         bool slotDetail=source.GetComponent<GearIconSlotUI>()!=null||
             source is ContextualInfoTrigger&&source.GetComponent<Button>()&&source.name.StartsWith("BackpackSlot");
         // A hand card's detail drops its heading (the card face already names the card), so it stays
-        // low enough to clear the enemies and status line above the hand.
-        bool compact=handCard;
-        ShowHeading(!compact);
-        float width=compact?Mathf.Min(320,parent.rect.width*.3f):slotDetail?Mathf.Min(340,parent.rect.width*.26f):Mathf.Min(390,parent.rect.width*.38f);
-        float chrome=compact?CompactChrome:140f,minimum=compact?CompactMinimum:150f;
-        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(body.GetPreferredValues(info.Body,width-44,0).y+chrome,minimum,460));
-        rect.anchorMin=rect.anchorMax=rect.pivot=new Vector2(.5f,.5f);rect.sizeDelta=new(width,height);
+        // low enough to clear the enemies and status line above the hand. A source with no name has none either.
+        bool showHeading=!handCard&&!string.IsNullOrEmpty(heading);
+        float scale=TextScale;
+        float width=handCard?Mathf.Min(320*scale,parent.rect.width*.3f):slotDetail?Mathf.Min(340*scale,parent.rect.width*.26f):Mathf.Min(MaxWidth,parent.rect.width*.38f);
+        Measure(heading,text,width);
+        float top=showHeading?Padding+_headingHeight+HeadingGap:Padding;
+        Layout(showHeading,top);
+        float chrome=top+Padding+16,minimum=handCard?CompactMinimum:top+Padding+40;
+        float height=Mathf.Min(parent.rect.height*.65f,Mathf.Clamp(_bodyHeight+chrome,minimum,460*scale));
+        var half=new Vector2(.5f,.5f);
+        if(rect.anchorMin!=half||rect.anchorMax!=half||rect.pivot!=half){rect.anchorMin=rect.anchorMax=rect.pivot=half;}
+        var size=new Vector2(width,height);
+        if(rect.sizeDelta!=size)rect.sizeDelta=size;
 
         var anchor=view&&view.visualRoot?view.visualRoot:(RectTransform)source.transform;
         bool gearSlot=source.GetComponent<GearIconSlotUI>()!=null;
         // The Gear and Trick rows run across the header, so their details open under the slot.
         bool headerRow=slotDetail&&IsRow(GroupBounds(parent,anchor,gearSlot));
         var target=headerRow?BoundsIn(parent,anchor):slotDetail?SlotGroupBounds(parent,anchor,gearSlot):BoundsIn(parent,anchor);
-        var size=new Vector2(width,height);
         var order=handCard?HandOrder:headerRow?RowOrder:BesideOrder;
         Vector2 chosen=Avoid(parent,Beside(order[0],target,size),size,rect,handCard);
         foreach(var side in order)
@@ -217,19 +400,110 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         float halfWidth=width*.5f,halfHeight=height*.5f;
         chosen.x=Mathf.Clamp(chosen.x,parent.rect.xMin+halfWidth+Gap,parent.rect.xMax-halfWidth-Gap);
         chosen.y=Mathf.Clamp(chosen.y,parent.rect.yMin+halfHeight+Gap,parent.rect.yMax-halfHeight-Gap);
-        rect.anchoredPosition=chosen-parent.rect.center;
+        RestPosition=chosen-parent.rect.center;
+        // The notch aims at the source's own untilted rect (S7 slots tilt their face, not the root),
+        // not the slot group the panel cleared.
+        var local=NotchPlacement(new Rect(chosen-size*.5f,size),BoundsIn(parent,anchor),out var direction);
+        NotchDirection=direction;
+        if(_notch&&_notch.anchoredPosition!=local)_notch.anchoredPosition=local;
     }
 
-    // Compact: 16 above and below the viewport, plus the body's own line padding.
-    const float HeadingTop=102f,CompactTop=16f,CompactChrome=52f,CompactMinimum=80f;
-    void ShowHeading(bool show)
+    /// <summary>
+    /// Where the notch sits (relative to the panel centre) and which way it points: toward the side
+    /// the source lies on, slid along that edge toward the source's centre, kept off the corners.
+    /// </summary>
+    public static Vector2 NotchPlacement(Rect panel,Rect target,out Vector2 direction)
+    {
+        if(panel.xMin>=target.xMax-1)direction=Vector2.left;
+        else if(panel.xMax<=target.xMin+1)direction=Vector2.right;
+        else if(panel.yMin>=target.yMax-1)direction=Vector2.down;
+        else if(panel.yMax<=target.yMin+1)direction=Vector2.up;
+        else
+        {
+            var delta=target.center-panel.center;
+            direction=Mathf.Abs(delta.x)>=Mathf.Abs(delta.y)?new Vector2(delta.x<0?-1:1,0):new Vector2(0,delta.y<0?-1:1);
+        }
+        float x=Mathf.Clamp(target.center.x,panel.xMin+NotchInset,Mathf.Max(panel.xMin+NotchInset,panel.xMax-NotchInset));
+        float y=Mathf.Clamp(target.center.y,panel.yMin+NotchInset,Mathf.Max(panel.yMin+NotchInset,panel.yMax-NotchInset));
+        Vector2 edge=direction.x<0?new(panel.xMin,y):direction.x>0?new(panel.xMax,y):direction.y<0?new(x,panel.yMin):new(x,panel.yMax);
+        return edge-panel.center;
+    }
+
+    // 16px padding all round; the heading sits in the top padding and the body scrolls under it.
+    const float Padding=CutSheetMetrics.TooltipPadding,HeadingGap=8f,CompactMinimum=80f;
+    // Text is measured only when the heading, body, width or text scale changes.
+    void Measure(string heading,string text,float width)
+    {
+        float scale=TextScale;
+        if(heading==_measuredHeading&&text==_measuredBody&&Mathf.Approximately(width,_measuredWidth)&&Mathf.Approximately(scale,_measuredScale))return;
+        _measuredHeading=heading;_measuredBody=text;_measuredWidth=width;_measuredScale=scale;
+        float inner=width-Padding*2;
+        _headingHeight=string.IsNullOrEmpty(heading)?0:title.GetPreferredValues(heading,inner,0).y;
+        _bodyHeight=body.GetPreferredValues(text??string.Empty,inner,0).y;
+    }
+    void Layout(bool show,float top)
     {
         if(title&&title.gameObject.activeSelf!=show)title.gameObject.SetActive(show);
-        var band=panel.transform.Find("DetailTitleBand");if(band&&band.gameObject.activeSelf!=show)band.gameObject.SetActive(show);
-        float top=show?HeadingTop:CompactTop;
-        if(scroll&&scroll.viewport&&!Mathf.Approximately(scroll.viewport.offsetMax.y,-top))scroll.viewport.offsetMax=new Vector2(scroll.viewport.offsetMax.x,-top);
-        if(scroll&&scroll.verticalScrollbar&&scroll.verticalScrollbar.transform is RectTransform bar&&!Mathf.Approximately(bar.offsetMax.y,-top))
-            bar.offsetMax=new Vector2(bar.offsetMax.x,-top);
+        if(title&&show)
+        {
+            var t=title.rectTransform;
+            Vector2 min=new(Padding,-(Padding+_headingHeight)),max=new(-Padding,-Padding);
+            if(t.anchorMin!=new Vector2(0,1)||t.anchorMax!=Vector2.one){t.anchorMin=new Vector2(0,1);t.anchorMax=Vector2.one;t.pivot=new Vector2(.5f,1);}
+            if(t.offsetMin!=min)t.offsetMin=min;
+            if(t.offsetMax!=max)t.offsetMax=max;
+        }
+        if(scroll&&scroll.viewport)
+        {
+            var v=scroll.viewport;Vector2 min=new(Padding,Padding),max=new(-Padding,-top);
+            if(v.offsetMin!=min)v.offsetMin=min;
+            if(v.offsetMax!=max)v.offsetMax=max;
+        }
+        // The scrollbar (shown only on overflow) runs in the right padding.
+        if(scroll&&scroll.verticalScrollbar&&scroll.verticalScrollbar.transform is RectTransform bar)
+        {
+            Vector2 min=new(-12,Padding),max=new(-6,-top);
+            if(bar.offsetMin!=min)bar.offsetMin=min;
+            if(bar.offsetMax!=max)bar.offsetMax=max;
+        }
+    }
+
+    // "CATEGORY / Title"; rebuilt only when the source's category or title changes.
+    string Heading(ContextualInfo info)
+    {
+        if(_headingText!=null&&info.Category==_headingCategory&&info.Title==_headingTitle)return _headingText;
+        _headingCategory=info.Category;_headingTitle=info.Title;
+        _headingText=string.IsNullOrEmpty(info.Category)?info.Title??string.Empty:$"<size=82%>{info.Category.ToUpperInvariant()}</size>\n{info.Title}";// 82% of the 22px heading = 18px, the art bible's text floor (owner 2026-10-29)
+        return _headingText;
+    }
+
+    // Digit runs print in Courier Prime through TMP's font tag (registered by name, as StatusTagUI
+    // does); digits inside rich-text tags are left alone. Rebuilt only when the body changes.
+    string _markupSource,_markupText,_numberOpen;
+    readonly System.Text.StringBuilder _markup=new();
+    string BodyMarkup(string text)
+    {
+        if(text==null)return string.Empty;
+        if(_markupText!=null&&text==_markupSource)return _markupText;
+        _markupSource=text;
+        if(_numberOpen==null)
+        {
+            var theme=DealbreakUIStyle.Theme;
+            if(theme&&theme.numericFont){MaterialReferenceManager.AddFontAsset(theme.numericFont);_numberOpen="<font=\""+theme.numericFont.name+"\">";}
+        }
+        if(_numberOpen==null){_markupText=text;return text;}
+        _markup.Clear();
+        bool inNumber=false,inTag=false;
+        foreach(char c in text)
+        {
+            if(c=='<'&&!inTag){if(inNumber){_markup.Append("</font>");inNumber=false;}inTag=true;}
+            bool digit=!inTag&&c>='0'&&c<='9';
+            if(!inTag&&digit!=inNumber){_markup.Append(digit?_numberOpen:"</font>");inNumber=digit;}
+            _markup.Append(c);
+            if(c=='>'&&inTag)inTag=false;
+        }
+        if(inNumber)_markup.Append("</font>");
+        _markupText=_markup.ToString();
+        return _markupText;
     }
 
     // The row's horizontal extent with the hovered slot's height: the detail clears the
@@ -309,7 +583,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     bool ObstacleBounds(RectTransform parent,RectTransform obstacle,out Rect bounds)
     {
         bounds=default;
-        foreach(var group in obstacle.GetComponentsInParent<CanvasGroup>())if(group.alpha<=.01f)return false;
+        if(HiddenByGroup(obstacle))return false;
         if(!obstacle.TryGetComponent<TMP_Text>(out var text)){bounds=BoundsIn(parent,obstacle);return true;}
         if(!text.enabled||text.alpha<=.01f||string.IsNullOrWhiteSpace(text.text))return false;
         var printed=text.textBounds;if(printed.size.x<=0)return false;

@@ -215,9 +215,11 @@ public static class DealbreakUIStyle
         foreach(var tooltip in root.GetComponentsInChildren<ContextualTooltipUI>(true))
         {
             if(!Fresh(tooltip))continue;
-            Text(tooltip.title,Theme.headingFont,27,Theme.paper);
+            // Cut Sheet tooltip (S12): Barlow heading and Zilla body in ink on the paper face; the
+            // tooltip applies TextScale to these sizes itself.
+            Text(tooltip.title,Theme.labelFont?Theme.labelFont:Theme.headingFont,ContextualTooltipUI.HeadingSize,Theme.inkPrint);
             tooltip.title.overflowMode=TextOverflowModes.Overflow;tooltip.title.alignment=TextAlignmentOptions.TopLeft;
-            Text(tooltip.body,Theme.bodyFont,19,Theme.paper);
+            Text(tooltip.body,Theme.bodyFont,ContextualTooltipUI.BodySize,Theme.inkPrint);
         }
         foreach(var dropdown in root.GetComponentsInChildren<TMP_Dropdown>(true))
         {
