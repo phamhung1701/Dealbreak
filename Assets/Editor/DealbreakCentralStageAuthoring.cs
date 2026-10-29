@@ -27,6 +27,65 @@ public static class DealbreakCentralStageAuthoring
     }
 
     /// <summary>
+    /// HUD slice S11: re-applies only the draw pile in Game.unity: DrawDeckStackUI's rect (x .871-.98,
+    /// y .187-.50), its stack root inside it, and the count label's rect (a 56px square at the pile's
+    /// lower right, where DrawDeckStackUI lays its paper disc). MAP, the DISCARD strip and the Contract
+    /// line's type are runtime-owned (PathScreenUI, ItemDragUI, ContractLineUI); the Contract line's
+    /// rect (header Inventory layout) is unchanged and already sits right-aligned above the pile.
+    /// </summary>
+    [MenuItem("Dealbreak/UI/Apply Right Column Layout")]
+    public static void ApplyRightColumnLayout()
+    {
+        Edit("Assets/Scenes/Game.unity", scene => RightColumnLayout(scene.GetRootGameObjects().First(g => g.name == "Canvas")));
+        AssetDatabase.SaveAssets();
+    }
+
+    // hud.md section C right column, canvas fractions of the 1920x1080 reference.
+    public const float PileMinX = .871f, PileMaxX = .98f, PileMinY = .187f, PileMaxY = .50f;
+    public const float CountDiscSize = 56, CountDiscInset = 4;
+
+    static void RightColumnLayout(GameObject root)
+    {
+        var deck = root.GetComponentInChildren<DrawDeckStackUI>(true);
+        if (!deck) return;
+        var parent = (RectTransform)deck.transform.parent;
+        // The pile's parent may be inset; place it by its absolute canvas box.
+        Absolute(parent, root.transform, out var pMin, out var pMax);
+        var size = pMax - pMin;
+        DealbreakUIStyle.Place(deck.transform, (PileMinX - pMin.x) / size.x, (PileMinY - pMin.y) / size.y,
+            (PileMaxX - pMin.x) / size.x, (PileMaxY - pMin.y) / size.y);
+        if (deck.stackRoot && deck.stackRoot != (RectTransform)deck.transform)
+            DealbreakUIStyle.Place(deck.stackRoot, .06f, .05f, .94f, .95f);
+        var label = deck.countLabel ? deck.countLabel.rectTransform : null;
+        if (label)
+        {
+            label.anchorMin = label.anchorMax = label.pivot = new Vector2(1, 0);
+            label.sizeDelta = new Vector2(CountDiscSize, CountDiscSize);
+            label.anchoredPosition = new Vector2(-CountDiscInset, CountDiscInset);
+            label.localRotation = Quaternion.identity;
+            label.localScale = Vector3.one;
+            deck.countLabel.fontSize = DrawDeckStackUI.CountSize;
+            deck.countLabel.enableAutoSizing = false;
+            deck.countLabel.alignment = TextAlignmentOptions.Center;
+            EditorUtility.SetDirty(deck.countLabel);
+        }
+        EditorUtility.SetDirty(deck);
+    }
+
+    static void Absolute(RectTransform rect, Transform canvasRoot, out Vector2 min, out Vector2 max)
+    {
+        min = Vector2.zero;
+        max = Vector2.one;
+        for (var r = rect; r && r != canvasRoot; r = r.parent as RectTransform)
+        {
+            var a = r.anchorMin;
+            var b = r.anchorMax;
+            min = a + Vector2.Scale(b - a, min);
+            max = a + Vector2.Scale(b - a, max);
+        }
+    }
+
+    /// <summary>
     /// HUD slice S8: re-applies only the enemy row (EnemyArea's layout padding), the INCOMING tag's
     /// rect (ActionButtonsUI.pendingDamageLabel) in Game.unity, and the EnemyView prefab's height.
     /// </summary>
@@ -418,10 +477,7 @@ public static class DealbreakCentralStageAuthoring
 
         var player = root.transform.Find("PlayerArea");
         var deck = root.GetComponentInChildren<DrawDeckStackUI>(true);
-        DealbreakUIStyle.Place(deck.transform, .905f, .285f, .98f, .50f);
-        DealbreakUIStyle.Place(deck.stackRoot, .15f, .29f, .85f, .90f);
-        deck.countLabel.fontSize = 30;
-        DealbreakUIStyle.Place(deck.countLabel.transform, .04f, .03f, .96f, .27f);
+        RightColumnLayout(root);
         var build = root.transform.Find("Inspect Build Button");
         if (build) build.gameObject.SetActive(false);
         var status = root.GetComponent<RunStatusUI>();

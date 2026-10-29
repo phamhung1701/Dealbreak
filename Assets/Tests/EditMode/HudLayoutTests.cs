@@ -154,6 +154,60 @@ public sealed class HudLayoutTests
         Assert.That(attackMin.x, Is.GreaterThanOrEqualTo(columnRight - .0001f), "ATTACK starts after the sort column.");
     }
 
+    // S11 right column (Dealbreak/UI/Apply Right Column Layout; MAP and DISCARD are runtime rects).
+    static Rect MapRect() => Rect.MinMaxRect(
+        (RefWidth + PathScreenUI.MapButtonOffset.x - PathScreenUI.MapButtonSize.x) / RefWidth,
+        (RefHeight + PathScreenUI.MapButtonOffset.y - PathScreenUI.MapButtonSize.y) / RefHeight,
+        (RefWidth + PathScreenUI.MapButtonOffset.x) / RefWidth,
+        (RefHeight + PathScreenUI.MapButtonOffset.y) / RefHeight);
+
+    static Rect DiscardRect() => Rect.MinMaxRect(ItemDragUI.DiscardMinX, ItemDragUI.DiscardMinY, ItemDragUI.DiscardMaxX, ItemDragUI.DiscardMaxY);
+
+    [Test]
+    public void MapButton_SitsAtX09085To09875AndY0837To0876()
+    {
+        var map = MapRect();
+        Assert.That(map.xMin, Is.EqualTo(.9085f).Within(Tolerance));
+        Assert.That(map.xMax, Is.EqualTo(.9875f).Within(Tolerance));
+        Assert.That(map.yMin, Is.EqualTo(.837f).Within(Tolerance));
+        Assert.That(map.yMax, Is.EqualTo(.876f).Within(Tolerance));
+        Assert.That(PathScreenUI.MapButtonSize, Is.EqualTo(new Vector2(152f, 42f)));
+        // At 16:10 the canvas grows to 1920x1200; MAP stays pinned 134px under the top, like the header rows.
+        Assert.That(-PathScreenUI.MapButtonOffset.y, Is.GreaterThanOrEqualTo(134f));
+    }
+
+    [Test]
+    public void DrawPile_SitsAtX0871To098AndY0187To050()
+    {
+        var root = Canvas();
+        var deck = root.GetComponentInChildren<DrawDeckStackUI>(true);
+        Absolute((RectTransform)deck.transform, root.transform, out var min, out var max);
+        Assert.That(min.x, Is.EqualTo(.871f).Within(Tolerance));
+        Assert.That(max.x, Is.EqualTo(.98f).Within(Tolerance));
+        Assert.That(min.y, Is.EqualTo(.187f).Within(Tolerance));
+        Assert.That(max.y, Is.EqualTo(.50f).Within(Tolerance));
+    }
+
+    [Test]
+    public void DiscardStrip_SitsAtX0895To0985AndY055To083_ClearOfMapAndTheContractLine()
+    {
+        var discard = DiscardRect();
+        Assert.That(discard.xMin, Is.EqualTo(.895f).Within(Tolerance));
+        Assert.That(discard.xMax, Is.EqualTo(.985f).Within(Tolerance));
+        Assert.That(discard.yMin, Is.EqualTo(.55f).Within(Tolerance));
+        Assert.That(discard.yMax, Is.EqualTo(.83f).Within(Tolerance));
+        Assert.That(discard.Overlaps(MapRect()), Is.False, "DISCARD clears MAP.");
+
+        var root = Canvas();
+        var status = root.GetComponent<RunStatusUI>();
+        Absolute(status.runProgressLabel.rectTransform, root.transform, out var min, out var max);
+        Assert.That(discard.Overlaps(Rect.MinMaxRect(min.x, min.y, max.x, max.y)), Is.False, "DISCARD clears the Contract line.");
+        var deck = root.GetComponentInChildren<DrawDeckStackUI>(true);
+        Absolute((RectTransform)deck.transform, root.transform, out _, out var pileMax);
+        Assert.That(min.y, Is.GreaterThanOrEqualTo(pileMax.y - .0001f), "The Contract line sits above the pile.");
+        Assert.That(max.x, Is.EqualTo(pileMax.x).Within(Tolerance), "The Contract line is right-aligned with the pile.");
+    }
+
     static void Absolute(RectTransform rect, Transform canvasRoot, out Vector2 min, out Vector2 max)
     {
         min = Vector2.zero;

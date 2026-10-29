@@ -123,7 +123,8 @@ public class RunStatusUI : MonoBehaviour
         if (runProgressLabel)
         {
             var contract = run != null && !run.IsRunCompleted ? run.ActiveContract : null;
-            runProgressLabel.text = contract != null ? FormatContractProgress(contract) : string.Empty;
+            // S11: the Contract line owns its type, numerals and underline.
+            ContractLineUI.Attach(runProgressLabel).SetText(contract != null ? FormatContractProgress(contract) : string.Empty);
             if (runProgressLabel.gameObject.activeSelf != (contract != null))
                 runProgressLabel.gameObject.SetActive(contract != null);
         }

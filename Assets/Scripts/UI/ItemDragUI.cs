@@ -27,14 +27,19 @@ public sealed class ItemDragUI : MonoBehaviour
     RectTransform _ghost;
     TMP_Text _ghostLabel;
     EditorialFrame _ghostFrame;
-    RectTransform _ring;
+    DropTargetMarksUI _marks;
     RectTransform _tag;
     TMP_Text _tagLabel;
     RectTransform _marketShade;
     TMP_Text _marketLabel;
     RectTransform _discardStrip;
+    RectTransform _discardFace;
     Image _discardImage;
     TMP_Text _discardLabel;
+    CutSheetShadow _discardShadow;
+    CropMarksUI _discardMarks;
+    float _discardSlideStart = -1f, _discardSlide;
+    bool _discardShown, _discardLegal;
 
     bool _dragging;
     bool _isGear;
@@ -48,6 +53,31 @@ public sealed class ItemDragUI : MonoBehaviour
     readonly List<RaycastResult> _hits = new();
     readonly List<CardInstance> _cardTargets = new();
     readonly Vector3[] _corners = new Vector3[4];
+    // Every place the held item could go, with its legality decided once at pickup (ItemDropRules).
+    readonly List<Candidate> _candidates = new();
+
+    struct Candidate
+    {
+        public ItemDropTarget Target;
+        public RectTransform Rect;
+        public bool Legal;
+        public RectTransform Lift;
+    }
+
+    // hud.md section C (owner, 2026-10-23): a tall strip down the right edge, between the MAP button
+    // and the draw pile, clear of the stage, the header rows and the Contract line. Canvas fractions.
+    public const float DiscardMinX = .895f, DiscardMaxX = .985f, DiscardMinY = .55f, DiscardMaxY = .83f;
+    public const float DiscardShadow = CutSheetMetrics.ShadowPanel, DiscardLift = 4f, DiscardSlideSeconds = .11f;
+    public const float DiscardLabelSize = 32f;
+    public RectTransform DiscardStrip => _discardStrip;
+    public RectTransform DiscardFace => _discardFace;
+    public Image DiscardImage => _discardImage;
+    public TMP_Text DiscardLabel => _discardLabel;
+    public CutSheetShadow DiscardShadowView => _discardShadow;
+    public CropMarksUI DiscardMarks => _discardMarks;
+    /// <summary>How far right of its rest the strip sits this frame (its slide-in offset, px).</summary>
+    public float DiscardSlideOffset => _discardSlide;
+    public DropTargetMarksUI TargetMarks => _marks;
 
     public static bool IsDragging => _instance != null && _instance._dragging;
 
@@ -87,6 +117,8 @@ public sealed class ItemDragUI : MonoBehaviour
         // Card-targeting Tricks light up the hand cards they can be dropped on.
         ItemDropRules.CollectCardTargets(slot, _cardTargets);
         if (_cardTargets.Count > 0 || IsCardTrick(slot)) SetHandTargetState(true);
+        CollectCandidates();
+        Drag(eventData);
         return true;
     }
 
@@ -99,6 +131,8 @@ public sealed class ItemDragUI : MonoBehaviour
         _gearId = gearId;
         _slot = -1;
         Begin(source, eventData);
+        CollectCandidates();
+        Drag(eventData);
         return true;
     }
 
@@ -129,6 +163,8 @@ public sealed class ItemDragUI : MonoBehaviour
         _ghost.sizeDelta = SizeIn(_root, source) * 1.08f;
         _ghost.gameObject.SetActive(true);
         _ghost.SetAsLastSibling();
+        _candidates.Clear();
+        _discardShown = false;
         Drag(eventData);
     }
 
@@ -136,7 +172,12 @@ public sealed class ItemDragUI : MonoBehaviour
     {
         if (!_dragging) return;
         _ghost.anchoredPosition = ToLocal(eventData.position);
-        _target = ResolveTarget(eventData);
+        var resolved = ResolveTarget(eventData);
+        // Hit-test against the hovered target's rest rect, not its raised visual (no bobbing).
+        if (_marks && _marks.LiftedTarget && resolved.Kind != ItemDropKind.Discard && !Same(resolved, _target) &&
+            _marks.RestContains(eventData.position))
+            resolved = _target;
+        _target = resolved;
         string preview = null;
         _targetValid = _target.Kind != ItemDropKind.None && (_isGear
             ? ItemDropRules.CanDropGear(_gearId, _target, out preview)
@@ -294,6 +335,99 @@ public sealed class ItemDragUI : MonoBehaviour
         if (_dragging && (GameplayInputGate.IsBlocked || !_source)) Cancel();
     }
 
+    // Targets move (hand layout, enemy tweens) and the strip slides; marks follow without allocating.
+    void LateUpdate()
+    {
+        if (!_dragging) return;
+        ShowTargetMarks();
+        PlaceDiscardStrip();
+    }
+
+    // Pickup: every visible place the item could go, judged once by ItemDropRules (previews only).
+    void CollectCandidates()
+    {
+        _candidates.Clear();
+        var actions = Object.FindFirstObjectByType<ActionButtonsUI>();
+        if (_isGear)
+        {
+            foreach (var slot in Object.FindObjectsByType<GearIconSlotUI>(FindObjectsSortMode.None))
+            {
+                if (!slot.isActiveAndEnabled) continue;
+                if (slot.Gear && slot.InstanceId != 0 && slot.InstanceId != _gearId) AddCandidate(ItemDropTarget.OnGear(slot.InstanceId), (RectTransform)slot.transform);
+                else if (!slot.Gear) AddCandidate(ItemDropTarget.GearPosition(slot.transform.GetSiblingIndex()), (RectTransform)slot.transform);
+            }
+        }
+        else
+        {
+            foreach (var view in HandViews())
+                AddCandidate(ItemDropTarget.HandCard(view.data), view.visualRoot ? view.visualRoot : (RectTransform)view.transform);
+            foreach (var enemy in Object.FindObjectsByType<EnemyDisplayUI>(FindObjectsSortMode.None))
+                if (enemy.isActiveAndEnabled && enemy.DisplayedEnemy != null && !enemy.DisplayedEnemy.IsDefeated)
+                    AddCandidate(ItemDropTarget.OnEnemy(enemy.DisplayedEnemy), (RectTransform)enemy.transform);
+            if (actions && actions.PlayerHealthArea && actions.PlayerHealthArea.gameObject.activeInHierarchy)
+                AddCandidate(ItemDropTarget.PlayerHealth, actions.PlayerHealthArea);
+            if (actions && actions.backpackSlotButtons != null)
+                for (int i = 0; i < actions.backpackSlotButtons.Length; i++)
+                    if (actions.backpackSlotButtons[i] && i != _slot && actions.backpackSlotButtons[i].gameObject.activeInHierarchy)
+                        AddCandidate(ItemDropTarget.TrickSlot(i), (RectTransform)actions.backpackSlotButtons[i].transform);
+        }
+        _discardLegal = _isGear ? ItemDropRules.CanDropGear(_gearId, ItemDropTarget.Discard, out _)
+            : ItemDropRules.CanDropTrick(_slot, ItemDropTarget.Discard, out _);
+    }
+
+    void AddCandidate(ItemDropTarget target, RectTransform rect)
+    {
+        if (!rect) return;
+        bool legal = _isGear ? ItemDropRules.CanDropGear(_gearId, target, out _) : ItemDropRules.CanDropTrick(_slot, target, out _);
+        _candidates.Add(new Candidate { Target = target, Rect = rect, Legal = legal, Lift = legal ? LiftVisual(target, rect) : null });
+    }
+
+    // The child visual a hovered target raises; never a root a layout group positions. A hand card
+    // lifts itself (CardView), so it has none.
+    static RectTransform LiftVisual(ItemDropTarget target, RectTransform rect)
+    {
+        switch (target.Kind)
+        {
+            case ItemDropKind.GearSlot:
+            case ItemDropKind.GearPosition:
+                return rect.TryGetComponent(out GearIconSlotUI gear) && gear.Sticker && gear.Sticker.Face ? gear.Sticker.Face : null;
+            case ItemDropKind.TrickSlot:
+                return rect.TryGetComponent(out CutSheetSlotUI slot) && slot.Face ? slot.Face : null;
+            case ItemDropKind.Enemy:
+                return rect.TryGetComponent(out EnemyDisplayUI enemy) && enemy.portrait ? enemy.portrait.rectTransform : null;
+            case ItemDropKind.PlayerHealth:
+                return rect;
+            default:
+                return null;
+        }
+    }
+
+    static bool Same(ItemDropTarget a, ItemDropTarget b) =>
+        a.Kind == b.Kind && a.Card == b.Card && a.Enemy == b.Enemy && a.Slot == b.Slot && a.GearId == b.GearId;
+
+    // The hovered target's rect among the candidates (no scene search per pointer move).
+    RectTransform HoveredRect()
+    {
+        if (!_targetValid) return null;
+        for (int i = 0; i < _candidates.Count; i++)
+            if (_candidates[i].Legal && Same(_candidates[i].Target, _target)) return _candidates[i].Rect;
+        return null;
+    }
+
+    void ShowTargetMarks()
+    {
+        if (!_marks) return;
+        var hovered = HoveredRect();
+        _marks.Begin();
+        for (int i = 0; i < _candidates.Count; i++)
+        {
+            var candidate = _candidates[i];
+            // A hand card lifts itself under the pointer (CardView), so only its marks thicken.
+            _marks.Mark(candidate.Rect, candidate.Legal, hovered && candidate.Rect == hovered, candidate.Lift);
+        }
+        _marks.End();
+    }
+
     ItemDropTarget ResolveTarget(PointerEventData eventData)
     {
         Vector2 screen = eventData.position;
@@ -330,28 +464,71 @@ public sealed class ItemDragUI : MonoBehaviour
         return ItemDropTarget.None;
     }
 
-    // (owner, 2026-10-23) A tall strip down the right edge, between the MAP button and the draw
-    // pile, clear of the stage and the header rows; in this layer's space.
+    // In this layer's space; the hit area is the strip's rest rect.
     bool TryDiscardArea(out Rect area)
     {
         var bounds = _root.rect;
-        area = Rect.MinMaxRect(bounds.xMin + bounds.width * .895f, bounds.yMin + bounds.height * .53f,
-            bounds.xMin + bounds.width * .985f, bounds.yMin + bounds.height * .855f);
+        area = Rect.MinMaxRect(bounds.xMin + bounds.width * DiscardMinX, bounds.yMin + bounds.height * DiscardMinY,
+            bounds.xMin + bounds.width * DiscardMaxX, bounds.yMin + bounds.height * DiscardMaxY);
         return true;
     }
 
-    void ShowDiscardStrip()
+    /// <summary>
+    /// The DISCARD strip while an item is held: brick panel, DISCARD in Anton 32 paper rotated 90 degrees,
+    /// a 6px shadow; it slides in from the right edge over 110ms (none under Reduce Motion). Hovered:
+    /// thick teal crop marks and the face lifts 4px; otherwise thin marks while the item can be thrown away.
+    /// </summary>
+    public void PresentDiscard(bool hovered)
     {
-        bool hovered = _targetValid && _target.Kind == ItemDropKind.Discard;
-        bool shown = TryDiscardArea(out var area);
-        _discardStrip.gameObject.SetActive(shown);
-        if (!shown) return;
-        _discardStrip.sizeDelta = area.size + new Vector2(24f, 8f);
-        _discardStrip.anchoredPosition = area.center - _root.rect.center;
-        var theme = DealbreakUIStyle.Theme;
-        Color red = theme ? theme.brick : new Color(.66f, .27f, .22f);
-        _discardImage.color = new Color(red.r, red.g, red.b, hovered ? 1f : .88f);
-        _discardLabel.fontSize = hovered ? 40f : 32f;
+        EnsureVisuals();
+        if (!_discardShown)
+        {
+            _discardShown = true;
+            float seconds = CutSheetMotion.Seconds(DiscardSlideSeconds);
+            _discardSlideStart = seconds > 0f ? Time.unscaledTime : -1f;
+        }
+        if (!_discardStrip.gameObject.activeSelf) _discardStrip.gameObject.SetActive(true);
+        var lift = new Vector2(0f, hovered ? DiscardLift : 0f);
+        if (_discardFace.offsetMin != lift) { _discardFace.offsetMin = lift; _discardFace.offsetMax = lift; }
+        var state = hovered ? CropMarksUI.State.Thick : _discardLegal || !_dragging ? CropMarksUI.State.Thin : CropMarksUI.State.Hidden;
+        bool appeared = !_discardMarks.IsShown && state != CropMarksUI.State.Hidden;
+        _discardMarks.Set(state);
+        if (appeared) _discardMarks.Hop();
+        PlaceDiscardStrip();
+    }
+
+    void PlaceDiscardStrip()
+    {
+        if (!_discardStrip || !_discardShown) return;
+        TryDiscardArea(out var area);
+        float slide = 0f;
+        if (_discardSlideStart >= 0f)
+        {
+            float seconds = CutSheetMotion.Seconds(DiscardSlideSeconds);
+            float t = seconds > 0f ? Mathf.Clamp01((Time.unscaledTime - _discardSlideStart) / seconds) : 1f;
+            if (t >= 1f) _discardSlideStart = -1f;
+            // From fully past the right edge (strip and shadow) to rest, easing out.
+            float distance = _root.rect.xMax - area.xMin + DiscardShadow;
+            slide = distance * (1f - t) * (1f - t);
+        }
+        _discardSlide = slide;
+        var size = area.size;
+        var position = area.center - _root.rect.center + new Vector2(slide, 0f);
+        if (_discardStrip.sizeDelta != size) _discardStrip.sizeDelta = size;
+        if (_discardStrip.anchoredPosition != position) _discardStrip.anchoredPosition = position;
+        // The label runs up the strip: its box is the strip's size turned a quarter.
+        var labelSize = new Vector2(size.y, size.x);
+        if (_discardLabel.rectTransform.sizeDelta != labelSize) _discardLabel.rectTransform.sizeDelta = labelSize;
+    }
+
+    /// <summary>Hides the strip (the item was dropped or the drag ended).</summary>
+    public void HideDiscard()
+    {
+        _discardShown = false;
+        _discardSlideStart = -1f;
+        _discardSlide = 0f;
+        if (_discardMarks) _discardMarks.Set(CropMarksUI.State.Hidden);
+        if (_discardStrip) _discardStrip.gameObject.SetActive(false);
     }
 
     static RectTransform MarketPanel()
@@ -366,7 +543,7 @@ public sealed class ItemDragUI : MonoBehaviour
         _ghostFrame.rim = _targetValid ? DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.ochre : Color.yellow
             : DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.slate : Color.gray;
         _ghostFrame.Refresh();
-        ShowDiscardStrip();
+        PresentDiscard(_targetValid && _target.Kind == ItemDropKind.Discard);
         bool market = _targetValid && _target.Kind == ItemDropKind.BlackMarket;
         _marketShade.gameObject.SetActive(market);
         if (market)
@@ -374,27 +551,30 @@ public sealed class ItemDragUI : MonoBehaviour
             Cover(_marketShade, MarketPanel());
             _marketLabel.text = preview;
         }
-        bool discard = _targetValid && _target.Kind == ItemDropKind.Discard;
-        var targetRect = !_targetValid || market || discard ? null : TargetRect(_target);
-        _ring.gameObject.SetActive(targetRect);
-        _tag.gameObject.SetActive(targetRect && !string.IsNullOrEmpty(preview));
-        if (!targetRect) return;
-        Cover(_ring, targetRect, 8f);
-        if (string.IsNullOrEmpty(preview)) return;
-        _tagLabel.text = preview;
-        _tag.sizeDelta = new Vector2(Mathf.Max(110f, _tagLabel.GetPreferredValues(preview).x + 28f), 46f);
-        _tag.anchoredPosition = _ring.anchoredPosition + new Vector2(0f, _ring.sizeDelta.y * .5f + 30f);
-        _ring.SetAsLastSibling();
+        // Legal targets carry thin crop marks; the hovered one thick marks and a lift (S11).
+        ShowTargetMarks();
+        var targetRect = market ? null : HoveredRect();
+        bool tag = targetRect && !string.IsNullOrEmpty(preview);
+        if (_tag.gameObject.activeSelf != tag) _tag.gameObject.SetActive(tag);
+        if (!tag) return;
+        var bounds = BoundsIn(_root, targetRect);
+        if (_tagLabel.text != preview)
+        {
+            _tagLabel.text = preview;
+            _tag.sizeDelta = new Vector2(Mathf.Max(110f, _tagLabel.GetPreferredValues(preview).x + 28f), 46f);
+        }
+        _tag.anchoredPosition = bounds.center - _root.rect.center + new Vector2(0f, bounds.height * .5f + 30f + CropMarksUI.DistanceFor(CropMarksUI.ThickScale));
         _tag.SetAsLastSibling();
         _ghost.SetAsLastSibling();
     }
 
     void HideFeedback()
     {
-        if (_ring) _ring.gameObject.SetActive(false);
+        if (_marks) _marks.Clear();
         if (_tag) _tag.gameObject.SetActive(false);
         if (_marketShade) _marketShade.gameObject.SetActive(false);
-        if (_discardStrip) _discardStrip.gameObject.SetActive(false);
+        HideDiscard();
+        _candidates.Clear();
     }
 
     RectTransform TargetRect(ItemDropTarget target)
@@ -504,28 +684,32 @@ public sealed class ItemDragUI : MonoBehaviour
         _marketLabel = Label(_marketShade, 64f, theme ? theme.mustard : Color.yellow);
         _marketShade.gameObject.SetActive(false);
 
-        _discardStrip = Child("Discard Strip", typeof(Image));
-        _discardImage = _discardStrip.GetComponent<Image>();
+        // DISCARD: a holder carrying the fixed shadow, then the brick face (which lifts) and its label.
+        _discardStrip = Child("Discard Strip");
+        _discardShadow = CutSheetShadow.Create(_discardStrip);
+        var face = new GameObject("Discard Face", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        face.layer = _discardStrip.gameObject.layer;
+        _discardFace = (RectTransform)face.transform;
+        _discardFace.SetParent(_discardStrip, false);
+        _discardFace.anchorMin = Vector2.zero;
+        _discardFace.anchorMax = Vector2.one;
+        _discardFace.offsetMin = _discardFace.offsetMax = Vector2.zero;
+        _discardImage = face.GetComponent<Image>();
         _discardImage.raycastTarget = false;
-        _discardLabel = Label(_discardStrip, 32f, theme ? theme.paper : Color.white);
+        _discardImage.sprite = theme ? theme.panelSprite : null;
+        _discardImage.type = _discardImage.sprite ? Image.Type.Sliced : Image.Type.Simple;
+        _discardImage.color = theme ? theme.brick : new Color(.66f, .27f, .22f);
+        _discardShadow.Match(_discardImage, CutSheetShadow.Tint, DiscardShadow);
+        _discardLabel = Label(_discardFace, DiscardLabelSize, theme ? theme.paper : Color.white);
+        var labelRect = _discardLabel.rectTransform;
+        labelRect.anchorMin = labelRect.anchorMax = labelRect.pivot = new Vector2(.5f, .5f);
+        labelRect.anchoredPosition = Vector2.zero;
+        labelRect.localRotation = Quaternion.Euler(0f, 0f, 90f);
         _discardLabel.text = "DISCARD";
+        _discardMarks = CropMarksUI.Create(_discardStrip);
         _discardStrip.gameObject.SetActive(false);
 
-        _ring = Child("Drop Ring");
-        foreach (var (min, max) in new[] { (new Vector2(0, 1), new Vector2(1, 1)), (new Vector2(0, 0), new Vector2(1, 0)),
-                     (new Vector2(0, 0), new Vector2(0, 1)), (new Vector2(1, 0), new Vector2(1, 1)) })
-        {
-            var bar = new GameObject("Edge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            var rect = (RectTransform)bar.transform;
-            rect.SetParent(_ring, false);
-            rect.anchorMin = min;
-            rect.anchorMax = max;
-            rect.sizeDelta = new Vector2(min.x == max.x ? 6f : 0f, min.y == max.y ? 6f : 0f);
-            var image = bar.GetComponent<Image>();
-            image.color = theme ? theme.ochre : Color.yellow;
-            image.raycastTarget = false;
-        }
-        _ring.gameObject.SetActive(false);
+        _marks = DropTargetMarksUI.Create(_root);
 
         _tag = Child("Drop Preview", typeof(Image));
         var tagImage = _tag.GetComponent<Image>();

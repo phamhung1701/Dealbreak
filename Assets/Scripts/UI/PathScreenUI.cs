@@ -38,6 +38,7 @@ public class PathScreenUI : MonoBehaviour
         if (_peeking) FitPeekBackdrop();
         if (_mapVisibilityButton)
         {
+            if (_mapVisibilityButton.gameObject.activeSelf) StyleMapLabel(_mapVisibilityLabel);
             bool visible = (_peeking || CanPeekMap()) &&
                 !(_deckViewer && _deckViewer.panel && _deckViewer.panel.activeInHierarchy);
             if (_mapVisibilityButton.gameObject.activeSelf != visible) SetMapVisibilityControl(visible);
@@ -562,11 +563,13 @@ public class PathScreenUI : MonoBehaviour
         rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(1f, 1f);
         // Under the header rows: a sixth Trick slot (Cargo Case and Nova) reaches this corner.
-        rect.anchoredPosition = new Vector2(-24f, -134f);
-        rect.sizeDelta = new Vector2(150f, 42f);
+        // hud.md section C: x .9085-.9875, y .837-.876 of 1920x1080; pinned from the top so a taller
+        // (16:10) canvas keeps it under the header rows.
+        rect.anchoredPosition = MapButtonOffset;
+        rect.sizeDelta = MapButtonSize;
 
         var image = control.GetComponent<Image>();
-        image.color = new Color(0.12f, 0.17f, 0.19f, 0.3f);
+        image.color = new Color(1f, 1f, 1f, 0f);
         var controlCanvas = control.GetComponent<Canvas>();
         controlCanvas.overrideSorting = true;
         controlCanvas.sortingOrder = 45;
@@ -584,9 +587,49 @@ public class PathScreenUI : MonoBehaviour
         _mapVisibilityLabel = labelObject.GetComponent<TextMeshProUGUI>();
         _mapVisibilityLabel.alignment = TextAlignmentOptions.Center;
         _mapVisibilityLabel.raycastTarget = false;
-        _mapVisibilityLabel.fontSize = 18f;
         _mapVisibilityLabel.text = "MAP";
+        StyleMapButton(_mapVisibilityButton);
         control.SetActive(false);
+    }
+
+    public static readonly Vector2 MapButtonOffset = new(-24f, -134f), MapButtonSize = new(152f, 42f);
+    public const float MapLabelSize = 22f;
+
+    /// <summary>
+    /// S11: MAP is a paper Cut Sheet button (S10b recipe: sliced panel face over a fixed 4px shadow,
+    /// hover lift, press, focus ring, disabled hatch) labelled in Barlow Condensed Bold 22 ink; Anton 32
+    /// does not fit "CLOSE MAP" in 152px. The map glyph (S3b) is not built yet, so there is none.
+    /// </summary>
+    public static void StyleMapButton(Button button)
+    {
+        var theme = DealbreakUIStyle.Theme;
+        if (!button || !theme) return;
+        DealbreakUIStyle.CutSheetButton(button, EditorialButton.Role.Paper, CutSheetMetrics.ShadowButton,
+            theme.labelFont ? theme.labelFont : theme.headingFont, MapLabelSize, false);
+        StyleMapLabel(button.GetComponentInChildren<TMP_Text>(true));
+    }
+
+    /// <summary>
+    /// Barlow Bold 22 inkPrint on the paper face. The HUD's text pass can tint it paper (blank on
+    /// paper) after the button's styler has cached its label colour, so this restores it on drift.
+    /// </summary>
+    public static void StyleMapLabel(TMP_Text label)
+    {
+        var theme = DealbreakUIStyle.Theme;
+        if (!label || !theme) return;
+        var font = theme.labelFont ? theme.labelFont : theme.headingFont;
+        if (font && label.font != font) label.font = font;
+        if (label.font && label.fontSharedMaterial != label.font.material) label.fontSharedMaterial = label.font.material;
+        if (!Mathf.Approximately(label.fontSize, MapLabelSize)) label.fontSize = MapLabelSize;
+        if (label.enableAutoSizing) label.enableAutoSizing = false;
+        if (label.color != theme.inkPrint) label.color = theme.inkPrint;
+        if (label.fontStyle != FontStyles.UpperCase) label.fontStyle = FontStyles.UpperCase;
+        if (label.alignment != TextAlignmentOptions.Center) label.alignment = TextAlignmentOptions.Center;
+        if (label.raycastTarget) label.raycastTarget = false;
+        if (!label.enabled) label.enabled = true;
+        if (!label.gameObject.activeSelf) label.gameObject.SetActive(true);
+        // Over the face, which the frame keeps as the first child.
+        if (label.transform.GetSiblingIndex() != label.transform.parent.childCount - 1) label.transform.SetAsLastSibling();
     }
 
     void SetMapVisibilityControl(bool visible)
