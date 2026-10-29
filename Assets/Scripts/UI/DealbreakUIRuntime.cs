@@ -42,6 +42,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         // so it is built before the style pass.
         if(playerState&&actions)PlayerCornerUI.For(playerState,actions.playerHealthLabel);
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
+        // S10b: the action bar's five buttons take the Cut Sheet sprite recipe after the style pass.
+        ActionBarLayout.Style(actions);
         // Credits sit just above the HP panel, so they show wherever it does.
         if(playerState&&actions&&actions.TryGetComponent<RunStatusUI>(out var status))CreditsHudUI.Install(playerState,status.creditsLabel);
         // The run's character sits above the Credits.
@@ -101,9 +103,28 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         count.sizeDelta=new Vector2(120,64);count.anchoredPosition=new Vector2(14,8);
         handCount.alignment=TextAlignmentOptions.BottomLeft;
         handCount.textWrappingMode=TextWrappingModes.NoWrap;
-        handCount.fontSize=28;
         handCount.raycastTarget=false;
+        // S10b: the word in Barlow Bold, the numbers in Courier Prime Bold, both 22 paper, no shadow or
+        // tilt. Two labels, since one TMP label holds one font; the word rides on the count's rect.
+        var theme=DealbreakUIStyle.Theme;
+        if(!theme)return;
+        count.sizeDelta=new Vector2(120,30);
+        DealbreakUIStyle.Text(handCount,theme.numericFont,22,theme.paper);
+        handCount.fontStyle=FontStyles.Normal;handCount.characterSpacing=0;
+        foreach(var shadow in handCount.GetComponents<Shadow>())shadow.enabled=false;
+        var word=DealbreakUIStyle.Child(count,HandWordName,typeof(TextMeshProUGUI));
+        word.anchorMin=word.anchorMax=new Vector2(0,1);word.pivot=Vector2.zero;
+        word.sizeDelta=new Vector2(120,28);word.anchoredPosition=Vector2.zero;word.localRotation=Quaternion.identity;
+        _handWord=word.GetComponent<TMP_Text>();
+        DealbreakUIStyle.Text(_handWord,theme.labelFont?theme.labelFont:theme.headingFont,22,theme.paper);
+        _handWord.fontStyle=FontStyles.UpperCase;_handWord.characterSpacing=0;
+        _handWord.alignment=TextAlignmentOptions.BottomLeft;_handWord.textWrappingMode=TextWrappingModes.NoWrap;
+        _handWord.raycastTarget=false;_handWord.text="HAND";
+        // The type is owned here; the style pass leaves both labels as set.
+        _styled.Add(handCount);_styled.Add(_handWord);
     }
+    const string HandWordName="Hand Count Word";
+    TMP_Text _handWord;
     // The hand frame widens on wide screens while the cards keep their spacing, so the hand size
     // follows the last card's slot rather than the frame's edge.
     readonly System.Collections.Generic.List<CardView> _handViews=new();
@@ -131,18 +152,9 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     void PositionSortControls()
     {
         if (!actions || !actions.playButton) return;
-        var bar = actions.playButton.transform.parent as RectTransform;
-        if (!bar) return;
-        var min = bar.anchorMin;
-        var size = bar.anchorMax - min;
-        // The action bar reserves its first 18% before Attack. Stack sorting there,
-        // using anchors so authored offsets cannot push the controls over player HP.
-        if (actions.rankSortButton && actions.rankSortButton.transform.parent == bar.parent)
-            DealbreakUIStyle.Place(actions.rankSortButton.transform, min.x + size.x * .01f,
-                min.y + size.y * .52f, min.x + size.x * .17f, min.y + size.y * .94f);
-        if (actions.suitSortButton && actions.suitSortButton.transform.parent == bar.parent)
-            DealbreakUIStyle.Place(actions.suitSortButton.transform, min.x + size.x * .01f,
-                min.y + size.y * .06f, min.x + size.x * .17f, min.y + size.y * .48f);
+        // The action bar reserves its first 18% before ATTACK; the sort buttons stack there, by anchors
+        // so authored offsets cannot push them over player HP. ActionBarLayout is the one writer.
+        ActionBarLayout.PlaceSorts(actions.playButton.transform.parent as RectTransform, actions.rankSortButton, actions.suitSortButton);
     }
 
     // Styles each control once; restyling live ones reset fonts and colors for a frame (a visible flash).
@@ -190,7 +202,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(handCount&&CardManager.Instance!=null)
         {
             int hand=CardManager.Instance.HandCount,handCap=CardManager.Instance.HandCapacity;
-            if(hand!=_shownHand||handCap!=_shownHandCap){_shownHand=hand;_shownHandCap=handCap;handCount.SetText("<size=55%>HAND</size>\n{0}/{1}",hand,handCap);}
+            if(hand!=_shownHand||handCap!=_shownHandCap){_shownHand=hand;_shownHandCap=handCap;handCount.SetText("{0}/{1}",hand,handCap);}
         }
         if(trickCapacity&&CardManager.Instance!=null)
         {

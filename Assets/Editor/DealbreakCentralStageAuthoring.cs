@@ -124,6 +124,31 @@ public static class DealbreakCentralStageAuthoring
     }
 
     /// <summary>
+    /// HUD slice S10b (hud.md section C): the action bar at canvas x .25-.69, y .016-.086; ATTACK,
+    /// BLOCK and PASS at bar x .19-.565, .58-.865, .88-.995; the two sort buttons stacked inside its
+    /// left 18%; the three action labels at 32. ActionBarLayout writes the rects, as at runtime.
+    /// </summary>
+    [MenuItem("Dealbreak/UI/Apply Action Bar Layout")]
+    public static void ApplyActionBarLayout()
+    {
+        Edit("Assets/Scenes/Game.unity", scene => ActionBar(scene.GetRootGameObjects().First(g => g.name == "Canvas")));
+        Debug.Log("Dealbreak: applied the Cut Sheet action bar layout (S10b) to Game.unity.");
+    }
+
+    static void ActionBar(GameObject root)
+    {
+        var actions = root.GetComponent<ActionButtonsUI>();
+        var bar = (RectTransform)root.transform.Find("PlayerArea/ActionBar");
+        ActionBarLayout.ApplyBar(bar, actions.playButton, actions.blockButton, actions.passButton);
+        ActionBarLayout.PlaceSorts(bar, actions.rankSortButton, actions.suitSortButton);
+        foreach (var control in new[] { actions.playButton, actions.blockButton, actions.passButton })
+            control.GetComponentInChildren<TMP_Text>(true).fontSize = ActionBarLayout.ActionLabelSize;
+        foreach (var sort in new[] { actions.rankSortButton, actions.suitSortButton })
+            sort.GetComponentInChildren<TMP_Text>(true).fontSize = ActionBarLayout.SortLabelSize;
+        EditorUtility.SetDirty(bar);
+    }
+
+    /// <summary>
     /// HUD slice S9: moves the status band (CombatStatusPanel) to x .18-.76, y .37-.42, below INCOMING;
     /// stretches TurnStateLabel (the status tag's label) over the band at 22pt; then re-applies the
     /// enemy row so INCOMING, a child of the band, keeps y .43-.47. Game.unity only.
@@ -407,7 +432,6 @@ public static class DealbreakCentralStageAuthoring
         logo.GetComponent<TMP_Text>().text = "DEALBREAK";
         DealbreakUIStyle.Text(logo.GetComponent<TMP_Text>(), DealbreakUIStyle.Theme.headingFont, 58, DealbreakUIStyle.Theme.paper);
         logo.GetComponent<TMP_Text>().alignment = TextAlignmentOptions.Left;
-        DealbreakUIStyle.Place(player.Find("ActionBar"), .27f, .04f, .835f, .22f);
         actions.rankSortButton.transform.SetParent(player, false);
         actions.suitSortButton.transform.SetParent(player, false);
         foreach (var sort in new[] { actions.rankSortButton, actions.suitSortButton })
@@ -417,16 +441,13 @@ public static class DealbreakCentralStageAuthoring
             runtime.combatGroups = runtime.combatGroups.Where(g => g).ToArray();
             if (!runtime.combatGroups.Contains(group)) runtime.combatGroups = runtime.combatGroups.Append(group).ToArray();
         }
-        DealbreakUIStyle.Place(actions.rankSortButton.transform, .88f, .13f, .985f, .20f);
-        DealbreakUIStyle.Place(actions.suitSortButton.transform, .88f, .035f, .985f, .105f);
         // Sorting lives in PlayerArea already; moving anchors retains the bound inputs.
+        ActionBar(root);
         PlayerCorner(root);
         // Incoming damage reads under the enemies, below the DEFENSE label, not on the HP panel.
         actions.pendingDamageLabel.transform.SetParent(actions.turnStateLabel.transform.parent, false);
         DealbreakUIStyle.Place(actions.pendingDamageLabel.transform, .02f, -.85f, .98f, -.05f);
         actions.pendingDamageLabel.fontSize = 30;
-        foreach (var control in new[] { actions.playButton, actions.blockButton, actions.passButton })
-            control.GetComponentInChildren<TMP_Text>(true).fontSize = 30;
         var pause = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<PauseMenuUI>(true)).First();
         // A square "||" icon pinned to the run header's top-right corner.
         var pauseRect = (RectTransform)pause.pauseButton.transform;

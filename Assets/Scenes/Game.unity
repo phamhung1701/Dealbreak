@@ -610,6 +610,9 @@ MonoBehaviour:
   button: {fileID: 35202266}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &38360876
 GameObject:
   m_ObjectHideFlags: 0
@@ -1290,6 +1293,9 @@ MonoBehaviour:
   button: {fileID: 69180993}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &83275268
 GameObject:
   m_ObjectHideFlags: 0
@@ -1665,6 +1671,9 @@ MonoBehaviour:
   button: {fileID: 95838459}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &95838462
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -1970,6 +1979,9 @@ MonoBehaviour:
   button: {fileID: 100278040}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &103654530
 GameObject:
   m_ObjectHideFlags: 0
@@ -2421,10 +2433,10 @@ RectTransform:
   - {fileID: 1817832391}
   m_Father: {fileID: 229061598}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.88, y: 0.035}
-  m_AnchorMax: {x: 0.985, y: 0.105}
-  m_AnchoredPosition: {x: -1393.9, y: 4.2120056}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.25439999, y: 0.05179488}
+  m_AnchorMax: {x: 0.3248, y: 0.120717965}
+  m_AnchoredPosition: {x: 0, y: 0.0000076293945}
+  m_SizeDelta: {x: -0.00012207031, y: 0.000015258789}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &124896548
 MonoBehaviour:
@@ -2540,6 +2552,9 @@ MonoBehaviour:
   button: {fileID: 124896548}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &124896553
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -3094,6 +3109,9 @@ MonoBehaviour:
   button: {fileID: 149528092}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &152677668
 GameObject:
   m_ObjectHideFlags: 0
@@ -6849,6 +6867,9 @@ MonoBehaviour:
   button: {fileID: 404059825}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &435431540
 GameObject:
   m_ObjectHideFlags: 0
@@ -7374,8 +7395,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 20
@@ -7671,6 +7692,9 @@ MonoBehaviour:
   button: {fileID: 484892116}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &484892123
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -7951,6 +7975,9 @@ MonoBehaviour:
   button: {fileID: 493917831}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &507255703
 GameObject:
   m_ObjectHideFlags: 0
@@ -8026,6 +8053,9 @@ MonoBehaviour:
   button: {fileID: 507255709}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!114 &507255707
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8058,6 +8088,9 @@ MonoBehaviour:
   button: {fileID: 507255709}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!114 &507255709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10900,6 +10933,9 @@ MonoBehaviour:
   button: {fileID: 704829021}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &706319559
 GameObject:
   m_ObjectHideFlags: 0
@@ -11910,6 +11946,9 @@ MonoBehaviour:
   button: {fileID: 749437831}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &769697721
 GameObject:
   m_ObjectHideFlags: 0
@@ -12875,6 +12914,9 @@ MonoBehaviour:
   button: {fileID: 816889398}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &831372063
 GameObject:
   m_ObjectHideFlags: 0
@@ -13491,8 +13533,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 20
@@ -14100,6 +14142,9 @@ MonoBehaviour:
   button: {fileID: 873894805}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &875932932
 GameObject:
   m_ObjectHideFlags: 0
@@ -14240,6 +14285,9 @@ MonoBehaviour:
   button: {fileID: 875932934}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &876281785
 GameObject:
   m_ObjectHideFlags: 0
@@ -14380,6 +14428,9 @@ MonoBehaviour:
   button: {fileID: 876281787}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &876519392
 GameObject:
   m_ObjectHideFlags: 0
@@ -15103,6 +15154,9 @@ MonoBehaviour:
   button: {fileID: 907432166}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &907432175
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -15388,6 +15442,9 @@ MonoBehaviour:
   button: {fileID: 918676845}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &922406156
 GameObject:
   m_ObjectHideFlags: 0
@@ -16088,6 +16145,9 @@ MonoBehaviour:
   button: {fileID: 982235689}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &995821412
 GameObject:
   m_ObjectHideFlags: 0
@@ -16881,6 +16941,9 @@ MonoBehaviour:
   button: {fileID: 1046300711}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &1066409726
 GameObject:
   m_ObjectHideFlags: 0
@@ -17117,6 +17180,9 @@ MonoBehaviour:
   button: {fileID: 1090897489}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &1102785503
 GameObject:
   m_ObjectHideFlags: 0
@@ -17846,7 +17912,7 @@ RectTransform:
   - {fileID: 475744251}
   m_Father: {fileID: 1984879277}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.835, y: 0.06}
+  m_AnchorMin: {x: 0.88, y: 0.06}
   m_AnchorMax: {x: 0.995, y: 0.94}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
@@ -17965,6 +18031,9 @@ MonoBehaviour:
   button: {fileID: 1142720073}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &1157419049
 GameObject:
   m_ObjectHideFlags: 0
@@ -19084,6 +19153,9 @@ MonoBehaviour:
   button: {fileID: 1214074541}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &1216068311
 GameObject:
   m_ObjectHideFlags: 0
@@ -20005,6 +20077,9 @@ MonoBehaviour:
   button: {fileID: 1272001926}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &1287144480
 GameObject:
   m_ObjectHideFlags: 0
@@ -20484,8 +20559,8 @@ RectTransform:
   - {fileID: 1578685567}
   m_Father: {fileID: 1984879277}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.18, y: 0.06}
-  m_AnchorMax: {x: 0.505, y: 0.94}
+  m_AnchorMin: {x: 0.19, y: 0.06}
+  m_AnchorMax: {x: 0.565, y: 0.94}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -20603,6 +20678,9 @@ MonoBehaviour:
   button: {fileID: 1352866218}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &1356186288
 GameObject:
   m_ObjectHideFlags: 0
@@ -21114,6 +21192,9 @@ MonoBehaviour:
   button: {fileID: 1359937363}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &1360698956
 GameObject:
   m_ObjectHideFlags: 0
@@ -22047,6 +22128,9 @@ MonoBehaviour:
   button: {fileID: 1406763502}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &1406763510
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -23206,6 +23290,9 @@ MonoBehaviour:
   button: {fileID: 1443228730}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &1443228737
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -24777,6 +24864,9 @@ MonoBehaviour:
   button: {fileID: 1541349978}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &1541349985
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -25375,8 +25465,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 20
@@ -26291,9 +26381,9 @@ RectTransform:
   - {fileID: 2143102128}
   m_Father: {fileID: 229061598}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.88, y: 0.13}
-  m_AnchorMax: {x: 0.985, y: 0.2}
-  m_AnchoredPosition: {x: -1392, y: 0}
+  m_AnchorMin: {x: 0.25439999, y: 0.14082053}
+  m_AnchorMax: {x: 0.3248, y: 0.20974362}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1640977750
@@ -26410,6 +26500,9 @@ MonoBehaviour:
   button: {fileID: 1640977750}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &1640977755
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -28640,8 +28733,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 15
+  m_fontSize: 22
+  m_fontSizeBase: 22
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 20
@@ -30917,8 +31010,8 @@ RectTransform:
   - {fileID: 1142720072}
   m_Father: {fileID: 229061598}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.27, y: 0.04}
-  m_AnchorMax: {x: 0.835, y: 0.22}
+  m_AnchorMin: {x: 0.25, y: 0.041025646}
+  m_AnchorMax: {x: 0.69, y: 0.22051284}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -31385,6 +31478,9 @@ MonoBehaviour:
   button: {fileID: 2028586743}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!225 &2028586750
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -31686,6 +31782,9 @@ MonoBehaviour:
   button: {fileID: 2040041090}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &2058768314
 GameObject:
   m_ObjectHideFlags: 0
@@ -33113,8 +33212,8 @@ RectTransform:
   - {fileID: 857302455}
   m_Father: {fileID: 1984879277}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.53, y: 0.06}
-  m_AnchorMax: {x: 0.81, y: 0.94}
+  m_AnchorMin: {x: 0.58, y: 0.06}
+  m_AnchorMax: {x: 0.865, y: 0.94}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -33232,6 +33331,9 @@ MonoBehaviour:
   button: {fileID: 2113696272}
   selected: 0
   emphasized: 0
+  cutSheet: 0
+  cutSheetRole: 0
+  restShadow: 4
 --- !u!1 &2118694623
 GameObject:
   m_ObjectHideFlags: 0
@@ -33612,8 +33714,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 15
+  m_fontSize: 22
+  m_fontSizeBase: 22
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 20

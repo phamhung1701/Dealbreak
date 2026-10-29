@@ -93,7 +93,8 @@ public static class DealbreakUIOverhaulAuthoring
         var trickCount=DealbreakUIStyle.Child(player,"Trick Capacity",typeof(TextMeshProUGUI));DealbreakUIStyle.Place(trickCount,.025f,.46f,.135f,.52f);
         runtime.trickCapacity=trickCount.GetComponent<TMP_Text>();runtime.trickCapacity.alignment=TextAlignmentOptions.Center;runtime.trickCapacity.fontSize=17;
         DealbreakUIStyle.Text(runtime.handCount,DealbreakUIStyle.Theme.numericFont,18,DealbreakUIStyle.Theme.paper);
-        DealbreakUIStyle.Place(player.Find("ActionBar"),.17f,.04f,.77f,.22f);
+        // S10b: ActionBarLayout writes the bar (DealbreakCentralStageAuthoring.ActionBar).
+        ActionBarLayout.ApplyBar((RectTransform)player.Find("ActionBar"),a.playButton,a.blockButton,a.passButton);
         DealbreakUIStyle.Frame(player.Find("HealthPanel"),true,true);
         runtime.playerState=(RectTransform)player.Find("HealthPanel");
         // S10a: the HP panel's rect comes from PlayerCornerLayout (DealbreakCentralStageAuthoring.PlayerCorner

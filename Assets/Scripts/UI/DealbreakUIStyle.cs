@@ -58,6 +58,8 @@ public static class DealbreakUIStyle
         if(!frameless)role=RoleFor(button.name,role);
         style.button=button;style.role=role;style.frame=Frame(button.transform,false,true);
         button.transition=Selectable.Transition.None;
+        // A Cut Sheet button (S10b) keeps its own role and label type; only its frame is re-made.
+        if(style.cutSheet){style.role=style.cutSheetRole;style.Refresh();return;}
         foreach(var label in button.GetComponentsInChildren<TMP_Text>(true))
         {
             bool offer=button.GetComponent<ShopOfferUI>()!=null;
@@ -72,6 +74,28 @@ public static class DealbreakUIStyle
             else if(paper||offer)Text(label,paper?Theme.bodyFont:label.name.Contains("Price")?Theme.numericFont:Theme.bodyFont,paper?21:Mathf.Max(18,Mathf.Min(24,label.fontSize)),color);
             else Label(label,Mathf.Max(18,Mathf.Min(22,label.fontSize)),color);
             // Single-line labels overflow a short button rather than truncating to nothing.
+            label.margin=new Vector4(8,2,8,2);label.overflowMode=TextOverflowModes.Overflow;
+        }
+        style.Refresh();
+    }
+    /// <summary>
+    /// Opts a button into the Cut Sheet sprite recipe (visual-design 3a, EditorialButton.cutSheet):
+    /// a panel-sprite face over a hard ink shadow of <paramref name="restShadow"/> px, with its labels
+    /// in <paramref name="font"/> at <paramref name="size"/>. Primary prints brick, every other role paper.
+    /// </summary>
+    public static void CutSheetButton(Button button,EditorialButton.Role role,float restShadow,TMP_FontAsset font,float size,bool tracked)
+    {
+        if(!button||!Theme)return;
+        if(!button.TryGetComponent<EditorialButton>(out var style)||!style.frame){Button(button,role);button.TryGetComponent(out style);}
+        if(!style)return;
+        foreach(var extra in button.GetComponents<EditorialButton>())if(extra!=style)extra.enabled=false;
+        style.button=button;style.role=style.cutSheetRole=role;style.cutSheet=true;style.restShadow=restShadow;
+        button.transition=Selectable.Transition.None;
+        var color=role==EditorialButton.Role.Primary?Theme.paper:Theme.inkPrint;
+        foreach(var label in button.GetComponentsInChildren<TMP_Text>(true))
+        {
+            Text(label,font,size,color);
+            label.fontStyle=tracked?FontStyles.UpperCase:FontStyles.Normal;label.characterSpacing=tracked?6:0;
             label.margin=new Vector4(8,2,8,2);label.overflowMode=TextOverflowModes.Overflow;
         }
         style.Refresh();

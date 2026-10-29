@@ -116,6 +116,44 @@ public sealed class HudLayoutTests
     }
 
     // A stretched rect's anchors in the canvas root's fractions, composed up its parents (offsets are zero).
+    // S10b (hud.md section C): the action bar re-centred under the hand, the sort column inside it.
+    [Test]
+    public void ActionBar_SpansX025To069AtY0016To0086()
+    {
+        var root = Canvas();
+        var actions = root.GetComponent<ActionButtonsUI>();
+        Absolute((RectTransform)actions.playButton.transform.parent, root.transform, out var min, out var max);
+
+        Assert.That(min.x, Is.EqualTo(.25f).Within(Tolerance), "Action bar left.");
+        Assert.That(max.x, Is.EqualTo(.69f).Within(Tolerance), "Action bar right.");
+        Assert.That((min.x + max.x) * .5f, Is.EqualTo(.47f).Within(Tolerance), "Centred under the hand.");
+        Assert.That(min.y, Is.EqualTo(.016f).Within(Tolerance), "Action bar bottom.");
+        Assert.That(max.y, Is.EqualTo(.086f).Within(Tolerance), "Action bar top.");
+    }
+
+    [Test]
+    public void SortButtons_StackInsideTheActionBarsLeft18Percent()
+    {
+        var root = Canvas();
+        var actions = root.GetComponent<ActionButtonsUI>();
+        Absolute((RectTransform)actions.playButton.transform.parent, root.transform, out var barMin, out var barMax);
+        float columnRight = barMin.x + (barMax.x - barMin.x) * .18f;
+        Absolute((RectTransform)actions.playButton.transform, root.transform, out var attackMin, out _);
+        Absolute((RectTransform)actions.rankSortButton.transform, root.transform, out var rankMin, out var rankMax);
+        Absolute((RectTransform)actions.suitSortButton.transform, root.transform, out var suitMin, out var suitMax);
+
+        foreach (var (label, min, max) in new[] { ("Rank sort", rankMin, rankMax), ("Suit sort", suitMin, suitMax) })
+        {
+            Assert.That(min.x, Is.GreaterThanOrEqualTo(barMin.x - .0001f), label + " left inside the bar.");
+            Assert.That(max.x, Is.LessThanOrEqualTo(columnRight + .0001f), label + " inside the bar's left 18%.");
+            Assert.That(min.y, Is.GreaterThanOrEqualTo(barMin.y - .0001f), label + " bottom inside the bar.");
+            Assert.That(max.y, Is.LessThanOrEqualTo(barMax.y + .0001f), label + " top inside the bar.");
+            Assert.That((max.y - min.y) * RefHeight, Is.EqualTo(29f).Within(1.5f), label + " is 29px tall.");
+        }
+        Assert.That(rankMin.y, Is.GreaterThanOrEqualTo(suitMax.y), "Stacked, rank above suit, not overlapping.");
+        Assert.That(attackMin.x, Is.GreaterThanOrEqualTo(columnRight - .0001f), "ATTACK starts after the sort column.");
+    }
+
     static void Absolute(RectTransform rect, Transform canvasRoot, out Vector2 min, out Vector2 max)
     {
         min = Vector2.zero;

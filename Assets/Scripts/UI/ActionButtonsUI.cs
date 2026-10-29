@@ -308,6 +308,7 @@ public class ActionButtonsUI : MonoBehaviour
         if (blockButton) blockButton.interactable = !targeting && isDefense && canDefend;
         if (rankSortButton) rankSortButton.interactable = cards.HandCount > 1;
         if (suitSortButton) suitSortButton.interactable = cards.HandCount > 1;
+        RefreshSortLatch(cards.HandCount);
         if (_primaryActionLabel)
         {
             _primaryActionLabel.text = cards.IsEnemyTargeting ? "Cancel" : combat.currentState switch
@@ -484,8 +485,31 @@ public class ActionButtonsUI : MonoBehaviour
         }
     }
 
-    void OnRankSortClicked() => (handField != null ? handField : CardManager.Instance?.handField)?.SortByRank();
-    void OnSuitSortClicked() => (handField != null ? handField : CardManager.Instance?.handField)?.SortBySuit();
+    void OnRankSortClicked() { (handField != null ? handField : CardManager.Instance?.handField)?.SortByRank(); LatchSort(1); }
+    void OnSuitSortClicked() { (handField != null ? handField : CardManager.Instance?.handField)?.SortBySuit(); LatchSort(2); }
+
+    // S10b: the sort last applied stays latched down (presentation only; the hand order lives in the
+    // hand field). The latch lets go when the hand's size changes or sorting is unavailable.
+    int _latchedSort, _latchedHandCount = -1;
+    EditorialButton _rankStyle, _suitStyle;
+    void LatchSort(int sort)
+    {
+        _latchedSort = sort;
+        _latchedHandCount = CardManager.Instance != null ? CardManager.Instance.HandCount : -1;
+        if (CardManager.Instance != null) RefreshSortLatch(_latchedHandCount);
+    }
+
+    void RefreshSortLatch(int handCount)
+    {
+        if (_latchedSort != 0 && (handCount != _latchedHandCount || handCount <= 1)) _latchedSort = 0;
+        if (!_rankStyle && rankSortButton) rankSortButton.TryGetComponent(out _rankStyle);
+        if (!_suitStyle && suitSortButton) suitSortButton.TryGetComponent(out _suitStyle);
+        if (_rankStyle && _rankStyle.selected != (_latchedSort == 1)) _rankStyle.selected = _latchedSort == 1;
+        if (_suitStyle && _suitStyle.selected != (_latchedSort == 2)) _suitStyle.selected = _latchedSort == 2;
+    }
+
+    /// <summary>The latched sort: 0 none, 1 rank, 2 suit.</summary>
+    public int LatchedSort => _latchedSort;
 
     // Kept for existing serialized UnityEvent bindings and interaction characterization.
     void OnDiscardClicked() => OnBlockClicked();
