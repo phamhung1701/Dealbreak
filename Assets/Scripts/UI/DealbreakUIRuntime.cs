@@ -169,11 +169,25 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             int slot=i;
             // The slot's own click (ActionButtonsUI) pins this detail, after a drag's click suppression.
             if(!button.TryGetComponent<ContextualInfoTrigger>(out var trigger))trigger=button.gameObject.AddComponent<ContextualInfoTrigger>();
-            trigger.describe=()=>{
-                var cards=CardManager.Instance;var item=cards?.GetConsumableInstanceAtSlot(slot);if(item==null)return null;
-                return new ContextualInfo("Trick",item.Definition.displayName,$"{ModSignature.TrickDescription(item.Definition)}\n\nStack {cards.GetConsumableStackCountAtSlot(slot)} • Charges {item.RemainingCharges}/{item.Definition.uses}");
-            };
+            trigger.describe=()=>TrickDetail(CardManager.Instance,slot);
         }
+    }
+    /// <summary>S14: a Trick slot's detail. Stack and charges read on the slot only, never here.</summary>
+    public static ContextualInfo? TrickDetail(CardManager cards,int slot)
+    {
+        var item=cards?.GetConsumableInstanceAtSlot(slot);if(item==null)return null;
+        return new ContextualInfo("Trick",item.Definition.displayName,ModSignature.TrickDescription(item.Definition));
+    }
+    /// <summary>
+    /// S14 (owner 2026-10-27): a click on the draw pile pins its detail beside it through the one
+    /// ContextualTooltipUI; the deck viewer panel no longer listens on the pile.
+    /// </summary>
+    public static void BindDrawPile(DrawDeckStackUI pile,DeckViewerUI[] viewers)
+    {
+        if(!pile||!pile.deckButton)return;
+        if(viewers!=null)foreach(var viewer in viewers)if(viewer&&viewer.toggleButton==pile.deckButton)viewer.DetachToggle();
+        pile.deckButton.onClick.RemoveListener(pile.PinDetail);
+        pile.deckButton.onClick.AddListener(pile.PinDetail);
     }
     void BindControls()
     {
@@ -190,6 +204,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
                 :button.IsInteractable()?null:new ContextualInfo("Combat action",button.GetComponentInChildren<TMP_Text>().text,
                 description+"\n\nUnavailable in the current state.");
         }
+        BindDrawPile(FindFirstObjectByType<DrawDeckStackUI>(FindObjectsInactive.Include),
+            FindObjectsByType<DeckViewerUI>(FindObjectsInactive.Include,FindObjectsSortMode.None));
         if(actions.GetComponent<RunStatusUI>() is RunStatusUI status)
         {
             // The header no longer names the District or Headliner; the progress line is an active Contract's.

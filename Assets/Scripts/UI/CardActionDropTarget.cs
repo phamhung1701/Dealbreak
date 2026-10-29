@@ -130,15 +130,8 @@ public class CardActionDropTarget : MonoBehaviour, IPointerEnterHandler, IPointe
     {
         if (feedbackGraphic != null)
             feedbackGraphic.color = valid ? validHoverColor : invalidHoverColor;
-        if (guidanceLabel != null)
-        {
-            var combat = CombatManager.Instance;
-            guidanceLabel.text = valid
-                ? combat != null && combat.currentState == GameState.EnemyAttacking
-                    ? "RELEASE TO DEFEND"
-                    : "RELEASE TO ATTACK"
-                : "INVALID CARD ACTION";
-        }
+        // S14: no VALID/INVALID target wording; the target marks and tint carry it, and the enemy's
+        // intent line (guidanceLabel) keeps showing the enemy's own facts.
     }
 
     public void ResetFeedback()

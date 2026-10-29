@@ -283,7 +283,7 @@ previews never change state or consume RNG.
 | Run defeat | `GameState.GameOver` | Status tag reads RUN DEFEAT. Input is gated and `RunResultUI` takes over. Interactive elements keep their shadows. |
 | Paused | the pause button or Escape | `Time.timeScale = 0` and input is gated. Trigger playback freezes and resumes in order. The modal draws at sorting order 100, above the tooltip (90). |
 | MAP view | MAP | The route map shows on the stage and the button reads CLOSE MAP. Input gating is to be traced (Open Questions). |
-| Deck view | click the draw pile | `DeckViewerUI`; see Open Questions (it is a fixed panel). |
+| Deck view | none in combat (S14) | the draw-pile click opens its tooltip detail; the full deck list waits for the deck menu screen (OQ7), so `DeckViewerUI` has no combat entry point. |
 | Tutorial run | the first NEW RUN, until `TutorialProgress` is set | The same HUD plus lesson prompts, the only how-to copy. Controls `TutorialGate` refuses show as unavailable. |
 | Exploration | — | The route map is a separate screen; out of scope here. |
 | Dialogue / cutscene | — | Incidents are a separate screen. There are no cutscenes. |

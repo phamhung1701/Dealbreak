@@ -141,18 +141,17 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
             var data = card.data;
             _text.Append($"ATTACK POWER  {combat.CalculateCardAttackDamage(data)}\nBLOCK VALUE  {combat.CalculateCardDefense(data)}\n\n");
             if (data.Enhancement) _text.Append("MOD • ").Append(ModSignature.Name(data.Enhancement)).Append('\n').Append(ModSignature.Description(data.Enhancement)).Append("\n\n");
-            if (CardManager.Instance?.SelectedCards.Count > 0)
-                _text.Append(actions && actions.selectionLabel ? actions.selectionLabel.text : SelectionSummary(CardManager.Instance)).Append("\n\n");
+            // S14: the selection preview reads on the status line only, and the card names itself (no heading).
             while (_text.Length > 0 && _text[_text.Length - 1] == '\n') _text.Length--;
-            Show(data.DisplayName, _text.ToString());
+            Show(string.Empty, _text.ToString());
         }
         else if (source.TryGetComponent<EnemyDisplayUI>(out var enemy))
         {
             if (enemy.DisplayedEnemy == null || enemy.DisplayedEnemy.IsDefeated) return false;
             var data = enemy.DisplayedEnemy;
             // Ability names and rules open from the ability tags under the enemy (owner 2026-10-29).
+            // S14: Shield, Double Strike/charged and the Headliner reward read on the enemy itself.
             _text.Append(enemy.DetailGuidance);
-            if (data.type.sourceCard) _text.Append("\n\nHeadliner reward • ").Append(data.type.sourceCard.DisplayName);
             if (data.type.fleeAfterPlayerTurns > 0) _text.Append("\n\nFlees after ").Append(data.type.fleeAfterPlayerTurns).Append(" completed card actions. Completed: ").Append(data.PlayerTurnsCompleted);
             Show(data.DisplayName, _text.ToString().TrimStart('\n'));
         }
@@ -163,9 +162,9 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         }
         else if (source.TryGetComponent<DrawDeckStackUI>(out _))
         {
-            var cards = CardManager.Instance;
-            if (cards == null) return false;
-            Show("DRAW PILE", $"Draw {cards.deck.Count}\nHand {cards.HandCount}/{cards.HandCapacity}\n\n{runStatus?.pileSummaryLabel?.text}\n{runStatus?.timingLabel?.text}");
+            string detail = DrawDeckStackUI.DetailText(CardManager.Instance, RunManager.Instance);
+            if (detail == null) return false;
+            Show("DRAW PILE", detail);
         }
         else return false;
         return true;

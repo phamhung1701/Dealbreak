@@ -49,6 +49,23 @@ public sealed class DrawDeckStackUI : MonoBehaviour, IPointerEnterHandler, IPoin
     public bool Hovered => _hover;
     public bool Pressed => _pressed;
 
+    /// <summary>Pins (or, on a second click, unpins) this pile's detail beside it.</summary>
+    public void PinDetail() => ContextualTooltipUI.Instance?.Pin(this);
+
+    /// <summary>
+    /// S14 (hud.md): the draw pile's one detail, the Mod count and the run timer. The draw count is on the
+    /// pile's disc and HAND n/cap by the hand, so neither repeats here. Read-only; null without a deck.
+    /// </summary>
+    public static string DetailText(CardManager cards, RunManager run)
+    {
+        if (cards == null) return null;
+        int mods = 0;
+        foreach (var card in cards.ownedCards)
+            if (card != null && card.Enhancement != null) mods++;
+        var timing = run != null ? run.Timing : null;
+        return $"Mods {mods}\nRun {(timing == null ? "—" : RunDurationFormatter.Format(timing.TotalElapsedSeconds))}";
+    }
+
     /// <summary>Visual depth: 1–9 cards show one layer, 10–19 two, 20–29 three, 30+ four.</summary>
     public static int GetDepthForCount(int count) => count <= 0 ? 0 : Mathf.Min(MaxLayers, 1 + count / 10);
 

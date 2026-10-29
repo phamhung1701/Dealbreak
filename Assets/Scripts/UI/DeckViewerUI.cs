@@ -69,6 +69,13 @@ public class DeckViewerUI : MonoBehaviour
             CombatManager.Instance.OnEncounterResult -= CloseForEncounterResult;
     }
 
+    /// <summary>S14: stops opening from <see cref="toggleButton"/> (the combat draw pile opens its detail instead).</summary>
+    public void DetachToggle()
+    {
+        if (toggleButton) toggleButton.onClick.RemoveListener(Toggle);
+        toggleButton = null;
+    }
+
     void OnRectTransformDimensionsChange()
     {
         if (!_isOpen || _content == null || Mathf.Abs(_content.rect.width - _lastLayoutWidth) < 0.5f) return;

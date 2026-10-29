@@ -66,7 +66,7 @@ public sealed class Phase2ElitePlayModeTests
         yield return null;
 
         Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
-        Assert.That(_status.text, Is.Not.Empty);
+        Assert.That(_status.text, Does.Contain("+1 SHIELD NEXT"));
         Assert.That(_display.DetailGuidance, Does.Contain("Next: +1 Shield and 5 damage"));
 
         var attack = HandViews().OrderBy(view => _combat.CalculateCardAttackDamage(view.data)).FirstOrDefault();
@@ -74,12 +74,13 @@ public sealed class Phase2ElitePlayModeTests
         Assert.That(_combat.TryPlayCards(new[] { attack }, knight), Is.True);
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
         Assert.That((_combat.pendingDamage, knight.ShieldCharges), Is.EqualTo((5, 1)));
-        Assert.That(_display.DetailGuidance, Does.Contain("Shield: 1"), "The state-change subscription should refresh the live display.");
+        // S14: in combat the enemy line carries intents only (Shield is glyphs on the HP bar), and none while it attacks.
+        Assert.That(_status.text, Does.Not.Contain("+1 SHIELD NEXT"), "The state-change subscription should refresh the live display.");
 
         _combat.TakeRemainingDamage();
         Assert.That(_combat.currentState, Is.EqualTo(GameState.PlayerTurn));
         Assert.That(knight.ShieldCharges, Is.EqualTo(1));
-        Assert.That(_display.DetailGuidance, Does.Contain("charged attack next (10 damage)"),
+        Assert.That(_status.text, Does.Contain("CHARGED ATTACK NEXT"),
             "Taking the response advances Royal Guard intent and the subscribed UI updates without a manual refresh.");
 
         attack = HandViews().OrderBy(view => _combat.CalculateCardAttackDamage(view.data)).FirstOrDefault();
@@ -89,8 +90,8 @@ public sealed class Phase2ElitePlayModeTests
         Assert.That((knight.currentHp, knight.ShieldCharges, _combat.pendingDamage), Is.EqualTo((knightHp, 0, 10)),
             "The next card consumes Royal Guard's shield and starts the charged response.");
         Assert.That(_combat.currentState, Is.EqualTo(GameState.EnemyAttacking));
-        Assert.That(_display.DetailGuidance, Does.Contain("Charged attack incoming (10 damage)"),
-            "The EnemyAttacking state event should update the charged-attack warning without a manual refresh.");
+        Assert.That(_status.text, Does.Not.Contain("CHARGED ATTACK NEXT"),
+            "The EnemyAttacking state event should update the intent line without a manual refresh.");
     }
 
     [UnityTest]

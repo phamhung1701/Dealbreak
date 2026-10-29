@@ -1161,6 +1161,8 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         {
             // Enemy facts only: phase hints and the pending total live on the player side.
             string guidance = string.Empty;
+            // S14: the detail leaves out what the enemy itself shows (Shield, Double Strike, charged attack).
+            string detail = string.Empty;
             var enemy = DisplayedEnemy;
             if (enemy != null && state == GameState.PlayerTurn && enemy.HasDoubleStrike)
             {
@@ -1171,29 +1173,29 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
             else if (enemy != null && state == GameState.EnemyAttacking && enemy.HasDoubleStrike)
                 guidance = $"Double Strike incoming: 2 hits, {Mathf.FloorToInt(enemy.PreparedResponseBudget * 0.6f + 0.5f)} damage each";
             if (enemy != null && enemy.HasSuitCall)
-                guidance += $"\nCalled suit: {enemy.AnnouncedSuit}{(enemy.DuelistCallConsumed ? " (used)" : " (first matching hit -50%)")}";
+                { string line = $"\nCalled suit: {enemy.AnnouncedSuit}{(enemy.DuelistCallConsumed ? " (used)" : " (first matching hit -50%)")}"; guidance += line; detail += line; }
             if (enemy != null && enemy.HasSilence)
-                guidance += "\nSilence active: held-card effects disabled";
+                { string line = "\nSilence active: held-card effects disabled"; guidance += line; detail += line; }
             else if (enemy != null && enemy.HasAbilityEffect(EnemyAbilityEffect.Silence))
-                guidance += "\nSilence inactive at/below 50% HP";
+                { string line = "\nSilence inactive at/below 50% HP"; guidance += line; detail += line; }
             if (enemy != null && enemy.HasWithering)
-                guidance += "\nWithering active: player healing prevented";
+                { string line = "\nWithering active: player healing prevented"; guidance += line; detail += line; }
             else if (enemy != null && enemy.HasAbilityEffect(EnemyAbilityEffect.Withering))
-                guidance += "\nWithering inactive at/below 50% HP";
+                { string line = "\nWithering inactive at/below 50% HP"; guidance += line; detail += line; }
             if (enemy != null && enemy.HasOppression && state == GameState.PlayerTurn)
-                guidance += $"\nOppression: +{Mathf.Max(0, (CardManager.Instance?.HandCount ?? 0) - 3) * 2} next response damage";
+                { string line = $"\nOppression: +{Mathf.Max(0, (CardManager.Instance?.HandCount ?? 0) - 3) * 2} next response damage"; guidance += line; detail += line; }
             if (enemy != null && state == GameState.PlayerTurn && enemy.NextAttackIsCharged)
                 guidance += $"\nWarning: charged attack next ({enemy.EffectiveAttack * 2} damage)";
             else if (enemy != null && state == GameState.EnemyAttacking && enemy.CurrentResponseIsCharged)
                 guidance = $"Charged attack incoming ({enemy.ResponseAttack} damage)";
             if (enemy != null && state == GameState.PlayerTurn && enemy.HasRoyalGuard && !enemy.NextAttackIsCharged)
-                guidance += $"\nNext: +1 Shield and {enemy.EffectiveAttack} damage";
+                { string line = $"\nNext: +1 Shield and {enemy.EffectiveAttack} damage"; guidance += line; detail += line; }
             if (enemy != null && enemy.ShieldCharges > 0)
                 guidance += $"\nShield: {enemy.ShieldCharges}";
             if (enemy != null && enemy.CaptainAttackBonus > 0)
-                guidance += "\nCaptain alive: +1 ATK";
+                { string line = "\nCaptain alive: +1 ATK"; guidance += line; detail += line; }
             guidance = guidance.TrimStart('\n');
-            DetailGuidance = guidance;
+            DetailGuidance = detail.TrimStart('\n');
             // Ability names and rules read on the ability tags (owner 2026-10-29), not here.
             statusText.text = CombatDetailPanelUI.IsCombatActive ? CompactIntent(enemy, state) : guidance;
             // Nothing to say (an ordinary attack): the line hides rather than showing an authored default.

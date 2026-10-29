@@ -336,22 +336,23 @@ public sealed class ContextualTooltipUI : MonoBehaviour
             int block=combat?combat.CalculateCardDefense(card):card.DefenseValue;
             string mod=card.Enhancement?$"\n\nMOD • {ModSignature.Name(card.Enhancement)}\n{ModSignature.Description(card.Enhancement)}":string.Empty;
             // The selection's block preview reads on the status line under the enemies, not here.
-            info=new("Card",card.DisplayName,$"ATK {attack}    DEF {block}{mod}");return true;
+            // S14: the card names itself, so its detail has no heading.
+            info=new(null,null,$"ATK {attack}    DEF {block}{mod}");return true;
         }
         if(source.TryGetComponent<EnemyDisplayUI>(out var enemy)&&enemy.DisplayedEnemy!=null&&!enemy.DisplayedEnemy.IsDefeated)
         {
             var data=enemy.DisplayedEnemy;
             // Ability names and rules open from each ability tag under the enemy (owner 2026-10-29): each fact once.
-            string reward=data.type.sourceCard?$"\n\nReward • {data.type.sourceCard.DisplayName}":string.Empty;
-            // HP and attack already read under the enemy; the detail adds only what the board does not show.
-            string detail=string.Join("\n\n",new[]{enemy.DetailGuidance,reward.TrimStart('\n')}.Where(part=>!string.IsNullOrEmpty(part)));
+            // HP, attack, Shield, Double Strike/charged and the Headliner reward read on the enemy (S14);
+            // the detail adds only what the board does not show.
+            string detail=enemy.DetailGuidance;
             if(string.IsNullOrEmpty(detail))return false;
             info=new(data.type.sourceCard?"Headliner":"Enemy",enemy.combatPortraits?enemy.combatPortraits.DisplayName(data):data.DisplayName,detail);return true;
         }
         if(source.TryGetComponent<GearIconSlotUI>(out var gear)&&gear.Gear)
         {info=new("Gear",gear.Gear.displayName,GearRules.OwnedDescription(CardManager.Instance,gear.Gear,gear.InstanceId));return true;}
         if(source.TryGetComponent<DrawDeckStackUI>(out _)&&CardManager.Instance!=null)
-        {var c=CardManager.Instance;info=new("Deck","Draw Pile",$"Draw {c.deck.Count}\nHand {c.HandCount}/{c.HandCapacity}");return true;}
+        {info=new("Deck","Draw Pile",DrawDeckStackUI.DetailText(CardManager.Instance,RunManager.Instance));return true;}
         return false;
     }
     // Every detail opens next to what it describes. Hand cards sit on the bottom edge, so theirs

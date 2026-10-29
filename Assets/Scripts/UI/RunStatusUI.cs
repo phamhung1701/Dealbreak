@@ -180,6 +180,8 @@ public class RunStatusUI : MonoBehaviour
     void RefreshGear(CardManager cards)
     {
         if (!ownedGearLabel) return;
+        // S14: the Gear rail shows owned Gear; this legacy line never shows (its text stays for old fixtures).
+        if (ownedGearLabel.gameObject.activeSelf) ownedGearLabel.gameObject.SetActive(false);
         int used = cards != null ? cards.GearSlotsUsed : 0;
         int capacity = cards != null ? cards.GearCapacity : CardManager.BASE_GEAR_CAPACITY;
         var text = new StringBuilder($"<b>GEAR  •  {used}/{capacity}</b>\n");
