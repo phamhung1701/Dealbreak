@@ -40,6 +40,13 @@ public class ActionButtonsUI : MonoBehaviour
         if (_incomingTag == null && pendingDamageLabel) _incomingTag = IncomingTagUI.Dress(pendingDamageLabel);
     }
     public TMP_Text selectionLabel;
+    StatusTagUI _statusTag;
+    /// <summary>The status band's one tag, built around <see cref="turnStateLabel"/>: the state, or the selection preview while it has content.</summary>
+    public StatusTagUI StatusTag { get { EnsureStatusTag(); return _statusTag; } }
+    void EnsureStatusTag()
+    {
+        if (_statusTag == null && turnStateLabel) _statusTag = StatusTagUI.Dress(turnStateLabel);
+    }
     public TMP_Text combatLogLabel;
 
     TMP_Text _primaryActionLabel;
@@ -167,10 +174,12 @@ public class ActionButtonsUI : MonoBehaviour
         var node = RunManager.Instance?.ActiveNode;
         bool encounter = node != null && (node.kind == MapNodeType.Combat ||
             node.kind == MapNodeType.Elite || node.kind == MapNodeType.Headliner);
-        if (turnStateLabel && turnStateLabel.enabled != encounter) turnStateLabel.enabled = encounter;
         if (combatLogLabel && combatLogLabel.gameObject.activeSelf) combatLogLabel.gameObject.SetActive(false);
-        bool showSelection = node == null || encounter;
-        if (selectionLabel && selectionLabel.enabled != showSelection) selectionLabel.enabled = showSelection;
+        // The status tag prints the state and the selection preview; the selection label keeps only the
+        // preview's text (read by tests and the legacy detail panel) and never draws.
+        if (_statusTag != null) _statusTag.SetVisible(encounter);
+        else if (turnStateLabel && turnStateLabel.enabled != encounter) turnStateLabel.enabled = encounter;
+        if (selectionLabel && selectionLabel.enabled) selectionLabel.enabled = false;
     }
 
     void HandleRunStarted(string _)
@@ -340,9 +349,7 @@ public class ActionButtonsUI : MonoBehaviour
 
         RefreshPlayerHealthLabel(combat);
 
-        if (turnStateLabel)
-        {
-            turnStateLabel.text = combat.currentState switch
+        string stateLine = combat.currentState switch
             {
                 GameState.PlayerTurn => combat.IsBonusPlayerAction ? "PLAYER TURN  •  BONUS ACTION" : "PLAYER TURN",
                 GameState.EnemyAttacking => "DEFENSE",
@@ -350,7 +357,6 @@ public class ActionButtonsUI : MonoBehaviour
                 GameState.GameOver => "RUN DEFEAT",
                 _ => "CHOOSE A ROUTE"
             };
-        }
 
         // One INCOMING tag under the enemy row, defense only: the aggregate pending hit, never split.
         if (pendingDamageLabel)
@@ -361,43 +367,24 @@ public class ActionButtonsUI : MonoBehaviour
                 _incomingTag.Show(showDamage, IncomingTagUI.ValueFor(combat), showDamage, IncomingTagUI.FullyBlockedFor(combat));
         }
 
-        if (selectionLabel)
-        {
-        // Only what the current selection will do; how to play is left to the tutorial.
-        if (cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting) selectionLabel.text = string.Empty;
-        else selectionLabel.text = combat.currentState switch
+        // Only what the current selection will do; how to play is left to the tutorial. The attack
+        // preview is the one builder the board showed before S9 (CombatDetailPanelUI.SelectionSummary).
+        string preview = cards.IsEnemyTargeting || cards.IsHandEnhancementTargeting ? string.Empty : combat.currentState switch
             {
                 GameState.PlayerTurn when cards.HandCount == 0 =>
                     $"Recover: take {combat.TotalEnemyAttack}, draw 1",
-                GameState.PlayerTurn when GameplayEffectResolver.IsRoyalFamilySelection(cards.SelectedCards.Select(view => view.data).ToArray(), cards) =>
-                    "Royal Flush • instant defeat",
-                GameState.PlayerTurn when selectedCount == 2 && GameplayEffectResolver.CanPlayAsAcePair(cards.SelectedCards) =>
-                    $"Ace pair • {DamagePreview(cards, combat)}",
-                GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsSameRankMultiCardAction(cards.SelectedCards, cards) =>
-                    $"Same rank ×{selectedCount} • {DamagePreview(cards, combat)}",
-                GameState.PlayerTurn when selectedCount >= 2 && GameplayEffectResolver.IsRoyalFamilyPartialSelection(cards.SelectedCards, cards) =>
-                    $"Royal Flush {selectedCount}/{AttackSelectionRules.RoyalFlushSize} • {DamagePreview(cards, combat)}",
-                GameState.PlayerTurn when GameplayEffectResolver.IsNuclearOptionGroup(cards.SelectedCards, cards) =>
-                    $"{selectedCount} cards • {DamagePreview(cards, combat)}",
-                GameState.PlayerTurn when hasSelected => DamagePreview(cards, combat),
+                GameState.PlayerTurn when hasSelected => CombatDetailPanelUI.SelectionSummary(cards),
                 GameState.EnemyAttacking when hasSelected && combat.TryPreviewDefense(cards.SelectedCards, out int blocked, out int remaining) =>
                     $"Blocks {blocked} of {combat.PendingAttackCount} • {remaining} damage left",
                 GameState.EnemyAttacking when hasSelected => "Can't block with this selection",
                 _ => string.Empty
             };
-        }
-    }
+        if (selectionLabel && selectionLabel.text != preview) selectionLabel.text = preview;
 
-    // Shares the execution calculation; the critical roll and enemy defenses are not included.
-    static string DamagePreview(CardManager cards, CombatManager combat)
-    {
-        var selected = cards.SelectedCards.Select(view => view.data).ToArray();
-        int damage = combat.PreviewActionDamage(selected, combat.currentEnemy);
-        int hits = combat.PreviewHitCount(selected);
-        if (hits <= 1) return $"{damage} damage";
-        // A damage cap (Scalpel) limits all the hits together.
-        int total = combat.PreviewActionTotalDamage(selected, combat.currentEnemy);
-        return total == damage * hits ? $"{damage} damage ×{hits} hits" : $"{total} damage over {hits} hits";
+        // One status line, one writer: the preview stands in for the state while it has content.
+        EnsureStatusTag();
+        if (_statusTag != null) _statusTag.SetLine(StatusTagUI.Compose(stateLine, preview));
+        else if (turnStateLabel && turnStateLabel.text != stateLine) turnStateLabel.text = stateLine;
     }
 
     void OnPrimaryActionClicked()

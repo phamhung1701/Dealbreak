@@ -67,14 +67,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
                 actions.playerHealthLabel.rectTransform.anchorMin = new Vector2(.055f, .1f);
             }
         }
-        if (actions && actions.selectionLabel && cards != null)
-        {
-            if (cards.SelectedCards.Count == 0 && !cards.IsEnemyTargeting && !cards.IsHandEnhancementTargeting)
-                actions.selectionLabel.text = cards.HandCount == 0 ? actions.selectionLabel.text : string.Empty;
-            else if (cards.SelectedCards.Count > 0 && !cards.IsEnemyTargeting && !cards.IsHandEnhancementTargeting &&
-                     CombatManager.Instance.currentState == GameState.PlayerTurn)
-                actions.selectionLabel.text = SelectionSummary(cards);
-        }
+        // The selection preview has one writer, ActionButtonsUI (S9); this panel only reads it back.
         bool overPanel = panel && panel.activeSelf && UnityEngine.InputSystem.Mouse.current != null &&
             RectTransformUtility.RectangleContainsScreenPoint((RectTransform)panel.transform,
                 UnityEngine.InputSystem.Mouse.current.position.ReadValue(), null);
@@ -97,9 +90,9 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         var instances = new CardInstance[cards.SelectedCards.Count];
         for (int i = 0; i < instances.Length; i++) instances[i] = cards.SelectedCards[i].data;
         if (GameplayEffectResolver.IsRoyalFamilySelection(instances, cards)) return "ROYAL FLUSH • Instant defeat";
-        long power = 0;
-        for (int i = 0; i < instances.Length; i++) power += combat.CalculateCardAttackDamage(instances[i], instances, i == 0);
-        return $"{instances.Length} selected • Attack power {Math.Min(int.MaxValue, power)}";
+        // The execution calculation: primed Gear bonuses, action damage, hit count and caps (no RNG, no state change).
+        int power = combat.PreviewActionTotalDamage(instances, combat.currentEnemy);
+        return $"{instances.Length} selected • Attack power {power}";
     }
 
     bool RenderSource(GameObject source)

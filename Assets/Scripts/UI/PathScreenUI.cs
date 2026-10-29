@@ -661,7 +661,8 @@ public class PathScreenUI : MonoBehaviour
             image.sprite = board.sprite;
             image.type = board.type;
             image.pixelsPerUnitMultiplier = board.pixelsPerUnitMultiplier;
-            image.color = new Color(board.color.r, board.color.g, board.color.b, 1f);
+            // The resting board tone, never a defense tone frozen by a first peek mid-fight.
+            image.color = BoardTone.ToneFor(false);
         }
         else image.color = DealbreakUIStyle.Theme ? DealbreakUIStyle.Theme.charcoal : new Color(0.1f, 0.12f, 0.13f);
         image.raycastTarget = true;

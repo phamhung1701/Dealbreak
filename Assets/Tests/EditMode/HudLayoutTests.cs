@@ -64,6 +64,23 @@ public sealed class HudLayoutTests
         Assert.That((min.x + max.x) * .5f, Is.EqualTo((rowMin.x + rowRight) * .5f).Within(Tolerance), "Centred under the enemy row.");
     }
 
+    // S9 (hud.md section C): the status band is centred at x .18-.76, y .37-.42, below INCOMING.
+    [Test]
+    public void StatusBand_IsCentredBelowIncomingAtY037To042()
+    {
+        var root = Canvas();
+        var actions = root.GetComponent<ActionButtonsUI>();
+        Absolute(actions.turnStateLabel.rectTransform, root.transform, out var min, out var max);
+        Absolute(actions.pendingDamageLabel.rectTransform, root.transform, out var incomingMin, out _);
+
+        Assert.That(min.y, Is.EqualTo(.37f).Within(Tolerance), "Status band bottom.");
+        Assert.That(max.y, Is.EqualTo(.42f).Within(Tolerance), "Status band top.");
+        Assert.That(min.x, Is.EqualTo(.18f).Within(Tolerance), "Status band left.");
+        Assert.That(max.x, Is.EqualTo(.76f).Within(Tolerance), "Status band right.");
+        Assert.That(max.y, Is.LessThanOrEqualTo(incomingMin.y + .0001f), "The status band sits below INCOMING, never over it.");
+        Assert.That(actions.turnStateLabel.fontSize, Is.GreaterThanOrEqualTo(22f));
+    }
+
     // A stretched rect's anchors in the canvas root's fractions, composed up its parents (offsets are zero).
     static void Absolute(RectTransform rect, Transform canvasRoot, out Vector2 min, out Vector2 max)
     {

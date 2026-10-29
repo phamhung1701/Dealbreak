@@ -75,6 +75,51 @@ public static class DealbreakCentralStageAuthoring
         EditorUtility.SetDirty(label);
     }
 
+    /// <summary>
+    /// HUD slice S9: moves the status band (CombatStatusPanel) to x .18-.76, y .37-.42, below INCOMING;
+    /// stretches TurnStateLabel (the status tag's label) over the band at 22pt; then re-applies the
+    /// enemy row so INCOMING, a child of the band, keeps y .43-.47. Game.unity only.
+    /// </summary>
+    [MenuItem("Dealbreak/UI/Apply Status Band Layout")]
+    public static void ApplyStatusBandLayout()
+    {
+        Edit("Assets/Scenes/Game.unity", scene =>
+        {
+            var root = scene.GetRootGameObjects().First(g => g.name == "Canvas");
+            StatusBandLayout(root);
+            EnemyRowLayout(root);
+        });
+        EnemyViewSize();
+        AssetDatabase.SaveAssets();
+    }
+
+    // hud.md section C: the status line is centred, x .18-.76, about y .37-.42, below INCOMING.
+    public const float StatusMinY = .37f, StatusMaxY = .42f, StatusHalfWidth = .29f, StatusFontSize = 22;
+
+    static void StatusBandLayout(GameObject root)
+    {
+        float centre = (StageMin.x + StageMax.x) * .5f;
+        var panel = root.transform.Find("CombatStatusPanel");
+        DealbreakUIStyle.Place(panel, centre - StatusHalfWidth, StatusMinY, centre + StatusHalfWidth, StatusMaxY);
+        EditorUtility.SetDirty(panel);
+        var actions = root.GetComponent<ActionButtonsUI>();
+        var label = actions.turnStateLabel;
+        DealbreakUIStyle.Place(label.transform, 0, 0, 1, 1);
+        label.enableAutoSizing = false;
+        label.fontSize = StatusFontSize;
+        label.fontSizeMax = StatusFontSize;
+        label.alignment = TextAlignmentOptions.Center;
+        EditorUtility.SetDirty(label);
+        // The selection label never draws (the tag prints its preview); its size meets the same floor.
+        if (actions.selectionLabel)
+        {
+            actions.selectionLabel.enableAutoSizing = false;
+            actions.selectionLabel.fontSize = StatusFontSize;
+            actions.selectionLabel.fontSizeMax = StatusFontSize;
+            EditorUtility.SetDirty(actions.selectionLabel);
+        }
+    }
+
     /// <summary>A stretched rect's anchors in the canvas root's fractions, composed up the parent chain (offsets are zero).</summary>
     public static void AbsoluteAnchors(RectTransform rect, Transform canvasRoot, out Vector2 min, out Vector2 max)
     {
@@ -209,7 +254,7 @@ public static class DealbreakCentralStageAuthoring
         stage.stageMax = StageMax;
         stage.ApplyLayout();
         float centre = (StageMin.x + StageMax.x) * .5f;
-        DealbreakUIStyle.Place(root.transform.Find("CombatStatusPanel"), centre - .29f, .38f, centre + .29f, .435f);
+        DealbreakUIStyle.Place(root.transform.Find("CombatStatusPanel"), centre - StatusHalfWidth, StatusMinY, centre + StatusHalfWidth, StatusMaxY);
     }
 
     /// <summary>Anchors <paramref name="t"/> to a reference-pixel box inside <paramref name="parent"/> and returns the box.</summary>
@@ -285,7 +330,7 @@ public static class DealbreakCentralStageAuthoring
         if (enemyLayout) { enemyLayout.childAlignment = TextAnchor.UpperCenter; enemyLayout.padding.top = 40; }
         if (enemyGroup.enemyContainer != stage.combat)
             DealbreakUIStyle.Place(enemyGroup.enemyContainer, .015f, .42f, .985f, .98f);
-        DealbreakUIStyle.Place(root.transform.Find("CombatStatusPanel"), .24f, .38f, .82f, .435f);
+        DealbreakUIStyle.Place(root.transform.Find("CombatStatusPanel"), .24f, StatusMinY, .82f, StatusMaxY);
         var shop = runtime.market;
         var title = shop.panel.GetComponentsInChildren<TMP_Text>(true).First(t => t.name == "ShopTitleLabel");
         title.fontSize = 48;
@@ -363,6 +408,7 @@ public static class DealbreakCentralStageAuthoring
         // Last: the header rows and the widened stage override the older column and stage placement.
         InventoryLayout(root.transform, actions, runtime);
         StageLayout(root);
+        StatusBandLayout(root);
         EnemyRowLayout(root);
         CleanCopy(scene);
     }

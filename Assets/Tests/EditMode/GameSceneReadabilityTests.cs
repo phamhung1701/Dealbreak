@@ -70,7 +70,8 @@ public sealed class GameSceneReadabilityTests
         AssertReadable("Canvas/PlayerArea/HealthPanel/PlayerHealthLabel", 19f);
         AssertReadable("Canvas/PlayerArea/ActionBar/PlayButton/PlayCardButtonLabel", 19f);
         AssertReadable("Canvas/PlayerArea/ActionBar/BlockButton/PlayCardButtonLabel", 19f);
-        AssertReadable("Canvas/PlayerArea/SelectionLabel", 16f);
+        // S9: the status tag prints the state and the selection preview on TurnStateLabel (22pt).
+        AssertReadable("Canvas/CombatStatusPanel/TurnStateLabel", 22f);
         AssertReadable("Canvas/RunHeader/RunProgressLabel", 17f);
         AssertReadable("Canvas/OwnedGearBar/GearHeader", 18f);
         AssertReadable("Canvas/PathPanel/PathCard/PathInstructionLabel", 16f);
@@ -86,7 +87,7 @@ public sealed class GameSceneReadabilityTests
         AssertTextFits("Canvas/CreditsLabel");
         AssertTextFits("Canvas/RunHeader/RunProgressLabel");
         AssertTextFits("Canvas/RunHeader/HeadlinerProgressLabel");
-        AssertTextFits("Canvas/PlayerArea/SelectionLabel");
+        AssertTextFits("Canvas/CombatStatusPanel/TurnStateLabel");
         AssertTextFits("Canvas/PlayerArea/ActionBar/PlayButton/PlayCardButtonLabel");
         AssertTextFits("Canvas/PlayerArea/ActionBar/BlockButton/PlayCardButtonLabel");
         AssertTextFits("Canvas/PathPanel/PathCard/PathInstructionLabel");

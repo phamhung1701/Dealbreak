@@ -49,6 +49,7 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         // One trigger presenter, on the game HUD (the frontend overlay has no hand or HP panel).
         if(canvas&&actions)EffectTriggerPresenterUI.Install(canvas.rootCanvas);
         InstallInventoryPanels();
+        InstallBoardTone(canvas);
     }
     // (owner, 2026-10-23) Each header row sits on its own panel with a coloured heading block, so the
     // rows read apart. Cut Sheet (visual-design 3b): the block is a tag-sprite strip, paper for Gear
@@ -68,26 +69,24 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         foreach(var slot in slots)members.Add((RectTransform)slot.transform);
         InventoryPanelUI.Install("Tricks Panel",area,members.ToArray(),new[]{trickHeading,trickCapacity},theme.kraft,theme.inkPrint,theme.tagSprite);
     }
-    // The selection preview and the turn state share one line under the enemies: while cards are
-    // selected their preview stands in for PLAYER TURN or DEFENSE, so it never collides with INCOMING.
-    // Both lines and INCOMING are obstacles a hand card's detail steps around.
+    // S9: the state, the selection preview, the block preview and the auto-Recover notice share one
+    // status tag under INCOMING (ActionButtonsUI writes it). The tag owns its label's type, so the
+    // style pass skips it. The tag and INCOMING are obstacles a hand card's detail steps around.
+    BoardTone _boardTone;
     void MergeStatusLines()
     {
-        if(!actions||!actions.selectionLabel||!actions.turnStateLabel)return;
-        var line=actions.selectionLabel.rectTransform;var turn=actions.turnStateLabel.rectTransform;
-        line.SetParent(turn.parent,false);
-        line.anchorMin=turn.anchorMin;line.anchorMax=turn.anchorMax;line.pivot=turn.pivot;
-        line.offsetMin=turn.offsetMin;line.offsetMax=turn.offsetMax;
-        actions.selectionLabel.alignment=TextAlignmentOptions.Center;
-        ContextualTooltipUI.RegisterObstacle(line);ContextualTooltipUI.RegisterObstacle(turn);
+        if(!actions)return;
+        var tag=actions.StatusTag;
+        if(tag){if(tag.Label)_styled.Add(tag.Label);ContextualTooltipUI.RegisterObstacle(tag.Body?tag.Body:(RectTransform)tag.transform);}
+        if(actions.selectionLabel){_styled.Add(actions.selectionLabel);actions.selectionLabel.enabled=false;}
         if(actions.IncomingArea)ContextualTooltipUI.RegisterObstacle(actions.IncomingArea);
     }
-    void ShowOneStatusLine()
+    // The stage background is a baked scene Image: the board tone tints it from the theme at runtime.
+    void InstallBoardTone(Canvas canvas)
     {
-        if(!actions||!actions.selectionLabel||!actions.turnStateLabel)return;
-        bool preview=actions.selectionLabel.enabled&&!string.IsNullOrWhiteSpace(actions.selectionLabel.text);
-        float alpha=preview?0f:1f;
-        if(!Mathf.Approximately(actions.turnStateLabel.alpha,alpha))actions.turnStateLabel.alpha=alpha;
+        if(!canvas||!actions)return;
+        var background=canvas.rootCanvas.transform.Find("Background");
+        if(background&&background.TryGetComponent<Image>(out var board))_boardTone=BoardTone.Install(board);
     }
     // (owner, 2026-10-23) The hand size rides at the hand's right end, as part of the hand, so it
     // travels with the hand between the board and the compact strip instead of on its own path.
@@ -193,7 +192,6 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             int used=CardManager.Instance.BackpackSlotsUsed,cap=CardManager.Instance.BackpackCapacity;
             if(used!=_shownTricksUsed||cap!=_shownTricksCap){_shownTricksUsed=used;_shownTricksCap=cap;trickCapacity.SetText("{0:0}/{1:0}",used,cap);}
         }
-        ShowOneStatusLine();
         FollowHandEnd();
         // A drop waiting on the board after a fight also brings the hand up, so Tricks can make room.
         // The board stays up until the last card lands and the last enemy's defeat has played.
@@ -235,6 +233,12 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             _compactHealthLayout=true;
             _lastDefenseLayout=null;
         }
+        if(_boardTone!=null)
+        {
+            // Defense tone and dot screen while the enemies attack; ink otherwise.
+            _boardTone.Set(CombatActive&&CombatManager.Instance.currentState==GameState.EnemyAttacking,Time.unscaledTime);
+            _boardTone.Tick(Time.unscaledTime);
+        }
         bool hideInventory=RunResultUI.IsShowingResult;
         if(inventoryGroups!=null)foreach(var group in inventoryGroups)if(group){group.alpha=hideInventory?0:1;group.blocksRaycasts=!hideInventory;group.interactable=!hideInventory;}
         if(actions&&CombatActive)
@@ -248,10 +252,6 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
                 _compactHealthLayout=false;
             }
             var cards=CardManager.Instance;
-            if(actions.selectionLabel&&cards!=null&&cards.SelectedCards.Count==0&&!cards.IsEnemyTargeting&&!cards.IsHandEnhancementTargeting)
-                actions.selectionLabel.text=cards.HandCount==0?actions.selectionLabel.text:string.Empty;
-            else if(actions.selectionLabel&&cards!=null&&cards.SelectedCards.Count>0&&!cards.IsEnemyTargeting&&!cards.IsHandEnhancementTargeting&&CombatManager.Instance.currentState==GameState.PlayerTurn)
-                actions.selectionLabel.text=CombatDetailPanelUI.SelectionSummary(cards);
             if(actions.playButton)actions.playButton.GetComponentInChildren<TMP_Text>().text=cards.IsEnemyTargeting?"CANCEL":"ATTACK";
             if(actions.recoverButton&&actions.recoverButton.gameObject.activeSelf)actions.recoverButton.gameObject.SetActive(false);
         }
