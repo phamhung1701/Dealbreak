@@ -30,6 +30,8 @@ public class CardView : MonoBehaviour,
     public Sprite[] cardSprites = new Sprite[52];
 
     [Header("Presentation Motion")]
+    // Legacy serialized values, no longer read: the Cut Sheet lifts are HandCardCutSheetUI.HoverLift
+    // and HandCardCutSheetUI.SelectedLift (S10c), tweened over HandCardCutSheetUI.LiftSeconds.
     [Min(0f)] public float hoverRaise = 10f;
     [Min(0f)] public float selectedRaise = 18f;
     [Min(0f)] public float dragRaise = 6f;
@@ -57,8 +59,10 @@ public class CardView : MonoBehaviour,
 
     Vector2 _layoutOffset;
     Vector2 _layoutVelocity;
-    Vector2 _stateOffset;
-    Vector2 _stateVelocity;
+    float _lift, _liftFrom, _liftTo, _liftElapsed = -1f;
+    bool _defending, _canBlock = true;
+    HandCardCutSheetUI _cutSheet;
+    static readonly CardInstance[] BlockProbe = new CardInstance[1];
     float _visualScale = 1f;
     float _scaleVelocity;
     float _targetRaise;
@@ -92,6 +96,41 @@ public class CardView : MonoBehaviour,
     public State CurrentState => _state;
     public bool IsSelected => _isSelected;
     public bool IsHandTargetEligible => _isHandTargeting && _isHandTargetEligible;
+    /// <summary>The artwork's current Cut Sheet lift in pixels (tweened; snaps under Reduce Motion).</summary>
+    public float CurrentLift => _lift;
+    public HandCardCutSheetUI CutSheet => _cutSheet;
+    /// <summary>In defense, an unselected card that cannot block on its own: darkened, hatched, no hover lift.</summary>
+    public bool CannotBlock => _defending && !_canBlock && !_isSelected;
+
+    /// <summary>Presentation input, like <see cref="SetHandTargetState"/>; changes no game state.</summary>
+    public void SetDefenseBlockState(bool defending, bool canBlock)
+    {
+        _defending = defending;
+        _canBlock = !defending || canBlock;
+        RefreshState();
+    }
+
+    /// <summary>
+    /// Reads, without changing anything, whether this hand card could block the pending attack alone
+    /// (CombatManager.PreviewBlockedAttackers). Runs on combat events, never per frame.
+    /// </summary>
+    public void RefreshDefenseBlockState()
+    {
+        bool defending = false, canBlock = true;
+        if (data != null && homeField != null && CombatManager.TryGetInstance(out var combat) &&
+            CardManager.TryGetInstance(out var cards) && cards.handField == homeField &&
+            combat.currentState == GameState.EnemyAttacking && combat.pendingDamage > 0)
+        {
+            defending = true;
+            BlockProbe[0] = data;
+            canBlock = combat.PreviewBlockedAttackers(BlockProbe) != null;
+            BlockProbe[0] = null;
+        }
+        if (defending != _defending || canBlock != _canBlock) SetDefenseBlockState(defending, canBlock);
+    }
+
+    void HandleCombatStateChanged(GameState _) => RefreshDefenseBlockState();
+    void HandlePendingDamageChanged(int _) => RefreshDefenseBlockState();
 
     public void SetHandTargetState(bool targeting, bool eligible)
     {
@@ -108,6 +147,12 @@ public class CardView : MonoBehaviour,
     {
         if (Application.isPlaying && CardManager.Instance != null)
             CardManager.Instance.OnBuildChanged += RefreshContent;
+        if (Application.isPlaying && CombatManager.TryGetInstance(out var combat))
+        {
+            combat.OnStateChanged += HandleCombatStateChanged;
+            combat.OnPendingDamageChanged += HandlePendingDamageChanged;
+            RefreshDefenseBlockState();
+        }
     }
 
     void OnDisable()
@@ -120,6 +165,11 @@ public class CardView : MonoBehaviour,
         RefreshState();
         if (CardManager.TryGetInstance(out var manager))
             manager.OnBuildChanged -= RefreshContent;
+        if (CombatManager.TryGetInstance(out var combat))
+        {
+            combat.OnStateChanged -= HandleCombatStateChanged;
+            combat.OnPendingDamageChanged -= HandlePendingDamageChanged;
+        }
     }
 
     public void Setup(CardInstance cardData)
@@ -131,6 +181,7 @@ public class CardView : MonoBehaviour,
             CardModFxUI.Attach(this);
         }
         RefreshContent();
+        if (Application.isPlaying) RefreshDefenseBlockState();
         RefreshState();
     }
 
@@ -237,9 +288,13 @@ public class CardView : MonoBehaviour,
                 State.Hover => 2,
                 _ => 1
             };
-        _targetRaise = (_isDragging ? 0f : (_isSelected ? selectedRaise : 0f) + (_isPointerOver || _isFocused ? hoverRaise : 0f)) +
+        EnsureCutSheet();
+        // A card that cannot block never answers hover; the selection lift reads without its shadow.
+        bool hoverLift = (_isPointerOver || _isFocused) && !CannotBlock;
+        _targetRaise = (_isDragging ? 0f : (_isSelected ? HandCardCutSheetUI.SelectedLift : 0f) + (hoverLift ? HandCardCutSheetUI.HoverLift : 0f)) +
             (_isHandTargetEligible ? 8f : 0f);
-        _targetScale = _isDragging ? 1.065f : 1f + (_isSelected ? 0.045f : 0f) + (_isPointerOver || _isFocused ? 0.035f : 0f);
+        RetargetLift(_targetRaise);
+        _targetScale = _isDragging ? 1.065f : 1f + (_isSelected ? 0.045f : 0f) + (hoverLift ? 0.035f : 0f);
 
         if (face)
         {
@@ -247,19 +302,57 @@ public class CardView : MonoBehaviour,
                 face.color = _isHandTargetEligible
                     ? (ContextualTooltipUI.Instance ? new Color(0.94f, 0.89f, 0.77f, 1f) : new Color(0.88f, 1f, 0.9f, 1f))
                     : new Color(0.48f, 0.48f, 0.48f, 0.58f);
+            else if (CannotBlock)
+                face.color = HandCardCutSheetUI.DarkenedFace;
             else
                 face.color = state == State.Idle ? new Color(0.97f, 0.97f, 0.97f, 1f) : Color.white;
         }
         if (selectionOutline)
         {
             bool selected = state == State.Click || state == State.Drag;
-            selectionOutline.enabled = selected || IsHandTargetEligible || _isFocused;
+            // With Cut Sheet crop marks, the selection is the marks and the lift, not the outline.
+            bool marked = _cutSheet != null && state == State.Click;
+            selectionOutline.enabled = selected && !marked || IsHandTargetEligible || _isFocused;
             selectionOutline.effectColor = CombatDetailPanelUI.IsCombatActive || ContextualTooltipUI.Instance
                 ? selected && state != State.Drag ? new Color(0.87f, 0.67f, 0.28f) : new Color(0.94f, 0.89f, 0.77f)
                 : state == State.Drag ? _dragColor : selected ? _selectedColor : new Color(0.28f, 1f, 0.52f);
         }
         if (selectionBadge) selectionBadge.SetActive(false);
         if (stateLabel) stateLabel.text = string.Empty;
+        ApplyCutSheet();
+    }
+
+    // Hand cards only (a home Field and a visual root under the card root); built once.
+    void EnsureCutSheet()
+    {
+        if (_cutSheet != null || homeField == null || visualRoot == null) return;
+        _cutSheet = HandCardCutSheetUI.Attach(this);
+    }
+
+    void ApplyCutSheet()
+    {
+        if (_cutSheet != null)
+            _cutSheet.Apply(face, _lift, _isSelected && !_isDragging, CannotBlock && !_isHandTargeting);
+    }
+
+    void RetargetLift(float target)
+    {
+        if (Mathf.Approximately(target, _liftTo)) return;
+        _liftFrom = _lift;
+        _liftTo = target;
+        if (CutSheetMotion.Seconds(HandCardCutSheetUI.LiftSeconds) > 0f) _liftElapsed = 0f;
+        else { _lift = target; _liftElapsed = -1f; }
+    }
+
+    // Ease-out over ~90ms on the presentation clock; Reduce Motion snaps, also mid-tween.
+    void TickLift(float deltaTime)
+    {
+        if (_liftElapsed < 0f) return;
+        float duration = CutSheetMotion.Seconds(HandCardCutSheetUI.LiftSeconds);
+        _liftElapsed += deltaTime;
+        float t = duration > 0f ? Mathf.Clamp01(_liftElapsed / duration) : 1f;
+        _lift = Mathf.LerpUnclamped(_liftFrom, _liftTo, 1f - (1f - t) * (1f - t));
+        if (t >= 1f) { _lift = _liftTo; _liftElapsed = -1f; }
     }
 
     void EnsureVisualSorting()
@@ -304,14 +397,12 @@ public class CardView : MonoBehaviour,
         _layoutOffset = Vector2.SmoothDamp(
             _layoutOffset, Vector2.zero, ref _layoutVelocity,
             layoutSmoothTime, Mathf.Infinity, deltaTime);
-        _stateOffset = Vector2.SmoothDamp(
-            _stateOffset, new Vector2(0f, _targetRaise), ref _stateVelocity,
-            positionSmoothTime, Mathf.Infinity, deltaTime);
+        TickLift(deltaTime);
         _visualScale = Mathf.SmoothDamp(
             _visualScale, _targetScale, ref _scaleVelocity,
             scaleSmoothTime, Mathf.Infinity, deltaTime);
         _visualRotation = Mathf.SmoothDampAngle(_visualRotation,
-            _isDragging ? 0f : _fanRotation * (_isPointerOver ? 0.35f : _isSelected ? 0.65f : 1f), ref _rotationVelocity,
+            _isDragging ? 0f : _fanRotation * (_isPointerOver && !CannotBlock ? 0.35f : _isSelected ? 0.65f : 1f), ref _rotationVelocity,
             layoutSmoothTime, Mathf.Infinity, deltaTime);
         _presentFanOffset = Vector2.SmoothDamp(_presentFanOffset,
             _isDragging ? Vector2.zero : _fanOffset, ref _fanVelocity,
@@ -329,9 +420,11 @@ public class CardView : MonoBehaviour,
             pulseAngle = Mathf.Sin(t * Mathf.PI * 3f) * 7f * (1f - t);
             if (t >= 1f) _triggerPulse = -1f;
         }
-        visualRoot.anchoredPosition = _layoutOffset + _stateOffset + _presentFanOffset + pulseOffset;
+        visualRoot.anchoredPosition = _layoutOffset + new Vector2(0f, _lift) + _presentFanOffset + pulseOffset;
         visualRoot.localRotation = Quaternion.Euler(0f, 0f, _visualRotation + pulseAngle);
         visualRoot.localScale = Vector3.one * (_visualScale * pulseScale);
+        EnsureCutSheet();
+        ApplyCutSheet();
         // Keep the grabbed artwork point locked even while rotation/lift/scale settle.
         if (_isDragging) AlignGrabPoint();
     }
