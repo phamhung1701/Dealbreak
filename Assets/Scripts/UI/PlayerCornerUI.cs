@@ -234,7 +234,8 @@ public sealed class PlayerCornerUI : MonoBehaviour
         }
     }
 
-    /// <summary>Ticks every 5 HP, or every 10 when 5 would sit closer than 6px; none for infinite HP.</summary>
+    /// <summary>Ticks every 5 HP, or every 10 when 5 would sit closer than 6px; none for infinite HP or
+    /// when even every 10 would sit closer than 6px.</summary>
     public static int TickStepFor(int max, float trackWidth) =>
         max > 0 && trackWidth * TickStep / max < MinTickSpacing ? DenseTickStep : TickStep;
 
@@ -248,7 +249,9 @@ public sealed class PlayerCornerUI : MonoBehaviour
         if (_shownInfinite != true && max > 0 && width > 0f)
         {
             _tickStep = TickStepFor(max, width);
-            needed = (max - 1) / _tickStep;
+            // Even every 10 HP can be denser than 6px (a dev or test run at huge max HP): draw no ticks
+            // then, so the canvas never holds thousands of them; the fill length carries HP.
+            if (width * _tickStep / max >= MinTickSpacing) needed = (max - 1) / _tickStep;
         }
         var theme = DealbreakUIStyle.Theme;
         while (_tickPool.Count < needed)

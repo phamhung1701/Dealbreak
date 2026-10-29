@@ -80,6 +80,19 @@ public sealed class PlayerCornerTests
     }
 
     [Test]
+    public void Meter_WithHugeMaxHp_DrawsNoTicksRatherThanThousands()
+    {
+        // The soak bot plays at 100000 HP: every-10 ticks would be ~10k Images on the HUD canvas.
+        var (_, panel, label) = Fixture();
+        var corner = PlayerCornerUI.For(panel, label);
+
+        corner.SetHealth(100000, 100000, 1f, false);
+
+        Assert.That(corner.ActiveTickCount, Is.Zero, "Ticks closer than 6px even at every 10 HP are dropped; the fill carries HP.");
+        Assert.That(corner.Ticks.Count, Is.LessThanOrEqualTo(399 / 6), "No tick pool is built past what the track can space.");
+    }
+
+    [Test]
     public void HpNumber_IsCourierPrimeBold20InkWithThePaperOutlinePreset()
     {
         var theme = DealbreakUIStyle.Theme;
