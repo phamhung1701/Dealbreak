@@ -210,9 +210,8 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         {
             // The header no longer names the District or Headliner; the progress line is an active Contract's.
             var progress=status.runProgressLabel.GetComponent<ContextualInfoTrigger>();
-            // The label carries <font> tags for its numerals; the detail gets the plain line.
-            if(progress)progress.describe=()=>new ContextualInfo("Contract",
-                status.runProgressLabel.TryGetComponent<ContractLineUI>(out var line)?line.PlainText:status.runProgressLabel.text,null);
+            // S15: a click opens the Contract's objective and reward beside the line, not the line again.
+            if(progress)progress.describe=()=>RunStatusUI.ContractDetail(RunManager.Instance);
         }
     }
     void LateUpdate()

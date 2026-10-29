@@ -270,4 +270,15 @@ public sealed class BalanceTextDriftTests
         AssertQuotes(contract.choices[2].description, "Flawless Contract",
             $"Reward: {c.flawlessReward} Credits", $"lose {c.failureHpLoss} HP");
     }
+
+    // HUD slice S15: the Contract line's detail quotes the same reward clause the player bought.
+    [Test]
+    public void ContractRewardText_MatchesItsQuestContractChoice()
+    {
+        var contract = Resources.Load<RunEventDefinition>("QuestContract");
+        Assert.That(contract, Is.Not.Null);
+        AssertQuotes(contract.choices[0].description, "Combat Contract", RunManager.ContractRewardText(RunContractObjective.WinTwoEncounters));
+        AssertQuotes(contract.choices[1].description, "Enforcer Contract", RunManager.ContractRewardText(RunContractObjective.DefeatEliteThisMap));
+        AssertQuotes(contract.choices[2].description, "Flawless Contract", RunManager.ContractRewardText(RunContractObjective.WinCombatWithoutHpLoss));
+    }
 }

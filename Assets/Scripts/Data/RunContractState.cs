@@ -19,8 +19,8 @@ public sealed class RunContractState
 
     public string ObjectiveDescription => objective switch
     {
-        RunContractObjective.WinTwoEncounters => $"Win {GameBalance.Current.contracts.combatWinsRequired} encounters within {GameBalance.Current.contracts.combatDeadlineDistricts} Districts.",
-        RunContractObjective.DefeatEliteThisMap => "Defeat an Enforcer before leaving this District.",
+        RunContractObjective.WinTwoEncounters => $"Win {GameBalance.Current.contracts.combatWinsRequired} encounters.", // the line beside it carries the deadline
+        RunContractObjective.DefeatEliteThisMap => "Defeat a reachable Enforcer before leaving this District.",
         RunContractObjective.WinCombatWithoutHpLoss => "Win 1 encounter without losing HP.",
         _ => "Complete the contract objective."
     };

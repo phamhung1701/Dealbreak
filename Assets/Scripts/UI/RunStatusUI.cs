@@ -132,6 +132,18 @@ public class RunStatusUI : MonoBehaviour
         RefreshTiming();
     }
 
+    /// <summary>
+    /// S15: the Contract line's click detail (owner ruling: objective and reward). The line itself keeps the
+    /// progress, so the detail does not repeat it. Null without an active Contract. Read-only.
+    /// </summary>
+    public static ContextualInfo? ContractDetail(RunManager run)
+    {
+        var contract = run != null && !run.IsRunCompleted ? run.ActiveContract : null;
+        if (contract == null) return null;
+        return new ContextualInfo("Contract", RunManager.ContractName(contract.objective),
+            contract.ObjectiveDescription + "\n" + run.ActiveContractRewardText);
+    }
+
     static string FormatContractProgress(RunContractState contract)
     {
         long lastMap = (long)contract.deadlineMapExclusive + 1L;

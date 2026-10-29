@@ -146,6 +146,40 @@ public partial class RunManager
         }
     }
 
+    // One source for a Contract's Credits payout: ResolveContractSuccess pays it, ContractRewardText quotes it.
+    static int ContractCreditReward(RunContractObjective objective, ContractBalance balance) => objective switch
+    {
+        RunContractObjective.WinTwoEncounters => balance.combatReward,
+        RunContractObjective.WinCombatWithoutHpLoss => balance.flawlessReward,
+        _ => 0
+    };
+
+    /// <summary>
+    /// The reward clause for <paramref name="objective"/>, worded as in its Resources/QuestContract choice and
+    /// read from the same GameBalance fields the payout uses. Read-only: no state change, no RNG.
+    /// </summary>
+    public static string ContractRewardText(RunContractObjective objective)
+    {
+        var balance = GameBalance.Current.contracts;
+        return objective == RunContractObjective.DefeatEliteThisMap
+            ? $"Reward: a {balance.enforcerRewardRarity} Gear item, or heal {balance.enforcerFallbackHeal} HP if none is eligible."
+            : $"Reward: {ContractCreditReward(objective, balance)} Credits.";
+    }
+
+    /// <summary>The active Contract's reward clause, or empty without one. Read-only: no state change, no RNG.</summary>
+    public string ActiveContractRewardText => _activeContract != null ? ContractRewardText(_activeContract.objective) : string.Empty;
+
+    /// <summary>The Contract's authored name (its Resources/QuestContract choice label); never throws.</summary>
+    public static string ContractName(RunContractObjective objective)
+    {
+        if (_contractSelectionTemplate == null)
+            _contractSelectionTemplate = Resources.Load<RunEventDefinition>("QuestContract");
+        var choices = _contractSelectionTemplate != null ? _contractSelectionTemplate.choices : null;
+        int index = Array.IndexOf(ContractChoices, objective);
+        return choices != null && index >= 0 && index < choices.Length && choices[index] != null &&
+            !string.IsNullOrEmpty(choices[index].label) ? choices[index].label : "Contract";
+    }
+
     void ResolveContractSuccess()
     {
         var contract = _activeContract;
@@ -157,10 +191,8 @@ public partial class RunManager
         switch (contract.objective)
         {
             case RunContractObjective.WinTwoEncounters:
-                cards?.AddCredits(balance.combatReward);
-                break;
             case RunContractObjective.WinCombatWithoutHpLoss:
-                cards?.AddCredits(balance.flawlessReward);
+                cards?.AddCredits(ContractCreditReward(contract.objective, balance));
                 break;
             case RunContractObjective.DefeatEliteThisMap:
                 var eligible = cards?.gearCatalog.Where(item => item != null &&
