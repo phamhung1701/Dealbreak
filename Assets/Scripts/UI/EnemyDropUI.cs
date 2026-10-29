@@ -264,6 +264,12 @@ public sealed class EnemyDropUI : MonoBehaviour
 
     IEnumerator ReturnHome()
     {
+        // Under Reduce Motion the token is simply back home.
+        if (CutSheetMotion.ReduceMotion)
+        {
+            if (_token) _token.anchoredPosition = _home;
+            yield break;
+        }
         Vector2 start = _token.anchoredPosition;
         float elapsed = 0f;
         while (elapsed < .18f && _token)
@@ -279,6 +285,13 @@ public sealed class EnemyDropUI : MonoBehaviour
     // A full backpack: the drop shakes to show it cannot go in yet.
     IEnumerator Shake()
     {
+        // A local wobble, not screen shake: only Reduce Motion settles it (read live), so a full
+        // backpack still answers with Screen Shake off.
+        if (CutSheetMotion.ReduceMotion)
+        {
+            if (_token) _token.anchoredPosition = _home;
+            yield break;
+        }
         float elapsed = 0f;
         while (elapsed < .25f && _token)
         {

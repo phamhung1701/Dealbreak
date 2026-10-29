@@ -571,18 +571,21 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             _rewardFlights.Remove(card.gameObject);
             DestroyVisual(card.gameObject);
         }
-        if (deckTarget) yield return PopDeck();
+        // Under Reduce Motion the draw pile does not jolt, but the flight ends at the same moment.
+        if (deckTarget) yield return CutSheetMotion.ReduceMotion ? Wait(DeckPopTime) : PopDeck();
         NotifyIfIdle();
     }
+
+    const float DeckPopTime = .16f;
 
     IEnumerator PopDeck()
     {
         Vector3 rest = deckTarget.localScale;
         float elapsed = 0f;
-        while (elapsed < .16f && deckTarget)
+        while (elapsed < DeckPopTime && deckTarget)
         {
             elapsed += Time.deltaTime;
-            deckTarget.localScale = rest * (1f + Mathf.Sin(Mathf.Clamp01(elapsed / .16f) * Mathf.PI) * .12f);
+            deckTarget.localScale = rest * (1f + Mathf.Sin(Mathf.Clamp01(elapsed / DeckPopTime) * Mathf.PI) * .12f);
             yield return null;
         }
         if (deckTarget) deckTarget.localScale = rest;

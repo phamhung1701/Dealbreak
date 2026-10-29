@@ -138,9 +138,8 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         bool inCombat = combat != null && combat.currentState is GameState.PlayerTurn or GameState.EnemyAttacking;
         float now = Time.time;
         // A long backlog plays faster, so spamming actions never leaves a long tail.
-        float scale = Mathf.Max(MinStepScale, 1f - .15f * _queue.Count);
         float start = Mathf.Max(now, _timelineEnd);
-        _timelineEnd = start + StepDuration(trigger.Cue) * scale;
+        _timelineEnd = start + StepSpan(trigger.Cue, _queue.Count);
         _queue.Add(new Step { Trigger = trigger, StartAt = start, Combat = inCombat });
         if (trigger.Cue == EffectCue.Credits) _creditsInFlight++;
         if (trigger.Cue is EffectCue.Heal) _healthInFlight++;
@@ -152,6 +151,11 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
     }
 
     static float StepDuration(EffectCue cue) => cue == EffectCue.HealthCost ? HealthCostStepTime : StepTime;
+
+    // How long a step holds the timeline, given the steps still waiting: the schedule that fixes tag
+    // order and hit timing. Independent of Reduce Motion, which only drops hops, tilt and pops.
+    internal static float StepSpan(EffectCue cue, int backlog) =>
+        StepDuration(cue) * Mathf.Max(MinStepScale, 1f - .15f * backlog);
 
     void Update()
     {
@@ -301,7 +305,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
     void Hop(RectTransform anchor, CardView handCard, bool canHop)
     {
         if (handCard) { handCard.PlayTriggerPulse(); return; }
-        if (!canHop) return;
+        if (!canHop || CutSheetMotion.ReduceMotion) return;
         // A Cut Sheet slot hops its own face; its root is the untilted (often pinned) hit area.
         if (anchor && anchor.TryGetComponent(out CutSheetSlotUI sticker)) { sticker.Hop(); return; }
         if (_pulses.TryGetValue(anchor, out var running) && running != null) StopCoroutine(running);
@@ -369,7 +373,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
     IEnumerator PulseHealth(RectTransform health)
     {
         var panel = health.parent as RectTransform;
-        if (!panel) yield break;
+        if (!panel || CutSheetMotion.ReduceMotion) yield break;
         float elapsed = 0f;
         while (elapsed < .3f && panel)
         {
@@ -428,7 +432,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
 
     void PopCoin(RectTransform coin)
     {
-        if (!coin) return;
+        if (!coin || CutSheetMotion.ReduceMotion) return;
         if (_pulses.TryGetValue(coin, out var running) && running != null) StopCoroutine(running);
         _pulses[coin] = StartCoroutine(Pulse(coin));
     }
@@ -603,15 +607,18 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         var group = tag.AddComponent<CanvasGroup>();
         group.blocksRaycasts = false;
         float elapsed = 0f;
+        // The jitter is drawn either way so the presentation generator's sequence never depends on the setting.
         float tilt = Jitter(-5f, 5f);
         while (elapsed < TagTime && rect)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / TagTime);
-            float pop = Mathf.Clamp01(elapsed / .14f);
+            // Reduce Motion (read live): the tag is simply there, upright and full size, for the same time.
+            bool still = CutSheetMotion.ReduceMotion;
+            float pop = still ? 1f : Mathf.Clamp01(elapsed / .14f);
             rect.localScale = Vector3.one * Mathf.LerpUnclamped(.3f, 1f, EaseOutBack(pop));
-            rect.localRotation = Quaternion.Euler(0f, 0f, tilt * (1f - pop * .6f));
-            rect.anchoredPosition = at + Vector2.up * (24f * EaseOutCubic(t));
+            rect.localRotation = Quaternion.Euler(0f, 0f, still ? 0f : tilt * (1f - pop * .6f));
+            rect.anchoredPosition = at + Vector2.up * (still ? 0f : 24f * EaseOutCubic(t));
             group.alpha = 1f - Mathf.InverseLerp(.7f, 1f, t);
             yield return null;
         }

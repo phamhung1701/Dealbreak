@@ -146,10 +146,13 @@ public sealed class ScreenShakeUI : MonoBehaviour
         return Sprite.Create(texture, new Rect(0, 0, Size, Size), new Vector2(.5f, .5f));
     }
 
+    /// <summary>Whether hits move the canvas, read live: off under Screen Shake off or Reduce Motion.</summary>
+    internal static bool Moves => CutSheetMotion.ShakeEnabled;
+
     void Apply()
     {
         // The red edge still flashes; only the movement honours the shake and Reduce Motion settings.
-        if (!CutSheetMotion.ShakeEnabled || CutSheetMotion.ReduceMotion) return;
+        if (!Moves) return;
         if (!isActiveAndEnabled || _applied.Count > 0 || _elapsed >= ShakeTime) return;
         float t = _elapsed / ShakeTime;
         float decay = (1f - t) * (1f - t);

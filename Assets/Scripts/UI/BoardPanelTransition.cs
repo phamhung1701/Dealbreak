@@ -60,6 +60,11 @@ public sealed class BoardPanelTransition : MonoBehaviour
 
     bool _initialized;
 
+    // The tween lengths under the current preferences: zero (a cut) under Reduce Motion, read live.
+    internal static float ShowSeconds => CutSheetMotion.Seconds(ShowDuration);
+    internal static float HideSeconds => CutSheetMotion.Seconds(HideDuration);
+    internal static float OverlayFadeSeconds => CutSheetMotion.Seconds(OverlayFadeDuration);
+
     void Awake() => CacheComponents();
 
     // A panel deactivated mid-transition by other code must not stay half-faded or unclickable.
@@ -97,22 +102,23 @@ public sealed class BoardPanelTransition : MonoBehaviour
         }
         _group.interactable = false;
         _group.blocksRaycasts = false;
-        if (!Application.isPlaying)
+        if (!Application.isPlaying || ShowSeconds <= 0f)
         {
+            _animating = false;
             _group.alpha = 1f;
             _group.interactable = true;
             _group.blocksRaycasts = true;
             if (_rect != null) _rect.localScale = _shownScale;
             return;
         }
-        StartCoroutine(Animate(1f, true, ShowDuration, true));
+        StartCoroutine(Animate(1f, true, ShowSeconds, true));
     }
 
     void HidePanel()
     {
         StopAllCoroutines();
         CacheComponents();
-        if (!Application.isPlaying || !isActiveAndEnabled)
+        if (!Application.isPlaying || !isActiveAndEnabled || HideSeconds <= 0f)
         {
             _animating = false;
             _group.alpha = 0f;
@@ -123,7 +129,7 @@ public sealed class BoardPanelTransition : MonoBehaviour
         }
         _group.interactable = false;
         _group.blocksRaycasts = false;
-        StartCoroutine(Animate(0f, false, HideDuration, true));
+        StartCoroutine(Animate(0f, false, HideSeconds, true));
     }
 
     void FadeOverlay()
@@ -134,7 +140,13 @@ public sealed class BoardPanelTransition : MonoBehaviour
         _group.interactable = true;
         _group.blocksRaycasts = true;
         if (_rect != null) _rect.localScale = _shownScale;
-        StartCoroutine(Animate(1f, true, OverlayFadeDuration, false));
+        if (OverlayFadeSeconds <= 0f)
+        {
+            _animating = false;
+            _group.alpha = 1f;
+            return;
+        }
+        StartCoroutine(Animate(1f, true, OverlayFadeSeconds, false));
     }
 
     IEnumerator Animate(float targetAlpha, bool activateAtEnd, float duration, bool scale)

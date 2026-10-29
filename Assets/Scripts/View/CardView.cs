@@ -435,7 +435,8 @@ public class CardView : MonoBehaviour,
     /// <summary>Presentation only: the card hops once, as one of its Mods triggers.</summary>
     public void PlayTriggerPulse()
     {
-        _triggerPulse = 0f;
+        // The artwork hop and wiggle are skipped under Reduce Motion; the Mod burst still marks the card.
+        if (!CutSheetMotion.ReduceMotion) _triggerPulse = 0f;
         if (TryGetComponent(out CardModFxUI modFx)) modFx.Burst();
     }
 
