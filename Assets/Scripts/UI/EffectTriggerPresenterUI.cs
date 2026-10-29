@@ -24,6 +24,8 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         public EffectTrigger Trigger;
         public float StartAt;
         public bool Combat;
+        // Trigger playback speed read when the step was queued: a settings change applies to the next triggers.
+        public float Speed;
     }
 
     readonly List<Step> _queue = new();
@@ -136,11 +138,18 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         if (!isActiveAndEnabled || !_layer) return;
         var combat = CombatManager.Instance;
         bool inCombat = combat != null && combat.currentState is GameState.PlayerTurn or GameState.EnemyAttacking;
-        float now = Time.time;
+        Enqueue(trigger, inCombat, Time.time);
+    }
+
+    // Queues one step on the timeline. The playback speed is read live here, never Reduce Motion:
+    // Reduce Motion leaves the schedule (and so hit timing) unchanged.
+    internal void Enqueue(EffectTrigger trigger, bool inCombat, float now)
+    {
+        float speed = SafeSpeed(CutSheetMotion.PlaybackSpeed);
         // A long backlog plays faster, so spamming actions never leaves a long tail.
         float start = Mathf.Max(now, _timelineEnd);
-        _timelineEnd = start + StepSpan(trigger.Cue, _queue.Count);
-        _queue.Add(new Step { Trigger = trigger, StartAt = start, Combat = inCombat });
+        _timelineEnd = start + StepSpan(trigger.Cue, _queue.Count, speed);
+        _queue.Add(new Step { Trigger = trigger, StartAt = start, Combat = inCombat, Speed = speed });
         if (trigger.Cue == EffectCue.Credits) _creditsInFlight++;
         if (trigger.Cue is EffectCue.Heal) _healthInFlight++;
         if (inCombat)
@@ -152,10 +161,17 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
 
     static float StepDuration(EffectCue cue) => cue == EffectCue.HealthCost ? HealthCostStepTime : StepTime;
 
-    // How long a step holds the timeline, given the steps still waiting: the schedule that fixes tag
-    // order and hit timing. Independent of Reduce Motion, which only drops hops, tilt and pops.
-    internal static float StepSpan(EffectCue cue, int backlog) =>
-        StepDuration(cue) * Mathf.Max(MinStepScale, 1f - .15f * backlog);
+    // How long a step holds the timeline, given the steps still waiting and the trigger playback speed:
+    // the schedule that fixes tag order and hit timing. Independent of Reduce Motion, which only drops
+    // hops, tilt and pops. Speed divides every span alike, so order and the backlog speed-up are kept.
+    internal static float StepSpan(EffectCue cue, int backlog, float speed = 1f) =>
+        StepDuration(cue) * Mathf.Max(MinStepScale, 1f - .15f * backlog) / SafeSpeed(speed);
+
+    // Tag and chip timings at a playback speed (HUD slice S19).
+    internal static float TagSeconds(float speed) => TagTime / SafeSpeed(speed);
+    internal static float ChipSeconds(float speed) => ChipTime / SafeSpeed(speed);
+    internal static float ChipStaggerSeconds(float speed) => ChipStagger / SafeSpeed(speed);
+    static float SafeSpeed(float speed) => speed > 0f ? speed : 1f;
 
     void Update()
     {
@@ -199,20 +215,21 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
     {
         var trigger = step.Trigger;
         var anchor = ResolveAnchor(trigger, out var handCard, out bool canHop);
-        float duration = StepDuration(trigger.Cue);
+        float speed = SafeSpeed(step.Speed);
+        float duration = StepDuration(trigger.Cue) / speed;
         if (anchor)
         {
             if (trigger.Cue == EffectCue.HealthCost)
-                yield return PlayHealthCost(trigger, anchor, handCard, canHop);
+                yield return PlayHealthCost(trigger, anchor, handCard, canHop, speed);
             else
             {
                 Hop(anchor, handCard, canHop);
-                ShowTag(anchor, TagText(trigger), Style(trigger.Cue), trigger.Cue == EffectCue.Credits);
+                ShowTag(anchor, TagText(trigger), Style(trigger.Cue), trigger.Cue == EffectCue.Credits, speed: speed);
                 bool sends = trigger.Cue is EffectCue.Credits or EffectCue.Heal;
-                if (trigger.Cue == EffectCue.Credits) StartCoroutine(SendCredits(anchor, trigger.Amount));
-                else if (trigger.Cue == EffectCue.Heal) StartCoroutine(SendHealth(anchor, trigger.Amount));
+                if (trigger.Cue == EffectCue.Credits) StartCoroutine(SendCredits(anchor, trigger.Amount, speed));
+                else if (trigger.Cue == EffectCue.Heal) StartCoroutine(SendHealth(anchor, trigger.Amount, speed));
                 // The board waits for what this step sends to land.
-                yield return Wait(sends ? ChipTime + (MaxChips - 1) * ChipStagger : duration * .5f);
+                yield return Wait(sends ? ChipSeconds(speed) + (MaxChips - 1) * ChipStaggerSeconds(speed) : duration * .5f);
             }
         }
         else
@@ -349,25 +366,25 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         return rest;
     }
 
-    IEnumerator PlayHealthCost(EffectTrigger trigger, RectTransform anchor, CardView handCard, bool canHop)
+    IEnumerator PlayHealthCost(EffectTrigger trigger, RectTransform anchor, CardView handCard, bool canHop, float speed)
     {
         var health = HealthTarget();
         int amount = Mathf.Max(0, trigger.Amount);
         if (health)
         {
-            ShowTag(health, $"−{amount} HP", TagStyle.Cost, false, below: false);
+            ShowTag(health, $"−{amount} HP", TagStyle.Cost, false, below: false, speed: speed);
             StartCoroutine(PulseHealth(health));
             int chips = Mathf.Clamp(amount, 1, MaxChips);
             for (int i = 0; i < chips; i++)
-                StartCoroutine(FlyChip(health, anchor, null, Signal, i * ChipStagger, null));
-            yield return Wait(ChipTime + (chips - 1) * ChipStagger);
+                StartCoroutine(FlyChip(health, anchor, null, Signal, i * ChipStaggerSeconds(speed), null, speed));
+            yield return Wait(ChipSeconds(speed) + (chips - 1) * ChipStaggerSeconds(speed));
         }
         if (anchor)
         {
             Hop(anchor, handCard, canHop);
-            ShowTag(anchor, $"+{amount} DMG", TagStyle.Attack, false);
+            ShowTag(anchor, $"+{amount} DMG", TagStyle.Attack, false, speed: speed);
         }
-        yield return Wait(.12f);
+        yield return Wait(.12f / speed);
     }
 
     IEnumerator PulseHealth(RectTransform health)
@@ -385,7 +402,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         if (panel) panel.localScale = Vector3.one;
     }
 
-    IEnumerator SendCredits(RectTransform from, int amount)
+    IEnumerator SendCredits(RectTransform from, int amount, float speed)
     {
         var coin = CreditsTarget();
         if (!coin)
@@ -397,8 +414,8 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         int chips = Mathf.Clamp(amount, 1, MaxChips);
         int landed = 0;
         for (int i = 0; i < chips; i++)
-            StartCoroutine(FlyChip(from, coin, CreditsHudUI.CurrentCoin, Mustard, i * ChipStagger,
-                () => { landed++; PopCoin(coin); }));
+            StartCoroutine(FlyChip(from, coin, CreditsHudUI.CurrentCoin, Mustard, i * ChipStaggerSeconds(speed),
+                () => { landed++; PopCoin(coin); }, speed));
         float elapsed = 0f;
         while (landed < chips && elapsed < 2f)
         {
@@ -408,7 +425,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         _creditsInFlight = Mathf.Max(0, _creditsInFlight - 1);
     }
 
-    IEnumerator SendHealth(RectTransform from, int amount)
+    IEnumerator SendHealth(RectTransform from, int amount, float speed)
     {
         var health = HealthTarget();
         if (!health)
@@ -419,7 +436,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         int chips = Mathf.Clamp(amount, 1, MaxChips);
         int landed = 0;
         for (int i = 0; i < chips; i++)
-            StartCoroutine(FlyChip(from, health, null, Lime, i * ChipStagger, () => landed++));
+            StartCoroutine(FlyChip(from, health, null, Lime, i * ChipStaggerSeconds(speed), () => landed++, speed));
         float elapsed = 0f;
         while (landed < chips && elapsed < 2f)
         {
@@ -439,8 +456,9 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
 
     // A chip rises off its source, then arcs into the target, re-aiming every frame.
     IEnumerator FlyChip(RectTransform from, RectTransform to, Sprite sprite, Color color, float delay,
-        System.Action landed)
+        System.Action landed, float speed)
     {
+        float chipTime = ChipSeconds(speed);
         if (delay > 0f) yield return Wait(delay);
         if (!from || !to) { landed?.Invoke(); yield break; }
         var chip = new GameObject("Trigger Chip", typeof(RectTransform), typeof(Image));
@@ -455,10 +473,10 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         _visuals.Add(chip);
         Vector2 start = LocalPoint(from) + new Vector2(Jitter(-28f, 28f), Jitter(-10f, 22f));
         float elapsed = 0f;
-        while (elapsed < ChipTime && rect && to)
+        while (elapsed < chipTime && rect && to)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / ChipTime);
+            float t = Mathf.Clamp01(elapsed / chipTime);
             Vector2 end = LocalPoint(to);
             Vector2 control = new((start.x + end.x) * .5f, Mathf.Max(start.y, end.y) + 110f);
             float eased = t * t;
@@ -540,7 +558,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         };
     }
 
-    void ShowTag(RectTransform anchor, string text, TagStyle style, bool creditIcon, bool below = false)
+    void ShowTag(RectTransform anchor, string text, TagStyle style, bool creditIcon, bool below = false, float speed = 1f)
     {
         if (string.IsNullOrEmpty(text) || !anchor) return;
         var tag = new GameObject("Trigger Tag", typeof(RectTransform), typeof(Image));
@@ -598,21 +616,21 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             at = LocalEdge(anchor, 0f) - new Vector2(0f, 54f + stacked * 48f);
         rect.anchoredPosition = at;
         _visuals.Add(tag);
-        StartCoroutine(AnimateTag(tag, rect, background, label, at, anchor));
+        StartCoroutine(AnimateTag(tag, rect, background, label, at, anchor, TagSeconds(speed)));
     }
 
     IEnumerator AnimateTag(GameObject tag, RectTransform rect, Image background, TMP_Text label, Vector2 at,
-        RectTransform anchor)
+        RectTransform anchor, float tagTime)
     {
         var group = tag.AddComponent<CanvasGroup>();
         group.blocksRaycasts = false;
         float elapsed = 0f;
         // The jitter is drawn either way so the presentation generator's sequence never depends on the setting.
         float tilt = Jitter(-5f, 5f);
-        while (elapsed < TagTime && rect)
+        while (elapsed < tagTime && rect)
         {
             elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / TagTime);
+            float t = Mathf.Clamp01(elapsed / tagTime);
             // Reduce Motion (read live): the tag is simply there, upright and full size, for the same time.
             bool still = CutSheetMotion.ReduceMotion;
             float pop = still ? 1f : Mathf.Clamp01(elapsed / .14f);

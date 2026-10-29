@@ -29,9 +29,7 @@ public sealed class ReduceMotionTests
     {
         CutSheetMotion.ReduceMotionOverride = null;
         DisplaySettingsService.ScreenShake = _screenShake;
-        for (int i = _created.Count - 1; i >= 0; i--)
-            if (_created[i] != null) Object.DestroyImmediate(_created[i]);
-        _created.Clear();
+        TriggerTimelineProbe.Release(_created);
     }
 
     T Make<T>(string name) where T : Component
@@ -46,45 +44,42 @@ public sealed class ReduceMotionTests
     static readonly EffectCue[] Sequence =
         { EffectCue.Credits, EffectCue.HealthCost, EffectCue.Heal, EffectCue.Credits, EffectCue.HealthCost, EffectCue.Heal };
 
-    static List<float> Schedule()
-    {
-        var starts = new List<float>();
-        float end = 0f;
-        for (int i = 0; i < Sequence.Length; i++)
-        {
-            starts.Add(end);
-            end += EffectTriggerPresenterUI.StepSpan(Sequence[i], i);
-        }
-        return starts;
-    }
+    static readonly int[] Hits = { 0, 1, 2, 5, 7, 11 };
 
+    // The same triggers queued on a real presenter with Reduce Motion off and on.
     [Test]
     public void TriggerSchedule_IsIdenticalWithReduceMotionOnAndOff()
     {
+        var presenter = TriggerTimelineProbe.Presenter(_created);
         CutSheetMotion.ReduceMotionOverride = false;
-        var off = Schedule();
+        var off = TriggerTimelineProbe.Run(presenter, Sequence, 5f);
         CutSheetMotion.ReduceMotionOverride = true;
-        var on = Schedule();
-        Assert.That(on, Is.EqualTo(off));
-        for (int i = 1; i < on.Count; i++) Assert.That(on[i], Is.GreaterThan(on[i - 1]), $"step {i} starts after step {i - 1}");
+        var on = TriggerTimelineProbe.Run(presenter, Sequence, 5f);
+        Assert.That(on.Cues, Is.EqualTo(off.Cues));
+        Assert.That(on.Starts, Is.EqualTo(off.Starts));
+        Assert.That(on.End, Is.EqualTo(off.End));
+        Assert.That(off.End, Is.GreaterThan(0f));
+        for (int i = 1; i < on.Starts.Count; i++)
+            Assert.That(on.Starts[i], Is.GreaterThan(on.Starts[i - 1]), $"step {i} starts after step {i - 1}");
     }
 
+    // Triggers queued before the first hit set the commit lead-in, so the presenter must be live.
     [TestCase(false)]
     [TestCase(true)]
     public void ImpactDelay_IsIdenticalWithReduceMotionOnAndOff(bool dragged)
     {
-        var attack = Make<AttackCardPresentationUI>("Reduce Motion Attack");
-        typeof(AttackCardPresentationUI).GetField("_pendingCommits", Private).SetValue(attack, 1);
-        typeof(AttackCardPresentationUI).GetField("_commitImpactDelay", Private).SetValue(attack, dragged ? .24f : .2f);
-        int[] hits = { 0, 1, 2, 5, 7, 11 };
+        var presenter = TriggerTimelineProbe.Presenter(_created);
+        var attack = TriggerTimelineProbe.Attack(_created, dragged ? .24f : .2f);
         CutSheetMotion.ReduceMotionOverride = false;
-        var off = new float[hits.Length];
-        for (int i = 0; i < hits.Length; i++) off[i] = attack.ImpactDelay(hits[i]);
+        var off = TriggerTimelineProbe.MeasureImpact(presenter, attack, Sequence, Hits);
         CutSheetMotion.ReduceMotionOverride = true;
-        for (int i = 0; i < hits.Length; i++)
+        var on = TriggerTimelineProbe.MeasureImpact(presenter, attack, Sequence, Hits);
+        Assert.That(off.LeadIn, Is.GreaterThan(0f), "the queued triggers delay the hit");
+        Assert.That(on.LeadIn, Is.EqualTo(off.LeadIn));
+        for (int i = 0; i < Hits.Length; i++)
         {
-            Assert.That(attack.ImpactDelay(hits[i]), Is.EqualTo(off[i]), $"hit {hits[i]}");
-            Assert.That(off[i], Is.GreaterThan(0f), $"hit {hits[i]} lands after the travel");
+            Assert.That(on.Delays[i], Is.EqualTo(off.Delays[i]), $"hit {Hits[i]}");
+            Assert.That(off.Delays[i], Is.GreaterThan(off.LeadIn), $"hit {Hits[i]} lands after the triggers and the travel");
         }
     }
 
