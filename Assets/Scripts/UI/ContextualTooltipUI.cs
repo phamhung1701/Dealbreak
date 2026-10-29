@@ -20,7 +20,7 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     MonoBehaviour _source,_pinned,_dismissed;
     float _leaveUntil;
     string _lastHeading,_lastBody;
-    float _lastWidth;
+    float _lastWidth,_lastScale=-1;
     readonly Vector3[] _positionCorners=new Vector3[4];
     readonly List<CardView> _positionHandViews=new();
     static readonly List<CanvasGroup> ParentGroups=new();
@@ -30,12 +30,12 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     // notch drawn under the face that peeks out toward the clicked object. Built once at runtime, so
     // every scene that carries the detail panel (combat, map, Black Market, menus) gets the same look.
     public const float BodySize=20,HeadingSize=22,NotchSize=14,NotchInset=14,GrainAlpha=.04f;
-    static float _textScale=1;
     /// <summary>
-    /// Tooltip text size (owner 2026-10-27: 100/115/130%), for the settings slice; no UI sets it yet.
-    /// It scales the body and heading type and the maximum width together.
+    /// Tooltip text size (owner 2026-10-27: 100/115/130%), read from the player's setting (S20). It
+    /// scales the body and heading type and the maximum width together; a body that then outgrows
+    /// the screen scrolls.
     /// </summary>
-    public static float TextScale{get=>_textScale;set=>_textScale=Mathf.Clamp(value,1f,1.5f);}
+    public static float TextScale=>Mathf.Clamp(CutSheetMotion.TooltipTextScale,1f,1.5f);
     public static float MaxWidth=>CutSheetMetrics.TooltipMaxWidth*TextScale;
     Image _face;CutSheetShadow _shadow;RectTransform _notch;
     public Image Face=>_face;
@@ -75,7 +75,14 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         SlotGroups.RemoveAll(group=>group.All(member=>!member));
         if(slots!=null&&slots.Length>0)SlotGroups.Add(slots);
     }
-    void OnEnable(){Instance=this;EnsureSkin();LinkScrollbar();Hide(true);}
+    void OnEnable(){Instance=this;EnsureSkin();LinkScrollbar();Hide(true);CutSheetMotion.Changed-=OnSettingsChanged;CutSheetMotion.Changed+=OnSettingsChanged;}
+    // A text-size change while a detail is open re-lays it out at once (type, width, height, scroll).
+    void OnSettingsChanged()
+    {
+        if(!this||!panel||!panel.activeSelf||_closing||!body||!title)return;
+        _lastScale=-1;
+        LateUpdate();
+    }
     void EnsureSkin()
     {
         if(!panel||_face)return;
@@ -171,10 +178,11 @@ public sealed class ContextualTooltipUI : MonoBehaviour
     void LinkScrollbar()
     {
         if(!scroll||!panel)return;
+        if(!scroll.vertical)scroll.vertical=true;
         if(!scroll.verticalScrollbar)scroll.verticalScrollbar=panel.transform.Find("Detail Scrollbar")?.GetComponent<Scrollbar>();
         if(scroll.verticalScrollbar)scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;
     }
-    void OnDisable(){if(Instance==this)Instance=null;Hide(true);}
+    void OnDisable(){CutSheetMotion.Changed-=OnSettingsChanged;if(Instance==this)Instance=null;Hide(true);}
     public void Inspect(MonoBehaviour source){if(!source)return;_source=source;_dismissed=null;_leaveUntil=float.PositiveInfinity;}
     public void Leave(MonoBehaviour source){if(_source==source)_leaveUntil=Time.unscaledTime+.18f;}
     public void Pin(MonoBehaviour source){_pinned=_pinned==source?null:source;_dismissed=null;}
@@ -296,13 +304,14 @@ public sealed class ContextualTooltipUI : MonoBehaviour
         float t=open<=0?1:Mathf.Clamp01((Time.unscaledTime-_openedAt)/open);
         _progress=1-(1-t)*(1-t);
         ApplyMotion(_progress,true);
-        if(heading!=_lastHeading||info.Body!=_lastBody||Mathf.Abs(body.rectTransform.rect.width-_lastWidth)>.5f)
+        if(heading!=_lastHeading||info.Body!=_lastBody||Mathf.Abs(body.rectTransform.rect.width-_lastWidth)>.5f||!Mathf.Approximately(TextScale,_lastScale))
         {
             title.text=heading;body.text=text;
+            // The body is its measured height, so text past the viewport scrolls (S20 at 130%).
             body.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,_bodyHeight+16);
             if(_lastHeading!=heading&&scroll)scroll.verticalNormalizedPosition=1;
             _lastHeading=heading;_lastBody=info.Body;
-            _lastWidth=body.rectTransform.rect.width;
+            _lastWidth=body.rectTransform.rect.width;_lastScale=TextScale;
         }
         if(scroll&&HasPinnedDetail&&Keyboard.current!=null)
         {

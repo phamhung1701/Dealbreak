@@ -10,6 +10,7 @@ public sealed class ContextualTooltipCutSheetTests
     GameObject _root;
     RectTransform _stage;
     ContextualTooltipUI _tooltip;
+    int _savedTextSize;
     DealbreakUITheme Theme => DealbreakUIStyle.Theme;
 
     [SetUp]
@@ -17,7 +18,8 @@ public sealed class ContextualTooltipCutSheetTests
     {
         Assume.That(DealbreakUIStyle.Theme, Is.Not.Null);
         CutSheetMotion.ReduceMotionOverride = true;
-        ContextualTooltipUI.TextScale = 1;
+        _savedTextSize = DisplaySettingsService.TooltipTextSizeIndex;
+        DisplaySettingsService.TooltipTextSizeIndex = 0;
         _root = new GameObject("S12 Canvas", typeof(RectTransform), typeof(Canvas));
         _root.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
         _stage = Rect("S12 Stage", _root.transform, new Vector2(1920, 1080));
@@ -50,7 +52,7 @@ public sealed class ContextualTooltipCutSheetTests
         if (_tooltip) Invoke("OnDisable");
         if (_root) Object.DestroyImmediate(_root);
         CutSheetMotion.ReduceMotionOverride = null;
-        ContextualTooltipUI.TextScale = 1;
+        DisplaySettingsService.TooltipTextSizeIndex = _savedTextSize;
     }
 
     static RectTransform Rect(string name, Transform parent, Vector2 size)
@@ -164,11 +166,56 @@ public sealed class ContextualTooltipCutSheetTests
         var source = Source(-700);
         Open(source);
         Assert.That(Panel.sizeDelta.x, Is.LessThanOrEqualTo(360));
-        ContextualTooltipUI.TextScale = 1.3f;
+        DisplaySettingsService.TooltipTextSizeIndex = 2;
         Invoke("LateUpdate");
         Assert.That(Panel.sizeDelta.x, Is.EqualTo(360 * 1.3f).Within(.01f));
         Assert.That(_tooltip.body.fontSize, Is.EqualTo(20 * 1.3f).Within(.01f));
         Assert.That(_tooltip.title.fontSize, Is.EqualTo(22 * 1.3f).Within(.01f));
+    }
+
+    // HUD slice S20: the Tooltip text size setting (100/115/130%) drives the type and the width.
+    [TestCase(1, 1.15f)]
+    [TestCase(2, 1.3f)]
+    public void TextSizeSetting_ScalesTypeAndMaxWidth(int index, float factor)
+    {
+        DisplaySettingsService.TooltipTextSizeIndex = index;
+        Open(Source(-700));
+        Assert.That(ContextualTooltipUI.TextScale, Is.EqualTo(factor).Within(1e-4f));
+        Assert.That(ContextualTooltipUI.MaxWidth, Is.EqualTo(360 * factor).Within(.01f));
+        Assert.That(Panel.sizeDelta.x, Is.EqualTo(360 * factor).Within(.01f));
+        Assert.That(_tooltip.body.fontSize, Is.EqualTo(20 * factor).Within(.01f));
+        Assert.That(_tooltip.title.fontSize, Is.EqualTo(22 * factor).Within(.01f));
+    }
+
+    [Test]
+    public void TextSizeChange_WhileOpen_RelaysOutAtOnce()
+    {
+        Open(Source(-700));
+        Assert.That(_tooltip.body.fontSize, Is.EqualTo(20));
+
+        DisplaySettingsService.TooltipTextSizeIndex = 2;
+
+        Assert.That(_tooltip.body.fontSize, Is.EqualTo(26).Within(.01f), "No frame needed: the change event re-lays it out.");
+        Assert.That(_tooltip.title.fontSize, Is.EqualTo(22 * 1.3f).Within(.01f));
+        Assert.That(Panel.sizeDelta.x, Is.EqualTo(360 * 1.3f).Within(.01f));
+        Assert.That(_tooltip.NotchDirection, Is.EqualTo(Vector2.left), "Still opens next to the source.");
+    }
+
+    [Test]
+    public void LongBody_At130Percent_StaysOnScreenAndScrolls()
+    {
+        DisplaySettingsService.TooltipTextSizeIndex = 2;
+        string longBody = string.Concat(System.Linq.Enumerable.Repeat("Deals 12 damage to the target and draws a card when it kills. ", 60));
+        Open(Source(-700, 0, "Scanner", longBody));
+
+        Assert.That(_tooltip.body.fontSize, Is.EqualTo(26).Within(.01f));
+        float half = Panel.sizeDelta.y * .5f;
+        Assert.That(Panel.sizeDelta.y, Is.LessThanOrEqualTo(_stage.rect.height));
+        Assert.That(_tooltip.RestPosition.y + half, Is.LessThanOrEqualTo(_stage.rect.yMax));
+        Assert.That(_tooltip.RestPosition.y - half, Is.GreaterThanOrEqualTo(_stage.rect.yMin));
+        Assert.That(_tooltip.scroll.vertical, Is.True);
+        Assert.That(_tooltip.body.rectTransform.rect.height, Is.GreaterThan(_tooltip.scroll.viewport.rect.height),
+            "The body is taller than its viewport, so it scrolls.");
     }
 
     [Test]
