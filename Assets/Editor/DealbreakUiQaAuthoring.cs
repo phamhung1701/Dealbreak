@@ -47,7 +47,7 @@ public static class DealbreakUiQaAuthoring
             tooltip.scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
             EditorUtility.SetDirty(tooltip.scroll);
         }
-        foreach (var settings in roots.SelectMany(g => g.GetComponentsInChildren<SettingsMenuUI>(true))) VSyncRow(settings);
+        foreach (var settings in roots.SelectMany(g => g.GetComponentsInChildren<SettingsMenuUI>(true))) { MotionRows(settings); VSyncRow(settings); }
         var stage = roots.Select(g => g.transform.Find("Background/Slate Printed Field")).FirstOrDefault(t => t)?.GetComponent<RawImage>();
         foreach (var panel in roots.SelectMany(g => g.GetComponentsInChildren<Image>(true)).Where(IsOldMenuPanel).ToList())
             StageBackdrop(panel, stage);
@@ -134,6 +134,70 @@ public static class DealbreakUiQaAuthoring
             EditorUtility.SetDirty(box);
         }
         EditorUtility.SetDirty(toggle);
+    }
+
+    // HUD slice S17: four motion rows under VSync, each a label in the Resolution label column and a
+    // dropdown cloned from the Resolution dropdown; Status, Apply and Back move down to make room.
+    // Idempotent: rows found by name are reused and every position is written absolutely.
+    static readonly (string name, string label, float y)[] MotionRowLayout =
+    {
+        ("ReduceMotion", "Reduce Motion", -55f),
+        ("ScreenShake", "Screen Shake", -125f),
+        ("TriggerSpeed", "Trigger Speed", -195f),
+        ("TooltipText", "Tooltip Text", -265f),
+    };
+
+    static void MotionRows(SettingsMenuUI settings)
+    {
+        var label = settings.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(t => t.name == "ResolutionLabel");
+        var dropdown = settings.GetComponentsInChildren<TMP_Dropdown>(true).FirstOrDefault(d => d.name == "ResolutionDropdown");
+        if (!label || !dropdown || label.transform.parent != dropdown.transform.parent) return;
+        var card = label.transform.parent;
+        var rows = new TMP_Dropdown[MotionRowLayout.Length];
+        for (int i = 0; i < MotionRowLayout.Length; i++)
+        {
+            var (name, text, y) = MotionRowLayout[i];
+            var rowLabel = CloneRowPart(label.gameObject, card, name + "Label").GetComponent<TMP_Text>();
+            rowLabel.text = text;
+            rowLabel.rectTransform.anchoredPosition = new Vector2(((RectTransform)label.transform).anchoredPosition.x, y);
+            EditorUtility.SetDirty(rowLabel);
+            var row = CloneRowPart(dropdown.gameObject, card, name + "Dropdown").GetComponent<TMP_Dropdown>();
+            ((RectTransform)row.transform).anchoredPosition = new Vector2(((RectTransform)dropdown.transform).anchoredPosition.x, y);
+            var options = i < 2 ? SettingsMenuUI.OnOffOptions : i == 2 ? SettingsMenuUI.TriggerSpeedOptions : SettingsMenuUI.TooltipTextOptions;
+            row.onValueChanged.RemoveAllListeners();
+            row.ClearOptions();
+            row.AddOptions(options.ToList());
+            row.SetValueWithoutNotify(i == 1 ? 1 : 0);
+            row.RefreshShownValue();
+            EditorUtility.SetDirty(row);
+            rows[i] = row;
+        }
+        settings.reduceMotionDropdown = rows[0];
+        settings.screenShakeDropdown = rows[1];
+        settings.triggerSpeedDropdown = rows[2];
+        settings.tooltipTextDropdown = rows[3];
+        EditorUtility.SetDirty(settings);
+        MoveRow(settings.statusLabel ? settings.statusLabel.transform : null, card, -322f, 50f);
+        MoveRow(settings.applyButton ? settings.applyButton.transform : null, card, -385f, 0f);
+        MoveRow(settings.backButton ? settings.backButton.transform : null, card, -463f, 0f);
+    }
+
+    static GameObject CloneRowPart(GameObject source, Transform card, string name)
+    {
+        var existing = card.Find(name);
+        if (existing) return existing.gameObject;
+        var clone = Object.Instantiate(source, card, false);
+        clone.name = name;
+        return clone;
+    }
+
+    static void MoveRow(Transform row, Transform card, float y, float height)
+    {
+        if (!row || row.parent != card) return;
+        var rect = (RectTransform)row;
+        rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, y);
+        if (height > 0f) rect.sizeDelta = new Vector2(rect.sizeDelta.x, height);
+        EditorUtility.SetDirty(rect);
     }
 
     static bool Near(Color a, Color b) => Mathf.Abs(a.r - b.r) < .01f && Mathf.Abs(a.g - b.g) < .01f && Mathf.Abs(a.b - b.b) < .01f;

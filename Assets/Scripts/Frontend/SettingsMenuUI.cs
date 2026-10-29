@@ -13,6 +13,14 @@ public sealed class SettingsMenuUI : MonoBehaviour
     public Button applyButton;
     public Button backButton;
     public TMP_Text statusLabel;
+    public TMP_Dropdown reduceMotionDropdown;
+    public TMP_Dropdown screenShakeDropdown;
+    public TMP_Dropdown triggerSpeedDropdown;
+    public TMP_Dropdown tooltipTextDropdown;
+
+    public static readonly string[] OnOffOptions = { "Off", "On" };
+    public static readonly string[] TriggerSpeedOptions = { "1x", "1.5x", "2x" };
+    public static readonly string[] TooltipTextOptions = { "100%", "115%", "130%" };
 
     DisplayResolution[] _resolutions = Array.Empty<DisplayResolution>();
     GameplayMenuCoordinator _coordinator;
@@ -24,6 +32,10 @@ public sealed class SettingsMenuUI : MonoBehaviour
     {
         if (applyButton) { applyButton.onClick.AddListener(Apply); KeyButtonBorderStyle.Apply(applyButton); }
         if (backButton) backButton.onClick.AddListener(Back);
+        if (reduceMotionDropdown) reduceMotionDropdown.onValueChanged.AddListener(SelectReduceMotion);
+        if (screenShakeDropdown) screenShakeDropdown.onValueChanged.AddListener(SelectScreenShake);
+        if (triggerSpeedDropdown) triggerSpeedDropdown.onValueChanged.AddListener(SelectTriggerSpeed);
+        if (tooltipTextDropdown) tooltipTextDropdown.onValueChanged.AddListener(SelectTooltipText);
         if (panel) panel.SetActive(false);
     }
 
@@ -31,6 +43,10 @@ public sealed class SettingsMenuUI : MonoBehaviour
     {
         if (applyButton) applyButton.onClick.RemoveListener(Apply);
         if (backButton) backButton.onClick.RemoveListener(Back);
+        if (reduceMotionDropdown) reduceMotionDropdown.onValueChanged.RemoveListener(SelectReduceMotion);
+        if (screenShakeDropdown) screenShakeDropdown.onValueChanged.RemoveListener(SelectScreenShake);
+        if (triggerSpeedDropdown) triggerSpeedDropdown.onValueChanged.RemoveListener(SelectTriggerSpeed);
+        if (tooltipTextDropdown) tooltipTextDropdown.onValueChanged.RemoveListener(SelectTooltipText);
         _onBack = null;
         _coordinator = null;
     }
@@ -103,5 +119,29 @@ public sealed class SettingsMenuUI : MonoBehaviour
 
         if (vSyncToggle) vSyncToggle.SetIsOnWithoutNotify(current.VSyncCount > 0);
         if (statusLabel) statusLabel.text = string.Empty;
+        RefreshMotionControls();
+    }
+
+    // Motion rows apply and persist as soon as a value is picked; Apply only covers the display rows.
+    public void SelectReduceMotion(int index) => DisplaySettingsService.ReduceMotion = index > 0;
+    public void SelectScreenShake(int index) => DisplaySettingsService.ScreenShake = index > 0;
+    public void SelectTriggerSpeed(int index) => DisplaySettingsService.PlaybackSpeedIndex = index;
+    public void SelectTooltipText(int index) => DisplaySettingsService.TooltipTextSizeIndex = index;
+
+    public void RefreshMotionControls()
+    {
+        Fill(reduceMotionDropdown, OnOffOptions, DisplaySettingsService.ReduceMotion ? 1 : 0);
+        Fill(screenShakeDropdown, OnOffOptions, DisplaySettingsService.ScreenShake ? 1 : 0);
+        Fill(triggerSpeedDropdown, TriggerSpeedOptions, DisplaySettingsService.PlaybackSpeedIndex);
+        Fill(tooltipTextDropdown, TooltipTextOptions, DisplaySettingsService.TooltipTextSizeIndex);
+    }
+
+    static void Fill(TMP_Dropdown dropdown, string[] options, int index)
+    {
+        if (!dropdown) return;
+        dropdown.ClearOptions();
+        dropdown.AddOptions(options.ToList());
+        dropdown.SetValueWithoutNotify(Mathf.Clamp(index, 0, options.Length - 1));
+        dropdown.RefreshShownValue();
     }
 }
