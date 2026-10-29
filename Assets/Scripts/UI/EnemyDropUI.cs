@@ -6,22 +6,37 @@ using UnityEngine.UI;
 
 /// <summary>
 /// An enemy's Trick drop. With room in the backpack it flies straight into its slot. With the
-/// backpack full it waits on the board, and the run waits with it: make room (use, sell or discard
-/// a Trick), then drag the drop onto the Trick slots, or press LEAVE IT to go on without it.
+/// backpack full it waits at the top of the stage, and the run waits with it: make room (use, sell or
+/// discard a Trick), then drag the drop onto the Trick slots, or press LEAVE IT to go on without it.
 /// Presentation only; RunManager owns the pending drop.
 /// </summary>
 public sealed class EnemyDropUI : MonoBehaviour
 {
     // Above the board and hand cards, below the drag layer (80) and the hover detail (90).
     const int SortingOrder = 70;
+    // The drop row: the top band of the stage (x .06-.88), the pair centred in it (hud.md section C).
+    // It sits over the enemy row's band, but no enemy stands then: the drop is granted only on victory.
+    public static readonly Vector2 RowMin = new(.06f, .74f), RowMax = new(.88f, .82f);
+    public const float TokenSize = 150f, LeaveWidth = 190f, LeaveHeight = 50f, Gap = 24f, LeaveLabelSize = 22f;
+    // Slap on arrival: 120ms in from a larger size to a slight undershoot, then an 80ms settle (hud.md motion table).
+    public const float SlapInSeconds = .12f, SlapSettleSeconds = .08f, SlapScale = .15f, SlapUndershoot = .04f;
 
     RunManager _run;
     RectTransform _root;
+    RectTransform _row;
     RectTransform _token;
     TMP_Text _tokenLabel;
-    RectTransform _tokenRest;
     Button _leave;
+    Vector2 _home;
     Vector3 _lastEnemyArea;
+    float _slapStart = -1f;
+
+    internal RectTransform Row => _row;
+    internal RectTransform Token => _token;
+    internal Button LeaveButton => _leave;
+    internal Vector2 TokenHome => _home;
+    public bool IsSlapping => _slapStart >= 0f;
+    public bool Showing => _token && _token.gameObject.activeSelf;
 
     public static void Install(Canvas canvas)
     {
@@ -40,24 +55,36 @@ public sealed class EnemyDropUI : MonoBehaviour
         ui.Build();
     }
 
+    /// <summary>Binds to <paramref name="run"/> now (Update otherwise follows RunManager.Instance).</summary>
+    internal void Bind(RunManager run) => Subscribe(run);
+
     void Build()
     {
         var theme = DealbreakUIStyle.Theme;
-        _tokenRest = new GameObject("Drop Rest", typeof(RectTransform)).GetComponent<RectTransform>();
-        _tokenRest.SetParent(_root, false);
-        _tokenRest.anchorMin = _tokenRest.anchorMax = new Vector2(.5f, .62f);
+        _row = new GameObject("Drop Row", typeof(RectTransform)).GetComponent<RectTransform>();
+        _row.SetParent(_root, false);
+        _row.anchorMin = RowMin;
+        _row.anchorMax = RowMax;
+        _row.offsetMin = _row.offsetMax = Vector2.zero;
+
+        // The token and LEAVE IT side by side, the pair centred in the row.
+        float half = (TokenSize + Gap + LeaveWidth) * .5f;
+        _home = new Vector2(-half + TokenSize * .5f, 0f);
+        var leaveCentre = new Vector2(half - LeaveWidth * .5f, 0f);
 
         var token = new GameObject("Enemy Drop", typeof(RectTransform), typeof(CanvasRenderer), typeof(EditorialFrame),
             typeof(DropToken), typeof(ContextualInfoTrigger));
         _token = (RectTransform)token.transform;
-        _token.SetParent(_root, false);
-        _token.anchorMin = _token.anchorMax = new Vector2(.5f, .62f);
-        _token.sizeDelta = new Vector2(150f, 150f);
+        _token.SetParent(_row, false);
+        _token.anchorMin = _token.anchorMax = new Vector2(.5f, .5f);
+        _token.sizeDelta = new Vector2(TokenSize, TokenSize);
+        _token.anchoredPosition = _home;
         var frame = token.GetComponent<EditorialFrame>();
         frame.border = 2f;
         frame.corner = 0f;
         frame.showAccent = false;
-        if (theme) { frame.fill = theme.charcoal; frame.ink = theme.inkPrint; frame.rim = theme.ochre; }
+        // An item sticker with a cream cut line (teal is for selection and valid targets only).
+        if (theme) { frame.fill = theme.charcoal; frame.ink = theme.inkPrint; frame.rim = theme.paper; }
         token.GetComponent<DropToken>().owner = this;
         var detail = token.GetComponent<ContextualInfoTrigger>();
         detail.allowWhileBlocked = true;
@@ -79,10 +106,10 @@ public sealed class EnemyDropUI : MonoBehaviour
 
         var leave = new GameObject("LeaveDrop", typeof(RectTransform), typeof(Image), typeof(Button));
         var leaveRect = (RectTransform)leave.transform;
-        leaveRect.SetParent(_root, false);
-        leaveRect.anchorMin = leaveRect.anchorMax = new Vector2(.5f, .62f);
-        leaveRect.anchoredPosition = new Vector2(0f, -112f);
-        leaveRect.sizeDelta = new Vector2(190f, 50f);
+        leaveRect.SetParent(_row, false);
+        leaveRect.anchorMin = leaveRect.anchorMax = new Vector2(.5f, .5f);
+        leaveRect.anchoredPosition = leaveCentre;
+        leaveRect.sizeDelta = new Vector2(LeaveWidth, LeaveHeight);
         _leave = leave.GetComponent<Button>();
         _leave.targetGraphic = leave.GetComponent<Image>();
         var leaveLabel = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI))
@@ -94,7 +121,12 @@ public sealed class EnemyDropUI : MonoBehaviour
         leaveLabel.text = "LEAVE IT";
         leaveLabel.alignment = TextAlignmentOptions.Center;
         _leave.onClick.AddListener(() => _run?.LeavePendingEnemyDrop());
-        DealbreakUIStyle.Button(_leave, EditorialButton.Role.Secondary);
+        // A cream paper button, styled as MAP and BLOCK are.
+        if (theme)
+            DealbreakUIStyle.CutSheetButton(_leave, EditorialButton.Role.Paper, CutSheetMetrics.ShadowButton,
+                theme.labelFont ? theme.labelFont : theme.headingFont, LeaveLabelSize, false);
+        _token.gameObject.SetActive(false);
+        _leave.gameObject.SetActive(false);
         Refresh();
     }
 
@@ -107,6 +139,8 @@ public sealed class EnemyDropUI : MonoBehaviour
         var enemies = FindFirstObjectByType<EnemyGroupUI>();
         if (enemies && enemies.isActiveAndEnabled) _lastEnemyArea = enemies.transform.position;
     }
+
+    void LateUpdate() => TickSlap(Time.unscaledTime);
 
     void Subscribe(RunManager run)
     {
@@ -131,16 +165,60 @@ public sealed class EnemyDropUI : MonoBehaviour
         if (!_token) return;
         var drop = _run != null ? _run.PendingEnemyDrop : null;
         bool waiting = drop != null && !DealbreakUIRuntime.BoardPresentationBusy;
+        bool arriving = waiting && !_token.gameObject.activeSelf;
         _token.gameObject.SetActive(waiting);
         _leave.gameObject.SetActive(waiting);
-        if (!waiting) return;
-        _token.anchoredPosition = Vector2.zero;
+        if (!waiting) { EndSlap(); return; }
+        _token.anchoredPosition = _home;
         // A sprite fills the token above the name; without one the glyph text sits over the name.
         bool hasSprite = ItemIconUI.Show(_token, drop.iconSprite, new Vector2(.14f, .26f), new Vector2(.86f, .94f));
         string dropName = drop.displayName.ToUpperInvariant();
         _tokenLabel.alignment = hasSprite ? TextAlignmentOptions.Bottom : TextAlignmentOptions.Center;
         _tokenLabel.text = hasSprite ? $"<size=70%>{dropName}</size>"
             : $"<size=140%>{drop.icon}</size>\n<size=80%>{dropName}</size>";
+        if (arriving) StartSlap(Time.unscaledTime);
+    }
+
+    // The token and LEAVE IT slap in together; under Reduce Motion they are simply there.
+    void StartSlap(float now)
+    {
+        if (CutSheetMotion.ReduceMotion) { EndSlap(); return; }
+        _slapStart = now;
+        SetScale(1f + SlapScale);
+    }
+
+    void EndSlap()
+    {
+        _slapStart = -1f;
+        SetScale(1f);
+    }
+
+    internal void TickSlap(float now)
+    {
+        if (_slapStart < 0f) return;
+        float inTime = CutSheetMotion.Seconds(SlapInSeconds), settle = CutSheetMotion.Seconds(SlapSettleSeconds);
+        float elapsed = now - _slapStart;
+        if (inTime + settle <= 0f || elapsed >= inTime + settle) { EndSlap(); return; }
+        float scale;
+        if (elapsed < inTime)
+        {
+            float t = elapsed / inTime;
+            scale = Mathf.Lerp(1f + SlapScale, 1f - SlapUndershoot, 1f - (1f - t) * (1f - t));
+        }
+        else
+        {
+            float t = settle > 0f ? (elapsed - inTime) / settle : 1f;
+            scale = Mathf.Lerp(1f - SlapUndershoot, 1f, t);
+        }
+        SetScale(scale);
+    }
+
+    // The only writer of the token's and LEAVE IT's scale.
+    void SetScale(float scale)
+    {
+        var target = Vector3.one * scale;
+        if (_token && _token.localScale != target) _token.localScale = target;
+        if (_leave && _leave.transform.localScale != target) _leave.transform.localScale = target;
     }
 
     void HandleClaimed(ConsumableData drop)
@@ -192,7 +270,7 @@ public sealed class EnemyDropUI : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / .18f);
-            _token.anchoredPosition = Vector2.Lerp(start, Vector2.zero, 1f - (1f - t) * (1f - t));
+            _token.anchoredPosition = Vector2.Lerp(start, _home, 1f - (1f - t) * (1f - t));
             yield return null;
         }
         yield return Shake();
@@ -206,10 +284,10 @@ public sealed class EnemyDropUI : MonoBehaviour
         {
             elapsed += Time.unscaledDeltaTime;
             float t = elapsed / .25f;
-            _token.anchoredPosition = new Vector2(Mathf.Sin(t * 40f) * 10f * (1f - t), 0f);
+            _token.anchoredPosition = _home + new Vector2(Mathf.Sin(t * 40f) * 10f * (1f - t), 0f);
             yield return null;
         }
-        if (_token) _token.anchoredPosition = Vector2.zero;
+        if (_token) _token.anchoredPosition = _home;
     }
 
     sealed class DropToken : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
