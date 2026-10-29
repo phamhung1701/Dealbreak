@@ -147,6 +147,8 @@ public static class DealbreakUIStyle
             if(text.GetComponentInParent<CutSheetSlotUI>(true))continue;
             // The INCOMING tag styles its own word and numerals.
             if(text.GetComponentInParent<IncomingTagUI>(true))continue;
+            // The player corner (HP meter, Block/Shield line, Credits chip) styles its own type (S10a).
+            if(text.GetComponentInParent<PlayerCornerUI>(true))continue;
             // The placeholder portrait name is authored display type (auto-sized Anton); leave it as set.
             if(text.name=="PortraitGlyph"&&text.GetComponentInParent<EnemyDisplayUI>())continue;
             // An enemy's ability tags print ink names on paper; the tag owns that style.

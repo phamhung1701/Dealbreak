@@ -96,7 +96,9 @@ public static class DealbreakUIOverhaulAuthoring
         DealbreakUIStyle.Place(player.Find("ActionBar"),.17f,.04f,.77f,.22f);
         DealbreakUIStyle.Frame(player.Find("HealthPanel"),true,true);
         runtime.playerState=(RectTransform)player.Find("HealthPanel");
-        DealbreakUIStyle.Place(player.Find("HealthPanel"),.80f,.045f,.98f,.38f);
+        // S10a: the HP panel's rect comes from PlayerCornerLayout (DealbreakCentralStageAuthoring.PlayerCorner
+        // dresses it later in the chain).
+        PlayerCornerLayout.Apply(runtime.playerState,false);
         DealbreakUIStyle.Place(a.selectionLabel.transform,.17f,.92f,.77f,.995f);
         var gear=root.GetComponentInChildren<GearRailUI>(true);
         DealbreakUIStyle.Place(gear.transform,.035f,.49f,.13f,.83f);DealbreakUIStyle.Frame(gear.transform,false);

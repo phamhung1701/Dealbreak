@@ -76,6 +76,54 @@ public static class DealbreakCentralStageAuthoring
     }
 
     /// <summary>
+    /// HUD slice S10a: re-applies only the player corner in Game.unity: the HP panel's rect
+    /// (PlayerCornerLayout), its PlayerCornerUI assets (the HP number's paper-outline preset and the
+    /// Credits coin), the HP label's and Credits label's type, and retires the panel's old frame.
+    /// </summary>
+    [MenuItem("Dealbreak/UI/Apply Player Corner Layout")]
+    public static void ApplyPlayerCornerLayout()
+    {
+        Edit("Assets/Scenes/Game.unity", scene => PlayerCorner(scene.GetRootGameObjects().First(g => g.name == "Canvas")));
+        AssetDatabase.SaveAssets();
+    }
+
+    public const string HpNumberMaterialPath = "Assets/Art/Fonts/Courier Prime UI - Paper Outline.mat";
+    public const string CreditsCoinPath = "Assets/Art/UI/Sprites/Credits_Coin.png";
+
+    // hud.md section C (owner ruling 2026-10-27): HP panel x .025-.235, y .014-.082; the Credits chip
+    // and the portrait are built at runtime above it (CreditsHudUI, PlayerAvatarUI).
+    static void PlayerCorner(GameObject root)
+    {
+        var runtime = root.GetComponent<DealbreakUIRuntime>();
+        var actions = root.GetComponent<ActionButtonsUI>();
+        var panel = runtime.playerState;
+        PlayerCornerLayout.Apply(panel, false);
+        EditorUtility.SetDirty(panel);
+        if (!panel.TryGetComponent<PlayerCornerUI>(out var corner)) corner = Undo.AddComponent<PlayerCornerUI>(panel.gameObject);
+        corner.hpNumberMaterial = AssetDatabase.LoadAssetAtPath<Material>(HpNumberMaterialPath);
+        corner.coinSprite = AssetDatabase.LoadAllAssetsAtPath(CreditsCoinPath).OfType<Sprite>().FirstOrDefault();
+        EditorUtility.SetDirty(corner);
+        // The meter is the panel now: the charcoal frame and the root fill stop drawing.
+        var oldFrame = panel.Find("Editorial Frame");
+        if (oldFrame) oldFrame.gameObject.SetActive(false);
+        if (panel.TryGetComponent<Image>(out var rootImage)) { rootImage.sprite = null; rootImage.color = Color.clear; rootImage.raycastTarget = false; EditorUtility.SetDirty(rootImage); }
+        var theme = DealbreakUIStyle.Theme;
+        var hp = actions.playerHealthLabel;
+        DealbreakUIStyle.Place(hp.transform, 0f, 0f, 1f, 1f);
+        DealbreakUIStyle.Text(hp, theme.numericFont, PlayerCornerUI.NumberSize, theme.inkPrint);
+        hp.alignment = TextAlignmentOptions.Center;
+        hp.raycastTarget = false;
+        if (corner.hpNumberMaterial) hp.fontSharedMaterial = corner.hpNumberMaterial;
+        EditorUtility.SetDirty(hp);
+        if (root.TryGetComponent<RunStatusUI>(out var status) && status.creditsLabel)
+        {
+            DealbreakUIStyle.Text(status.creditsLabel, theme.numericFont, CreditsHudUI.NumberSize, theme.inkPrint);
+            status.creditsLabel.raycastTarget = true;
+            EditorUtility.SetDirty(status.creditsLabel);
+        }
+    }
+
+    /// <summary>
     /// HUD slice S9: moves the status band (CombatStatusPanel) to x .18-.76, y .37-.42, below INCOMING;
     /// stretches TurnStateLabel (the status tag's label) over the band at 22pt; then re-applies the
     /// enemy row so INCOMING, a child of the band, keeps y .43-.47. Game.unity only.
@@ -372,9 +420,7 @@ public static class DealbreakCentralStageAuthoring
         DealbreakUIStyle.Place(actions.rankSortButton.transform, .88f, .13f, .985f, .20f);
         DealbreakUIStyle.Place(actions.suitSortButton.transform, .88f, .035f, .985f, .105f);
         // Sorting lives in PlayerArea already; moving anchors retains the bound inputs.
-        DealbreakUIStyle.Place(runtime.playerState, .025f, .035f, .235f, .25f);
-        DealbreakUIStyle.Place(actions.playerHealthLabel.transform, .055f, .42f, .945f, .94f);
-        actions.playerHealthLabel.fontSize = 29;
+        PlayerCorner(root);
         // Incoming damage reads under the enemies, below the DEFENSE label, not on the HP panel.
         actions.pendingDamageLabel.transform.SetParent(actions.turnStateLabel.transform.parent, false);
         DealbreakUIStyle.Place(actions.pendingDamageLabel.transform, .02f, -.85f, .98f, -.05f);

@@ -393,7 +393,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         int chips = Mathf.Clamp(amount, 1, MaxChips);
         int landed = 0;
         for (int i = 0; i < chips; i++)
-            StartCoroutine(FlyChip(from, coin, theme ? theme.creditsIcon : null, Mustard, i * ChipStagger,
+            StartCoroutine(FlyChip(from, coin, CreditsHudUI.CurrentCoin, Mustard, i * ChipStagger,
                 () => { landed++; PopCoin(coin); }));
         float elapsed = 0f;
         while (landed < chips && elapsed < 2f)
@@ -565,7 +565,8 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         label.textWrappingMode = TextWrappingModes.NoWrap;
         label.overflowMode = TextOverflowModes.Overflow;
         label.raycastTarget = false;
-        float iconSize = creditIcon && theme && theme.creditsIcon ? 30f : 0f;
+        var coinSprite = CreditsHudUI.CurrentCoin;
+        float iconSize = creditIcon && coinSprite ? 30f : 0f;
         Vector2 textSize = label.GetPreferredValues(text);
         rect.sizeDelta = new Vector2(textSize.x + 22f + (iconSize > 0f ? iconSize + 6f : 0f), 42f);
         labelRect.anchorMin = labelRect.anchorMax = new Vector2(.5f, .5f);
@@ -581,7 +582,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             iconRect.sizeDelta = new Vector2(iconSize, iconSize);
             iconRect.anchoredPosition = new Vector2(10f, 0f);
             var iconImage = icon.GetComponent<Image>();
-            iconImage.sprite = theme.creditsIcon;
+            iconImage.sprite = coinSprite;
             iconImage.preserveAspect = true;
             iconImage.raycastTarget = false;
         }

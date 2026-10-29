@@ -2,18 +2,28 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// The run's character as a square portrait just above the Credits chip, so it shows wherever the
-/// HP panel does. A click opens its name and perk beside it. A run without a character (the tutorial,
-/// older saves) shows the first character's look and opens nothing. Presentation only.
+/// The run's character as a Cut Sheet sticker above the Credits chip, so it shows wherever the HP
+/// panel does (HUD slice S10a): the portrait art with its own cut line (no frame, no fill behind
+/// it), a 3px ink shadow from its own alpha, a 2px lift on hover and a paper ring on focus. A click
+/// opens its name and perk beside it. A run without a character (the tutorial, older saves) shows
+/// the first character's look and opens nothing. Presentation only.
 /// </summary>
 public sealed class PlayerAvatarUI : MonoBehaviour
 {
-    // Above the Credits chip: its gap, its height, then this gap.
-    const float Size = 130f, Bottom = 10f + 46f + 14f, Inset = 6f;
+    public const float Width = PlayerCornerLayout.PortraitWidth, Height = PlayerCornerLayout.PortraitHeight,
+        Bottom = PlayerCornerLayout.PortraitBottom;
+    public const string StickerName = "Sticker", PortraitName = "Portrait", RingName = "Avatar Ring";
 
     Image _portrait;
+    RectTransform _sticker;
+    CutSheetShadow _shadow;
+    CutSheetHoverRing _hover;
     CharacterData _shown;
-    bool _bound;
+    Sprite _shownSprite;
+    bool _bound, _applied;
+
+    public Image Portrait => _portrait;
+    public CutSheetShadow Shadow => _shadow;
 
     /// <summary>Builds the avatar above <paramref name="healthPanel"/>.</summary>
     public static PlayerAvatarUI Install(RectTransform healthPanel)
@@ -22,32 +32,38 @@ public sealed class PlayerAvatarUI : MonoBehaviour
         var existing = healthPanel.GetComponentInChildren<PlayerAvatarUI>(true);
         if (existing) return existing;
 
-        var theme = DealbreakUIStyle.Theme;
         var root = DealbreakUIStyle.Child(healthPanel, "Player Avatar", typeof(Image), typeof(PlayerAvatarUI),
             typeof(ContextualInfoTrigger));
         root.anchorMin = root.anchorMax = new Vector2(0f, 1f);
         root.pivot = new Vector2(0f, 0f);
         root.anchoredPosition = new Vector2(0f, Bottom);
-        root.sizeDelta = new Vector2(Size, Size);
-        // The 1px hairline: the root draws slate, the fill inside it charcoal.
-        var rim = root.GetComponent<Image>();
-        rim.color = theme ? theme.slate : Color.grey;
-        var fill = DealbreakUIStyle.Child(root, "Fill", typeof(Image));
-        DealbreakUIStyle.Place(fill, 0, 0, 1, 1);
-        fill.offsetMin = Vector2.one;
-        fill.offsetMax = -Vector2.one;
-        var fillImage = fill.GetComponent<Image>();
-        fillImage.color = theme ? theme.charcoal : Color.black;
-        fillImage.raycastTarget = false;
-        var portrait = DealbreakUIStyle.Child(root, "Portrait", typeof(Image));
-        DealbreakUIStyle.Place(portrait, 0, 0, 1, 1);
-        portrait.offsetMin = new Vector2(Inset, Inset);
-        portrait.offsetMax = new Vector2(-Inset, -Inset);
+        root.sizeDelta = new Vector2(Width, Height);
+        // The root only carries the click detail; the sticker art takes the pointer.
+        var rootImage = root.GetComponent<Image>();
+        rootImage.sprite = null;
+        rootImage.color = Color.clear;
+        rootImage.raycastTarget = false;
+
+        var sticker = DealbreakUIStyle.Child(root, StickerName);
+        sticker.anchorMin = new Vector2(0f, 0f);
+        sticker.anchorMax = new Vector2(0f, 1f);
+        sticker.pivot = new Vector2(0f, .5f);
+        sticker.sizeDelta = new Vector2(Height, 0f);
+        sticker.anchoredPosition = Vector2.zero;
+        var shadow = CutSheetShadow.Create(sticker);
+        var portrait = DealbreakUIStyle.Child(sticker, PortraitName, typeof(CanvasRenderer), typeof(Image));
+        portrait.anchorMin = Vector2.zero;
+        portrait.anchorMax = Vector2.one;
+        portrait.offsetMin = portrait.offsetMax = Vector2.zero;
+        var ring = CutSheetHoverRing.CreateRing(portrait, RingName, 2f);
 
         var avatar = root.GetComponent<PlayerAvatarUI>();
+        avatar._sticker = sticker;
+        avatar._shadow = shadow;
         avatar._portrait = portrait.GetComponent<Image>();
         avatar._portrait.preserveAspect = true;
-        avatar._portrait.raycastTarget = false;
+        avatar._portrait.raycastTarget = true;
+        avatar._hover = CutSheetHoverRing.Attach(root.gameObject, ring, false, true, portrait);
         var detail = root.GetComponent<ContextualInfoTrigger>();
         detail.pinOnClick = true;
         detail.allowWhileBlocked = true;
@@ -82,7 +98,21 @@ public sealed class PlayerAvatarUI : MonoBehaviour
         _shown = CardManager.Instance ? CardManager.Instance.Character : null;
         _bound = true;
         if (!_portrait) return;
-        _portrait.sprite = PortraitFor(_shown);
-        _portrait.enabled = _portrait.sprite;
+        var sprite = PortraitFor(_shown);
+        if (_applied && sprite == _shownSprite && _portrait.sprite == sprite) return;
+        _applied = true;
+        _shownSprite = sprite;
+        _portrait.sprite = sprite;
+        _portrait.enabled = sprite;
+        // The sticker keeps the art's aspect, left-aligned in the portrait rect, full height.
+        float aspect = sprite && sprite.rect.height > 0f ? sprite.rect.width / sprite.rect.height : 1f;
+        float width = Mathf.Min(Width, Height * aspect);
+        if (_sticker && !Mathf.Approximately(_sticker.sizeDelta.x, width)) _sticker.sizeDelta = new Vector2(width, 0f);
+        if (_shadow)
+        {
+            _shadow.Match(_portrait, CutSheetShadow.Tint, sprite ? CutSheetMetrics.ShadowSlot : 0f);
+            if (!_shadow.Image.preserveAspect) _shadow.Image.preserveAspect = true;
+        }
+        if (_hover) _hover.RecaptureRest();
     }
 }

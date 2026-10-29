@@ -21,11 +21,10 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     public RunEventUI incident;
     float _nextStyleCheck;
     int _shownTricksUsed=int.MinValue,_shownTricksCap=int.MinValue;
+    int _shownHand=int.MinValue,_shownHandCap=int.MinValue;
     int _lastSignature;
     readonly System.Collections.Generic.HashSet<Object> _styled=new();
     int _lastShopCredits=int.MinValue;
-    bool? _lastDefenseLayout;
-    bool _compactHealthLayout;
     RectTransform _enemyContainer;
     Vector2 _handAnchorMin,_handAnchorMax;
     // The compact hand fills the strip under route, Black Market and Incident panels; its hand
@@ -39,6 +38,9 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         _enemyContainer=enemies?enemies.enemyContainer:null;
         AttachHandCount();
         MergeStatusLines();
+        // S10a: the HP panel dresses itself (meter, number, Block/Shield line) and owns its labels' type,
+        // so it is built before the style pass.
+        if(playerState&&actions)PlayerCornerUI.For(playerState,actions.playerHealthLabel);
         RefreshStyles();BindTricks();BindControls();PositionSortControls();
         // Credits sit just above the HP panel, so they show wherever it does.
         if(playerState&&actions&&actions.TryGetComponent<RunStatusUI>(out var status))CreditsHudUI.Install(playerState,status.creditsLabel);
@@ -185,7 +187,11 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
     }
     void LateUpdate()
     {
-        if(handCount&&CardManager.Instance!=null)handCount.text=$"<size=55%>HAND</size>\n{CardManager.Instance.HandCount}/{CardManager.Instance.HandCapacity}";
+        if(handCount&&CardManager.Instance!=null)
+        {
+            int hand=CardManager.Instance.HandCount,handCap=CardManager.Instance.HandCapacity;
+            if(hand!=_shownHand||handCap!=_shownHandCap){_shownHand=hand;_shownHandCap=handCap;handCount.SetText("<size=55%>HAND</size>\n{0}/{1}",hand,handCap);}
+        }
         if(trickCapacity&&CardManager.Instance!=null)
         {
             // Set only on change: SetText formats without allocating a string each frame.
@@ -225,14 +231,9 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
             bool hidden=overlay&&!kept||RunResultUI.IsShowingResult||(!board||!shownWhilePresenting)&&!choosingCard&&!kept||choosingCard&&i>1;
             group.alpha=hidden?0:1;group.blocksRaycasts=!hidden;group.interactable=!hidden;
         }
-        // Beside the compact hand the HP panel is a single short bar in the bottom-left corner.
-        if(compactHand&&playerState&&actions&&!_compactHealthLayout)
-        {
-            DealbreakUIStyle.Place(playerState,.025f,.035f,.2f,.16f);
-            DealbreakUIStyle.Place(actions.playerHealthLabel.transform,.055f,.1f,.945f,.9f);
-            _compactHealthLayout=true;
-            _lastDefenseLayout=null;
-        }
+        // S10a: the one writer of the HP panel's anchors (it writes only on change). Beside the compact
+        // hand the panel keeps its rows and ends before the hand strip.
+        if(playerState)PlayerCornerLayout.Apply(playerState,compactHand);
         if(_boardTone!=null)
         {
             // Defense tone and dot screen while the enemies attack; ink otherwise.
@@ -243,14 +244,6 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(inventoryGroups!=null)foreach(var group in inventoryGroups)if(group){group.alpha=hideInventory?0:1;group.blocksRaycasts=!hideInventory;group.interactable=!hideInventory;}
         if(actions&&CombatActive)
         {
-            bool defending=CombatManager.Instance.currentState==GameState.EnemyAttacking;
-            if(playerState&&_lastDefenseLayout!=defending)
-            {
-                DealbreakUIStyle.Place(playerState,.025f,.035f,.235f,.25f);
-                DealbreakUIStyle.Place(actions.playerHealthLabel.transform,.055f,.1f,.945f,.94f);
-                _lastDefenseLayout=defending;
-                _compactHealthLayout=false;
-            }
             var cards=CardManager.Instance;
             if(actions.playButton)actions.playButton.GetComponentInChildren<TMP_Text>().text=cards.IsEnemyTargeting?"CANCEL":"ATTACK";
             if(actions.recoverButton&&actions.recoverButton.gameObject.activeSelf)actions.recoverButton.gameObject.SetActive(false);

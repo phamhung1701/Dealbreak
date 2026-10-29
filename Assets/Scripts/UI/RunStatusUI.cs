@@ -222,7 +222,8 @@ public class RunStatusUI : MonoBehaviour
         _lastCreditsTarget = CreditsTarget(cards);
         if (!_creditsHeld) _shownCredits.SetTarget(_lastCreditsTarget, animate);
         creditsLabel.text = $"{_shownCredits.Shown}";
-        creditsLabel.color = _shownCredits.Tint(_creditsLabelColor);
+        // Ink on the mustard plate only: the coin stamp shows the gain (the green pulse is off-palette).
+        creditsLabel.color = _creditsLabelColor;
     }
 
     void RefreshTiming()

@@ -54,8 +54,7 @@ public class ActionButtonsUI : MonoBehaviour
     bool _healthHeld;
     Color _healthLabelColor;
     bool _healthLabelColorCaptured;
-    HealthBarBacking _healthBar;
-    TMP_Text _defenseLine;
+    PlayerCornerUI _corner;
     UnityAction[] _backpackSlotListeners;
     // A slot's authored glyph alignment; a Trick sprite moves the stack/charge count to the top-right corner.
     readonly Dictionary<TMP_Text, TextAlignmentOptions> _backpackLabelAlignment = new();
@@ -163,9 +162,10 @@ public class ActionButtonsUI : MonoBehaviour
 
     void LateUpdate()
     {
-        // Style passes repaint labels; the HP label must stay readable on its bar.
-        if (_healthLabelColorCaptured && playerHealthLabel)
-            playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
+        // Style passes repaint labels; the HP label must stay readable on its bar. Ink only: the meter
+        // shows the change, and the old salmon/green pulse is off the Cut Sheet palette.
+        if (_healthLabelColorCaptured && playerHealthLabel && playerHealthLabel.color != _healthLabelColor)
+            playerHealthLabel.color = _healthLabelColor;
     }
 
     // These labels support encounters, not the Shop/Event objects occupying the same surface.
@@ -250,54 +250,32 @@ public class ActionButtonsUI : MonoBehaviour
     }
 
     // HP changes count over a few frames with a loss/gain tint in play mode; the value itself is
-    // always read from the player.
+    // always read from the player. The Cut Sheet meter (PlayerCornerUI) draws it; text, fill and the
+    // Block/Shield line are written only when they change.
     void RefreshPlayerHealthLabel(CombatManager combat)
     {
         if (!playerHealthLabel || combat == null) return;
         if (!_healthLabelColorCaptured)
         {
-            // The label sits on the HP bar, so it reads in paper over brick and ink.
+            // The number sits on the meter in ink with a paper outline, over brick and paper alike.
             var theme = DealbreakUIStyle.Theme;
-            _healthLabelColor = theme ? theme.paper : Color.white;
+            _healthLabelColor = theme ? theme.inkPrint : Color.black;
             _healthLabelColorCaptured = true;
         }
         // Healing from a Mod or Gear shows once its chips reach the bar.
         bool animate = Application.isPlaying && isActiveAndEnabled;
         _healthHeld = animate && EffectTriggerPresenterUI.HoldsHealth;
         if (!_healthHeld) _shownHealth.SetTarget(combat.player.currentHealth, animate);
-        playerHealthLabel.text = combat.HasInfiniteHealthForDev
-            ? "HP  ∞"
-            : $"HP  {_shownHealth.Shown}/{combat.player.maxHealth}";
-        playerHealthLabel.color = _shownHealth.Tint(_healthLabelColor);
-        if (_healthBar == null) _healthBar = HealthBarBacking.Attach(playerHealthLabel, true, HealthBarBacking.Look.Meter);
-        if (_healthBar != null)
-            _healthBar.SetFraction(combat.HasInfiniteHealthForDev || combat.player.maxHealth <= 0 ? 1f
-                : _shownHealth.Value / combat.player.maxHealth);
-        // Block and Shield sit on a small line above the bar, so the bar only carries HP.
-        var parts = new List<string>(2);
-        if (combat.player.EncounterBlock > 0) parts.Add($"BLOCK {combat.player.EncounterBlock}");
-        if (combat.player.ShieldCharges > 0) parts.Add($"SHIELD {combat.player.ShieldCharges}");
-        var line = EnsureDefenseLine();
-        if (line) line.text = string.Join("  •  ", parts);
-    }
-
-    TMP_Text EnsureDefenseLine()
-    {
-        if (_defenseLine || _healthBar == null || !_healthBar.Bar) return _defenseLine;
-        var lineObject = new GameObject("Player Defense Line", typeof(RectTransform), typeof(TextMeshProUGUI));
-        var rect = (RectTransform)lineObject.transform;
-        rect.SetParent(_healthBar.Bar, false);
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = Vector2.one;
-        rect.pivot = new Vector2(.5f, 0f);
-        rect.sizeDelta = new Vector2(0f, 26f);
-        rect.anchoredPosition = new Vector2(0f, 4f);
-        _defenseLine = lineObject.GetComponent<TMP_Text>();
-        var theme = DealbreakUIStyle.Theme;
-        DealbreakUIStyle.Label(_defenseLine, 18f, theme ? theme.paper : Color.white);
-        _defenseLine.alignment = TextAlignmentOptions.BottomRight;
-        _defenseLine.raycastTarget = false;
-        return _defenseLine;
+        if (_corner == null) _corner = PlayerCornerUI.For(PlayerHealthArea, playerHealthLabel);
+        int max = combat.player.maxHealth;
+        bool infinite = combat.HasInfiniteHealthForDev;
+        if (_corner != null)
+        {
+            _corner.SetHealth(_shownHealth.Shown, max, max > 0 ? _shownHealth.Value / max : 1f, infinite);
+            // Block and Shield sit on a small line above the panel, so the meter only carries HP.
+            _corner.SetDefense(combat.player.EncounterBlock, combat.player.ShieldCharges);
+        }
+        if (playerHealthLabel.color != _healthLabelColor) playerHealthLabel.color = _healthLabelColor;
     }
 
     /// <summary>The player's HP panel, the drop target for healing Tricks.</summary>

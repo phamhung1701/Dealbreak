@@ -81,6 +81,40 @@ public sealed class HudLayoutTests
         Assert.That(actions.turnStateLabel.fontSize, Is.GreaterThanOrEqualTo(22f));
     }
 
+    // S10a (hud.md section C, owner ruling 2026-10-27): the HP panel sits at x .025-.235, y .014-.082,
+    // written by Dealbreak/UI/Apply Player Corner Layout.
+    [Test]
+    public void HpPanel_SitsAtX025To235AndY014To082()
+    {
+        var root = Canvas();
+        var panel = root.GetComponent<DealbreakUIRuntime>().playerState;
+        Absolute(panel, root.transform, out var min, out var max);
+
+        Assert.That(min.x, Is.EqualTo(.025f).Within(Tolerance), "HP panel left.");
+        Assert.That(max.x, Is.EqualTo(.235f).Within(Tolerance), "HP panel right.");
+        Assert.That(min.y, Is.EqualTo(.014f).Within(Tolerance), "HP panel bottom.");
+        Assert.That(max.y, Is.EqualTo(.082f).Within(Tolerance), "HP panel top.");
+        // Sub-pixel float residue from the anchor rewrite is fine; a stray offset is pixels.
+        Assert.That(panel.offsetMin.magnitude, Is.LessThan(.01f), "No stray offsets move it.");
+        Assert.That(panel.offsetMax.magnitude, Is.LessThan(.01f), "No stray offsets move it.");
+        Assert.That(min.x * RefWidth, Is.GreaterThanOrEqualTo(24f), "24px left edge margin.");
+    }
+
+    [Test]
+    public void HpPanel_CarriesTheCreditsCoinAndTheHpNumberPreset()
+    {
+        var root = Canvas();
+        var panel = root.GetComponent<DealbreakUIRuntime>().playerState;
+        Assert.That(panel.TryGetComponent<PlayerCornerUI>(out var corner), Is.True);
+        Assert.That(UnityEditor.AssetDatabase.GetAssetPath(corner.coinSprite), Is.EqualTo("Assets/Art/UI/Sprites/Credits_Coin.png"));
+        Assert.That(UnityEditor.AssetDatabase.GetAssetPath(corner.hpNumberMaterial), Is.EqualTo("Assets/Art/Fonts/Courier Prime UI - Paper Outline.mat"));
+        var label = root.GetComponent<ActionButtonsUI>().playerHealthLabel;
+        Assert.That(label.fontSharedMaterial, Is.SameAs(corner.hpNumberMaterial));
+        Assert.That(label.fontSize, Is.EqualTo(20f));
+        var frame = panel.Find("Editorial Frame");
+        Assert.That(frame == null || !frame.gameObject.activeSelf, Is.True, "The old charcoal frame no longer draws.");
+    }
+
     // A stretched rect's anchors in the canvas root's fractions, composed up its parents (offsets are zero).
     static void Absolute(RectTransform rect, Transform canvasRoot, out Vector2 min, out Vector2 max)
     {

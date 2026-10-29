@@ -15,6 +15,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
     public ActionButtonsUI actions;
     public RunStatusUI runStatus;
     public GearRailUI gearRail;
+    [Tooltip("Kept for scene compatibility; the HP panel is placed by PlayerCornerLayout.")]
     public RectTransform playerStatePanel;
     CombatInspectUI _inspected;
     string _lastTitle, _lastBody;
@@ -60,12 +61,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
             var attackLabel = actions.playButton ? actions.playButton.GetComponentInChildren<TMP_Text>() : null;
             if (attackLabel) attackLabel.text = cards != null && cards.IsEnemyTargeting ? "CANCEL" : "ATTACK";
             if (actions.recoverButton && actions.recoverButton.gameObject.activeSelf) actions.recoverButton.gameObject.SetActive(false);
-            // Incoming damage shows under the enemies, so the HP panel keeps one shape in both phases.
-            if (playerStatePanel)
-            {
-                playerStatePanel.anchorMax = new Vector2(playerStatePanel.anchorMax.x, .21f);
-                actions.playerHealthLabel.rectTransform.anchorMin = new Vector2(.055f, .1f);
-            }
+            // The HP panel's rect has one writer, PlayerCornerLayout via DealbreakUIRuntime (S10a).
         }
         // The selection preview has one writer, ActionButtonsUI (S9); this panel only reads it back.
         bool overPanel = panel && panel.activeSelf && UnityEngine.InputSystem.Mouse.current != null &&
