@@ -194,15 +194,14 @@ public sealed class DealbreakUIRuntime : MonoBehaviour
         if(!actions)return;
         // Attack and Block show no detail; the others show theirs when clicked while unavailable.
         var buttons=new[]{actions.passButton,actions.recoverButton,actions.rankSortButton,actions.suitSortButton};
-        var details=new[]{"Pass the current action; while blocking, take the pending damage.","Recover when your hand is empty.","Sort your current hand by rank.","Sort your current hand by suit."};
         for(int i=0;i<buttons.Length;i++)
         {
-            var button=buttons[i];if(!button)continue;string description=details[i];
+            var button=buttons[i];if(!button)continue;
             if(!button.TryGetComponent<ContextualInfoTrigger>(out var trigger))trigger=button.gameObject.AddComponent<ContextualInfoTrigger>();
             trigger.describe=()=>button==actions.passButton&&CombatManager.Instance?.currentState==GameState.EnemyAttacking
                 ?new ContextualInfo("Defense","PASS",$"Take {CombatManager.Instance.pendingDamage} remaining damage. Shield and other combat effects resolve normally.")
                 :button.IsInteractable()?null:new ContextualInfo("Combat action",button.GetComponentInChildren<TMP_Text>().text,
-                description+"\n\nUnavailable in the current state.");
+                "Unavailable in the current state.");
         }
         BindDrawPile(FindFirstObjectByType<DrawDeckStackUI>(FindObjectsInactive.Include),
             FindObjectsByType<DeckViewerUI>(FindObjectsInactive.Include,FindObjectsSortMode.None));
