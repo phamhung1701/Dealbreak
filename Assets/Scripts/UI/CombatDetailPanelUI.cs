@@ -22,6 +22,7 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
     bool _wasCombat;
     float _leaveUntil;
     readonly StringBuilder _text = new();
+    readonly System.Collections.Generic.List<GearIconSlotUI> _gearSlots = new();
 
     public bool InCombat => CombatManager.Instance != null && CombatManager.Instance.Enemies.Count > 0 &&
         CombatManager.Instance.currentState is GameState.PlayerTurn or GameState.EnemyAttacking;
@@ -73,8 +74,11 @@ public sealed class CombatDetailPanelUI : MonoBehaviour
         // Selection pins detail when the pointer leaves; a transient inspect always wins.
         if (cards?.selectedCard != null && RenderSource(cards.selectedCard.gameObject)) return;
         if (gearRail)
-            foreach (var slot in gearRail.GetComponentsInChildren<GearIconSlotUI>())
+        {
+            gearRail.GetComponentsInChildren(_gearSlots);
+            foreach (var slot in _gearSlots)
                 if (slot.IsDetailSelected && RenderSource(slot.gameObject)) return;
+        }
         if (panel) panel.SetActive(false);
         _lastTitle = _lastBody = null;
     }
