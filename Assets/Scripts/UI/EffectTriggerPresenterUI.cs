@@ -16,7 +16,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
     public static EffectTriggerPresenterUI Instance { get; private set; }
 
     const float StepTime = .3f, HealthCostStepTime = .5f, MinStepScale = .35f;
-    const float TagTime = .8f, ChipTime = .42f, ChipStagger = .06f;
+    const float TagTime = .8f, ChipTime = .42f, ChipStagger = .04f;
     const int MaxChips = 6;
 
     struct Step
