@@ -6,7 +6,7 @@ The combat HUD is done (S7-S20). The game plays fully but is silent, only combat
 
 ## Progress (2026-10-31, code-only pass)
 
-Locus and Unity were unavailable, so this pass was checked by compiling only: no test has run and nothing has been seen or heard in the game.
+This pass was written without Unity. The gate then ran on `17239384` and passed: EditMode 2144 passed + 1 skipped, PlayMode 11 passed + 1 skipped, soak passed in 101 s. Nothing has been seen or heard in the game yet.
 
 **Built:**
 - Sound layer: `AudioService`, `AudioCue`, `SoundSettings`, 16 cues hooked to presenters.
@@ -18,9 +18,8 @@ Locus and Unity were unavailable, so this pass was checked by compiling only: no
 **Changed from the plan below:** no `AudioMixer` asset and no cue bank asset, because neither can be authored safely without the Editor. Levels are set in code and cues are a code table, so a clip is replaced by overwriting its `.wav`. Add a mixer later if the mix needs fades or ducking.
 
 **Check first in Unity:**
-1. Run the full gate.
-2. Open Settings from both menus: the three volume rows sit right of the main rows, at x 365-950, a position worked out from scene data and not seen.
-3. Play a fight with sound on and listen to every cue.
+1. Open Settings from both menus: the three volume rows sit right of the main rows, at x 365-950, a position worked out from scene data and not seen.
+2. Play a fight with sound on and listen to every cue.
 
 **Not done, needs the Editor or your eyes:** everything else in this plan, including Track S, board tones, Track M motion, music and the Phase 0 captures.
 
