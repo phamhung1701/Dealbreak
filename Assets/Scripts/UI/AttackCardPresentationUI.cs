@@ -499,6 +499,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             origin += backward;
         }
         float travelTime = isBlock ? BlockTravelTime : dragged ? DraggedTravelTime : AttackTravelTime;
+        AudioService.Play(AudioCue.CardThrow);
         // Accelerate into the target so the hit lands with weight.
         yield return Move(card, origin, impact, travelTime, Ease.In);
         yield return Flash(impact, isBlock);
@@ -553,6 +554,7 @@ public sealed class AttackCardPresentationUI : MonoBehaviour
             yield return null;
         }
         yield return Wait(.45f);
+        AudioService.Play(AudioCue.RewardCard);
         Vector2 start = origin + Vector2.up * 40f;
         Vector2 control = new((start.x + deck.x) * .5f, Mathf.Max(start.y, deck.y) + 140f);
         elapsed = 0f;

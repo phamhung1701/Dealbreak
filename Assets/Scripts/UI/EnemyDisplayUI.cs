@@ -177,6 +177,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     System.Collections.IEnumerator HitCueAfter(bool blocked, float delay)
     {
         if (delay > 0f) yield return new WaitForSeconds(delay);
+        AudioService.Play(blocked ? AudioCue.BlockImpact : AudioCue.EnemyHit);
         StartShake(ShakeTime);
         _flashTime = HitFlashTime;
         _flashColor = blocked ? new Color(0.55f, 0.9f, 1f, 1f) : new Color(1f, 0.42f, 0.36f, 1f);
@@ -956,6 +957,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
     {
         if (delay > 0f) yield return new WaitForSeconds(delay);
         DefeatHitLanded?.Invoke(this);
+        AudioService.Play(AudioCue.EnemyDefeat);
         var rect = transform;
         Vector3 initialScale = _preDefeatScale;
         var hitColor = new Color(1f, 0.35f, 0.2f, 1f);
@@ -1107,6 +1109,7 @@ public class EnemyDisplayUI : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         _perfectBlockCueText.text = _perfectBlockCueCount > 1
             ? $"PERFECT BLOCK ×{_perfectBlockCueCount}" : "PERFECT BLOCK";
         _perfectBlockCueText.gameObject.SetActive(true);
+        AudioService.Play(AudioCue.PerfectBlock);
         if (_perfectBlockCue != null) StopCoroutine(_perfectBlockCue);
         _perfectBlockCue = Application.isPlaying ? StartCoroutine(PerfectBlockCueRoutine()) : null;
     }

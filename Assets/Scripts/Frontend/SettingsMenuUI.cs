@@ -22,6 +22,17 @@ public sealed class SettingsMenuUI : MonoBehaviour
     public static readonly string[] TriggerSpeedOptions = { "1x", "1.5x", "2x" };
     public static readonly string[] TooltipTextOptions = { "100%", "115%", "130%" };
 
+    // The audio rows stand in their own column right of the card's rows (which end at x 325), built
+    // at runtime from the Tooltip Text row so both scenes share one layout. 1080p-canvas pixels.
+    public const float AudioLabelX = 500f, AudioDropdownX = 800f, AudioDropdownWidth = 300f;
+    static readonly (string name, string label, AudioBus bus, float y)[] AudioRowLayout =
+    {
+        ("MusicVolume", "Music Volume", AudioBus.Music, 155f),
+        ("SfxVolume", "SFX Volume", AudioBus.Sfx, 85f),
+        ("UiVolume", "UI Volume", AudioBus.Ui, 15f),
+    };
+    readonly TMP_Dropdown[] _audioRows = new TMP_Dropdown[AudioRowLayout.Length];
+
     DisplayResolution[] _resolutions = Array.Empty<DisplayResolution>();
     GameplayMenuCoordinator _coordinator;
     Action _onBack;
@@ -120,6 +131,44 @@ public sealed class SettingsMenuUI : MonoBehaviour
         if (vSyncToggle) vSyncToggle.SetIsOnWithoutNotify(current.VSyncCount > 0);
         if (statusLabel) statusLabel.text = string.Empty;
         RefreshMotionControls();
+        RefreshAudioControls();
+    }
+
+    public void RefreshAudioControls()
+    {
+        EnsureAudioRows();
+        foreach (var (_, _, bus, _) in AudioRowLayout)
+            Fill(_audioRows[(int)bus], SoundSettings.StepLabels, SoundSettings.Step(bus));
+    }
+
+    void EnsureAudioRows()
+    {
+        if (!tooltipTextDropdown || _audioRows[0]) return;
+        var card = tooltipTextDropdown.transform.parent;
+        var label = card.Find("TooltipTextLabel");
+        if (!label) return;
+        foreach (var (name, text, bus, y) in AudioRowLayout)
+        {
+            var rowLabel = Instantiate(label.gameObject, card, false);
+            rowLabel.name = name + "Label";
+            if (rowLabel.TryGetComponent(out TMP_Text labelText)) labelText.text = text;
+            ((RectTransform)rowLabel.transform).anchoredPosition = new Vector2(AudioLabelX, y);
+            var row = Instantiate(tooltipTextDropdown, card, false);
+            row.name = name + "Dropdown";
+            var rect = (RectTransform)row.transform;
+            rect.anchoredPosition = new Vector2(AudioDropdownX, y);
+            rect.sizeDelta = new Vector2(AudioDropdownWidth, rect.sizeDelta.y);
+            row.onValueChanged.AddListener(step => SelectVolume(bus, step));
+            _audioRows[(int)bus] = row;
+        }
+    }
+
+    // A volume applies and persists as soon as it is picked; a sample plays at the new level.
+    public void SelectVolume(AudioBus bus, int step)
+    {
+        SoundSettings.SetStep(bus, step);
+        if (bus == AudioBus.Sfx) AudioService.Play(AudioCue.ItemSlap);
+        else if (bus == AudioBus.Ui) AudioService.Play(AudioCue.UiPress);
     }
 
     // Motion rows apply and persist as soon as a value is picked; Apply only covers the display rows.

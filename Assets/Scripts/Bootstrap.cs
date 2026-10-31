@@ -23,6 +23,8 @@ public class Bootstrap : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         if (GetComponent<GameFlowService>() == null)
             gameObject.AddComponent<GameFlowService>();
+        if (GetComponent<AudioService>() == null)
+            gameObject.AddComponent<AudioService>();
     }
 
     void OnEnable()

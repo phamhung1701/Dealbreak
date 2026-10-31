@@ -84,6 +84,8 @@ public sealed class ScreenShakeUI : MonoBehaviour
             _seed++;
             // Only a hit that costs HP flashes red; a Shield-absorbed hit just shakes.
             _vignettePeak = _strength >= HitStrength ? Mathf.Lerp(.5f, .8f, (_strength - HitStrength) / (MaxStrength - HitStrength)) : 0f;
+            // The queue paces the hits on screen, so the sound lands with each one, shake setting or not.
+            AudioService.Play(_strength >= HitStrength ? AudioCue.PlayerHurt : AudioCue.ShieldHit);
         }
         UpdateVignette();
     }

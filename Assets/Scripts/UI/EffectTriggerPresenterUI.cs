@@ -224,6 +224,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             else
             {
                 Hop(anchor, handCard, canHop);
+                PlayChainedHopSound();
                 ShowTag(anchor, TagText(trigger), Style(trigger.Cue), trigger.Cue == EffectCue.Credits, speed: speed);
                 bool sends = trigger.Cue is EffectCue.Credits or EffectCue.Heal;
                 if (trigger.Cue == EffectCue.Credits) StartCoroutine(SendCredits(anchor, trigger.Amount, speed));
@@ -239,6 +240,19 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
             if (trigger.Cue == EffectCue.Heal) _healthInFlight--;
         }
         if (step.Combat) FinishCombatStep();
+    }
+
+    // Each hop in a run of triggers sounds a semitone higher, up to an octave.
+    const float HopChainGap = .9f;
+    const int HopChainSteps = 12;
+    int _hopChain;
+    float _lastHopSound = float.NegativeInfinity;
+
+    void PlayChainedHopSound()
+    {
+        _hopChain = Time.time - _lastHopSound > HopChainGap ? 0 : Mathf.Min(_hopChain + 1, HopChainSteps);
+        _lastHopSound = Time.time;
+        AudioService.Play(AudioCue.TriggerHop, _hopChain);
     }
 
     void FinishCombatStep()
@@ -382,6 +396,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         if (anchor)
         {
             Hop(anchor, handCard, canHop);
+            PlayChainedHopSound();
             ShowTag(anchor, $"+{amount} DMG", TagStyle.Attack, false, speed: speed);
         }
         yield return Wait(.12f / speed);
@@ -415,7 +430,7 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         int landed = 0;
         for (int i = 0; i < chips; i++)
             StartCoroutine(FlyChip(from, coin, CreditsHudUI.CurrentCoin, Mustard, i * ChipStaggerSeconds(speed),
-                () => { landed++; PopCoin(coin); }, speed));
+                () => { landed++; AudioService.Play(AudioCue.CoinLand); PopCoin(coin); }, speed));
         float elapsed = 0f;
         while (landed < chips && elapsed < 2f)
         {
@@ -436,7 +451,8 @@ public sealed class EffectTriggerPresenterUI : MonoBehaviour
         int chips = Mathf.Clamp(amount, 1, MaxChips);
         int landed = 0;
         for (int i = 0; i < chips; i++)
-            StartCoroutine(FlyChip(from, health, null, Lime, i * ChipStaggerSeconds(speed), () => landed++, speed));
+            StartCoroutine(FlyChip(from, health, null, Lime, i * ChipStaggerSeconds(speed),
+                () => { landed++; AudioService.Play(AudioCue.HealLand); }, speed));
         float elapsed = 0f;
         while (landed < chips && elapsed < 2f)
         {

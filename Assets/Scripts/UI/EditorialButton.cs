@@ -200,7 +200,12 @@ public sealed class EditorialButton : MonoBehaviour, IPointerEnterHandler, IPoin
 
     public void OnPointerEnter(PointerEventData _) => _hover=true;
     public void OnPointerExit(PointerEventData _) { _hover=false;_pressed=false; }
-    public void OnPointerDown(PointerEventData e) { if(e.button==PointerEventData.InputButton.Left)_pressed=true; }
+    public void OnPointerDown(PointerEventData e)
+    {
+        if(e.button!=PointerEventData.InputButton.Left)return;
+        _pressed=true;
+        if(button&&button.IsInteractable())AudioService.Play(AudioCue.UiPress);
+    }
     public void OnPointerUp(PointerEventData _) => _pressed=false;
     public void OnSelect(BaseEventData _) => _focus=true;
     public void OnDeselect(BaseEventData _) { _focus=false;_pressed=false; }

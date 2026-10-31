@@ -138,6 +138,7 @@ public sealed class ItemDragUI : MonoBehaviour
 
     void Begin(RectTransform source, PointerEventData eventData)
     {
+        AudioService.Play(AudioCue.ItemPickUp);
         // A drop's return/vanish animation must not hide the next drag's ghost.
         if (_settle != null) StopCoroutine(_settle);
         _settle = null;
@@ -192,6 +193,7 @@ public sealed class ItemDragUI : MonoBehaviour
         var target = _target;
         bool valid = _targetValid;
         bool committed = valid && (_isGear ? ItemDropRules.DropGear(_gearId, target) : ItemDropRules.DropTrick(_slot, target));
+        if (committed) AudioService.Play(AudioCue.ItemSlap);
         HideFeedback();
         SetHandTargetState(false);
         _dragging = false;
@@ -307,7 +309,12 @@ public sealed class ItemDragUI : MonoBehaviour
         Release(held);
         if (!slot) yield break;
         // A Cut Sheet slot slaps its face; its pinned root never animates.
-        if (slot.TryGetComponent(out CutSheetSlotUI sticker)) { sticker.Slap(); yield break; }
+        if (slot.TryGetComponent(out CutSheetSlotUI sticker))
+        {
+            AudioService.Play(AudioCue.ItemSlap);
+            sticker.Slap();
+            yield break;
+        }
         elapsed = 0f;
         Vector3 rest = slot.localScale;
         while (elapsed < .16f && slot)

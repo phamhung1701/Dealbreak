@@ -236,6 +236,8 @@ public class RunResultUI : MonoBehaviour
     void ShowResult(bool victory)
     {
         if (IsShowingResult) return;
+        // A halted encounter is not a defeat (the run is kept), so it plays no sting.
+        if (!_aborted) AudioService.Play(victory ? AudioCue.Victory : AudioCue.Defeat);
         var run = RunManager.Instance;
         var cards = CardManager.Instance;
         int totalHeadliners = run != null ? run.HeadlinerTotal : 12;

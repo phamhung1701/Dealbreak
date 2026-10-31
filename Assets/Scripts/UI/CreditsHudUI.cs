@@ -171,7 +171,7 @@ public sealed class CreditsHudUI : MonoBehaviour
     {
         float now = Time.unscaledTime;
         for (int i = _landingCount - 1; i >= 0; i--)
-            if (_landings[i] <= now) { _landings[i] = _landings[--_landingCount]; Stamp(); }
+            if (_landings[i] <= now) { _landings[i] = _landings[--_landingCount]; AudioService.Play(AudioCue.CoinLand); Stamp(); }
         // A Mod or Gear trigger's Credits chips: stamp once they have all landed.
         bool held = EffectTriggerPresenterUI.HoldsCredits;
         if (_triggerCreditsHeld && !held) Stamp();
