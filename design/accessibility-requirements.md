@@ -139,23 +139,33 @@
 
 ## Auditory Accessibility
 
-The game has no audio assets today, so nothing is communicated by sound. When
-audio ships, two rules apply:
-- independent Music, SFX and UI volume sliders (Basic), in the main settings
+Placeholder sound effects are in the game (2026-10-31); there is no music yet.
+Two rules apply:
+- independent Music, SFX and UI volume controls (Basic), in the main settings
   and the pause menu;
 - no gameplay information is carried by sound alone (every cue already has a
   visual).
 
 | Feature | Target Tier | Scope | Status | Implementation Notes |
 |---------|-------------|-------|--------|---------------------|
-| Independent volume controls | Basic | Music / SFX / UI buses | Not Started (no audio yet) | Required before any audio ships. |
+| Independent volume controls | Basic | Music / SFX / UI buses | Built, not yet seen in the game | 0-100% in 10% steps (`SoundSettings`). Rows are built by `SettingsMenuUI`, which both menus share. |
 | Subtitles, captions, mono audio | Basic–Comprehensive | — | N/A | No voice, and no audio-only cues. |
 
 ### Gameplay-Critical SFX Audit
 
+All cues play alongside a visual that says the same thing, so none needs a
+caption. Re-audit when final sounds replace the placeholders.
+
 | Sound Effect | What It Communicates | Visual Backup | Caption Required | Status |
 |-------------|---------------------|--------------|-----------------|--------|
-| (none yet) | — | — | — | Re-audit when audio is added |
+| `EnemyHit`, `BlockImpact` | A hit landed, or was blocked | Flash, shake, HP drain, hit number | No | Placeholder |
+| `EnemyDefeat` | An enemy is defeated | Defeat fade | No | Placeholder |
+| `PerfectBlock` | Perfect Block | PERFECT BLOCK text | No | Placeholder |
+| `PlayerHurt`, `ShieldHit` | The player lost HP, or Shield absorbed it | Red vignette or shake, HP meter, Shield line | No | Placeholder |
+| `TriggerHop` | A Mod or Gear activated | Hop and tag | No | Placeholder |
+| `CoinLand`, `HealLand` | Credits or healing arrived | Chip flight, count-up | No | Placeholder |
+| `UiPress`, `CardThrow`, `ItemPickUp`, `ItemSlap`, `RewardCard` | Physical feedback | The action on screen | No | Placeholder |
+| `Victory`, `Defeat` | The run ended | Result screen | No | Placeholder |
 
 ---
 
@@ -238,4 +248,4 @@ audio ships, two rules apply:
 | The map's current node is marked only by a teal fill. Add a non-colour cue, such as a pin glyph or "YOU ARE HERE"? | owner | before the map spec | — |
 | Minimum supported resolution: raise it to 1600×900 to keep the 18px floor, or accept 720p below it? | owner | before the UI rework | — |
 | Can the tutorial be replayed from a menu (Standard: tutorial persistence)? | owner | — | — |
-| Re-audit the auditory section when the first audio ships. | ux-designer | first audio milestone | — |
+| Re-audit the auditory section when final sounds replace the placeholders. | ux-designer | final SFX pass | — |

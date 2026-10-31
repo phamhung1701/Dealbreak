@@ -498,7 +498,9 @@ Designer constants (in code today):
 2. Resolved 2026-10-27: the tier is committed in
    `design/accessibility-requirements.md` (Basic with elevated features).
    Keyboard-only play is a known limitation.
-3. Audio cues weren't inventoried; section H has no sound column.
+3. Resolved 2026-10-31: audio cues are inventoried in the cue table of
+   `production/next-phase-plan.md` and the SFX audit in
+   `design/accessibility-requirements.md`; `AudioCue` is the code list.
 4. The pause button sits at the top-right corner by MAP and the sixth Trick
    slot. Confirm its place and its focus order.
 5. Verify the section C anchors against `Game.unity`, opened read-only and
@@ -510,8 +512,8 @@ Designer constants (in code today):
    click and lives in the deck menu screen.
 8. MAP during combat: is combat input gated, and are the enemies and INCOMING
    covered? This isn't traced yet.
-9. Credits flight timing: code uses 0.42s with a 60ms stagger; the art bible
-   says 350–450ms with 40ms. Pick one.
+9. Resolved 2026-10-31: the code now matches the art bible, 0.42s with a 40ms
+   stagger. The owner has not seen the change.
 10. Minimum supported resolution: 1280×720 breaks the 18px floor. Raise the
     minimum to 1600×900, or accept the gap.
 11. While the board is busy, buttons show nothing (proposed); confirm.
