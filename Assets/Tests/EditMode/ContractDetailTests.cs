@@ -144,6 +144,23 @@ public sealed class ContractDetailTests
         }
     }
 
+    [Test]
+    public void WinEncountersProgressLine_QuotesTheBalanceRequirement()
+    {
+        var contract = new RunContractState { objective = RunContractObjective.WinTwoEncounters, encounterWins = 1, deadlineMapExclusive = 12 };
+        var balance = GameBalance.Current.contracts;
+        int required = balance.combatWinsRequired;
+        balance.combatWinsRequired = required + 1;
+        try
+        {
+            string line = (string)typeof(RunStatusUI).GetMethod("FormatContractProgress", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, new object[] { contract });
+
+            Assert.That(line, Does.Contain($"1/{required + 1}"));
+        }
+        finally { balance.combatWinsRequired = required; }
+    }
+
     static void SetPrivate(object target, string field, object value) =>
         target.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, value);
 

@@ -150,7 +150,7 @@ public class RunStatusUI : MonoBehaviour
         return contract.objective switch
         {
             RunContractObjective.WinTwoEncounters =>
-                $"Contract • Encounters {contract.encounterWins}/2 • due before District {lastMap}",
+                $"Contract • Encounters {contract.encounterWins}/{GameBalance.Current.contracts.combatWinsRequired} • due before District {lastMap}",
             RunContractObjective.DefeatEliteThisMap =>
                 $"Contract • Enforcer 0/1 • District {(long)contract.startedAtMapIndex + 1L}",
             RunContractObjective.WinCombatWithoutHpLoss =>
